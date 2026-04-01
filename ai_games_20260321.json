@@ -1,0 +1,759 @@
+{
+  "topic": "ai_games",
+  "label": "AI 与游戏",
+  "desc": "AI NPC、程序化内容生成、游戏AI、强化学习与游戏、AI辅助游戏开发",
+  "generated": "2026-03-21 05:00",
+  "papers": [
+    {
+      "title": "Generation Models Know Space: Unleashing Implicit 3D Priors for Scene Understanding",
+      "authors": [
+        "Xianjin Wu",
+        "Dingkang Liang",
+        "Tianrui Feng",
+        "Kui Xia",
+        "Yumeng Zhang",
+        "Xiaofan Li",
+        "Xiao Tan",
+        "Xiang Bai"
+      ],
+      "date": "2026-03-19",
+      "abstract": "While Multimodal Large Language Models demonstrate impressive semantic capabilities, they often suffer from spatial blindness, struggling with fine-grained geometric reasoning and physical dynamics. Existing solutions typically rely on explicit 3D modalities or complex geometric scaffolding, which are limited by data scarcity and generalization challenges. In this work, we propose a paradigm shift by leveraging the implicit spatial prior within large-scale video generation models. We posit that to synthesize temporally coherent videos, these models inherently learn robust 3D structural priors and physical laws. We introduce VEGA-3D (Video Extracted Generative Awareness), a plug-and-play framework that repurposes a pre-trained video diffusion model as a Latent World Simulator. By extracting spatiotemporal features from intermediate noise levels and integrating them with semantic representations via a token-level adaptive gated fusion mechanism, we enrich MLLMs with dense geometric cues without explicit 3D supervision. Extensive experiments across 3D scene understanding, spatial reasoning, and embodied manipulation benchmarks demonstrate that our method outperforms state-of-the-art baselines, validating that generative priors provide a scalable foundation for physical-world understanding. Code is publicly available at https://github.com/H-EmbodVis/VEGA-3D.",
+      "url": "https://arxiv.org/abs/2603.19235v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Cubic Discrete Diffusion: Discrete Visual Generation on High-Dimensional Representation Tokens",
+      "authors": [
+        "Yuqing Wang",
+        "Chuofan Ma",
+        "Zhijie Lin",
+        "Yao Teng",
+        "Lijun Yu",
+        "Shuai Wang",
+        "Jiaming Han",
+        "Jiashi Feng",
+        "Yi Jiang",
+        "Xihui Liu"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Visual generation with discrete tokens has gained significant attention as it enables a unified token prediction paradigm shared with language models, promising seamless multimodal architectures. However, current discrete generation methods remain limited to low-dimensional latent tokens (typically 8-32 dims), sacrificing the semantic richness essential for understanding. While high-dimensional pretrained representations (768-1024 dims) could bridge this gap, their discrete generation poses fundamental challenges. In this paper, we present Cubic Discrete Diffusion (CubiD), the first discrete generation model for high-dimensional representations. CubiD performs fine-grained masking throughout the high-dimensional discrete representation -- any dimension at any position can be masked and predicted from partial observations. This enables the model to learn rich correlations both within and across spatial positions, with the number of generation steps fixed at $T$ regardless of feature dimensionality, where $T \\ll hwd$. On ImageNet-256, CubiD achieves state-of-the-art discrete generation with strong scaling behavior from 900M to 3.7B parameters. Crucially, we validate that these discretized tokens preserve original representation capabilities, demonstrating that the same discrete tokens can effectively serve both understanding and generation tasks. We hope this work will inspire future research toward unified multimodal architectures. Code is available at: https://github.com/YuqingWang1029/CubiD.",
+      "url": "https://arxiv.org/abs/2603.19232v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "开源",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Not All Features Are Created Equal: A Mechanistic Study of Vision-Language-Action Models",
+      "authors": [
+        "Bryce Grant",
+        "Xijia Zhao",
+        "Peng Wang"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Vision-Language-Action (VLA) models combine perception, language, and motor control in a single architecture, yet how they translate multimodal inputs into actions remains poorly understood. We apply activation injection, sparse autoencoders (SAEs), and linear probes to six models spanning 80M--7B parameters across 394,000+ rollout episodes on four benchmarks. The visual pathway dominates action generation across all architectures: injecting baseline activations into null-prompt episodes recovers near-identical behavior, while cross-task injection steers robots toward source-task positions (99.8\\% of X-VLA episodes align with the source trajectory), exposing spatially bound motor programs tied to scene coordinates rather than abstract task representations. Language sensitivity depends on task structure, not model design: when visual context uniquely specifies the task, language is ignored; when multiple goals share a scene, language becomes essential (X-VLA \\texttt{libero\\_goal}: 94\\%$\\to$10\\% under wrong prompts vs.\\ \\texttt{libero\\_object}: 60--100\\% regardless). In all three multi-pathway architectures (\\pizhalf{}, SmolVLA, GR00T), expert pathways encode motor programs while VLM pathways encode goal semantics ($2\\times$ greater behavioral displacement from expert injection), and subspace injection confirms these occupy separable activation subspaces. Per-token SAE processing is essential for action fidelity on most architectures, though mean-pooling improves fidelity on X-VLA. Contrastive identification recovers 82+ manipulation concepts, and causal ablation reveals sensitivity spanning 28--92\\% zero-effect rates independent of representation width. We release \\textbf{Action Atlas} (https://action-atlas.com) for interactive exploration of VLA representations across all six models.",
+      "url": "https://arxiv.org/abs/2603.19233v1",
+      "source": "arxiv",
+      "tags": [
+        "具身智能"
+      ]
+    },
+    {
+      "title": "The structure and evolution of the Galactic high-$α$ disc I. Chemical and age orbital cartography",
+      "authors": [
+        "Furkan Akbaba",
+        "Danny Horta",
+        "Olcay Plevne"
+      ],
+      "date": "2026-03-19",
+      "abstract": "We present a comprehensive chemical and age orbital cartography of the Galactic high-$α$ disc using subgiant stars with precise ages, element abundances, and full phase-space information from the \\textsl{LAMOST--Gaia} data set. Specifically, we map how average [Fe/H], [$α$/Fe], and age vary across present-day kinematic and orbital coordinates. We analyse the data in full and across mono-abundance populations to measure element abundance-orbital and age-orbital gradients across orbital actions and angular-momenta. Our results show that the high-$α$ disc exhibits clear and coherent gradients in [Fe/H], [$α$/Fe], and age with orbits; these gradients are much stronger and sharper in orbital space than in present-day kinematics, showing that orbital diagnostics recover the intrinsic disc structure of old disc populations more effectively than instantaneous kinematic coordinates. We find that older high-$α$ populations display qualitatively similar element abundance--orbital and age--orbital trends to stars in the low-$α$ disc, although the high-$α$ gradients are generally shallower. The presence of these ordered correlations indicates that the old high-$α$ disc is structured, and preserved a strong fossil record of its early assembly despite the Milky Way's subsequent accretion history. This result implies that later mergers did not fully erase the chemical-orbital and age-orbital structure imprinted during the high-$α$ disc's earliest formation epoch. All together, these findings indicate that the Galactic high-$α$ disc formed mainly through inside-out and upside-down growth.",
+      "url": "https://arxiv.org/abs/2603.19230v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "MonoArt: Progressive Structural Reasoning for Monocular Articulated 3D Reconstruction",
+      "authors": [
+        "Haitian Li",
+        "Haozhe Xie",
+        "Junxiang Xu",
+        "Beichen Wen",
+        "Fangzhou Hong",
+        "Ziwei Liu"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Reconstructing articulated 3D objects from a single image requires jointly inferring object geometry, part structure, and motion parameters from limited visual evidence. A key difficulty lies in the entanglement between motion cues and object structure, which makes direct articulation regression unstable. Existing methods address this challenge through multi-view supervision, retrieval-based assembly, or auxiliary video generation, often sacrificing scalability or efficiency. We present MonoArt, a unified framework grounded in progressive structural reasoning. Rather than predicting articulation directly from image features, MonoArt progressively transforms visual observations into canonical geometry, structured part representations, and motion-aware embeddings within a single architecture. This structured reasoning process enables stable and interpretable articulation inference without external motion templates or multi-stage pipelines. Extensive experiments on PartNet-Mobility demonstrate that OM achieves state-of-the-art performance in both reconstruction accuracy and inference speed. The framework further generalizes to robotic manipulation and articulated scene reconstruction.",
+      "url": "https://arxiv.org/abs/2603.19231v1",
+      "source": "arxiv",
+      "tags": [
+        "具身智能"
+      ]
+    },
+    {
+      "title": "Bridging Semantic and Kinematic Conditions with Diffusion-based Discrete Motion Tokenizer",
+      "authors": [
+        "Chenyang Gu",
+        "Mingyuan Zhang",
+        "Haozhe Xie",
+        "Zhongang Cai",
+        "Lei Yang",
+        "Ziwei Liu"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Prior motion generation largely follows two paradigms: continuous diffusion models that excel at kinematic control, and discrete token-based generators that are effective for semantic conditioning. To combine their strengths, we propose a three-stage framework comprising condition feature extraction (Perception), discrete token generation (Planning), and diffusion-based motion synthesis (Control). Central to this framework is MoTok, a diffusion-based discrete motion tokenizer that decouples semantic abstraction from fine-grained reconstruction by delegating motion recovery to a diffusion decoder, enabling compact single-layer tokens while preserving motion fidelity. For kinematic conditions, coarse constraints guide token generation during planning, while fine-grained constraints are enforced during control through diffusion-based optimization. This design prevents kinematic details from disrupting semantic token planning. On HumanML3D, our method significantly improves controllability and fidelity over MaskControl while using only one-sixth of the tokens, reducing trajectory error from 0.72 cm to 0.08 cm and FID from 0.083 to 0.029. Unlike prior methods that degrade under stronger kinematic constraints, ours improves fidelity, reducing FID from 0.033 to 0.014.",
+      "url": "https://arxiv.org/abs/2603.19227v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "SAMA: Factorized Semantic Anchoring and Motion Alignment for Instruction-Guided Video Editing",
+      "authors": [
+        "Xinyao Zhang",
+        "Wenkai Dong",
+        "Yuxin Song",
+        "Bo Fang",
+        "Qi Zhang",
+        "Jing Wang",
+        "Fan Chen",
+        "Hui Zhang",
+        "Haocheng Feng",
+        "Yu Lu",
+        "Hang Zhou",
+        "Chun Yuan",
+        "Jingdong Wang"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Current instruction-guided video editing models struggle to simultaneously balance precise semantic modifications with faithful motion preservation. While existing approaches rely on injecting explicit external priors (e.g., VLM features or structural conditions) to mitigate these issues, this reliance severely bottlenecks model robustness and generalization. To overcome this limitation, we present SAMA (factorized Semantic Anchoring and Motion Alignment), a framework that factorizes video editing into semantic anchoring and motion modeling. First, we introduce Semantic Anchoring, which establishes a reliable visual anchor by jointly predicting semantic tokens and video latents at sparse anchor frames, enabling purely instruction-aware structural planning. Second, Motion Alignment pre-trains the same backbone on motion-centric video restoration pretext tasks (cube inpainting, speed perturbation, and tube shuffle), enabling the model to internalize temporal dynamics directly from raw videos. SAMA is optimized with a two-stage pipeline: a factorized pre-training stage that learns inherent semantic-motion representations without paired video-instruction editing data, followed by supervised fine-tuning on paired editing data. Remarkably, the factorized pre-training alone already yields strong zero-shot video editing ability, validating the proposed factorization. SAMA achieves state-of-the-art performance among open-source models and is competitive with leading commercial systems (e.g., Kling-Omni). Code, models, and datasets will be released.",
+      "url": "https://arxiv.org/abs/2603.19228v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "可编辑",
+        "开源"
+      ]
+    },
+    {
+      "title": "Under One Sun: Multi-Object Generative Perception of Materials and Illumination",
+      "authors": [
+        "Nobuo Yoshii",
+        "Xinran Nicole Han",
+        "Ryo Kawahara",
+        "Todd Zickler",
+        "Ko Nishino"
+      ],
+      "date": "2026-03-19",
+      "abstract": "We introduce Multi-Object Generative Perception (MultiGP), a generative inverse rendering method for stochastic sampling of all radiometric constituents -- reflectance, texture, and illumination -- underlying object appearance from a single image. Our key idea to solve this inherently ambiguous radiometric disentanglement is to leverage the fact that while their texture and reflectance may differ, objects in the same scene are all lit by the same illumination. MultiGP exploits this consensus to produce samples of reflectance, texture, and illumination from a single image of known shapes based on four key technical contributions: a cascaded end-to-end architecture that combines image-space and angular-space disentanglement; Coordinated Guidance for diffusion convergence to a single consistent illumination estimate; Axial Attention applied to facilitate ``cross-talk'' between objects of different reflectance; and a Texture Extraction ControlNet to preserve high-frequency texture details while ensuring decoupling from estimated lighting. Experimental results demonstrate that MultiGP effectively leverages the complementary spatial and frequency characteristics of multiple object appearances to recover individual texture and reflectance as well as the common illumination.",
+      "url": "https://arxiv.org/abs/2603.19226v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "FinTradeBench: A Financial Reasoning Benchmark for LLMs",
+      "authors": [
+        "Yogesh Agrawal",
+        "Aniruddha Dutta",
+        "Md Mahadi Hasan",
+        "Santu Karmaker",
+        "Aritra Dutta"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Real-world financial decision-making is a challenging problem that requires reasoning over heterogeneous signals, including company fundamentals derived from regulatory filings and trading signals computed from price dynamics. Recently, with the advancement of Large Language Models (LLMs), financial analysts have begun to use them for financial decision-making tasks. However, existing financial question answering benchmarks for testing these models primarily focus on company balance sheet data and rarely evaluate reasoning over how company stocks trade in the market or their interactions with fundamentals. To take advantage of the strengths of both approaches, we introduce FinTradeBench, a benchmark for evaluating financial reasoning that integrates company fundamentals and trading signals. FinTradeBench contains 1,400 questions grounded in NASDAQ-100 companies over a ten-year historical window. The benchmark is organized into three reasoning categories: fundamentals-focused, trading-signal-focused, and hybrid questions requiring cross-signal reasoning. To ensure reliability at scale, we adopt a calibration-then-scaling framework that combines expert seed questions, multi-model response generation, intra-model self-filtering, numerical auditing, and human-LLM judge alignment. We evaluate 14 LLMs under zero-shot prompting and retrieval-augmented settings and witness a clear performance gap. Retrieval substantially improves reasoning over textual fundamentals, but provides limited benefit for trading-signal reasoning. These findings highlight fundamental challenges in the numerical and time-series reasoning for current LLMs and motivate future research in financial intelligence.",
+      "url": "https://arxiv.org/abs/2603.19225v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "F2LLM-v2: Inclusive, Performant, and Efficient Embeddings for a Multilingual World",
+      "authors": [
+        "Ziyin Zhang",
+        "Zihan Liao",
+        "Hang Yu",
+        "Peng Di",
+        "Rui Wang"
+      ],
+      "date": "2026-03-19",
+      "abstract": "We present F2LLM-v2, a new family of general-purpose, multilingual embedding models in 8 distinct sizes ranging from 80M to 14B. Trained on a newly curated composite of 60 million publicly available high-quality data samples, F2LLM-v2 supports more than 200 languages, with a particular emphasis on previously underserved mid- and low-resource languages. By integrating a two-stage LLM-based embedding training pipeline with matryoshka learning, model pruning, and knowledge distillation techniques, we present models that are far more efficient than previous LLM-based embedding models while retaining competitive performances. Extensive evaluations confirm that F2LLM-v2-14B ranks first on 11 MTEB benchmarks, while the smaller models in the family also set a new state of the art for resource-constrained applications. To facilitate open-source embedding model research, we release all models, data, code, and intermediate checkpoints.",
+      "url": "https://arxiv.org/abs/2603.19223v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "开源",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Spectrally-Guided Diffusion Noise Schedules",
+      "authors": [
+        "Carlos Esteves",
+        "Ameesh Makadia"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Denoising diffusion models are widely used for high-quality image and video generation. Their performance depends on noise schedules, which define the distribution of noise levels applied during training and the sequence of noise levels traversed during sampling. Noise schedules are typically handcrafted and require manual tuning across different resolutions. In this work, we propose a principled way to design per-instance noise schedules for pixel diffusion, based on the image's spectral properties. By deriving theoretical bounds on the efficacy of minimum and maximum noise levels, we design ``tight'' noise schedules that eliminate redundant steps. During inference, we propose to conditionally sample such noise schedules. Experiments show that our noise schedules improve generative quality of single-stage pixel diffusion models, particularly in the low-step regime.",
+      "url": "https://arxiv.org/abs/2603.19222v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型"
+      ]
+    },
+    {
+      "title": "Online Learning and Equilibrium Computation with Ranking Feedback",
+      "authors": [
+        "Mingyang Liu",
+        "Yongshan Chen",
+        "Zhiyuan Fan",
+        "Gabriele Farina",
+        "Asuman Ozdaglar",
+        "Kaiqing Zhang"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Online learning in arbitrary, and possibly adversarial, environments has been extensively studied in sequential decision-making, and it is closely connected to equilibrium computation in game theory. Most existing online learning algorithms rely on \\emph{numeric} utility feedback from the environment, which may be unavailable in human-in-the-loop applications and/or may be restricted by privacy concerns. In this paper, we study an online learning model in which the learner only observes a \\emph{ranking} over a set of proposed actions at each timestep. We consider two ranking mechanisms: rankings induced by the \\emph{instantaneous} utility at the current timestep, and rankings induced by the \\emph{time-average} utility up to the current timestep, under both \\emph{full-information} and \\emph{bandit} feedback settings. Using the standard external-regret metric, we show that sublinear regret is impossible with instantaneous-utility ranking feedback in general. Moreover, when the ranking model is relatively deterministic, \\emph{i.e.}, under the Plackett-Luce model with a temperature that is sufficiently small, sublinear regret is also impossible with time-average utility ranking feedback. We then develop new algorithms that achieve sublinear regret under the additional assumption that the utility sequence has sublinear total variation. Notably, for full-information time-average utility ranking feedback, this additional assumption can be removed. As a consequence, when all players in a normal-form game follow our algorithms, repeated play yields an approximate coarse correlated equilibrium. We also demonstrate the effectiveness of our algorithms in an online large-language-model routing task.",
+      "url": "https://arxiv.org/abs/2603.19221v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "Rethinking Vector Field Learning for Generative Segmentation",
+      "authors": [
+        "Chaoyang Wang",
+        "Yaobo Liang",
+        "Boci Peng",
+        "Fan Duan",
+        "Jingdong Wang",
+        "Yunhai Tong"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Taming diffusion models for generative segmentation has attracted increasing attention. While existing approaches primarily focus on architectural tweaks or training heuristics, there remains a limited understanding of the intrinsic mismatch between continuous flow matching objectives and discrete perception tasks. In this work, we revisit diffusion segmentation from the perspective of vector field learning. We identify two key limitations of the commonly used flow matching objective: gradient vanishing and trajectory traversing, which result in slow convergence and poor class separation. To tackle these issues, we propose a principled vector field reshaping strategy that augments the learned velocity field with a detached distance-aware correction term. This correction introduces both attractive and repulsive interactions, enhancing gradient magnitudes near centroids while preserving the original diffusion training framework. Furthermore, we design a computationally efficient, quasi-random category encoding scheme inspired by Kronecker sequences, which integrates seamlessly with an end-to-end pixel neural field framework for pixel-level semantic alignment. Extensive experiments consistently demonstrate significant improvements over vanilla flow matching approaches, substantially narrowing the performance gap between generative segmentation and strong discriminative specialists.",
+      "url": "https://arxiv.org/abs/2603.19218v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "LVOmniBench: Pioneering Long Audio-Video Understanding Evaluation for Omnimodal LLMs",
+      "authors": [
+        "Keda Tao",
+        "Yuhua Zheng",
+        "Jia Xu",
+        "Wenjie Du",
+        "Kele Shao",
+        "Hesong Wang",
+        "Xueyi Chen",
+        "Xin Jin",
+        "Junhan Zhu",
+        "Bohan Yu",
+        "Weiqiang Wang",
+        "Jian Liu",
+        "Can Qin",
+        "Yulun Zhang",
+        "Ming-Hsuan Yang",
+        "Huan Wang"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Recent advancements in omnimodal large language models (OmniLLMs) have significantly improved the comprehension of audio and video inputs. However, current evaluations primarily focus on short audio and video clips ranging from 10 seconds to 5 minutes, failing to reflect the demands of real-world applications, where videos typically run for tens of minutes. To address this critical gap, we introduce LVOmniBench, a new benchmark designed specifically for the cross-modal comprehension of long-form audio and video. This dataset comprises high-quality videos sourced from open platforms that feature rich audio-visual dynamics. Through rigorous manual selection and annotation, LVOmniBench comprises 275 videos, ranging in duration from 10 to 90 minutes, and 1,014 question-answer (QA) pairs. LVOmniBench aims to rigorously evaluate the capabilities of OmniLLMs across domains, including long-term memory, temporal localization, fine-grained understanding, and multimodal perception. Our extensive evaluation reveals that current OmniLLMs encounter significant challenges when processing extended audio-visual inputs. Open-source models generally achieve accuracies below 35%, whereas the Gemini 3 Pro reaches a peak accuracy of approximately 65%. We anticipate that this dataset, along with our empirical findings, will stimulate further research and the development of advanced models capable of resolving complex cross-modal understanding problems within long-form audio-visual contexts.",
+      "url": "https://arxiv.org/abs/2603.19217v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "SLAM",
+        "开源"
+      ]
+    },
+    {
+      "title": "DreamPartGen: Semantically Grounded Part-Level 3D Generation via Collaborative Latent Denoising",
+      "authors": [
+        "Tianjiao Yu",
+        "Xinzhuo Li",
+        "Muntasir Wahed",
+        "Jerry Xiong",
+        "Yifan Shen",
+        "Ying Shen",
+        "Ismini Lourentzou"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Understanding and generating 3D objects as compositions of meaningful parts is fundamental to human perception and reasoning. However, most text-to-3D methods overlook the semantic and functional structure of parts. While recent part-aware approaches introduce decomposition, they remain largely geometry-focused, lacking semantic grounding and failing to model how parts align with textual descriptions or their inter-part relations. We propose DreamPartGen, a framework for semantically grounded, part-aware text-to-3D generation. DreamPartGen introduces Duplex Part Latents (DPLs) that jointly model each part's geometry and appearance, and Relational Semantic Latents (RSLs) that capture inter-part dependencies derived from language. A synchronized co-denoising process enforces mutual geometric and semantic consistency, enabling coherent, interpretable, and text-aligned 3D synthesis. Across multiple benchmarks, DreamPartGen delivers state-of-the-art performance in geometric fidelity and text-shape alignment.",
+      "url": "https://arxiv.org/abs/2603.19216v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "$R$-equivalence on Cubic Surfaces I: Existing Cases with Non-Trivial Universal Equivalence",
+      "authors": [
+        "Dimitri Kanevsky",
+        "Julian Salazar",
+        "Matt Harvey"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Let $V$ be a smooth cubic surface over a $p$-adic field $k$ with good reduction. Swinnerton-Dyer (1981) proved that $R$-equivalence is trivial on $V(k)$ except perhaps if $V$ is one of three special types--those whose $R$-equivalence he could not bound by proving the universal (admissible) equivalence is trivial. We consider all surfaces $V$ currently known to have non-trivial universal equivalence. Beyond being intractable to Swinnerton-Dyer's approach, we observe that if these surfaces also had non-trivial $R$-equivalence, they would contradict Colliot-Thélène and Sansuc's conjecture regarding the $k$-rationality of universal torsors for geometrically rational surfaces.   By devising new methods to study $R$-equivalence, we prove that for 2-adic surfaces with all-Eckardt reductions (the third special type, which contains every existing case of non-trivial universal equivalence), $R$-equivalence is trivial or of exponent 2. For the explicit cases, we confirm triviality: the diagonal cubic $X^3+Y^3+Z^3+ζ_3 T^3=0$ over $\\mathbb{Q}_2(ζ_3)$--answering a long-standing question of Manin's (Cubic Forms, 1972)--and the cubic with universal equivalence of exponent 2 (Kanevsky, 1982).   This is the first in a series of works derived from a year of interactions with generative AI models such as AlphaEvolve and Gemini 3 Deep Think, with the latter proving many of our lemmas. We disclose the timeline and nature of their use towards this paper, and describe our broader AI-assisted research program in a companion report (in preparation).",
+      "url": "https://arxiv.org/abs/2603.19215v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "Outage Probability Analysis of NOMA Enabled Hierarchical UAV Networks with Non-Linear Energy Harvesting",
+      "authors": [
+        "Faicel Khennoufa",
+        "Khelil Abdellatif",
+        "Metin Ozturk",
+        "Halim Yanikomeroglu",
+        "Safwan Alfattani"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Uncrewed aerial vehicles (UAVs) are expected to enhance connectivity, extend network coverage, and support advanced communication services in sixth-generation (6G) cellular networks, particularly in public and civil domains. Although multi-UAV systems enhance connectivity for IoT networks more than single-UAV systems, energy-efficient communication systems and the integration of energy harvesting (EH) are crucial for their widespread adoption and effectiveness. In this regard, this paper proposes a hierarchical ad hoc UAV network with non-linear EH and non-orthogonal multiple access (NOMA) to enhance both energy and cost efficiency. The proposed system consists of two UAV layers: a cluster head UAV (CHU), which acts as the source, and cluster member UAVs (CMUs), which serve as relays and are capable of harvesting energy from a terrestrial power beacon. For the considered IoT network architecture, the outage probability expressions of ground Internet of things (IoT) devices, each CMU, and the overall outage probability of the proposed system are derived over Nakagami-m fading channels with practical constraints such as hardware impairments and non-linear EH. We compare the proposed system against a non EH system, and our findings indicate that the proposed system outperforms the benchmark in terms of outage probability.",
+      "url": "https://arxiv.org/abs/2603.19214v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Constitutive vs. Corrective: A Causal Taxonomy of Human Runtime Involvement in AI Systems",
+      "authors": [
+        "Kevin Baum",
+        "Johann Laux"
+      ],
+      "date": "2026-03-19",
+      "abstract": "As AI systems increasingly permeate high-stakes decision-making, the terminology regarding human involvement - Human-in-the-Loop (HITL), Human-on-the-Loop (HOTL), and Human Oversight - has become vexingly ambiguous. This ambiguity complicates interdisciplinary collaboration between computer science, law, philosophy, psychology, and sociology and can lead to regulatory uncertainty. We propose a clarification grounded in causal structure, focused on human involvement during the runtime of AI systems. The distinction between HITL and HOTL, we argue, is not primarily spatial but causal: HITL is constitutive (a human contribution is necessary for the decision output), while HOTL is corrective (external to the primary causal chain, capable of preventing or modifying outputs). Within HOTL, we distinguish three temporal modes - synchronous, asynchronous, and anticipatory - situated within a nested model of provider and deployer runtime that clarifies their different capacities for intervention. A second, orthogonal dimension captures cognitive integration: whether human and machine operate as complementary or hybrid intelligence, yielding four structurally distinct configurations. Finally, we distinguish these descriptive categories from the normative requirements they serve: statutory \"Human Oversight\" is a specific normative mode of HOTL that demands not merely a corrective causal position, but genuine preparedness and capacity for effective intervention. Because the same person may occupy both HITL and HOTL roles simultaneously, we argue that this role duality must be treated as a design problem requiring architectural and epistemic mitigation rather than mere acknowledgment.",
+      "url": "https://arxiv.org/abs/2603.19213v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Multiplication Tables for Integers with Restricted Prime Factors",
+      "authors": [
+        "Jeremy Schlitt"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Let $Q$ be a set of primes with relative density $δ$. We count integers in $[1,x]$ with prime factors all in $Q$ that also have a divisor in $(y,2y]$. We establish the order of magnitude for all $δ\\in (0,1]$. This generalizes the case $δ= 1$ from the 2008 work of Ford. We also show that there is a phase transition at the critical point $δ= 1/\\log 4$, for which we explicitly determine the behaviour.",
+      "url": "https://arxiv.org/abs/2603.19212v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "The commutant of fermionic Gaussian unitaries",
+      "authors": [
+        "Paolo Braccia",
+        "N. L. Diaz",
+        "Martin Larocca",
+        "M. Cerezo",
+        "Diego García-Martín"
+      ],
+      "date": "2026-03-19",
+      "abstract": "In this work, we characterize the $t$-th order commutants of fermionic Gaussian unitaries and of their particle-preserving subgroup acting on $n$ fermionic modes. These commutants govern Haar averages over the corresponding groups and therefore play a central role in fermionic randomized protocols, invariant theory, and resource quantification. Using Howe dualities, we show that the particle-preserving commutant is generated by generalized copy-hopping operators, while that for general Gaussian commutant is generated by generalized quadratic Majorana bilinears together with parity. We then derive closed formulas for the dimensions of both commutants as functions of $t$ and $n$, and develop constructive Gelfand--Tsetlin procedures to obtain explicit orthonormal bases, with detailed low-$t$ examples. Our framework also clarifies the structure of replicated fermionic states and connects naturally to measures of fermionic correlations, generalized Plücker-type constraints, and the stabilizer entropy of fermionic Gaussian states. These results provide a unified algebraic description of higher-order invariants for fermionic Gaussian dynamics.",
+      "url": "https://arxiv.org/abs/2603.19210v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "Matryoshka Gaussian Splatting",
+      "authors": [
+        "Zhilin Guo",
+        "Boqiao Zhang",
+        "Hakan Aktas",
+        "Kyle Fogarty",
+        "Jeffrey Hu",
+        "Nursena Koprucu Aslan",
+        "Wenzhao Li",
+        "Canberk Baykal",
+        "Albert Miao",
+        "Josef Bengtson",
+        "Chenliang Zhou",
+        "Weihao Xia",
+        "Cristina Nader Vasconcelos. Cengiz Oztireli"
+      ],
+      "date": "2026-03-19",
+      "abstract": "The ability to render scenes at adjustable fidelity from a single model, known as level of detail (LoD), is crucial for practical deployment of 3D Gaussian Splatting (3DGS). Existing discrete LoD methods expose only a limited set of operating points, while concurrent continuous LoD approaches enable smoother scaling but often suffer noticeable quality degradation at full capacity, making LoD a costly design decision. We introduce Matryoshka Gaussian Splatting (MGS), a training framework that enables continuous LoD for standard 3DGS pipelines without sacrificing full-capacity rendering quality. MGS learns a single ordered set of Gaussians such that rendering any prefix, the first k splats, produces a coherent reconstruction whose fidelity improves smoothly with increasing budget. Our key idea is stochastic budget training: each iteration samples a random splat budget and optimises both the corresponding prefix and the full set. This strategy requires only two forward passes and introduces no architectural modifications. Experiments across four benchmarks and six baselines show that MGS matches the full-capacity performance of its backbone while enabling a continuous speed-quality trade-off from a single model. Extensive ablations on ordering strategies, training objectives, and model capacity further validate the designs.",
+      "url": "https://arxiv.org/abs/2603.19234v1",
+      "source": "arxiv",
+      "tags": [
+        "城市建模"
+      ]
+    },
+    {
+      "title": "NavTrust: Benchmarking Trustworthiness for Embodied Navigation",
+      "authors": [
+        "Huaide Jiang",
+        "Yash Chaudhary",
+        "Yuping Wang",
+        "Zehao Wang",
+        "Raghav Sharma",
+        "Manan Mehta",
+        "Yang Zhou",
+        "Lichao Sun",
+        "Zhiwen Fan",
+        "Zhengzhong Tu",
+        "Jiachen Li"
+      ],
+      "date": "2026-03-19",
+      "abstract": "There are two major categories of embodied navigation: Vision-Language Navigation (VLN), where agents navigate by following natural language instructions; and Object-Goal Navigation (OGN), where agents navigate to a specified target object. However, existing work primarily evaluates model performance under nominal conditions, overlooking the potential corruptions that arise in real-world settings. To address this gap, we present NavTrust, a unified benchmark that systematically corrupts input modalities, including RGB, depth, and instructions, in realistic scenarios and evaluates their impact on navigation performance. To our best knowledge, NavTrust is the first benchmark that exposes embodied navigation agents to diverse RGB-Depth corruptions and instruction variations in a unified framework. Our extensive evaluation of seven state-of-the-art approaches reveals substantial performance degradation under realistic corruptions, which highlights critical robustness gaps and provides a roadmap toward more trustworthy embodied navigation systems. Furthermore, we systematically evaluate four distinct mitigation strategies to enhance robustness against RGB-Depth and instructions corruptions. Our base models include Uni-NaVid and ETPNav. We deployed them on a real mobile robot and observed improved robustness to corruptions. The project website is: https://navtrust.github.io.",
+      "url": "https://arxiv.org/abs/2603.19229v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "具身智能"
+      ]
+    },
+    {
+      "title": "EffectErase: Joint Video Object Removal and Insertion for High-Quality Effect Erasing",
+      "authors": [
+        "Yang Fu",
+        "Yike Zheng",
+        "Ziyun Dai",
+        "Henghui Ding"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Video object removal aims to eliminate dynamic target objects and their visual effects, such as deformation, shadows, and reflections, while restoring seamless backgrounds. Recent diffusion-based video inpainting and object removal methods can remove the objects but often struggle to erase these effects and to synthesize coherent backgrounds. Beyond method limitations, progress is further hampered by the lack of a comprehensive dataset that systematically captures common object effects across varied environments for training and evaluation. To address this, we introduce VOR (Video Object Removal), a large-scale dataset that provides diverse paired videos, each consisting of one video where the target object is present with its effects and a counterpart where the object and effects are absent, with corresponding object masks. VOR contains 60K high-quality video pairs from captured and synthetic sources, covers five effects types, and spans a wide range of object categories as well as complex, dynamic multi-object scenes. Building on VOR, we propose EffectErase, an effect-aware video object removal method that treats video object insertion as the inverse auxiliary task within a reciprocal learning scheme. The model includes task-aware region guidance that focuses learning on affected areas and enables flexible task switching. Then, an insertion-removal consistency objective that encourages complementary behaviors and shared localization of effect regions and structural cues. Trained on VOR, EffectErase achieves superior performance in extensive experiments, delivering high-quality video object effect erasing across diverse scenarios.",
+      "url": "https://arxiv.org/abs/2603.19224v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "SLAM",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "Nemotron-Cascade 2: Post-Training LLMs with Cascade RL and Multi-Domain On-Policy Distillation",
+      "authors": [
+        "Zhuolin Yang",
+        "Zihan Liu",
+        "Yang Chen",
+        "Wenliang Dai",
+        "Boxin Wang",
+        "Sheng-Chieh Lin",
+        "Chankyu Lee",
+        "Yangyi Chen",
+        "Dongfu Jiang",
+        "Jiafan He",
+        "Renjie Pi",
+        "Grace Lam",
+        "Nayeon Lee",
+        "Alexander Bukharin",
+        "Mohammad Shoeybi",
+        "Bryan Catanzaro",
+        "Wei Ping"
+      ],
+      "date": "2026-03-19",
+      "abstract": "We introduce Nemotron-Cascade 2, an open 30B MoE model with 3B activated parameters that delivers best-in-class reasoning and strong agentic capabilities. Despite its compact size, its mathematical and coding reasoning performance approaches that of frontier open models. It is the second open-weight LLM, after DeepSeekV3.2-Speciale-671B-A37B, to achieve Gold Medal-level performance in the 2025 International Mathematical Olympiad (IMO), the International Olympiad in Informatics (IOI), and the ICPC World Finals, demonstrating remarkably high intelligence density with 20x fewer parameters. In contrast to Nemotron-Cascade 1, the key technical advancements are as follows. After SFT on a meticulously curated dataset, we substantially expand Cascade RL to cover a much broader spectrum of reasoning and agentic domains. Furthermore, we introduce multi-domain on-policy distillation from the strongest intermediate teacher models for each domain throughout the Cascade RL process, allowing us to efficiently recover benchmark regressions and sustain strong performance gains along the way. We release the collection of model checkpoint and training data.",
+      "url": "https://arxiv.org/abs/2603.19220v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "DriveTok: 3D Driving Scene Tokenization for Unified Multi-View Reconstruction and Understanding",
+      "authors": [
+        "Dong Zhuo",
+        "Wenzhao Zheng",
+        "Sicheng Zuo",
+        "Siming Yan",
+        "Lu Hou",
+        "Jie Zhou",
+        "Jiwen Lu"
+      ],
+      "date": "2026-03-19",
+      "abstract": "With the growing adoption of vision-language-action models and world models in autonomous driving systems, scalable image tokenization becomes crucial as the interface for the visual modality. However, most existing tokenizers are designed for monocular and 2D scenes, leading to inefficiency and inter-view inconsistency when applied to high-resolution multi-view driving scenes. To address this, we propose DriveTok, an efficient 3D driving scene tokenizer for unified multi-view reconstruction and understanding. DriveTok first obtains semantically rich visual features from vision foundation models and then transforms them into the scene tokens with 3D deformable cross-attention. For decoding, we employ a multi-view transformer to reconstruct multi-view features from the scene tokens and use multiple heads to obtain RGB, depth, and semantic reconstructions. We also add a 3D head directly on the scene tokens for 3D semantic occupancy prediction for better spatial awareness. With the multiple training objectives, DriveTok learns unified scene tokens that integrate semantic, geometric, and textural information for efficient multi-view tokenization. Extensive experiments on the widely used nuScenes dataset demonstrate that the scene tokens from DriveTok perform well on image reconstruction, semantic segmentation, depth prediction, and 3D occupancy prediction tasks.",
+      "url": "https://arxiv.org/abs/2603.19219v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "可编辑",
+        "数字人"
+      ]
+    },
+    {
+      "title": "Do VLMs Need Vision Transformers? Evaluating State Space Models as Vision Encoders",
+      "authors": [
+        "Shang-Jui Ray Kuo",
+        "Paola Cascante-Bonilla"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Large vision--language models (VLMs) often use a frozen vision backbone, whose image features are mapped into a large language model through a lightweight connector. While transformer-based encoders are the standard visual backbone, we ask whether state space model (SSM) vision backbones can be a strong alternative. We systematically evaluate SSM vision backbones for VLMs in a controlled setting. Under matched ImageNet-1K initialization, the SSM backbone achieves the strongest overall performance across both VQA and grounding/localization. We further adapt both SSM and ViT-family backbones with detection or segmentation training and find that dense-task tuning generally improves performance across families; after this adaptation, the SSM backbone remains competitive while operating at a substantially smaller model scale. We further observe that (i) higher ImageNet accuracy or larger backbones do not reliably translate into better VLM performance, and (ii) some visual backbones are unstable in localization. Based on these findings, we propose stabilization strategies that improve robustness for both backbone families and highlight SSM backbones as a strong alternative to transformer-based vision encoders in VLMs.",
+      "url": "https://arxiv.org/abs/2603.19209v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "SLAM",
+        "可编辑"
+      ]
+    },
+    {
+      "title": "Robustness, Cost, and Attack-Surface Concentration in Phishing Detection",
+      "authors": [
+        "Julian Allagan",
+        "Mohamed Elbakary",
+        "Zohreh Safari",
+        "Weizheng Gao",
+        "Gabrielle Morgan",
+        "Essence Morgan",
+        "Vladimir Deriglazov"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Phishing detectors built on engineered website features attain near-perfect accuracy under i.i.d.\\ evaluation, yet deployment security depends on robustness to post-deployment feature manipulation. We study this gap through a cost-aware evasion framework that models discrete, monotone feature edits under explicit attacker budgets. Three diagnostics are introduced: minimal evasion cost (MEC), the evasion survival rate $S(B)$, and the robustness concentration index (RCI).   On the UCI Phishing Websites benchmark (11\\,055 instances, 30 ternary features), Logistic Regression, Random Forests, Gradient Boosted Trees, and XGBoost all achieve $\\mathrm{AUC}\\ge 0.979$ under static evaluation. Under budgeted sanitization-style evasion, robustness converges across architectures: the median MEC equals 2 with full features, and over 80\\% of successful minimal-cost evasions concentrate on three low-cost surface features. Feature restriction improves robustness only when it removes all dominant low-cost transitions. Under strict cost schedules, infrastructure-leaning feature sets exhibit 17-19\\% infeasible mass for ensemble models, while the median MEC among evadable instances remains unchanged. We formalize this convergence: if a positive fraction of correctly detected phishing instances admit evasion through a single feature transition of minimal cost $c_{\\min}$, no classifier can raise the corresponding MEC quantile above $c_{\\min}$ without modifying the feature representation or cost model. Adversarial robustness in phishing detection is governed by feature economics rather than model complexity.",
+      "url": "https://arxiv.org/abs/2603.19204v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "数字人",
+        "具身智能"
+      ]
+    },
+    {
+      "title": "The Exponentially Weighted Signature",
+      "authors": [
+        "Alexandre Bloch",
+        "Samuel N. Cohen",
+        "Terry Lyons",
+        "Joël Mouterde",
+        "Benjamin Walker"
+      ],
+      "date": "2026-03-19",
+      "abstract": "The signature is a canonical representation of a multidimensional path over an interval. However, it treats all historical information uniformly, offering no intrinsic mechanism for contextualising the relevance of the past. To address this, we introduce the Exponentially Weighted Signature (EWS), generalising the Exponentially Fading Memory (EFM) signature from diagonal to general bounded linear operators. These operators enable cross-channel coupling at the level of temporal weighting together with richer memory dynamics including oscillatory, growth, and regime-dependent behaviour, while preserving the algebraic strengths of the classical signature. We show that the EWS is the unique solution to a linear controlled differential equation on the tensor algebra, and that it generalises both state-space models and the Laplace and Fourier transforms of the path. The group-like structure of the EWS enables efficient computation and makes the framework amenable to gradient-based learning, with the full semigroup action parametrised by and learned through its generator. We use this framework to empirically demonstrate the expressivity gap between the EWS and both the signature and EFM on two SDE-based regression tasks.",
+      "url": "https://arxiv.org/abs/2603.19198v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态"
+      ]
+    },
+    {
+      "title": "Exploring the Role of Interaction Data to Empower End-User Decision-Making In UI Personalization",
+      "authors": [
+        "Sérgio Alves",
+        "Carlos Duarte",
+        "Kyle Montague",
+        "Tiago Guerreiro"
+      ],
+      "date": "2026-03-19",
+      "abstract": "User interface personalization enhances digital efficiency, usability, and accessibility. However, in user-driven setups, limited support for identifying and evaluating worthwhile opportunities often leads to underuse. We explore a reflexive personalization approach where individuals engage with their digital interaction data to identify meaningful personalization opportunities and benefits. We interviewed 12 participants, using experimental vignettes as design probes to support reflection on different forms of using interaction data to empower decision-making in personalization and the preferred level of system support. We found that people can independently identify personalization opportunities but prefer system support through visual personalization suggestions. Interaction data can shape how users perceive and approach personalization by reinforcing the perceived value of change and data collection, helping them weigh benefits against effort, and increasing the transparency of system suggestions. We discuss opportunities for designing personalization software that raises end-users' agency over interfaces through reflective engagement with their interaction data.",
+      "url": "https://arxiv.org/abs/2603.19196v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人"
+      ]
+    },
+    {
+      "title": "Reconstruction Matters: Learning Geometry-Aligned BEV Representation through 3D Gaussian Splatting",
+      "authors": [
+        "Yiren Lu",
+        "Xin Ye",
+        "Burhaneddin Yaman",
+        "Jingru Luo",
+        "Zhexiao Xiong",
+        "Liu Ren",
+        "Yu Yin"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Bird's-Eye-View (BEV) perception serves as a cornerstone for autonomous driving, offering a unified spatial representation that fuses surrounding-view images to enable reasoning for various downstream tasks, such as semantic segmentation, 3D object detection, and motion prediction. However, most existing BEV perception frameworks adopt an end-to-end training paradigm, where image features are directly transformed into the BEV space and optimized solely through downstream task supervision. This formulation treats the entire perception process as a black box, often lacking explicit 3D geometric understanding and interpretability, leading to suboptimal performance. In this paper, we claim that an explicit 3D representation matters for accurate BEV perception, and we propose Splat2BEV, a Gaussian Splatting-assisted framework for BEV tasks. Splat2BEV aims to learn BEV feature representations that are both semantically rich and geometrically precise. We first pre-train a Gaussian generator that explicitly reconstructs 3D scenes from multi-view inputs, enabling the generation of geometry-aligned feature representations. These representations are then projected into the BEV space to serve as inputs for downstream tasks. Extensive experiments on nuScenes and argoverse dataset demonstrate that Splat2BEV achieves state-of-the-art performance and validate the effectiveness of incorporating explicit 3D reconstruction into BEV perception.",
+      "url": "https://arxiv.org/abs/2603.19193v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "自动驾驶"
+      ]
+    }
+  ],
+  "hot_topics": [
+    {
+      "title": "Valve is not willing to publish games with AI generated content anymore?",
+      "url": "https://old.reddit.com/r/aigamedev/comments/142j3yt/valve_is_not_willing_to_publish_games_with_ai/",
+      "hn_url": "https://news.ycombinator.com/item?id=36522665",
+      "points": 622,
+      "comments": 395,
+      "author": "Wouter33",
+      "date": "2023-06-29",
+      "hn_id": "36522665",
+      "comment": ""
+    },
+    {
+      "title": "Building an AI game studio: what we've learned so far",
+      "url": "https://braindump.me/blog-posts/building-an-ai-game-studio",
+      "hn_url": "https://news.ycombinator.com/item?id=40426382",
+      "points": 287,
+      "comments": 297,
+      "author": "FredrikNoren",
+      "date": "2024-05-21",
+      "hn_id": "40426382",
+      "comment": ""
+    },
+    {
+      "title": "Death by AI – a free Jackbox style party game. AI judges your plans to survive",
+      "url": "https://deathbyai.gg",
+      "hn_url": "https://news.ycombinator.com/item?id=38318889",
+      "points": 476,
+      "comments": 179,
+      "author": "overactor",
+      "date": "2023-11-18",
+      "hn_id": "38318889",
+      "comment": ""
+    },
+    {
+      "title": "The Total Beginner's Guide to Game AI",
+      "url": "https://www.gamedev.net/articles/programming/artificial-intelligence/the-total-beginners-guide-to-game-ai-r4942/",
+      "hn_url": "https://news.ycombinator.com/item?id=17748749",
+      "points": 477,
+      "comments": 57,
+      "author": "stesch",
+      "date": "2018-08-13",
+      "hn_id": "17748749",
+      "comment": ""
+    },
+    {
+      "title": "Game AI Pro",
+      "url": "http://www.gameaipro.com/",
+      "hn_url": "https://news.ycombinator.com/item?id=22216472",
+      "points": 389,
+      "comments": 60,
+      "author": "SimplyUseless",
+      "date": "2020-02-02",
+      "hn_id": "22216472",
+      "comment": ""
+    },
+    {
+      "title": "Infinite Photorealistic Worlds Using Procedural Generation",
+      "url": "https://arxiv.org/abs/2306.09310",
+      "hn_url": "https://news.ycombinator.com/item?id=36376071",
+      "points": 306,
+      "comments": 76,
+      "author": "cpeterso",
+      "date": "2023-06-18",
+      "hn_id": "36376071",
+      "comment": ""
+    }
+  ],
+  "trending_repos": [
+    {
+      "name": "msitarzewski/agency-agents",
+      "url": "https://github.com/msitarzewski/agency-agents",
+      "desc": "A complete AI agency at your fingertips - From frontend wizards to Reddit community ninjas, from whimsy injectors to reality checkers. Each agent is a specialized expert with personality, processes, and proven deliverables.",
+      "stars": 56631,
+      "weekly_stars": 23185,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "obra/superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "desc": "An agentic skills framework &amp; software development methodology that works.",
+      "stars": 101340,
+      "weekly_stars": 19176,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "666ghj/MiroFish",
+      "url": "https://github.com/666ghj/MiroFish",
+      "desc": "A Simple and Universal Swarm Intelligence Engine, Predicting Anything. 简洁通用的群体智能引擎，预测万物",
+      "stars": 37017,
+      "weekly_stars": 17584,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "volcengine/OpenViking",
+      "url": "https://github.com/volcengine/OpenViking",
+      "desc": "OpenViking is an open-source context database designed specifically for AI Agents(such as openclaw). OpenViking unifies the management of context (memory, resources, and skills) that Agents need through a file system paradigm, enabling hierarchical context delivery and self-evolving.",
+      "stars": 16924,
+      "weekly_stars": 10158,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "lightpanda-io/browser",
+      "url": "https://github.com/lightpanda-io/browser",
+      "desc": "Lightpanda: the headless browser designed for AI and automation",
+      "stars": 22577,
+      "weekly_stars": 9984,
+      "date": "2026-03-21"
+    }
+  ],
+  "bili_videos": [
+    {
+      "title": "独立游戏的春天？AI强爆了！",
+      "url": "https://www.bilibili.com/video/BV1RQm7BtE89",
+      "author": "林亦LYi",
+      "play": 557377,
+      "danmaku": 326,
+      "date": 1765540800,
+      "desc": "一天时间、0 行代码、3 款网页游戏上线。这个曾经代表着高技术门槛、需要团队爆肝的“游戏开发”，为什么在AI时代变得如此触手可及？从被 AI 写的“无敌外挂”虐杀，到目睹“数字生命宇宙”的崩坏与重生，我用亚马逊的Kiro Agentic IDE 8小时速通了游戏创作。今天我们就来聊聊，在智能体接管代码的时代，为什么你的“审美”和“判断力”，才是未来真正的硬通货！",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "不用AI，一行代码没写也能做游戏？怎么做到的！",
+      "url": "https://www.bilibili.com/video/BV1C86PBSEyb",
+      "author": "大狸子切切里",
+      "play": 346932,
+      "danmaku": 943,
+      "date": 1769742000,
+      "desc": "来玩一下：https://gd.games/qieli/qielisurvivor",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "AI开发游戏，真的靠谱吗？",
+      "url": "https://www.bilibili.com/video/BV1Y3rHBSE1n",
+      "author": "秦无邪OvO",
+      "play": 151513,
+      "danmaku": 207,
+      "date": 1768363202,
+      "desc": "AI到底是如何彻底改变了写代码这件事？作为游戏开发者，我从手写代码到用AI生成项目，亲身体验了这场变革。当工具越来越聪明，什么才是我们真正该关注的事？这期视频聊聊我自己的思考！",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "AI编程搞钱的时代到了吗？挑战30分钟做小游戏",
+      "url": "https://www.bilibili.com/video/BV1oS7EzkEa4",
+      "author": "林粒粒呀",
+      "play": 115060,
+      "danmaku": 100,
+      "date": 1748579802,
+      "desc": "挑战AI编程30分钟做小游戏\n可以闷声发大财吗？\n@CodeBuddy",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "我做游戏用到的十几个AI工具",
+      "url": "https://www.bilibili.com/video/BV1FXzSBBEcn",
+      "author": "硅基包工头",
+      "play": 60095,
+      "danmaku": 16,
+      "date": 1769396100,
+      "desc": "",
+      "comment": "",
+      "source": "bilibili"
+    }
+  ],
+  "xhs_notes": []
+}

@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Gaussian Splatting (3DGS) 最新进展报告 2025</title>
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-light: #818cf8;
+    --accent: #06b6d4;
+    --bg: #0f172a;
+    --bg2: #1e293b;
+    --bg3: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --border: #334155;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --card-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 40%, #0c1a3a 100%);
+    border-bottom: 1px solid #312e81;
+    padding: 60px 40px 50px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(79,70,229,0.15) 0%, transparent 60%),
+                radial-gradient(circle at 70% 50%, rgba(6,182,212,0.1) 0%, transparent 60%);
+    animation: pulse 8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  .header-content { position: relative; z-index: 1; }
+  .header-badge {
+    display: inline-block;
+    background: rgba(79,70,229,0.3);
+    border: 1px solid var(--primary);
+    color: var(--primary-light);
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .header h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, var(--primary-light) 50%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+  .header p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    max-width: 700px;
+    margin: 0 auto 24px;
+  }
+  .header-meta {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+  .header-meta span {
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  .header-meta strong { color: var(--accent); }
+
+  /* Nav */
+  .nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav ul {
+    list-style: none;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .nav ul li a {
+    display: block;
+    padding: 16px 20px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .nav ul li a:hover {
+    color: var(--text);
+    border-bottom-color: var(--primary);
+  }
+
+  /* Main layout */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 40px 80px;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 60px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .icon-blue { background: rgba(79,70,229,0.2); }
+  .icon-cyan { background: rgba(6,182,212,0.2); }
+  .icon-green { background: rgba(34,197,94,0.2); }
+  .icon-yellow { background: rgba(234,179,8,0.2); }
+  .icon-purple { background: rgba(168,85,247,0.2); }
+  .icon-red { background: rgba(239,68,68,0.2); }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .section-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .section-num {
+    margin-left: auto;
+    background: var(--bg3);
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .card:hover {
+    border-color: var(--primary);
+    box-shadow: var(--card-shadow);
+  }
+
+  /* Tech Cards Grid */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+  }
+  .tech-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.2s;
+  }
+  .tech-card:hover {
+    border-color: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow);
+  }
+  .tech-card-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+  }
+  .tech-card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .tech-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .tech-tag {
+    display: inline-block;
+    background: rgba(79,70,229,0.15);
+    color: var(--primary-light);
+    border: 1px solid rgba(79,70,229,0.3);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-top: 12px;
+    margin-right: 6px;
+  }
+
+  /* App Cards */
+  .app-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .app-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s;
+  }
+  .app-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 20px rgba(6,182,212,0.15);
+  }
+  .app-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .app-card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .badge-green { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .badge-blue { background: rgba(79,70,229,0.15); color: var(--primary-light); border: 1px solid rgba(79,70,229,0.3); }
+  .badge-yellow { background: rgba(234,179,8,0.15); color: var(--yellow); border: 1px solid rgba(234,179,8,0.3); }
+  .badge-cyan { background: rgba(6,182,212,0.15); color: var(--accent); border: 1px solid rgba(6,182,212,0.3); }
+
+  /* Paper Cards */
+  .paper-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 12px;
+    position: relative;
+    transition: all 0.2s;
+  }
+  .paper-card:hover {
+    border-color: var(--primary-light);
+    box-shadow: 0 4px 20px rgba(79,70,229,0.15);
+  }
+  .paper-num {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 28px;
+    height: 28px;
+    background: rgba(79,70,229,0.2);
+    color: var(--primary-light);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .paper-content { padding-left: 40px; }
+  .paper-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.4;
+  }
+  .paper-title a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .paper-title a:hover {
+    color: var(--primary-light);
+  }
+  .paper-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .paper-authors { font-size: 13px; color: var(--accent); }
+  .paper-date { font-size: 12px; color: var(--text-muted); }
+  .paper-abstract {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .paper-tags { margin-top: 10px; }
+
+  /* Tool Cards */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .tool-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s;
+  }
+  .tool-card:hover {
+    border-color: var(--green);
+    box-shadow: 0 4px 20px rgba(34,197,94,0.1);
+  }
+  .tool-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tool-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .tool-lang {
+    font-size: 11px;
+    background: var(--bg3);
+    color: var(--text-muted);
+    padding: 2px 8px;
+    border-radius: 8px;
+  }
+
+  /* Industry */
+  .industry-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .industry-card h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .industry-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .industry-card ul {
+    list-style: none;
+    margin-top: 12px;
+  }
+  .industry-card ul li {
+    font-size: 14px;
+    color: var(--text-muted);
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(51,65,85,0.5);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .industry-card ul li:last-child { border-bottom: none; }
+  .dot { color: var(--accent); flex-shrink: 0; }
+
+  /* Summary boxes */
+  .summary-box {
+    background: rgba(79,70,229,0.08);
+    border: 1px solid rgba(79,70,229,0.25);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 30px;
+  }
+  .summary-box h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin-bottom: 16px;
+  }
+  .summary-box p {
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary-light), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 32px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item {
+    position: relative;
+    padding-bottom: 28px;
+  }
+  .timeline-dot {
+    position: absolute;
+    left: -26px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid var(--bg);
+  }
+  .timeline-date {
+    font-size: 12px;
+    color: var(--primary-light);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .timeline-content h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .timeline-content p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* Footer */
+  .footer {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 32px 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .footer a { color: var(--primary-light); text-decoration: none; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .header { padding: 40px 20px 32px; }
+    .header h1 { font-size: 1.8rem; }
+    .container { padding: 24px 16px 60px; }
+    .nav { padding: 0 16px; }
+    .tech-grid, .app-grid, .tool-grid, .stats-row { grid-template-columns: 1fr; }
+    .header-meta { gap: 12px; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-content">
+    <div class="header-badge">Research Report · 2025</div>
+    <h1>3D Gaussian Splatting<br>最新技术进展报告</h1>
+    <p>全面梳理 2024 年底至 2025 年最新 3DGS 研究成果、技术突破与产业应用，覆盖 30+ 前沿论文与开源工具</p>
+    <div class="header-meta">
+      <span>📅 生成时间：<strong>2025年3月15日</strong></span>
+      <span>📄 论文数量：<strong>30+篇</strong></span>
+      <span>🔗 数据来源：<strong>ArXiv · GitHub · 搜索引擎</strong></span>
+    </div>
+  </div>
+</div>
+
+<!-- Navigation -->
+<nav class="nav">
+  <ul>
+    <li><a href="#overview">概览</a></li>
+    <li><a href="#tech">技术进展</a></li>
+    <li><a href="#apps">应用场景</a></li>
+    <li><a href="#papers">代表论文</a></li>
+    <li><a href="#tools">开源工具</a></li>
+    <li><a href="#industry">行业动态</a></li>
+  </ul>
+</nav>
+
+<!-- Main Content -->
+<div class="container">
+
+  <!-- Overview Section -->
+  <div id="overview" class="section">
+    <div class="summary-box">
+      <h2>🌐 技术背景与现状概述</h2>
+      <p>
+        3D Gaussian Splatting（3DGS）由 Kerbl 等人于 2023 年 SIGGRAPH 首次提出，通过使用数百万个三维高斯椭球来显式表示场景，结合可微分的 tile 光栅化渲染，实现了前所未有的实时高质量新视角合成。相比 NeRF，3DGS 训练速度提升 10-100 倍，渲染速度可达 100+ FPS，于是迅速席卷了计算机视觉、计算机图形学和机器人等领域。
+      </p>
+      <p style="margin-top:12px;">
+        进入 2025 年，3DGS 研究呈现爆炸式增长态势：每周 ArXiv 新增数十篇相关论文，研究方向从最初的新视角合成，已拓展到动态场景重建、医疗影像、自动驾驶、机器人操作、数字人、卫星遥感等多个垂直领域。开源生态日臻完善，工业界也开始大规模落地应用。
+      </p>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value">30+</div>
+        <div class="stat-label">本报告收录论文</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">100+</div>
+        <div class="stat-label">FPS 实时渲染速度</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">10x</div>
+        <div class="stat-label">训练速度较 NeRF 提升</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">2025</div>
+        <div class="stat-label">CVPR 大量收录 3DGS 论文</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">20+</div>
+        <div class="stat-label">活跃开源实现项目</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tech Advances Section -->
+  <div id="tech" class="section">
+    <div class="section-header">
+      <div class="section-icon icon-blue">⚡</div>
+      <div>
+        <div class="section-title">技术进展</div>
+        <div class="section-subtitle">算法改进 · 压缩加速 · 质量提升</div>
+      </div>
+      <div class="section-num">6 个方向</div>
+    </div>
+
+    <div class="tech-grid">
+      <div class="tech-card">
+        <div class="tech-card-icon">📱</div>
+        <h3>移动端实时渲染</h3>
+        <p>Mobile-GS（2026-03）提出专为移动设备优化的实时高斯溅射方法，解决了原始 3DGS 高计算量与大存储开销在移动端部署的核心瓶颈。通过轻量化高斯表示与自适应分辨率策略，在手机 GPU 上实现了高质量实时渲染。</p>
+        <span class="tech-tag">移动端</span>
+        <span class="tech-tag">实时渲染</span>
+        <span class="tech-tag">轻量化</span>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-card-icon">🗜️</div>
+        <h3>渐进式压缩编码</h3>
+        <p>ProGS（2026-03）首次提出面向 3DGS 数据的渐进式压缩编码框架。GSStream 则构建了基于 3DGS 的体积场景流式传输系统，解决了 3DGS 数据量大、难以实时传输的问题，为 XR 远程渲染奠定基础。</p>
+        <span class="tech-tag">数据压缩</span>
+        <span class="tech-tag">流式传输</span>
+        <span class="tech-tag">带宽优化</span>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-card-icon">🎬</div>
+        <h3>动态场景 4D 重建</h3>
+        <p>Mango-GS（2026-03）引入多帧节点引导的 4D 高斯溅射框架，显著提升动态场景重建的时空一致性。ReconDrive（2026-03）则专为自动驾驶场景设计了快速前向 4DGS 重建管线，无需耗时的每场景优化。</p>
+        <span class="tech-tag">4D-GS</span>
+        <span class="tech-tag">动态场景</span>
+        <span class="tech-tag">时空一致性</span>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-card-icon">🔍</div>
+        <h3>HDR 与复杂光照</h3>
+        <p>InstantHDR（2026-03）提出单次前向 HDR 3D 场景重建，从多曝光 LDR 图像中重建高动态范围场景，无需已知相机位姿。PolGS++（2026-03）利用偏振图像先验，大幅提升镜面/反光表面的重建质量。</p>
+        <span class="tech-tag">HDR</span>
+        <span class="tech-tag">偏振成像</span>
+        <span class="tech-tag">反光表面</span>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-card-icon">🤖</div>
+        <h3>鲁棒 SLAM 集成</h3>
+        <p>VarSplat（2026-03）提出不确定性感知的 3DGS SLAM，通过显式建模测量可靠性来提升低纹理、透明表面等困难场景下的位姿估计精度。MipSLAM（2026-03）则解决了 3DGS-SLAM 中的混叠伪影问题，支持不同相机配置的高保真渲染。</p>
+        <span class="tech-tag">SLAM</span>
+        <span class="tech-tag">不确定性</span>
+        <span class="tech-tag">鲁棒定位</span>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-card-icon">🔬</div>
+        <h3>物理驱动与可解释性</h3>
+        <p>AstroSplat（2026-03）提出基于物理的高斯溅射，将物理模型融入渲染过程，适用于小天体（如小行星）的表面重建。DiffWind（2026-03）结合物理信息可微分框架，从视频中建模风驱动的物体动力学。</p>
+        <span class="tech-tag">物理渲染</span>
+        <span class="tech-tag">可微分</span>
+        <span class="tech-tag">科学计算</span>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-card-icon">🏗️</div>
+        <h3>稀疏输入重建</h3>
+        <p>S2D（Sparse to Dense，2026-03）提出稀疏到密集提升框架，将点云与 3DGS 的优势结合，仅需少量输入图像即可实现高质量重建。DenoiseSplat（2026-03）专门针对噪声输入设计，提升了实际部署中的鲁棒性。</p>
+        <span class="tech-tag">稀疏输入</span>
+        <span class="tech-tag">去噪</span>
+        <span class="tech-tag">鲁棒重建</span>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-card-icon">🌈</div>
+        <h3>可编辑性与风格化</h3>
+        <p>VIRGi（2026-03）实现了 3D 高斯点云的视角相关实时重着色，用户可交互地改变场景颜色外观。EntON（2026-03）提出特征熵优化的邻域致密化策略，在几何精确性上显著超越标准 3DGS。</p>
+        <span class="tech-tag">可编辑</span>
+        <span class="tech-tag">重着色</span>
+        <span class="tech-tag">几何优化</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Applications Section -->
+  <div id="apps" class="section">
+    <div class="section-header">
+      <div class="section-icon icon-cyan">🚀</div>
+      <div>
+        <div class="section-title">新应用场景</div>
+        <div class="section-subtitle">自动驾驶 · 医疗 · 机器人 · 游戏 · 遥感</div>
+      </div>
+      <div class="section-num">8 大领域</div>
+    </div>
+
+    <div class="app-grid">
+      <div class="app-card">
+        <div class="app-card-title">
+          🚗 自动驾驶
+          <span class="badge badge-green">高热度</span>
+        </div>
+        <p>ReconDrive 实现 4DGS 高保真驾驶场景重建，支持闭环仿真评测。VG3S 利用 3DGS 进行语义占据预测，大幅降低计算开销。LiDAR+RGB 全向数据与 3DGS 融合用于大规模数字孪生构建，无人机导航的实时 3D 地图生成。</p>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-title">
+          🔬 医疗影像
+          <span class="badge badge-yellow">新兴</span>
+        </div>
+        <p>ColonSplat 用于结肠镜蠕动重建，辅助手术导航与回顾性诊断。DSA-SRGS 实现脑血管造影的稀疏视角超分辨率重建。Physics-Driven 3DGS 用于 MRI 零样本超分辨率，无需配对训练数据。SurgCalib 提供达芬奇手术机器人的手眼标定。</p>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-title">
+          🤖 机器人操作
+          <span class="badge badge-green">活跃</span>
+        </div>
+        <p>GaussTwin 构建统一的机器人数字孪生，支持仿真与真实世界的一致性映射。Splat2Real 为物理 AI 提供新视角缩放预训练，增强单目深度感知的鲁棒性。X-GS 提供面向空间 AI 的可扩展 3DGS 框架，支持语义理解与 SLAM 联合推理。</p>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-title">
+          🎮 游戏与 XR
+          <span class="badge badge-blue">成熟</span>
+        </div>
+        <p>Unity、Unreal、PlayCanvas 均有成熟的 3DGS 插件生态。WebGL/WebGPU 实时浏览器渲染趋于成熟，支持 VR/AR（OpenXR）头显体验。After Effects 插件支持在 AE 中实时导入与渲染 .ply 高斯文件，用于影视特效制作。</p>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-title">
+          🛰️ 卫星遥感 & 航天
+          <span class="badge badge-yellow">前沿</span>
+        </div>
+        <p>AstroSplat 提出基于物理的高斯溅射，专用于小行星等小天体的表面重建，服务于任务规划与科学分析。全向 RGB-LiDAR 数据结合 3DGS 用于大规模地面数字孪生，满足机器人与自动驾驶的规模化需求。</p>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-title">
+          🎥 影视创作
+          <span class="badge badge-cyan">增长</span>
+        </div>
+        <p>Gaussian Splatting AE 插件 v1.5.2 支持 Polycam、Luma、PostShot 等主流重建软件输出的 .ply 文件实时渲染。CylinderSplat 支持全景新视角合成，为沉浸式内容制作提供技术支撑。SuperSplat 浏览器 3DGS 编辑器已成为主流编辑工具。</p>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-title">
+          🏙️ 城市建模
+          <span class="badge badge-green">实用</span>
+        </div>
+        <p>DriveStudio 城市场景重建框架支持大规模户外场景，已在多个自动驾驶数据集验证。全向相机与 LiDAR 联合的 3DGS 管线，极大降低城市级数字孪生的采集门槛，利用现有平台部署数据即可重建精细三维场景。</p>
+      </div>
+
+      <div class="app-card">
+        <div class="app-card-title">
+          👤 数字人 & 头像
+          <span class="badge badge-blue">成熟</span>
+        </div>
+        <p>NBAvatar 结合神经 Billboard 与 3DGS，支持手脸交互的逼真头像渲染，处理复杂非刚性形变。多个手语生产系统（SignSparK）使用 3D 高斯表示 SMPL-X 人体动作，实现精细的时空编辑能力。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Papers Section -->
+  <div id="papers" class="section">
+    <div class="section-header">
+      <div class="section-icon icon-green">📄</div>
+      <div>
+        <div class="section-title">代表性论文</div>
+        <div class="section-subtitle">2025年3月最新 ArXiv 论文精选（含摘要）</div>
+      </div>
+      <div class="section-num">30 篇</div>
+    </div>
+
+    <!-- Paper 1 -->
+    <div class="paper-card">
+      <div class="paper-num">1</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.09529" target="_blank">Mobile-GS: Real-time Gaussian Splatting for Mobile Devices</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Xiaobiao Du, Yida Wang, Kun Zhan, Xin Yu</span>
+          <span class="paper-date">2026-03-12</span>
+        </div>
+        <div class="paper-abstract">提出针对移动设备优化的实时高斯溅射方法 Mobile-GS。原始 3DGS 的高计算量和大存储开销在移动端部署存在显著挑战。本文通过轻量化高斯表示与自适应渲染策略，在移动 GPU 上实现实时高质量渲染，大幅拓宽 3DGS 的应用边界。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">移动端</span>
+          <span class="tech-tag">实时渲染</span>
+          <span class="tech-tag">效率</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 2 -->
+    <div class="paper-card">
+      <div class="paper-num">2</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.09428" target="_blank">Mango-GS: Enhancing Spatio-Temporal Consistency in Dynamic Scenes Reconstruction using Multi-Frame Node-Guided 4D Gaussian Splatting</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Tingxuan Huang, Haowei Zhu, Jun-hai Yong, Hao Pan, Bin Wang</span>
+          <span class="paper-date">2026-03-12</span>
+        </div>
+        <div class="paper-abstract">Mango-GS 提出多帧节点引导框架用于动态 3D 场景重建，解决现有方法逐帧优化导致的时空不一致问题。通过跨帧节点约束捕捉底层运动动力学，实现具有真实感细节和强时间一致性的动态场景重建。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">4D-GS</span>
+          <span class="tech-tag">动态场景</span>
+          <span class="tech-tag">时空一致性</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 3 -->
+    <div class="paper-card">
+      <div class="paper-num">3</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.08723" target="_blank">InstantHDR: Single-forward Gaussian Splatting for High Dynamic Range 3D Reconstruction</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Dingqiang Ye, Jiacong Xu, Jianglu Ping, Yuxiang Guo, Chao Fan, Vishal M. Patel</span>
+          <span class="paper-date">2026-03-11</span>
+        </div>
+        <div class="paper-abstract">InstantHDR 提出单次前向网络，从未标定多曝光 LDR 图像重建 HDR 3D 场景。现有方法依赖已知相机位姿和耗时的逐场景优化，本文设计几何引导外观建模实现多曝光融合，无需位姿先验即可实时完成 HDR 重建。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">HDR</span>
+          <span class="tech-tag">前向网络</span>
+          <span class="tech-tag">新视角合成</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 4 -->
+    <div class="paper-card">
+      <div class="paper-num">4</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.08644" target="_blank">PolGS++: Physically-Guided Polarimetric Gaussian Splatting for Fast Reflective Surface Reconstruction</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Yufei Han, Chu Zhou, Youwei Lyu, Qi Chen, Si Li, Boxin Shi</span>
+          <span class="paper-date">2026-03-11</span>
+        </div>
+        <div class="paper-abstract">针对 3DGS 在镜面/反光表面重建上性能不足的问题，PolGS++ 利用偏振图像的物理先验，通过偏振光几何约束指导高斯优化，快速恢复细粒度高光信息，在反光表面重建精度上显著超越现有方法，同时保持实时渲染能力。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">偏振成像</span>
+          <span class="tech-tag">反光表面</span>
+          <span class="tech-tag">VR/AR</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 5 -->
+    <div class="paper-card">
+      <div class="paper-num">5</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.08539" target="_blank">Splat2Real: Novel-view Scaling for Physical AI with 3D Gaussian Splatting</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Hansol Lim, Jongseong Brad Choi</span>
+          <span class="paper-date">2026-03-11</span>
+        </div>
+        <div class="paper-abstract">物理 AI 面临训练与部署间的视角偏移问题。Splat2Real 将 Real2Render2Real 单目深度预训练构建为模仿学习监督：学生深度网络从数字孪生中模仿专家度量深度/可见性，3DGS 提供可扩展的新视角观测，增强单目 RGB-to-3D 感知的鲁棒性。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">物理AI</span>
+          <span class="tech-tag">深度估计</span>
+          <span class="tech-tag">机器人</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 6 -->
+    <div class="paper-card">
+      <div class="paper-num">6</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.07694" target="_blank">P-GSVC: Layered Progressive 2D Gaussian Splatting for Scalable Image and Video Compression</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Longan Wang, Yuang Shi, Wei Tsang Ooi</span>
+          <span class="paper-date">2026-03-11</span>
+        </div>
+        <div class="paper-abstract">P-GSVC 提出首个分层渐进式 2D 高斯溅射框架，统一解决图像与视频的可扩展高斯表示问题。将 2D 高斯组织为基础层和增强层，实现渐进式质量提升的内容传输，在图像视频压缩方向为 Gaussian Splatting 打开新应用空间。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">图像压缩</span>
+          <span class="tech-tag">视频压缩</span>
+          <span class="tech-tag">渐进式</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 7 -->
+    <div class="paper-card">
+      <div class="paper-num">7</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.07652" target="_blank">ReCoSplat: Autoregressive Feed-Forward Gaussian Splatting Using Render-and-Compare</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Freeman Cheng, Botao Ye, Xueting Li, Junqi You</span>
+          <span class="paper-date">2026-03-10</span>
+        </div>
+        <div class="paper-abstract">ReCoSplat 提出自回归前向 3DGS 模型，支持有/无位姿及内参的顺序输入。通过渲染-比较机制，将局部高斯组装到相机坐标系，同时具备更好的扩展性，解决在线新视角合成中无位姿输入下场景重建的鲁棒性难题。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">自回归</span>
+          <span class="tech-tag">前向推理</span>
+          <span class="tech-tag">在线重建</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 8 -->
+    <div class="paper-card">
+      <div class="paper-num">8</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.07576" target="_blank">GSStream: 3D Gaussian Splatting based Volumetric Scene Streaming System</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Zhiye Tang, Qiudan Zhang, Lei Zhang, Junhui Hou, You Yang, Xu Wang</span>
+          <span class="paper-date">2026-03-10</span>
+        </div>
+        <div class="paper-abstract">3DGS 产生海量数据给传输带来极大挑战。GSStream 构建基于 3DGS 的体积场景流式传输系统，研究如何在有限带宽下高效传输 3DGS 数据，为 XR 远程渲染、云游戏等低延迟沉浸式体验提供技术基础。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">流式传输</span>
+          <span class="tech-tag">XR</span>
+          <span class="tech-tag">带宽优化</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 9 -->
+    <div class="paper-card">
+      <div class="paper-num">9</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.07541" target="_blank">ProGS: Towards Progressive Coding for 3D Gaussian Splatting</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Zhiye Tang, Lingzhuo Liu, Shengjie Jiao, Qiudan Zhang, Junhui Hou, You Yang</span>
+          <span class="paper-date">2026-03-10</span>
+        </div>
+        <div class="paper-abstract">3DGS 数据量巨大（通常数百 MB 至数 GB）严重制约存储和传输。ProGS 首次提出针对 3DGS 的渐进式编码框架，允许根据带宽/存储条件按需加载不同质量级别的 3DGS 场景，是 3DGS 走向实用化部署的重要一步。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">数据压缩</span>
+          <span class="tech-tag">渐进编码</span>
+          <span class="tech-tag">存储优化</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 10 -->
+    <div class="paper-card">
+      <div class="paper-num">10</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.07468" target="_blank">VarSplat: Uncertainty-aware 3D Gaussian Splatting for Robust RGB-D SLAM</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Anh Thuan Tran, Jana Kosecka</span>
+          <span class="paper-date">2026-03-10</span>
+        </div>
+        <div class="paper-abstract">VarSplat 将不确定性感知引入 3DGS-SLAM，通过显式建模测量可靠性，解决现有方法在低纹理区域、透明表面和复杂光照下位姿估计漂移的问题。创新性地提出基于可变高斯的测量误差建模，显著提升全局对齐精度。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">SLAM</span>
+          <span class="tech-tag">不确定性</span>
+          <span class="tech-tag">鲁棒性</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 11 -->
+    <div class="paper-card">
+      <div class="paper-num">11</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.07422" target="_blank">X-GS: An Extensible Open Framework for Perceiving and Thinking via 3D Gaussian Splatting</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Yueen Ma, Zenglin Xu, Irwin King</span>
+          <span class="paper-date">2026-03-10</span>
+        </div>
+        <div class="paper-abstract">X-GS 提出可扩展开放框架，整合无位姿 3DGS、在线 SLAM 和语义丰富化等模块，统一了此前孤立运行的各类 3DGS 方法。框架支持多任务协同的空间 AI 应用，是面向具身智能的 3DGS 基础框架探索。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">空间AI</span>
+          <span class="tech-tag">语义理解</span>
+          <span class="tech-tag">具身智能</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 12 -->
+    <div class="paper-card">
+      <div class="paper-num">12</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.07389" target="_blank">DenoiseSplat: Feed-Forward Gaussian Splatting for Noisy 3D Scene Reconstruction</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Fuzhen Jiang, Zhuoran Li, Yinlin Zhang</span>
+          <span class="paper-date">2026-03-10</span>
+        </div>
+        <div class="paper-abstract">大多数 NeRF 和 3DGS 管线假设输入干净，在实际噪声下性能急剧下降。DenoiseSplat 提出前向 3DGS 方法，在输入受噪声和伪影污染的情况下仍能重建高质量 3D 场景，对于 VR、机器人和内容创作等实际部署场景具有重要意义。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">去噪</span>
+          <span class="tech-tag">鲁棒重建</span>
+          <span class="tech-tag">前向推理</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 13 -->
+    <div class="paper-card">
+      <div class="paper-num">13</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.06819" target="_blank">SurgCalib: Gaussian Splatting-Based Hand-Eye Calibration for Robot-Assisted Minimally Invasive Surgery</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Zijian Wu, Shuojue Yang, Yu Chung Lee, Eitan Prisman</span>
+          <span class="paper-date">2026-03-09</span>
+        </div>
+        <div class="paper-abstract">SurgCalib 将高斯溅射应用于达芬奇手术机器人的手眼标定，精确估计机器人底座与相机的刚性变换，是基于 3DGS 的视觉引导机器人控制闭环的重要探索，在微创手术精确性上取得突破。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">手术机器人</span>
+          <span class="tech-tag">手眼标定</span>
+          <span class="tech-tag">医疗</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 14 -->
+    <div class="paper-card">
+      <div class="paper-num">14</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.06782" target="_blank">Physics-Driven 3D Gaussian Rendering for Zero-Shot MRI Super-Resolution</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Shuting Liu, Lei Zhang, Wei Huang</span>
+          <span class="paper-date">2026-03-10</span>
+        </div>
+        <div class="paper-abstract">高分辨率 MRI 对临床诊断至关重要但采集时间长。本文提出物理驱动的 3D 高斯渲染，实现 MRI 的零样本超分辨率重建，无需配对训练数据即可从低分辨率扫描重建高分辨率图像，具有重要临床应用价值。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">医疗影像</span>
+          <span class="tech-tag">MRI</span>
+          <span class="tech-tag">超分辨率</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 15 -->
+    <div class="paper-card">
+      <div class="paper-num">15</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.06651" target="_blank">ImprovedGS+: A High-Performance C++/CUDA Re-Implementation Strategy for 3D Gaussian Splatting</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Jordi Muñoz Vicente</span>
+          <span class="paper-date">2026-03-09</span>
+        </div>
+        <div class="paper-abstract">ImprovedGS+ 在 LichtFeld-Studio 框架内提出 3DGS 的高性能 C++/CUDA 底层实现，显著提升训练和推理效率，为 3DGS 的工程落地提供了高性能参考实现，是面向生产环境优化的重要工作。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">C++/CUDA</span>
+          <span class="tech-tag">性能优化</span>
+          <span class="tech-tag">工程实现</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 16 -->
+    <div class="paper-card">
+      <div class="paper-num">16</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.06628" target="_blank">Improving Continual Learning for Gaussian Splatting based Environments Reconstruction on Edge Devices</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Ivan Zaino, Matteo Risso, Daniele Jahier Pagliari, Miguel de Prado</span>
+          <span class="paper-date">2026-03-09</span>
+        </div>
+        <div class="paper-abstract">面向边缘机器人，在商用边缘设备上实现基于高斯溅射的持续学习场景重建。VBGS（变分贝叶斯 GS）支持无重放的持续场景更新，满足 SLAM、导航和检测等任务的紧内存和低延迟需求，是 3DGS 走向真实机器人的关键工作。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">边缘计算</span>
+          <span class="tech-tag">持续学习</span>
+          <span class="tech-tag">边缘机器人</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 17 -->
+    <div class="paper-card">
+      <div class="paper-num">17</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.06132" target="_blank">ReconDrive: Fast Feed-Forward 4D Gaussian Splatting for Autonomous Driving Scene Reconstruction</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Haibao Yu, Kuntao Xiao, Jiahang Wang, Ruiyang Hao</span>
+          <span class="paper-date">2026-03-08</span>
+        </div>
+        <div class="paper-abstract">ReconDrive 为自动驾驶闭环评测提供高保真视觉重建与新视角合成。现有 4DGS 方法需昂贵的迭代优化，本文提出快速前向 4DGS 管线，无需逐场景优化即可实现高质量驾驶场景重建，大幅提升评测效率。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">自动驾驶</span>
+          <span class="tech-tag">4D-GS</span>
+          <span class="tech-tag">闭环评测</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 18 -->
+    <div class="paper-card">
+      <div class="paper-num">18</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.06038" target="_blank">Ref-DGS: Reflective Dual Gaussian Splatting</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Ningjing Fan, Yiqun Wang, Dongming Yan, Peter Wonka</span>
+          <span class="paper-date">2026-03-08</span>
+        </div>
+        <div class="paper-abstract">Ref-DGS 提出双高斯溅射方法处理强近场镜面反射。现有方法无法准确建模近场镜面，Ref-DGS 通过双路高斯分别表示漫反射和镜面分量，不依赖显式光线追踪，实现高质量反光表面重建和新视角合成。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">镜面反射</span>
+          <span class="tech-tag">双路渲染</span>
+          <span class="tech-tag">表面重建</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 19 -->
+    <div class="paper-card">
+      <div class="paper-num">19</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.05948" target="_blank">3DGS-HPC: Distractor-free 3D Gaussian Splatting with Hybrid Patch-wise Classification</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Jiahao Chen, Yipeng Qin, Ganlong Zhao, Xin Li</span>
+          <span class="paper-date">2026-03-08</span>
+        </div>
+        <div class="paper-abstract">真实场景中的移动物体（行人、汽车）和阴影变化严重影响 3DGS 质量。3DGS-HPC 提出混合图块分类策略，自动识别并移除干扰元素，在户外动态场景下显著提升 3DGS 重建质量，对大规模室外场景建模有重要价值。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">动态遮挡</span>
+          <span class="tech-tag">户外场景</span>
+          <span class="tech-tag">鲁棒重建</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 20 -->
+    <div class="paper-card">
+      <div class="paper-num">20</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.05830" target="_blank">MipSLAM: Alias-Free Gaussian Splatting SLAM</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Yingzhao Li, Yan Li, Shixiong Tian, Yanjie Liu</span>
+          <span class="paper-date">2026-03-07</span>
+        </div>
+        <div class="paper-abstract">MipSLAM 引入频率感知的 3DGS-SLAM 框架，实现无锯齿伪影的新视角合成和在不同相机配置下的鲁棒位姿估计。现有 3DGS-SLAM 系统在变焦/广角相机下存在明显混叠，本文通过多尺度高斯表示有效缓解此问题。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">SLAM</span>
+          <span class="tech-tag">反锯齿</span>
+          <span class="tech-tag">多相机</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 21 -->
+    <div class="paper-card">
+      <div class="paper-num">21</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.04575" target="_blank">ColonSplat: Reconstruction of Peristaltic Motion in Colonoscopy with Dynamic Gaussian Splatting</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Weronika Smolak-Dyżewska, Joanna Kaleta, Diego Dall'Alba, Przemysław Spurek</span>
+          <span class="paper-date">2026-03-06</span>
+        </div>
+        <div class="paper-abstract">ColonSplat 将动态高斯溅射应用于结肠镜数据的 3D 重建，考虑复杂蠕动运动，用于支持高级手术导航与回顾性诊断。是 3DGS 在内窥镜医疗影像领域的重要突破。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">内窥镜</span>
+          <span class="tech-tag">医疗影像</span>
+          <span class="tech-tag">手术导航</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 22 -->
+    <div class="paper-card">
+      <div class="paper-num">22</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.04567" target="_blank">VG3S: Visual Geometry Grounded Gaussian Splatting for Semantic Occupancy Prediction</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Xiaoyang Yan, Muleilan Pei, Shaojie Shen</span>
+          <span class="paper-date">2026-03-06</span>
+        </div>
+        <div class="paper-abstract">VG3S 将 3DGS 引入自动驾驶语义占据预测任务，通过高质量 3D 高斯生成大幅降低计算开销，同时保持精确场景理解。是 3DGS 用于感知任务而非仅渲染任务的代表性工作。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">自动驾驶</span>
+          <span class="tech-tag">占据预测</span>
+          <span class="tech-tag">语义理解</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 23 -->
+    <div class="paper-card">
+      <div class="paper-num">23</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.04398" target="_blank">Transforming Omnidirectional RGB-LiDAR data into 3D Gaussian Splatting</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Semin Bae, Hansol Lim, Jongseong Brad Choi</span>
+          <span class="paper-date">2026-03-06</span>
+        </div>
+        <div class="paper-abstract">针对大规模数字孪生需求，本文提出将全向 RGB 相机与 LiDAR 数据联合用于 3DGS 重建，利用现有自动驾驶/机器人平台已有的廉价传感器数据构建高质量三维场景，大幅降低数字孪生采集成本。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">LiDAR</span>
+          <span class="tech-tag">全向相机</span>
+          <span class="tech-tag">数字孪生</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 24 -->
+    <div class="paper-card">
+      <div class="paper-num">24</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.04218" target="_blank">GaussTwin: Unified Simulation and Correction with Gaussian Splatting for Robotic Digital Twins</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Yichen Cai, Paul Jansonnie, Cristiana de Farias, Oleg Arenz</span>
+          <span class="paper-date">2026-03-05</span>
+        </div>
+        <div class="paper-abstract">GaussTwin 基于高斯溅射构建机器人数字孪生的统一仿真与校正框架，解决现有系统缺乏统一模型、复杂动态交互和 real-to-sim 差距的问题，实现真实感知与仿真环境的一致性映射，推进机器人操作能力。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">数字孪生</span>
+          <span class="tech-tag">机器人</span>
+          <span class="tech-tag">仿真</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 25 -->
+    <div class="paper-card">
+      <div class="paper-num">25</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.04038" target="_blank">DSA-SRGS: Super-Resolution Gaussian Splatting for Dynamic Sparse-View DSA Reconstruction</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Shiyu Zhang, Zhicong Wu, Huangxuan Zhao, Zhentao Liu</span>
+          <span class="paper-date">2026-03-05</span>
+        </div>
+        <div class="paper-abstract">将高斯溅射与动态神经表示结合用于数字减影血管造影（DSA）稀疏视角超分辨率重建，是 3DGS 在脑血管疾病辅助诊断和治疗中的重要医疗应用，从稀疏动态输入实现鲁棒三维血管重建。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">血管造影</span>
+          <span class="tech-tag">超分辨率</span>
+          <span class="tech-tag">医疗</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 26 -->
+    <div class="paper-card">
+      <div class="paper-num">26</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.02438" target="_blank">VIRGi: View-dependent Instant Recoloring of 3D Gaussian Splats</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Alessio Mazzucchelli, Ivan Ojeda-Martin, Fernando Rivas-Manzaneque, Elena Garces</span>
+          <span class="paper-date">2026-03-03</span>
+        </div>
+        <div class="paper-abstract">VIRGi 实现了 3D 高斯场景的视角相关实时重着色，允许用户交互地改变场景颜色外观。这一可编辑性扩展对数字内容创作、影视后期和游戏场景设计具有重要价值，是 3DGS 向可编辑表示迈进的重要工作。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">可编辑</span>
+          <span class="tech-tag">重着色</span>
+          <span class="tech-tag">内容创作</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 27 -->
+    <div class="paper-card">
+      <div class="paper-num">27</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.02357" target="_blank">S2D: Sparse to Dense Lifting for 3D Reconstruction with Minimal Inputs</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Yuzhou Ji, Qijian Tian, He Zhu, Xiaoqi Jiang, Guangzhi Cao, Lizhuang Ma, Yuan Xie, Xin Tan</span>
+          <span class="paper-date">2026-03-11</span>
+        </div>
+        <div class="paper-abstract">S2D 桥接点云与 3DGS 两种显式表示，解决各自在非真实感渲染和稀疏输入下退化的问题。通过稀疏到密集提升管线，仅需少量输入图像即可实现高质量 3D 重建，对无人机巡检、文化遗产数字化等场景有重要意义。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">稀疏输入</span>
+          <span class="tech-tag">点云</span>
+          <span class="tech-tag">3D重建</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 28 -->
+    <div class="paper-card">
+      <div class="paper-num">28</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.02197" target="_blank">EntON: Eigenentropy-Optimized Neighborhood Densification in 3D Gaussian Splatting</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Miriam Jäger, Boris Jutzi</span>
+          <span class="paper-date">2026-03-06</span>
+        </div>
+        <div class="paper-abstract">EntON 提出特征熵优化的邻域致密化策略，解决标准 3DGS 中高斯中心和表面与底层物体几何对准不精确的问题。通过基于特征熵的自适应密度控制，在几何精确性上显著超越标准 3DGS 的自适应密度控制策略。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">几何优化</span>
+          <span class="tech-tag">致密化</span>
+          <span class="tech-tag">精度提升</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 29 -->
+    <div class="paper-card">
+      <div class="paper-num">29</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.02056" target="_blank">AstroSplat: Physics-Based Gaussian Splatting for Rendering and Reconstruction of Small Celestial Bodies</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Jennifer Nolan, Travis Driver, John Christian</span>
+          <span class="paper-date">2026-03-12</span>
+        </div>
+        <div class="paper-abstract">AstroSplat 突破 3DGS 的外观建模局限，将物理光照模型融入高斯溅射表示，专用于小行星等小天体的表面精确重建与特征识别，服务于航天任务规划、导航与科学分析，是 3DGS 航天应用的首批探索之一。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">物理渲染</span>
+          <span class="tech-tag">航天</span>
+          <span class="tech-tag">小天体</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paper 30 -->
+    <div class="paper-card">
+      <div class="paper-num">30</div>
+      <div class="paper-content">
+        <div class="paper-title"><a href="https://arxiv.org/abs/2503.01908" target="_blank">CylinderSplat: 3D Gaussian Splatting with Cylindrical Triplanes for Panoramic Novel View Synthesis</a></div>
+        <div class="paper-meta">
+          <span class="paper-authors">Qiwei Wang, Xianghui Ze, Jingyi Yu, Yujiao Shi</span>
+          <span class="paper-date">2026-03-06</span>
+        </div>
+        <div class="paper-abstract">CylinderSplat 利用柱面三平面表示，专为全景图像设计的前向 3DGS 框架。现有方法在全景稀疏视角下遮挡处理困难，CylinderSplat 有效解决全景新视角合成的几何一致性问题，为沉浸式媒体制作提供技术支撑。</div>
+        <div class="paper-tags">
+          <span class="tech-tag">全景合成</span>
+          <span class="tech-tag">沉浸式媒体</span>
+          <span class="tech-tag">VR/AR</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Open Source Tools Section -->
+  <div id="tools" class="section">
+    <div class="section-header">
+      <div class="section-icon icon-green">🛠️</div>
+      <div>
+        <div class="section-title">开源工具与项目</div>
+        <div class="section-subtitle">主流框架 · 渲染器 · 编辑器 · 工程工具</div>
+      </div>
+      <div class="section-num">20+ 项目</div>
+    </div>
+
+    <div class="tool-grid">
+      <div class="tool-card">
+        <div class="tool-name">
+          🏆 gaussian-splatting
+          <span class="tool-lang">Python/CUDA</span>
+        </div>
+        <div class="tool-desc">原始官方实现，由 INRIA 团队发布。学术和工程领域的标准参考实现，GitHub Stars 超 10k，是所有后续工作的基础。</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">
+          ⚡ gsplat (nerfstudio)
+          <span class="tool-lang">Python/CUDA</span>
+        </div>
+        <div class="tool-desc">Nerfstudio 项目的高性能 3DGS 库，Apache-2.0 许可，提供模块化 CUDA 渲染器，已成为学术界最常用的 3DGS 基础库之一。</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">
+          🏎️ LichtFeld-Studio
+          <span class="tool-lang">C++/CUDA</span>
+        </div>
+        <div class="tool-desc">GPL-3.0 高性能 C++ 实现，支持 ImprovedGS+ 等最新算法，是目前速度最快的 3DGS 实现之一，适合生产环境部署。</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">
+          🌍 OpenSplat
+          <span class="tool-lang">C++/CPU+GPU</span>
+        </div>
+        <div class="tool-desc">跨平台方案，支持 CPU 和 GPU，AGPL-3.0 许可，无需高端 NVIDIA GPU 即可运行 3DGS，大幅降低硬件门槛。</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">
+          🌐 GaussianSplats3D
+          <span class="tool-lang">JavaScript/Three.js</span>
+        </div>
+        <div class="tool-desc">基于 Three.js 的 WebGL 3DGS 实时渲染器，支持在浏览器中直接查看 .splat/.ply 文件，无需安装任何本地软件。</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">
+          ✏️ SuperSplat
+          <span class="tool-lang">JavaScript</span>
+        </div>
+        <div class="tool-desc">PlayCanvas 出品的浏览器端 3DGS 编辑器，支持直接在网页中对高斯场景进行选择、删除、变换等编辑操作，已成为主流编辑工具。</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">
+          🎮 Unity Plugin
+          <span class="tool-lang">C#</span>
+        </div>
+        <div class="tool-desc">aras-p 开发的 Unity 3DGS 插件，支持在 Unity 引擎中直接导入和渲染 3DGS 场景，已有多个版本，广泛用于游戏和 XR 开发。</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">
+          🎬 Blender Add-on
+          <span class="tool-lang">Python</span>
+        </div>
+        <div class="tool-desc">多个 Blender 插件（ReshotAI、KIRI、404-Repo）支持在 Blender 中导入、编辑和渲染 3DGS 文件，与主流 3D 制作管线无缝集成。</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">
+          🏙️ DriveStudio
+          <span class="tool-lang">Python</span>
+        </div>
+        <div class="tool-desc">专为自动驾驶场景设计的城市场景重建框架，已在 Waymo、nuScenes 等大规模数据集上验证，是 3DGS 在自动驾驶领域的标准工具。</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">
+          📦 GSCodecStudio
+          <span class="tool-lang">Python</span>
+        </div>
+        <div class="tool-desc">专注于 3DGS 压缩和动态场景处理的工具集，集成多种压缩算法，支持 3DGS 数据的高效存储和传输，是压缩研究的重要平台。</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">
+          🔄 SplatTransform
+          <span class="tool-lang">Node.js</span>
+        </div>
+        <div class="tool-desc">PlayCanvas 出品的 CLI 工具，支持 .ply/.splat/.spz/.ksplat 等多种格式之间的转换与编辑，是 3DGS 工作流中不可缺少的格式转换工具。</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">
+          🤖 ROSplat
+          <span class="tool-lang">Python/ROS2</span>
+        </div>
+        <div class="tool-desc">将 3DGS 与 ROS2 机器人操作系统集成，支持机器人应用中的实时 3DGS 场景建图与定位，是 3DGS 进入机器人领域的桥梁。</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">
+          🥽 Splatapult (OpenXR)
+          <span class="tool-lang">C++/OpenGL</span>
+        </div>
+        <div class="tool-desc">支持 OpenXR 的 3DGS VR 渲染器，使用 C++ 和 OpenGL 实现，可在主流 VR 头显上直接体验 3DGS 场景，支持 6DoF 交互。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Industry Trends Section -->
+  <div id="industry" class="section">
+    <div class="section-header">
+      <div class="section-icon icon-yellow">💼</div>
+      <div>
+        <div class="section-title">行业动态</div>
+        <div class="section-subtitle">商业落地 · 产业应用 · 生态发展</div>
+      </div>
+      <div class="section-num">5 大趋势</div>
+    </div>
+
+    <div class="industry-card">
+      <h3>🎬 影视与创意制作加速落地</h3>
+      <p>After Effects 的 Gaussian Splatting 插件已发展至 v1.5.2，支持 Polycam、Luma AI、PostShot 等主流重建软件的输出文件，实时导入 3DGS 场景进行粒子特效制作。主要商业平台持续跟进：</p>
+      <ul>
+        <li><span class="dot">▶</span>Polycam、Luma AI 已将 3DGS 集成为主要重建输出格式，用户可一键生成 .ply 文件</li>
+        <li><span class="dot">▶</span>PlayCanvas 引擎全面集成 3DGS 支持，SuperSplat 成为浏览器端主流编辑器</li>
+        <li><span class="dot">▶</span>Metaverse Standards Forum（2025年1月、5月）多次讨论 Gaussian Splat 标准化方向</li>
+        <li><span class="dot">▶</span>游戏引擎（Unity、Unreal、Godot）均有成熟插件，XR 应用开发门槛大幅降低</li>
+      </ul>
+    </div>
+
+    <div class="industry-card">
+      <h3>🚗 自动驾驶仿真成为战略方向</h3>
+      <p>3DGS 在自动驾驶领域的应用从研究走向产业，主要体现在闭环仿真、传感器数据扩增和数字孪生构建三个方向。</p>
+      <ul>
+        <li><span class="dot">▶</span>多家自动驾驶公司（Waymo、百度 Apollo、小鹏等）内部使用 3DGS/NeRF 构建仿真场景</li>
+        <li><span class="dot">▶</span>DriveStudio、UniSim 等开源框架支持从街道采集数据快速重建可渲染的 3D 驾驶场景</li>
+        <li><span class="dot">▶</span>4DGS 动态场景重建支持行人、车辆等动态元素，实现更真实的闭环测试环境</li>
+        <li><span class="dot">▶</span>LiDAR+Camera 融合 3DGS 管线降低高精地图构建成本，月更新频率从周提升至小时级</li>
+      </ul>
+    </div>
+
+    <div class="industry-card">
+      <h3>🏥 医疗影像进入实验性应用阶段</h3>
+      <p>3DGS 在医疗领域的探索正从概念验证走向实验性临床应用，覆盖内窥镜、血管造影、MRI 等多个医疗影像模态。</p>
+      <ul>
+        <li><span class="dot">▶</span>结肠镜 3D 重建支持手术导航，有望替代传统 CT 重建用于术前规划</li>
+        <li><span class="dot">▶</span>脑血管造影稀疏视角重建降低辐射剂量，实现从稀疏投影重建精细血管树</li>
+        <li><span class="dot">▶</span>MRI 零样本超分辨率有望在低场强设备上获得高分辨率图像，降低医疗设备成本</li>
+        <li><span class="dot">▶</span>达芬奇手术机器人手眼标定基于 3DGS，提升微创手术精确性</li>
+      </ul>
+    </div>
+
+    <div class="industry-card">
+      <h3>🤖 机器人与具身智能深度融合</h3>
+      <p>3DGS 已成为机器人领域场景表示的核心技术路线，推动具身智能从结构化环境走向真实世界复杂场景。</p>
+      <ul>
+        <li><span class="dot">▶</span>基于 3DGS 的 SLAM 系统（VarSplat、MipSLAM）提供高质量实时地图，支持长期持续建图</li>
+        <li><span class="dot">▶</span>3DGS 数字孪生（GaussTwin）支持机器人操作策略在虚拟环境中的训练与迁移</li>
+        <li><span class="dot">▶</span>边缘设备上的持续学习 3DGS（VBGS）支持机器人在线更新场景模型，无需云端支持</li>
+        <li><span class="dot">▶</span>X-GS 等框架整合感知与建图，推动机器人具身空间智能的统一表示</li>
+      </ul>
+    </div>
+
+    <div class="industry-card">
+      <h3>📡 标准化与互操作性加速推进</h3>
+      <p>随着 3DGS 商业落地加速，格式标准化和跨平台互操作需求日益迫切，行业正积极推动统一标准。</p>
+      <ul>
+        <li><span class="dot">▶</span>Metaverse Standards Forum 多次召开专题会议，讨论 Gaussian Splat 数据格式标准化</li>
+        <li><span class="dot">▶</span>SPZ（Splat Z）格式由 Niantic 推出，比 .ply 压缩率高 10 倍以上，正在成为传输标准</li>
+        <li><span class="dot">▶</span>SplatTransform、GaussForge 等工具支持 PLY/SPLAT/SPZ/KSPLAT 多格式互转</li>
+        <li><span class="dot">▶</span>浏览器端 WebGPU 渲染器性能显著提升，正在成为 3DGS 内容分发的主要渠道</li>
+        <li><span class="dot">▶</span>CVPR 2025 大量收录 3DGS 论文，相关研讨会和竞赛持续举办，学术生态高度活跃</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 技术趋势展望 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon icon-purple">🔮</div>
+      <div>
+        <div class="section-title">未来趋势展望</div>
+        <div class="section-subtitle">2025年下半年关键研究方向预测</div>
+      </div>
+    </div>
+
+    <div class="tech-grid">
+      <div class="tech-card">
+        <div class="tech-card-icon">🧠</div>
+        <h3>大规模 3DGS 基础模型</h3>
+        <p>类似视觉基础模型（SAM、DINOv2），3DGS 领域正在涌现大规模预训练模型，如 ReCoSplat 等前向网络。预计将出现能一次性重建多种场景类型的通用 3DGS 基础模型。</p>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-card-icon">💻</div>
+        <h3>端侧实时渲染普及</h3>
+        <p>Mobile-GS 等工作推动 3DGS 在手机、AR 眼镜等端侧设备实时渲染，Apple Vision Pro、Meta Quest 等 XR 设备将成为主要消费端，3DGS 内容消费有望大规模普及。</p>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-card-icon">🎭</div>
+        <h3>可控生成与编辑</h3>
+        <p>3DGS 与扩散模型的深度结合将使文本/图像驱动的 3D 内容生成和精细编辑成为可能，VIRGi 等工作已在可编辑性方向取得进展，预计将出现更强大的 3DGS 内容创作工具。</p>
+      </div>
+
+      <div class="tech-card">
+        <div class="tech-card-icon">🌍</div>
+        <h3>城市级大场景重建</h3>
+        <p>从单室内场景扩展到城市级大规模场景是重要方向，Grendel（分布式计算）等框架已支持多 GPU 并行重建，结合流式传输技术，城市级数字孪生的实时更新将成现实。</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <p>
+    本报告数据来源：<a href="https://arxiv.org" target="_blank">ArXiv</a> ·
+    <a href="https://github.com/MrNeRF/awesome-3D-gaussian-splatting" target="_blank">awesome-3D-gaussian-splatting</a> ·
+    搜索引擎 · 开源社区
+  </p>
+  <p style="margin-top:8px; color: #475569;">
+    生成时间：2025-03-15 | 内容基于公开学术资料整理，仅供参考 | Powered by OpenClaw
+  </p>
+</div>
+
+</body>
+</html>

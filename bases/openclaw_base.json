@@ -1,0 +1,129 @@
+{
+  "overview": {
+    "background": "AI Agent 正从「会对话」迈向「会行动」：以 LLM 为核心的 Agentic 系统通过工具调用、规划推理和多智能体协作，开始在代码编写、数据分析、浏览器操作等真实任务中展现超越单轮对话的能力。MCP（Model Context Protocol）协议的兴起正在标准化 Agent 与外部工具的集成方式；OpenClaw、Claude Code、Cursor 等产品将 Agentic 能力带入日常开发工作流。本周报告汇聚了 ArXiv 最新 Agent 研究、社区热帖与开源项目动态，覆盖 Agent 框架、工具使用、多智能体、评测基准等方向。",
+    "stats": [
+      { "value": "MCP",    "label": "Model Context Protocol 成为工具集成新标准" },
+      { "value": "Multi",  "label": "多智能体协作研究爆发式增长" },
+      { "value": "Code",   "label": "AI 编程 Agent 进入实用阶段" },
+      { "value": "OpenClaw", "label": "个人 AI Agent 基础设施快速成熟" }
+    ]
+  },
+  "tech": [
+    {
+      "icon": "🛠️",
+      "title": "工具调用与 MCP 协议",
+      "desc": "Anthropic 发布的 Model Context Protocol（MCP）正成为 LLM 与外部工具/数据源集成的开放标准。MCP 服务器生态快速扩张，覆盖文件系统、数据库、Web 搜索、代码执行等场景。Function Calling（OpenAI）与 Tool Use（Anthropic）在能力上趋于统一。",
+      "tags": ["MCP", "工具调用", "Function Calling"]
+    },
+    {
+      "icon": "🤔",
+      "title": "规划与推理增强",
+      "desc": "ReAct、Chain-of-Thought、Tree-of-Thought 等框架持续演进，o1/o3、DeepSeek-R1 等推理模型将「慢思考」能力内化到模型层。长程任务规划（Task Decomposition）和自我纠错（Self-Reflection）是当前研究热点。",
+      "tags": ["推理", "规划", "CoT"]
+    },
+    {
+      "icon": "👥",
+      "title": "多智能体协作",
+      "desc": "AutoGen、CrewAI、LangGraph 等框架支持多个 Agent 分工协作完成复杂任务。研究热点包括 Agent 间通信协议、角色分配策略、共享记忆管理和并行执行效率。",
+      "tags": ["多智能体", "AutoGen", "协作"]
+    },
+    {
+      "icon": "📊",
+      "title": "评测基准与安全",
+      "desc": "GAIA、SWE-bench、WebArena、AgentBench 等基准快速涌现，用于评估 Agent 在真实任务场景的能力边界。Prompt Injection 防御、权限控制、沙箱隔离成为 Agent 安全的核心议题。",
+      "tags": ["评测", "SWE-bench", "Agent安全"]
+    }
+  ],
+  "apps": [
+    {
+      "icon": "💻",
+      "title": "AI 编程 Agent",
+      "desc": "Claude Code、Cursor、GitHub Copilot Workspace、Devin 等产品将 Agentic 能力带入软件开发全流程，从写代码到跑测试、提 PR 全自动化。SWE-bench 上各模型表现持续提升，实用性门槛已大幅降低。",
+      "tags": ["编程Agent", "Claude Code", "Cursor"]
+    },
+    {
+      "icon": "🌐",
+      "title": "浏览器与桌面自动化",
+      "desc": "Computer Use（Anthropic）、OpenInterpreter、Browser Use 等方案让 Agent 直接操控浏览器和桌面应用，完成表单填写、数据采集、UI 测试等任务，无需专用 API 对接。",
+      "tags": ["浏览器自动化", "Computer Use", "RPA"]
+    },
+    {
+      "icon": "🏠",
+      "title": "个人 AI 助理生态",
+      "desc": "OpenClaw、Home Assistant AI、Raycast AI 等工具将 LLM Agent 集成到个人工作流，实现跨平台消息管理、日历提醒、文件操作、数据查询等日常任务自动化。",
+      "tags": ["个人助理", "OpenClaw", "工作流自动化"]
+    }
+  ],
+  "tools": [
+    {
+      "name": "🦞 OpenClaw",
+      "lang": "Node.js",
+      "desc": "个人 AI Agent 基础设施，支持多渠道消息（微信/企业微信/Telegram/Discord）、技能扩展、定时任务、文件操作，内网版集成腾讯工蜂 AI。",
+      "url": "https://openclaw.ai"
+    },
+    {
+      "name": "🤖 AutoGen (Microsoft)",
+      "lang": "Python",
+      "desc": "微软开源的多智能体对话框架，支持 Agent 角色定义、自动任务分解和代码执行，是学术界研究多 Agent 协作的标准框架之一。",
+      "url": "https://github.com/microsoft/autogen"
+    },
+    {
+      "name": "🔗 LangGraph",
+      "lang": "Python",
+      "desc": "LangChain 出品的有状态 Agent 工作流框架，基于图结构定义 Agent 的规划与执行流程，适合构建复杂的多步骤 Agentic 应用。",
+      "url": "https://github.com/langchain-ai/langgraph"
+    },
+    {
+      "name": "⚡ CrewAI",
+      "lang": "Python",
+      "desc": "以「角色扮演」为核心的多 Agent 协作框架，定义 Agent 的专业角色、目标和工具，自动编排任务执行顺序。",
+      "url": "https://github.com/crewAIInc/crewAI"
+    },
+    {
+      "name": "🌐 Browser Use",
+      "lang": "Python",
+      "desc": "让 LLM Agent 直接控制真实浏览器执行 Web 任务，基于 Playwright，支持视觉感知和 DOM 操作双模式。",
+      "url": "https://github.com/browser-use/browser-use"
+    }
+  ],
+  "industry": [
+    {
+      "title": "🏢 大厂 Agent 产品全面落地",
+      "desc": "OpenAI（Operator）、Anthropic（Claude Code）、Google（Project Astra）、Microsoft（Copilot Agents）均在 2024-2025 年推出了具备真实任务执行能力的 Agent 产品，AI Agent 从研究走向商业化。",
+      "bullets": [
+        "▶ OpenAI Operator：浏览器自动化 Agent，可完成订票、填表等真实 Web 任务",
+        "▶ Anthropic Claude Code：终端 AI 编程 Agent，在 SWE-bench 上排名前列",
+        "▶ Google Gemini + Project Astra：多模态实时 Agent，整合 Google 服务生态"
+      ]
+    },
+    {
+      "title": "🔌 MCP 生态快速扩张",
+      "desc": "Anthropic 发布 MCP 后，数百个第三方 MCP 服务器涌现，覆盖 GitHub、Slack、Notion、数据库、本地文件系统等主流场景，正在成为 Agent 工具集成的事实标准。",
+      "bullets": [
+        "▶ Cursor、Zed、Claude Desktop 已原生支持 MCP",
+        "▶ OpenClaw mcporter skill 支持直接配置和调用 MCP 服务器",
+        "▶ Anthropic 宣布 MCP 将向其他模型厂商开放"
+      ]
+    }
+  ],
+  "future": [
+    {
+      "icon": "🧠",
+      "title": "长程自主任务执行",
+      "desc": "未来 Agent 将能在数天到数周的时间跨度内自主完成软件项目开发、科学实验设计、商业分析等复杂任务，人类只需设定目标并在关键节点审核。",
+      "tags": ["长程任务", "自主性", "人机协作"]
+    },
+    {
+      "icon": "🌐",
+      "title": "Agent 互联互通",
+      "desc": "不同厂商的 Agent 通过标准协议（MCP、A2A、ACP）互相调用，形成「Agent 生态系统」，用户只需一个入口 Agent 即可调度全球专业 Agent 网络完成任务。",
+      "tags": ["协议标准化", "Agent网络", "互操作性"]
+    },
+    {
+      "icon": "🔒",
+      "title": "可信 Agent 与权限治理",
+      "desc": "随着 Agent 获得更多真实世界权限（支付、邮件、代码部署），如何建立细粒度权限控制、操作审计和人工审批机制成为产业和监管的核心课题。",
+      "tags": ["Agent安全", "权限控制", "可信AI"]
+    }
+  ]
+}

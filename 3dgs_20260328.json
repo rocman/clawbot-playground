@@ -1,0 +1,741 @@
+{
+  "topic": "3dgs",
+  "label": "3D Gaussian Splatting",
+  "desc": "3DGS 核心技术、压缩、编辑、SLAM、动态场景等方向",
+  "generated": "2026-03-28 04:00",
+  "papers": [
+    {
+      "title": "Less Gaussians, Texture More: 4K Feed-Forward Textured Splatting",
+      "authors": [
+        "Yixing Lao",
+        "Xuyang Bai",
+        "Xiaoyang Wu",
+        "Nuoyuan Yan",
+        "Zixin Luo",
+        "Tian Fang",
+        "Jean-Daniel Nahmias",
+        "Yanghai Tsin",
+        "Shiwei Li",
+        "Hengshuang Zhao"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Existing feed-forward 3D Gaussian Splatting methods predict pixel-aligned primitives, leading to a quadratic growth in primitive count as resolution increases. This fundamentally limits their scalability, making high-resolution synthesis such as 4K intractable. We introduce LGTM (Less Gaussians, Texture More), a feed-forward framework that overcomes this resolution scaling barrier. By predicting compact Gaussian primitives coupled with per-primitive textures, LGTM decouples geometric complexity from rendering resolution. This approach enables high-fidelity 4K novel view synthesis without per-scene optimization, a capability previously out of reach for feed-forward methods, all while using significantly fewer Gaussian primitives. Project page: https://yxlao.github.io/lgtm/",
+      "url": "https://arxiv.org/abs/2603.25745v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "新视角合成"
+      ]
+    },
+    {
+      "title": "How good was my shot? Quantifying Player Skill Level in Table Tennis",
+      "authors": [
+        "Akihiro Kubota",
+        "Tomoya Hasegawa",
+        "Ryo Kawahara",
+        "Ko Nishino"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Gauging an individual's skill level is crucial, as it inherently shapes their behavior. Quantifying skill, however, is challenging because it is latent to the observed actions. To explore skill understanding in human behavior, we focus on dyadic sports -- specifically table tennis -- where skill manifests not just in complex movements, but in the subtle nuances of execution conditioned on game context. Our key idea is to learn a generative model of each player's tactical racket strokes and jointly embed them in a common latent space that encodes individual characteristics, including those pertaining to skill levels. By training these player models on a large-scale dataset of 3D-reconstructed professional matches and conditioning them on comprehensive game context -- including player positioning and opponent behaviors -- the models capture individual tactical identities within their latent space. We probe this learned player space and find that it reflects distinct play styles and attributes that collectively represent skill. By training a simple relative ranking network on these embeddings, we demonstrate that both relative and absolute skill predictions can be achieved. These results demonstrate that the learned player space effectively quantifies skill levels, providing a foundation for automated skill assessment in complex, interactive behaviors.",
+      "url": "https://arxiv.org/abs/2603.25736v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "PackForcing: Short Video Training Suffices for Long Video Sampling and Long Context Inference",
+      "authors": [
+        "Xiaofeng Mao",
+        "Shaohao Rui",
+        "Kaining Ying",
+        "Bo Zheng",
+        "Chuanhao Li",
+        "Mingmin Chi",
+        "Kaipeng Zhang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Autoregressive video diffusion models have demonstrated remarkable progress, yet they remain bottlenecked by intractable linear KV-cache growth, temporal repetition, and compounding errors during long-video generation. To address these challenges, we present PackForcing, a unified framework that efficiently manages the generation history through a novel three-partition KV-cache strategy. Specifically, we categorize the historical context into three distinct types: (1) Sink tokens, which preserve early anchor frames at full resolution to maintain global semantics; (2) Mid tokens, which achieve a massive spatiotemporal compression (32x token reduction) via a dual-branch network fusing progressive 3D convolutions with low-resolution VAE re-encoding; and (3) Recent tokens, kept at full resolution to ensure local temporal coherence. To strictly bound the memory footprint without sacrificing quality, we introduce a dynamic top-$k$ context selection mechanism for the mid tokens, coupled with a continuous Temporal RoPE Adjustment that seamlessly re-aligns position gaps caused by dropped tokens with negligible overhead. Empowered by this principled hierarchical context compression, PackForcing can generate coherent 2-minute, 832x480 videos at 16 FPS on a single H200 GPU. It achieves a bounded KV cache of just 4 GB and enables a remarkable 24x temporal extrapolation (5s to 120s), operating effectively either zero-shot or trained on merely 5-second clips. Extensive results on VBench demonstrate state-of-the-art temporal consistency (26.07) and dynamic degree (56.25), proving that short-video supervision is sufficient for high-quality, long-video synthesis. https://github.com/ShandaAI/PackForcing",
+      "url": "https://arxiv.org/abs/2603.25730v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染",
+        "4D/动态",
+        "压缩"
+      ]
+    },
+    {
+      "title": "AnyHand: A Large-Scale Synthetic Dataset for RGB(-D) Hand Pose Estimation",
+      "authors": [
+        "Chen Si",
+        "Yulin Liu",
+        "Bo Ai",
+        "Jianwen Xie",
+        "Rolandos Alexandros Potamias",
+        "Chuanxia Zheng",
+        "Hao Su"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We present AnyHand, a large-scale synthetic dataset designed to advance the state of the art in 3D hand pose estimation from both RGB-only and RGB-D inputs. While recent works with foundation approaches have shown that an increase in the quantity and diversity of training data can markedly improve performance and robustness in hand pose estimation, existing real-world-collected datasets on this task are limited in coverage, and prior synthetic datasets rarely provide occlusions, arm details, and aligned depth together at scale. To address this bottleneck, our AnyHand contains 2.5M single-hand and 4.1M hand-object interaction RGB-D images, with rich geometric annotations. In the RGB-only setting, we show that extending the original training sets of existing baselines with AnyHand yields significant gains on multiple benchmarks (FreiHAND and HO-3D), even when keeping the architecture and training scheme fixed. More impressively, the model trained with AnyHand shows stronger generalization to the out-of-domain HO-Cap dataset, without any fine-tuning. We also contribute a lightweight depth fusion module that can be easily integrated into existing RGB-based models. Trained with AnyHand, the resulting RGB-D model achieves superior performance on the HO-3D benchmark, showing the benefits of depth integration and the effectiveness of our synthetic data.",
+      "url": "https://arxiv.org/abs/2603.25726v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Provably Efficient Long-Time Exponential Decompositions of Non-Markovian Gaussian Baths",
+      "authors": [
+        "Zhen Huang",
+        "Zhiyan Ding",
+        "Ke Wang",
+        "Jason Kaye",
+        "Xiantao Li",
+        "Lin Lin"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Gaussian baths are widely used to model non-Markovian environments, yet the cost of accurate simulation at long times remains poorly understood, especially when spectral densities exhibit nonanalytic behavior as in a range of realistic models. We rigorously bound the complexity of representing bath correlation functions on a time interval $[0,T]$ by sums of complex exponentials, as employed in recent variants of pseudomode and hierarchical equations of motion methods. These bounds make explicit the dependence on the maximal simulation time $T$, inverse temperature $β$, and the type and strength of singularities in an effective spectral density. For a broad class of spectral densities, the required number of exponentials is bounded independently of $T$, achieving time-uniform complexity. The $T$-dependence emerges only as polylogarithmic factors for spectral densities with strong singularities, such as step discontinuities and inverse power-law divergences. The temperature dependence is mild for bosonic environments and disappears entirely for fermionic environments. Thus, the true bottleneck for long-time simulation is not the simulation duration itself, but rather the presence of sharp nonanalytic features in the bath spectrum. Our results are instructive both for long-time simulation of non-Markovian open quantum systems, as well as for Markovian embeddings of classical generalized Langevin equations with memory kernels.",
+      "url": "https://arxiv.org/abs/2603.25708v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑"
+      ]
+    },
+    {
+      "title": "Approximate Bayesian Inference for Structural Equation Models using Integrated Nested Laplace Approximations",
+      "authors": [
+        "Haziq Jamil",
+        "Håvard Rue"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Markov chain Monte Carlo (MCMC) methods remain the mainstay of Bayesian estimation of structural equation models (SEM); however they often incur a high computational cost. We present a bespoke approximate Bayesian approach to SEM, drawing on ideas from the integrated nested Laplace approximation (INLA; Rue et al., 2009, J. R. Stat. Soc. Series B Stat. Methodol.) framework. We implement a simplified Laplace approximation that efficiently profiles the posterior density in each parameter direction while correcting for asymmetry, allowing for parametric skew-normal estimation of the marginals. Furthermore, we apply a variational Bayes correction to shift the marginal locations, thereby better capturing the posterior mass. Essential quantities, including factor scores and model-fit indices, are obtained via an adjusted Gaussian copula sampling scheme. For normal-theory SEM, this approach offers a highly accurate alternative to sampling-based inference, achieving near-'maximum likelihood' speeds while retaining the precision of full Bayesian inference.",
+      "url": "https://arxiv.org/abs/2603.25690v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "A Low-Cost Teapot Effect Experiment for Introductory Physics",
+      "authors": [
+        "Yu-Chen Guo",
+        "Jin-Ming Wang",
+        "Ying-Xin Li"
+      ],
+      "date": "2026-03-26",
+      "abstract": "The teapot effect refers to the tendency of a poured liquid to cling to the lip of a container and run down the outside. It is a familiar but physically rich example of flow separation. We present a low-cost experiment for introductory physics laboratories that uses 3D-printed cups, a simple flow regulator, and basic surface treatments to explore this phenomenon in a classroom setting. Students measure the run-off length along the outer wall as an accessible indicator of sticking versus separation and use it to compare the effects of flow velocity and surface wettability. Rather than attempting a full quantitative test of research-level models, the activity is designed to illustrate the inertial-capillary picture of the teapot effect in a form that is experimentally straightforward and pedagogically effective. The experiment connects a familiar everyday observation to fluid inertia, wetting, and interfacial forces in a form that is well suited to introductory instruction.",
+      "url": "https://arxiv.org/abs/2603.25653v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Designing Any Imaging System from Natural Language: Agent-Constrained Composition over a Finite Primitive Basis",
+      "authors": [
+        "Chengshuai Yang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Designing a computational imaging system -- selecting operators, setting parameters, validating consistency -- requires weeks of specialist effort per modality, creating an expertise bottleneck that excludes the   broader scientific community from prototyping imaging instruments. We introduce spec.md, a structured specification format, and three autonomous agents -- Plan, Judge, and Execute -- that translate a one-sentence   natural-language description into a validated forward model with bounded reconstruction error. A design-to-real error theorem decomposes total reconstruction error into five independently bounded terms, each linked   to a corrective action. On 6 real-data modalities spanning all 5 carrier families, the automated pipeline matches expert-library quality (98.1 +/- 4.2%). Ten novel designs -- composing primitives into chains from 3D   to 5D -- demonstrate compositional reach beyond any single-modality tool.",
+      "url": "https://arxiv.org/abs/2603.25636v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "Anchored-Branched Steady-state WInd Flow Transformer (AB-SWIFT): a metamodel for 3D atmospheric flow in urban environments",
+      "authors": [
+        "Armand de Villeroché",
+        "Rem-Sophia Mouradi",
+        "Vincent Le Guen",
+        "Sibo Cheng",
+        "Marc Bocquet",
+        "Alban Farchi",
+        "Patrick Armand",
+        "Patrick Massin"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Air flow modeling at a local scale is essential for applications such as pollutant dispersion modeling or wind farm modeling. To circumvent costly Computational Fluid Dynamics (CFD) computations, deep learning surrogate models have recently emerged as promising alternatives. However, in the context of urban air flow, deep learning models struggle to adapt to the high variations of the urban geometry and to large mesh sizes. To tackle these challenges, we introduce Anchored Branched Steady-state WInd Flow Transformer (AB-SWIFT), a transformer-based model with an internal branched structure uniquely designed for atmospheric flow modeling. We train our model on a specially designed database of atmospheric simulations around randomised urban geometries and with a mixture of unstable, neutral, and stable atmospheric stratifications. Our model reaches the best accuracy on all predicted fields compared to state-of-the-art transformers and graph-based models. Our code and data is available at https://github.com/cerea-daml/abswift.",
+      "url": "https://arxiv.org/abs/2603.25635v1",
+      "source": "arxiv",
+      "tags": [
+        "城市建模",
+        "开源"
+      ]
+    },
+    {
+      "title": "Accurate Surface and Reflectance Modelling from 3D Radar Data with Neural Radiance Fields",
+      "authors": [
+        "Judith Treffler",
+        "Vladimír Kubelka",
+        "Henrik Andreasson",
+        "Martin Magnusson"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Robust scene representation is essential for autonomous systems to safely operate in challenging low-visibility environments. Radar has a clear advantage over cameras and lidars in these conditions due to its resilience to environmental factors such as fog, smoke, or dust. However, radar data is inherently sparse and noisy, making reliable 3D surface reconstruction challenging. To address these challenges, we propose a neural implicit approach for 3D mapping from radar point clouds, which jointly models scene geometry and view-dependent radar intensities. Our method leverages a memory-efficient hybrid feature encoding to learn a continuous Signed Distance Field (SDF) for surface reconstruction, while also capturing radar-specific reflective properties. We show that our approach produces smoother, more accurate 3D surface reconstructions compared to existing lidar-based reconstruction methods applied to radar data, and can reconstruct view-dependent radar intensities. We also show that in general, as input point clouds get sparser, neural implicit representations render more faithful surfaces, compared to traditional explicit SDFs and meshing techniques.",
+      "url": "https://arxiv.org/abs/2603.25623v1",
+      "source": "arxiv",
+      "tags": [
+        "SLAM",
+        "数字人",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "Ice chemistry that can be unveiled with the JWST: SynthIceSpec, a synthetic spectrum generator to test spectral limits. Solid CO_2 as a dust thermometer and solid CH_3CN detectability in cold cores",
+      "authors": [
+        "A. Taillard",
+        "P. Gratier",
+        "J. A. Noble",
+        "E. Dartois",
+        "A. C. A. Boogert",
+        "J. Keane",
+        "A. Clement",
+        "A. Maiolo",
+        "A. Fuente",
+        "V. Wakelam"
+      ],
+      "date": "2026-03-26",
+      "abstract": "As the (JWST) pursues its observing journey, several thousands of icy-grain spectra are expected to be measured and analysed. The inventory of ices in particular, via the observations of background sources, is accessible for hundreds of lines of sight (LOSs) per molecular-cloud region, opening the possibility to add strong constraints on the solid phase chemistry in a vast domain of cloud densities. SynthIceSpec is a synthetic infrared (IR) spectrum generator that has been designed as a tool to support observing proposals and to test the outcome of chemical models. It is based on laboratory measurements of pure and mixed ices, where each vibrational component is fitted by a sum of Gaussian profiles. Given an initial ice chemical composition (either set by the user or the outputs of a chemical model), a full JWST spectrum is generated, to which the contribution of silicates; continuum, stellar photospheric absorption bands; and extinction law can be added. For the continuum, stellar photospheric models for a wide range of spectral types can be selected by the program, or, Spectral Energy Distribution (SEDs). We present a few use cases of SynthIceSpec: we probed the impact of dust temperature on CO_2 ice formation using IR data and gas-grain modelling. Next, we used SynthIceSpec to explore the detectability of the main feature of CH_3CN at 4.45 um in a cold core environment with the JWST, which was previously tentatively detected in YSOs. The detection thresholds we derive are reasonably low and observable, but identification is directly impacted by the photosphere absorptions that can greatly hinder identification. For some photostellar types, it could remain feasible. Coupled with the Estimated Time Calculator of the Space Telescope Science Institute, SynthIceSpec can be used to find the optimum observational setup for new observations.",
+      "url": "https://arxiv.org/abs/2603.25619v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "Structure-Preserving Integration for Magnetic Gaussian Wave Packet Dynamics",
+      "authors": [
+        "Sebastian Merk",
+        "Caroline Lasser"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We develop structure-preserving time integration schemes for Gaussian wave packet dynamics associated with the magnetic Schrödinger equation. The variational Dirac--Frenkel formulation yields a finite-dimensional Hamiltonian system for the wave packet parameters, where the presence of a magnetic vector potential leads to a non-separable structure and a modified symplectic geometry. By introducing kinetic momenta through a minimal substitution, we reformulate the averaged dynamics as a Poisson system that closely parallels the classical equations of charged particle motion. This representation enables the construction of Boris-type integrators adapted to the variational setting. In addition, we propose explicit high-order symplectic schemes based on splitting methods and partitioned Runge--Kutta integrators. The proposed methods conserve the quadratic invariants characterizing the Hagedorn parametrization, preserve linear and angular momentum under symmetry assumptions, and exhibit near-conservation of the averaged Hamiltonian over long time intervals. Rigorous error estimates are derived for both the wave packet parameters and observable quantities, with bounds uniform in the semiclassical parameter. Numerical experiments demonstrate the favorable long-time behavior and structure preservation of the integrators.",
+      "url": "https://arxiv.org/abs/2603.25596v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "UNIC: Neural Garment Deformation Field for Real-time Clothed Character Animation",
+      "authors": [
+        "Chengfeng Zhao",
+        "Junbo Qi",
+        "Yulou Liu",
+        "Zhiyang Dou",
+        "Minchen Li",
+        "Taku Komura",
+        "Ziwei Liu",
+        "Wenping Wang",
+        "Yuan Liu"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Simulating physically realistic garment deformations is an essential task for virtual immersive experience, which is often achieved by physics simulation methods. However, these methods are typically time-consuming, computationally demanding, and require costly hardware, which is not suitable for real-time applications. Recent learning-based methods tried to resolve this problem by training graph neural networks to learn the garment deformation on vertices, which, however, fail to capture the intricate deformation of complex garment meshes with complex topologies. In this paper, we introduce a novel neural deformation field-based method, named UNIC, to animate the garments of an avatar in real time, given the motion sequences. Our key idea is to learn the instance-specific neural deformation field to animate the garment meshes. Such an instance-specific learning scheme does not require UNIC to generalize to new garments but only to new motion sequences, which greatly reduces the difficulty in training and improves the deformation quality. Moreover, neural deformation fields map the 3D points to their deformation offsets, which not only avoids handling topologies of the complex garments but also injects a natural smoothness constraint in the deformation learning. Extensive experiments have been conducted on various kinds of garment meshes to demonstrate the effectiveness and efficiency of UNIC over baseline methods, making it potentially practical and useful in real-world interactive applications like video games.",
+      "url": "https://arxiv.org/abs/2603.25580v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染",
+        "4D/动态",
+        "数字人"
+      ]
+    },
+    {
+      "title": "Atomic-Scale Insights into Copper Corrosion in Acidic Environment through Cryogenic Atom Probe Tomography of 3D-Electrodeposited Microcorrosion Cell",
+      "authors": [
+        "Lalith Kumar Bhaskar",
+        "Sung-Gyu Kang",
+        "Oliver R. Waszkiewicz",
+        "Finn Giuliani",
+        "Baptiste Gault",
+        "Mary P. Ryan",
+        "Roger C. Newman",
+        "Gerhard Dehm",
+        "Rajaprakash Ramachandramoorthy",
+        "Ayman A. El-Zoka"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Corrosion originates from atomistic reactions occurring at dynamic solid liquid interfaces; however, direct experimental observation of these reactions has remained elusive due to the inability to preserve transient interfacial states during characterization. To refine corrosion models, advanced techniques capable of analyzing corrosion interfaces at the atomic scale are essential. Recent advancements in cryogenic atom probe tomography (cryoAPT) enabled 3D nanoscale analysis of frozen liquid metal interfaces. However, challenges remain in sample preparation for cryoAPT on metals undergoing corrosion. This study introduces a microcorrosion cell fabricated using localized electrodeposition in liquid (LEL), enabling atomic scale capture of liquid metal reactions by integrating picoliter scale electrolytes encapsulated within sealed metallic microvessels, subsequently analyzed using cryoAPT. This approach enables 3D, nanoscale mapping of corrosion reactions with simultaneous spatial, chemical, and temporal resolution. As a model system, copper exposed to aerated dilute sulfuric acid reveals temperature and time dependent interfacial evolution, including nanoscale clustering of copper sulfate species, enhanced ion pairing at elevated temperature, and the emergence of transient carbon based interfacial complexes inaccessible to conventional characterization methods. Beyond copper corrosion, the presented microcorrosion cell architecture establishes a strategy for interrogating confined electrochemical and degradation processes across a wide range of material liquid systems, using a combination of microfabrication and cryoAPT.",
+      "url": "https://arxiv.org/abs/2603.25556v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "SLAM",
+        "数字人"
+      ]
+    },
+    {
+      "title": "Bayes-SCF: A Bayesian filter to mitigate foreground leakage in the 21-cm power spectrum",
+      "authors": [
+        "Khandakar Md Asif Elahi"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Missing channels in radio-interferometric visibility data can introduce systematic artifacts into the estimated 21-cm power spectrum. A common workaround is to first estimate the two-frequency correlation $C(Δν)$ and then Fourier-transform it to obtain the power spectrum $P(k_\\parallel)$. This procedure yields an unbiased estimate when the signal is statistically homogeneous (ergodic) along the line-of-sight, but it fails in the presence of non-ergodic foregrounds. Smooth Component Filtering (SCF) has recently been proposed as a solution to this problem, in which the dominant non-ergodic (spectrally smooth) component is removed prior to estimating $C(Δν)$. In existing implementations, the smooth component is estimated by convolving the visibilities with a Hann window along the frequency axis. We demonstrate that this Hann-based SCF performs adequately only when foregrounds are extremely spectrally smooth, i.e., when they possess a long frequency-correlation length. In contrast, it breaks down when foregrounds exhibit short correlation lengths, as is frequently encountered in real observations. We introduce a Bayesian extension, Bayes-SCF, based on Gaussian Process (GP) regression, which overcomes this limitation. Bayes-SCF models the smooth component via a covariance function with a fixed correlation length, enabling a controlled and data-driven filtering. Using simulated data, we show that Bayes-SCF robustly recovers the input model 21-cm power spectrum even in the presence of spectrally unsmooth foregrounds. Bayes-SCF is also effective in a delay-spectrum approach. The primary trade-off introduced by the Bayesian framework is increased computational cost; future work will focus on optimizing the algorithm and applying it to real MWA data.",
+      "url": "https://arxiv.org/abs/2603.25543v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "PAWS: Perception of Articulation in the Wild at Scale from Egocentric Videos",
+      "authors": [
+        "Yihao Wang",
+        "Yang Miao",
+        "Wenshuai Zhao",
+        "Wenyan Yang",
+        "Zihan Wang",
+        "Joni Pajarinen",
+        "Luc Van Gool",
+        "Danda Pani Paudel",
+        "Juho Kannala",
+        "Xi Wang",
+        "Arno Solin"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Articulation perception aims to recover the motion and structure of articulated objects (e.g., drawers and cupboards), and is fundamental to 3D scene understanding in robotics, simulation, and animation. Existing learning-based methods rely heavily on supervised training with high-quality 3D data and manual annotations, limiting scalability and diversity. To address this limitation, we propose PAWS, a method that directly extracts object articulations from hand-object interactions in large-scale in-the-wild egocentric videos. We evaluate our method on the public data sets, including HD-EPIC and Arti4D data sets, achieving significant improvements over baselines. We further demonstrate that the extracted articulations benefit downstream tasks, including fine-tuning 3D articulation prediction models and enabling robot manipulation. See the project website at https://aaltoml.github.io/PAWS/.",
+      "url": "https://arxiv.org/abs/2603.25539v1",
+      "source": "arxiv",
+      "tags": [
+        "城市建模",
+        "具身智能",
+        "空间推理"
+      ]
+    },
+    {
+      "title": "A Representation Optimization Dichotomy, Lie-Algebraic Policy Optimization",
+      "authors": [
+        "Sooraj KC",
+        "Vivek Mishra"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Structured reinforcement learning and stochastic optimization often involve parameters evolving on matrix Lie groups such as rotations and rigid-body transformations. We establish a representation-optimization dichotomy for Lie-algebra-parameterized Gaussian policy objectives in the Lie Group MDP class: the gradient Lipschitz constant L(R), governing step size, convergence, and sample complexity of first-order methods, depends only on the algebraic type of g, uniformly over all objectives, independent of reward or transition structure. Specifically, L = O(1) for compact g (e.g., so(n), su(n)), and L = Theta(exp(2R)) for g = gl(n), with O(exp(2R)) for all algebras with a hyperbolic element. A key lower bound shows this exponential growth cannot be canceled by interaction between the exponential map and the objective, making the dichotomy intrinsic to the algebra.This yields an algorithmic consequence: for compact algebras, radius-independent smoothness enables O(1/sqrt(T)) convergence using an O(n^2 J) Lie-algebraic projection step instead of O(d_g^3) Fisher inversion. A Kantorovich alignment bound alpha >= 2 kappa / (kappa + 1) provides a computable condition under which this projection approximates natural gradient updates. Experiments on SO(3)^J and SE(3) confirm the theory: constant smoothness for compact algebras, polynomial growth for SE(3), and alignment across condition regimes. The projection step achieves 1.1-1.7x speedup over Cholesky-based Fisher inversion, with increasing gains at larger scales.",
+      "url": "https://arxiv.org/abs/2603.25525v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Interfacial charge-transfer in 3d/5d complex oxide heterostructures",
+      "authors": [
+        "Arun Kumar Jaiswal",
+        "Di Wang",
+        "Ji Soo Lim",
+        "Shruti Roy",
+        "Fabrice Wilhelm",
+        "Vanessa Wollersen",
+        "Andrei Rogalev",
+        "Matthieu Le Tacon",
+        "Dirk Fuchs"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Interfacial charge transfer (ICT) provides a powerful route to engineer electronic phases in correlated oxide heterostructures, yet predictive design principles remain elusive. Here, we systematically investigate superlattices composed of the 5d spin-orbit coupled semimetal SrIrO3 and a series of correlated 3d perovskites (LaMnO3, LaFeO3, LaCoO3, and NdNiO3), thereby establishing a quantitative framework for ICT across 3d/5d interfaces. Combining element-specific x-ray absorption spectroscopy with spatially resolved electron energy loss spectroscopy, a homogeneous electron transfer from the 5d to the 3d layers is directly quantified, reaching up to 0.35 e per unit cell in the cobaltate superlattice. We show that the magnitude of ICT scales linearly with the difference in electronegativity between the transition-metal oxide layers, identifying electronegativity-driven band alignment as the dominant mechanism for ICT. Beyond interfacial doping, we find that strong 3d-5d hybridization induces a complete low-spin to high-spin conversion in the cobaltate layers, demonstrating interface-controlled spin-state engineering without chemical substitution. These results establish electronegativity mismatch as a predictive design parameter for correlated oxide interfaces and provide a materials platform for tailoring band filling, orbital hierarchy, and spin configurations in quantum oxide heterostructures, paving the way towards advanced oxide electronics and next-generation information technologies.",
+      "url": "https://arxiv.org/abs/2603.25514v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "DC-Reg: Globally Optimal Point Cloud Registration via Tight Bounding with Difference of Convex Programming",
+      "authors": [
+        "Wei Lian",
+        "Fei Ma",
+        "Hang Pan",
+        "Zhesen Cui",
+        "Wangmeng Zuo"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Achieving globally optimal point cloud registration under partial overlaps and large misalignments remains a fundamental challenge. While simultaneous transformation ($\\boldsymbolθ$) and correspondence ($\\mathbf{P}$) estimation has the advantage of being robust to nonrigid deformation, its non-convex coupled objective often leads to local minima for heuristic methods and prohibitive convergence times for existing global solvers due to loose lower bounds. To address this, we propose DC-Reg, a robust globally optimal framework that significantly tightens the Branch-and-Bound (BnB) search. Our core innovation is the derivation of a holistic concave underestimator for the coupled transformation-assignment objective, grounded in the Difference of Convex (DC) programming paradigm. Unlike prior works that rely on term-wise relaxations (e.g., McCormick envelopes) which neglect variable interplay, our holistic DC decomposition captures the joint structural interaction between $\\boldsymbolθ$ and $\\mathbf{P}$. This formulation enables the computation of remarkably tight lower bounds via efficient Linear Assignment Problems (LAP) evaluated at the vertices of the search boxes. We validate our framework on 2D similarity and 3D rigid registration, utilizing rotation-invariant features for the latter to achieve high efficiency without sacrificing optimality. Experimental results on synthetic data and the 3DMatch benchmark demonstrate that DC-Reg achieves significantly faster convergence and superior robustness to extreme noise and outliers compared to state-of-the-art global techniques.",
+      "url": "https://arxiv.org/abs/2603.25442v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "可编辑",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "HiSpatial: Taming Hierarchical 3D Spatial Understanding in Vision-Language Models",
+      "authors": [
+        "Huizhi Liang",
+        "Yichao Shen",
+        "Yu Deng",
+        "Sicheng Xu",
+        "Zhiyuan Feng",
+        "Tong Zhang",
+        "Yaobo Liang",
+        "Jiaolong Yang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Achieving human-like spatial intelligence for vision-language models (VLMs) requires inferring 3D structures from 2D observations, recognizing object properties and relations in 3D space, and performing high-level spatial reasoning. In this paper, we propose a principled hierarchical framework that decomposes the learning of 3D spatial understanding in VLMs into four progressively complex levels, from geometric perception to abstract spatial reasoning. Guided by this framework, we construct an automated pipeline that processes approximately 5M images with over 45M objects to generate 3D spatial VQA pairs across diverse tasks and scenes for VLM supervised fine-tuning. We also develop an RGB-D VLM incorporating metric-scale point maps as auxiliary inputs to further enhance spatial understanding. Extensive experiments demonstrate that our approach achieves state-of-the-art performance on multiple spatial understanding and reasoning benchmarks, surpassing specialized spatial models and large proprietary systems such as Gemini-2.5-pro and GPT-5. Moreover, our analysis reveals clear dependencies among hierarchical task levels, offering new insights into how multi-level task design facilitates the emergence of 3D spatial intelligence.",
+      "url": "https://arxiv.org/abs/2603.25411v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "空间推理"
+      ]
+    },
+    {
+      "title": "One-arm probabilities for the two-dimensional metric-graph and discrete Gaussian free field",
+      "authors": [
+        "Yijie Bi",
+        "Yifan Gao",
+        "Xinyi Li"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We study the one-arm probability in the level-set percolation of the discrete and metric-graph Gaussian free field (GFF) defined on a box with Dirichlet boundary conditions. For the metric-graph case, we establish asymptotic estimates on two one-arm probabilities of interest. For the discrete case, we show up-to-constants bounds on the point-to-bulk probability and demonstrate its difference from the metric-graph case.",
+      "url": "https://arxiv.org/abs/2603.25400v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "LaMP: Learning Vision-Language-Action Policies with 3D Scene Flow as Latent Motion Prior",
+      "authors": [
+        "Xinkai Wang",
+        "Chenyi Wang",
+        "Yifu Xu",
+        "Mingzhe Ye",
+        "Fu-Cheng Zhang",
+        "Jialin Tian",
+        "Xinyu Zhan",
+        "Lifeng Zhu",
+        "Cewu Lu",
+        "Lixin Yang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We introduce \\textbf{LaMP}, a dual-expert Vision-Language-Action framework that embeds dense 3D scene flow as a latent motion prior for robotic manipulation. Existing VLA models regress actions directly from 2D semantic visual features, forcing them to learn complex 3D physical interactions implicitly. This implicit learning strategy degrades under unfamiliar spatial dynamics. LaMP addresses this limitation by aligning a flow-matching \\emph{Motion Expert} with a policy-predicting \\emph{Action Expert} through gated cross-attention. Specifically, the Motion Expert generates a one-step partially denoised 3D scene flow, and its hidden states condition the Action Expert without full multi-step reconstruction. We evaluate LaMP on the LIBERO, LIBERO-Plus, and SimplerEnv-WidowX simulation benchmarks as well as real-world experiments. LaMP consistently outperforms evaluated VLA baselines across LIBERO, LIBERO-Plus, and SimplerEnv-WidowX benchmarks, achieving the highest reported average success rates under the same training budgets. On LIBERO-Plus OOD perturbations, LaMP shows improved robustness with an average 9.7% gain over the strongest prior baseline. Our project page is available at https://summerwxk.github.io/lamp-project-page/.",
+      "url": "https://arxiv.org/abs/2603.25399v1",
+      "source": "arxiv",
+      "tags": [
+        "具身智能"
+      ]
+    },
+    {
+      "title": "Enabling ab initio geometry optimization of strongly correlated systems with transferable deep quantum Monte Carlo",
+      "authors": [
+        "P. Bernát Szabó",
+        "Zeno Schätzle",
+        "Frank Noé"
+      ],
+      "date": "2026-03-26",
+      "abstract": "A faithful description of chemical processes requires exploring extended regions of the molecular potential energy surface (PES), which remains challenging for strongly correlated systems. Transferable deep-learning variational Monte Carlo (VMC) offers a promising route by efficiently solving the electronic Schrödinger equation jointly across molecular geometries at consistently high accuracy, yet its stochastic nature renders direct exploration of molecular configuration space nontrivial. Here, we present a framework for highly accurate ab initio exploration of PESs that combines transferable deep-learning VMC with a cost-effective estimation of energies, forces, and Hessians. By continuously sampling nuclear configurations during VMC optimization of electronic wave functions, we obtain transferable descriptions that achieve zero-shot chemical accuracy within chemically relevant distributions of molecular geometries. Throughout the subsequent characterization of molecular configuration space, the PES is evaluated only sparsely, with local approximations constructed by estimating VMC energies and forces at sampled geometries and aggregating the resulting noisy data using Gaussian process regression. Our method enables accurate and efficient exploration of complex PES landscapes, including structure relaxation, transition-state searches, and minimum-energy pathways, for both ground and excited states. This opens the door to studying bond breaking, formation, and large structural rearrangements in systems with pronounced multi-reference character.",
+      "url": "https://arxiv.org/abs/2603.25381v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人"
+      ]
+    },
+    {
+      "title": "Bayesian Learning-Enhanced Navigation with Deep Smoothing for Inertial-Aided Navigation",
+      "authors": [
+        "Nadav Cohen",
+        "Itzik Klein"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Accurate post-processing navigation is essential for applications such as survey and mapping, where the full measurement history can be exploited to refine past state estimates. Fixed-interval smoothing algorithms represent the theoretically optimal solution under Gaussian assumptions. However, loosely coupled INS/GNSS systems fundamentally inherit the systematic position bias of raw GNSS measurements, leaving a persistent accuracy gap that model-based smoothers cannot resolve. To address this limitation, we propose BLENDS, which integrates Bayesian learning with deep smoothing to enhance navigation performance. BLENDS is a a data-driven post-processing framework that augments the classical two-filter smoother with a transformer-based neural network. It learns to modify the filter covariance matrices and apply an additive correction to the smoothed error-state directly within the Bayesian framework. A novel Bayesian-consistent loss jointly supervises the smoothed mean and covariance, enforcing minimum-variance estimates while maintaining statistical consistency. BLENDS is evaluated on two real-world datasets spanning a mobile robot and a quadrotor. Across all unseen test trajectories, BLENDS achieves horizontal position improvements of up to 63% over the baseline forward EKF.",
+      "url": "https://arxiv.org/abs/2603.25364v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "SLAM",
+        "具身智能"
+      ]
+    },
+    {
+      "title": "New bounds for codes over Gaussian integers based on the Mannheim distance",
+      "authors": [
+        "Minjia Shi",
+        "Xuan Wang",
+        "Junmin An",
+        "Jon-Lark Kim"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We study linear codes over Gaussian integers equipped with the Mannheim distance. We develop Mannheim-metric analogues of several classical bounds. We derive an explicit formula for the volume of Mannheim balls, which yields a sphere packing bound and constraints on the parameters of two-error-correcting perfect codes. We prove several other useful bounds, and exhibit families of codes meeting these bounds for some parameters, thereby showing that these bounds are tight. We also discuss self-dual codes over Gaussian integers and obtain upper bounds on their minimum Mannheim distance for certain parameter regions using a Mannheim version of the Macwilliams-type identity. Finally, we present decoding algorithms for codes over Gaussian integer residue rings. We give examples showing that certain errors which are not correctable under the Hamming metric become correctable under the Mannheim metric.",
+      "url": "https://arxiv.org/abs/2603.25362v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "Image Rotation Angle Estimation: Comparing Circular-Aware Methods",
+      "authors": [
+        "Maximilian Woehrer"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Automatic image rotation estimation is a key preprocessing step in many vision pipelines. This task is challenging because angles have circular topology, creating boundary discontinuities that hinder standard regression methods. We present a comprehensive study of five circular-aware methods for global orientation estimation: direct angle regression with circular loss, classification via angular binning, unit-vector regression, phase-shifting coder, and circular Gaussian distribution. Using transfer learning from ImageNet-pretrained models, we systematically evaluate these methods across sixteen modern architectures by adapting their output heads for rotation-specific predictions. Our results show that probabilistic methods, particularly the circular Gaussian distribution, are the most robust across architectures, while classification achieves the best accuracy on well-matched backbones but suffers training instabilities on others. The best configuration (classification with EfficientViT-B3) achieves a mean absolute error (MAE) of 1.23° (mean across five independent runs) on the DRC-D dataset, while the circular Gaussian distribution with MambaOut Base achieves a virtually identical 1.24° with greater robustness across backbones. Training and evaluating our top-performing method-architecture combinations on COCO 2014, the best configuration reaches 3.71° MAE, improving substantially over prior work, with further improvement to 2.84° on the larger COCO 2017 dataset.",
+      "url": "https://arxiv.org/abs/2603.25351v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人"
+      ]
+    },
+    {
+      "title": "HeSS: Head Sensitivity Score for Sparsity Redistribution in VGGT",
+      "authors": [
+        "Yongsung Kim",
+        "Wooseok Song",
+        "Jaihyun Lew",
+        "Hun Hwangbo",
+        "Jaehoon Lee",
+        "Sungroh Yoon"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Visual Geometry Grounded Transformer (VGGT) has advanced 3D vision, yet its global attention layers suffer from quadratic computational costs that hinder scalability. Several sparsification-based acceleration techniques have been proposed to alleviate this issue, but they often suffer from substantial accuracy degradation. We hypothesize that the accuracy degradation stems from the heterogeneity in head-wise sparsification sensitivity, as the existing methods apply a uniform sparsity pattern across all heads. Motivated by this hypothesis, we present a two-stage sparsification pipeline that effectively quantifies and exploits headwise sparsification sensitivity. In the first stage, we measure head-wise sparsification sensitivity using a novel metric, the Head Sensitivity Score (HeSS), which approximates the Hessian with respect to two distinct error terms on a small calibration set. In the inference stage, we perform HeSS-Guided Sparsification, leveraging the pre-computed HeSS to reallocate the total attention budget-assigning denser attention to sensitive heads and sparser attention to more robust ones. We demonstrate that HeSS effectively captures head-wise sparsification sensitivity and empirically confirm that attention heads in the global attention layers exhibit heterogeneous sensitivity characteristics. Extensive experiments further show that our method effectively mitigates performance degradation under high sparsity, demonstrating strong robustness across varying sparsification levels. Code is available at https://github.com/libary753/HeSS.",
+      "url": "https://arxiv.org/abs/2603.25336v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "开源",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "A High-Flux Source of Cold Strontium with a Loading Rate of $4 \\times 10^{10}$ atoms/s for Open Release",
+      "authors": [
+        "Thomas Walker",
+        "Anna L. Marchant",
+        "Elliot Bentine",
+        "Oliver Buchmueller",
+        "Katherine Clarke",
+        "Christopher Foot",
+        "Leonie Hawkins",
+        "Kenneth M. Hughes",
+        "Kamran Hussain",
+        "Ludovico Iannizzotto-Venezze",
+        "Alice Josset",
+        "Hamza Labiad",
+        "Dillen Lee",
+        "Timothy C. Thornton-Sparkes",
+        "Tristan Valenzuela",
+        "Maurits van der Grinten",
+        "Andrew Vick",
+        "Mark G. Bason",
+        "Charles F. A. Baynham",
+        "Richard Hobson"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We present a high-flux source of cold strontium atoms based on a two-dimensional magneto-optical trap (2D MOT) and a Zeeman slower. We use the source to load a 3D MOT in a separate science chamber, observing a loading rate of $4 \\times 10^{10}$ atoms/s -- to our knowledge, the highest reported loading flux for strontium. To characterise the vacuum pressure in the science chamber, we load the atoms into a magnetic trap and measure a lifetime of between 8 and 24 seconds, depending on oven temperature. Finally, we characterise the atom flux and velocity distributions from the oven and from the 2D MOT source, finding reasonable agreement with models in the free molecular flow regime. Our results show it is possible to readily produce a cold strontium flux at comparable levels to alkali species, at oven temperatures compatible with long-term operation, and at vacuum pressures suitable for state-of-the-art quantum experiments. We make our design available at no cost, to benefit researchers in the quantum community.",
+      "url": "https://arxiv.org/abs/2603.25312v1",
+      "source": "arxiv",
+      "tags": [
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Practical Efficient Global Optimization is No-regret",
+      "authors": [
+        "Jingyi Wang",
+        "Haowei Wang",
+        "Nai-Yuan Chiang",
+        "Juliane Mueller",
+        "Tucker Hartland",
+        "Cosmin G. Petra"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Efficient global optimization (EGO) is one of the most widely used noise-free Bayesian optimization algorithms.It comprises the Gaussian process (GP) surrogate model and expected improvement (EI) acquisition function. In practice, when EGO is applied, a scalar matrix of a small positive value (also called a nugget or jitter) is usually added to the covariance matrix of the deterministic GP to improve numerical stability. We refer to this EGO with a positive nugget as the practical EGO. Despite its wide adoption and empirical success, to date, cumulative regret bounds for practical EGO have yet to be established. In this paper, we present for the first time the cumulative regret upper bound of practical EGO. In particular, we show that practical EGO has sublinear cumulative regret bounds and thus is a no-regret algorithm for commonly used kernels including the squared exponential (SE) and Matérn kernels ($ν>\\frac{1}{2}$). Moreover, we analyze the effect of the nugget on the regret bound and discuss the theoretical implication on its choice. Numerical experiments are conducted to support and validate our findings.",
+      "url": "https://arxiv.org/abs/2603.25311v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "CSI-tuples-based 3D Channel Fingerprints Construction Assisted by MultiModal Learning",
+      "authors": [
+        "Chenjie Xie",
+        "Li You",
+        "Ruirong Chen",
+        "Gaoning He",
+        "Xiqi Gao"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Low-altitude communications can promote the integration of aerial and terrestrial wireless resources, expand network coverage, and enhance transmission quality, thereby empowering the development of sixth-generation (6G) mobile communications. As an enabler for low-altitude transmission, 3D channel fingerprints (3D-CF), also referred to as the 3D radio map or 3D channel knowledge map, are expected to enhance the understanding of communication environments and assist in the acquisition of channel state information (CSI), thereby avoiding repeated estimations and reducing computational complexity. In this paper, we propose a modularized multimodal framework to construct 3D-CF. Specifically, we first establish the 3D-CF model as a collection of CSI-tuples based on Rician fading channels, with each tuple comprising the low-altitude vehicle's (LAV) positions and its corresponding statistical CSI. In consideration of the heterogeneous structures of different prior data, we formulate the 3D-CF construction problem as a multimodal regression task, where the target channel information in the CSI-tuple can be estimated directly by its corresponding LAV positions, together with communication measurements and geographic environment maps. Then, a high-efficiency multimodal framework is proposed accordingly, which includes a correlation-based multimodal fusion (Corr-MMF) module, a multimodal representation (MMR) module, and a CSI regression (CSI-R) module. Numerical results show that our proposed framework can efficiently construct 3D-CF and achieve at least 27.5% higher accuracy than the state-of-the-art algorithms under different communication scenarios, demonstrating its competitive performance and excellent generalization ability. We also analyze the computational complexity and illustrate its superiority in terms of the inference time.",
+      "url": "https://arxiv.org/abs/2603.25288v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "城市建模"
+      ]
+    }
+  ],
+  "hot_topics": [
+    {
+      "title": "Gaussian Splatting – A$AP Rocky \"Helicopter\" music video",
+      "url": "https://radiancefields.com/a-ap-rocky-releases-helicopter-music-video-featuring-gaussian-splatting",
+      "hn_url": "https://news.ycombinator.com/item?id=46670024",
+      "points": 772,
+      "comments": 260,
+      "author": "ChrisArchitect",
+      "date": "2026-01-18",
+      "hn_id": "46670024",
+      "comment": ""
+    },
+    {
+      "title": "SMERF: Streamable Memory Efficient Radiance Fields",
+      "url": "https://smerf-3d.github.io/",
+      "hn_url": "https://news.ycombinator.com/item?id=38632492",
+      "points": 630,
+      "comments": 143,
+      "author": "duckworthd",
+      "date": "2023-12-13",
+      "hn_id": "38632492",
+      "comment": ""
+    },
+    {
+      "title": "\"Nvidia is so far ahead that all the 4090s are nerfed to half speed\"",
+      "url": "https://twitter.com/realGeorgeHotz/status/1868356459542770087",
+      "hn_url": "https://news.ycombinator.com/item?id=42430184",
+      "points": 207,
+      "comments": 176,
+      "author": "BIackSwan",
+      "date": "2024-12-16",
+      "hn_id": "42430184",
+      "comment": ""
+    },
+    {
+      "title": "Show HN: Spark, An advanced 3D Gaussian Splatting renderer for Three.js",
+      "url": "https://sparkjs.dev/",
+      "hn_url": "https://news.ycombinator.com/item?id=44249565",
+      "points": 377,
+      "comments": 86,
+      "author": "dmarcos",
+      "date": "2025-06-11",
+      "hn_id": "44249565",
+      "comment": ""
+    },
+    {
+      "title": "Google is nerfing all Home Minis because mine spied on everything I said",
+      "url": "http://www.androidpolice.com/2017/10/10/google-nerfing-home-minis-mine-spied-everything-said-247/",
+      "hn_url": "https://news.ycombinator.com/item?id=15446206",
+      "points": 257,
+      "comments": 145,
+      "author": "watbe",
+      "date": "2017-10-10",
+      "hn_id": "15446206",
+      "comment": ""
+    },
+    {
+      "title": "Gaussian splatting is pretty cool",
+      "url": "https://aras-p.info/blog/2023/09/05/Gaussian-Splatting-is-pretty-cool/",
+      "hn_url": "https://news.ycombinator.com/item?id=37415478",
+      "points": 324,
+      "comments": 94,
+      "author": "signa11",
+      "date": "2023-09-07",
+      "hn_id": "37415478",
+      "comment": ""
+    }
+  ],
+  "trending_repos": [
+    {
+      "name": "affaan-m/everything-claude-code",
+      "url": "https://github.com/affaan-m/everything-claude-code",
+      "desc": "The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.",
+      "stars": 112058,
+      "weekly_stars": 22821,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "bytedance/deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "desc": "An open-source long-horizon SuperAgent harness that researches, codes, and creates. With the help of sandboxes, memories, tools, skill, subagents and message gateway, it handles different levels of tasks that could take minutes to hours.",
+      "stars": 50030,
+      "weekly_stars": 16126,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "Crosstalk-Solutions/project-nomad",
+      "url": "https://github.com/Crosstalk-Solutions/project-nomad",
+      "desc": "Project N.O.M.A.D, is a self-contained, offline survival computer packed with critical tools, knowledge, and AI to keep you informed and empowered—anytime, anywhere.",
+      "stars": 18166,
+      "weekly_stars": 14631,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "FujiwaraChoki/MoneyPrinterV2",
+      "url": "https://github.com/FujiwaraChoki/MoneyPrinterV2",
+      "desc": "Automate the process of making money online.",
+      "stars": 26660,
+      "weekly_stars": 10352,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "TauricResearch/TradingAgents",
+      "url": "https://github.com/TauricResearch/TradingAgents",
+      "desc": "TradingAgents: Multi-Agents LLM Financial Trading Framework",
+      "stars": 42803,
+      "weekly_stars": 9209,
+      "date": "2026-03-28"
+    }
+  ],
+  "bili_videos": [
+    {
+      "title": "把影视飓风变成模型，会怎样？",
+      "url": "https://www.bilibili.com/video/BV1k85NzMEv4",
+      "author": "影视飓风",
+      "play": 3186694,
+      "danmaku": 7691,
+      "date": 1746694800,
+      "desc": "有没有一种方案，能够留住现实世界的时间和空间，让我们获得像游戏一样自由探索的体验？能够让这样的体验成真的技术，叫做4D高斯，这一次我们把这个技术带到了云冈石窟，想和你一起沉浸式地走进这千年古迹，感受高斯泼溅的独特魅力！如果你喜欢这期视频，请多多支持我们，并把视频分享给你的朋友们一起看看！",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "【较真系列】讲人话-3d gaussian splatting全解(原理+代码+公式)【1】 捏雪球",
+      "url": "https://www.bilibili.com/video/BV1zi421v7Dr",
+      "author": "SY_007",
+      "play": 125315,
+      "danmaku": 383,
+      "date": 1717843527,
+      "desc": "我们希望应用比较人性化的方式，把3dgs讲解清楚。\n其中，我们使用python，将3dgs的cuda部分进行重写。方便大家对这一部分的理解和阅读。\n代码地址：https://github.com/SY-007-Research/3dgs_render_python",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "3DGS_01本地训练环境搭建-高斯泼溅GaussianSplatting保姆教程",
+      "url": "https://www.bilibili.com/video/BV1Gu3uztECe",
+      "author": "XR_1605",
+      "play": 94872,
+      "danmaku": 43,
+      "date": 1751551200,
+      "desc": "本系列教程主要分享高斯泼溅（Gaussian-splatting）模型文件的制作全流程\n本期为第1节：本地训练环境搭建\n本期包含以下子章节：\n00.00废话\n02.55安装vs2019\n05.03安装cuda\n05.42从git获取项目\n08.24配置colmap\n09.58安装conda\n10.57配置运行环境（方法一）\n14.30配置运行环境（方法二）\n21.18预处理和训练数据\n23.09使",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "Remy正式上线，这可能是3D高斯泼溅的终极形态",
+      "url": "https://www.bilibili.com/video/BV1JFstzWE1P",
+      "author": "Remy-3D记录App",
+      "play": 83425,
+      "danmaku": 160,
+      "date": 1761114891,
+      "desc": "今天Remy正式登录鸿蒙应用商城，并对升级到鸿蒙6操作系统的用户开放下载。\n也欢迎大家加入Remy官方QQ交流群，获取Remy最新的消息和动态｜QQ群号：521183043",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "【较真系列】讲人话-NeRF全解（原理+代码+公式）",
+      "url": "https://www.bilibili.com/video/BV1CC411V7oq",
+      "author": "SY_007",
+      "play": 63096,
+      "danmaku": 261,
+      "date": 1712308037,
+      "desc": "我们希望可以用比较人性化的方式，把NeRF吃透。\npdf自取链接：哔哩哔哩工房",
+      "comment": "",
+      "source": "bilibili"
+    }
+  ],
+  "xhs_notes": []
+}

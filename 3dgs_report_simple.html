@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3DGS 交互报告</title>
+<style>
+body { font-family: sans-serif; padding: 40px; background: #111; color: #eee; }
+h1 { color: #06d6d6; }
+.paper { background: #222; border-left: 4px solid #06d6d6; padding: 20px; margin-bottom: 20px; max-width: 800px; }
+.paper-title { font-size: 18px; font-weight: bold; cursor: pointer; color: #ffffff; margin-bottom: 8px; }
+.paper-title:hover { color: #06d6d6; }
+.paper-abstract { font-size: 14px; color: #aaa; line-height: 1.5; margin-top: 12px; }
+.paper-expanded { background: #2a2a2a; padding: 12px; margin-top: 12px; border-radius: 5px; display: none; }
+.controls { margin-top: 12px; display: flex; gap: 10px; }
+.btn { background: #333; color: #fff; border: 1px solid #555; padding: 6px 12px; border-radius: 5px; cursor: pointer; transition: all 0.2s; }
+.btn:hover { background: #06d6d6; color: #111; border-color: #06d6d6; }
+</style>
+</head>
+<body>
+<h1>3D Gaussian Splatting 论文交互版</h1>
+<p>这是精简版，支持展开摘要与扩展信息。</p>
+
+<div class="paper">
+  <div class="paper-title">Mobile-GS: Real-time Gaussian Splatting for Mobile Devices</div>
+  <div class="paper-abstract">
+    提出针对移动设备优化的实时高斯溅射方法 Mobile-GS。原始 3DGS 的高计算量和大存储开销在移动端部署存在显著挑战。本文通过轻量化高斯表示与自适应渲染策略，在移动 GPU 上实现实时高质量渲染，大幅拓宽 3DGS 的应用边界。
+  </div>
+  <div class="paper-expanded">
+    <strong>🧰 技术栈</strong>: PyTorch, CUDA, Metal, OpenGL ES<br>
+    <strong>📂 开源状态</strong>: 暂未开源，预期有官方代码<br>
+    <strong>🔄 适用场景</strong>: 手游AR、XR眼镜、便携扫描仪<br>
+    <strong>📚 引用关联</strong>: 同期相关论文: LiteGS、TinyGaussian
+  </div>
+  <div class="controls">
+    <button class="btn toggle-abstract">📄 展开摘要</button>
+    <button class="btn toggle-expanded">📊 扩展概要</button>
+    <a href="https://arxiv.org/abs/2503.09529" target="_blank"><button class="btn">🌐 查看详情</button></a>
+    <button class="btn search-github">🔍 代码/引用</button>
+  </div>
+</div>
+
+<!-- 可以继续添加更多条目 -->
+
+<script>
+document.querySelector('.toggle-abstract').addEventListener('click', function() {
+  const abstract = document.querySelector('.paper-abstract');
+  abstract.style.display = abstract.style.display === 'block' ? 'none' : 'block';
+  this.textContent = abstract.style.display === 'block' ? '📄 收起摘要' : '📄 展开摘要';
+});
+
+document.querySelector('.toggle-expanded').addEventListener('click', function() {
+  const expanded = document.querySelector('.paper-expanded');
+  expanded.style.display = expanded.style.display === 'block' ? 'none' : 'block';
+  this.textContent = expanded.style.display === 'block' ? '📊 收起概要' : '📊 扩展概要';
+});
+
+document.querySelector('.search-github').addEventListener('click', function() {
+  const title = 'Mobile-GS: Real-time Gaussian Splatting for Mobile Devices';
+  const url = `https://github.com/search?q=${encodeURIComponent(title)}&type=repositories`;
+  window.open(url, '_blank');
+});
+</script>
+
+</body>
+</html>

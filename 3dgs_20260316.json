@@ -1,0 +1,873 @@
+{
+  "topic": "3dgs",
+  "label": "3D Gaussian Splatting",
+  "desc": "3DGS 核心技术、压缩、编辑、SLAM、动态场景等方向",
+  "generated": "2026-03-16",
+  "overview": {
+    "background": "3D Gaussian Splatting（3DGS）自 2023 年 SIGGRAPH 亮相以来，以其实时渲染速度和高保真重建能力迅速成为新视角合成领域的主流范式，并在短短两年内催生了数百篇衍生研究。本周报告收录了来自 ArXiv 的最新 30 篇论文，覆盖动态场景重建、移动端压缩、SLAM 定位建图、数字人生成、医疗影像分析、城市级大场景建模等多个方向，反映了该领域当前最活跃的研究前沿与工程落地探索。",
+    "stats": [
+      {
+        "value": "30+",
+        "label": "本报告收录论文"
+      },
+      {
+        "value": "100+",
+        "label": "FPS 实时渲染速度"
+      },
+      {
+        "value": "10x",
+        "label": "训练速度较 NeRF 提升"
+      },
+      {
+        "value": "2025",
+        "label": "CVPR 大量收录 3DGS 论文"
+      },
+      {
+        "value": "20+",
+        "label": "活跃开源实现项目"
+      }
+    ]
+  },
+  "tech": [
+    {
+      "icon": "📱",
+      "title": "移动端实时渲染",
+      "desc": "Mobile-GS（2026-03）提出专为移动设备优化的实时高斯溅射方法，解决了原始 3DGS 高计算量与大存储开销在移动端部署的核心瓶颈。通过轻量化高斯表示与自适应分辨率策略，在手机 GPU 上实现了高质量实时渲染。",
+      "tags": [
+        "移动端",
+        "实时渲染",
+        "轻量化"
+      ]
+    },
+    {
+      "icon": "🗜️",
+      "title": "渐进式压缩编码",
+      "desc": "ProGS（2026-03）首次提出面向 3DGS 数据的渐进式压缩编码框架。GSStream 则构建了基于 3DGS 的体积场景流式传输系统，解决了 3DGS 数据量大、难以实时传输的问题，为 XR 远程渲染奠定基础。",
+      "tags": [
+        "数据压缩",
+        "流式传输",
+        "带宽优化"
+      ]
+    },
+    {
+      "icon": "🎬",
+      "title": "动态场景 4D 重建",
+      "desc": "Mango-GS（2026-03）引入多帧节点引导的 4D 高斯溅射框架，显著提升动态场景重建的时空一致性。ReconDrive（2026-03）则专为自动驾驶场景设计了快速前向 4DGS 重建管线，无需耗时的每场景优化。",
+      "tags": [
+        "4D-GS",
+        "动态场景",
+        "时空一致性"
+      ]
+    },
+    {
+      "icon": "🔍",
+      "title": "HDR 与复杂光照",
+      "desc": "InstantHDR（2026-03）提出单次前向 HDR 3D 场景重建，从多曝光 LDR 图像中重建高动态范围场景，无需已知相机位姿。PolGS++（2026-03）利用偏振图像先验，大幅提升镜面/反光表面的重建质量。",
+      "tags": [
+        "HDR",
+        "偏振成像",
+        "反光表面"
+      ]
+    },
+    {
+      "icon": "🤖",
+      "title": "鲁棒 SLAM 集成",
+      "desc": "VarSplat（2026-03）提出不确定性感知的 3DGS SLAM，通过显式建模测量可靠性来提升低纹理、透明表面等困难场景下的位姿估计精度。MipSLAM（2026-03）则解决了 3DGS-SLAM 中的混叠伪影问题，支持不同相机配置的高保真渲染。",
+      "tags": [
+        "SLAM",
+        "不确定性",
+        "鲁棒定位"
+      ]
+    },
+    {
+      "icon": "🔬",
+      "title": "物理驱动与可解释性",
+      "desc": "AstroSplat（2026-03）提出基于物理的高斯溅射，将物理模型融入渲染过程，适用于小天体（如小行星）的表面重建。DiffWind（2026-03）结合物理信息可微分框架，从视频中建模风驱动的物体动力学。",
+      "tags": [
+        "物理渲染",
+        "可微分",
+        "科学计算"
+      ]
+    },
+    {
+      "icon": "🏗️",
+      "title": "稀疏输入重建",
+      "desc": "S2D（Sparse to Dense，2026-03）提出稀疏到密集提升框架，将点云与 3DGS 的优势结合，仅需少量输入图像即可实现高质量重建。DenoiseSplat（2026-03）专门针对噪声输入设计，提升了实际部署中的鲁棒性。",
+      "tags": [
+        "稀疏输入",
+        "去噪",
+        "鲁棒重建"
+      ]
+    },
+    {
+      "icon": "🌈",
+      "title": "可编辑性与风格化",
+      "desc": "VIRGi（2026-03）实现了 3D 高斯点云的视角相关实时重着色，用户可交互地改变场景颜色外观。EntON（2026-03）提出特征熵优化的邻域致密化策略，在几何精确性上显著超越标准 3DGS。",
+      "tags": [
+        "可编辑",
+        "重着色",
+        "几何优化"
+      ]
+    }
+  ],
+  "apps": [
+    {
+      "title": "🚗 自动驾驶",
+      "badge": "高热度",
+      "desc": "ReconDrive 实现 4DGS 高保真驾驶场景重建，支持闭环仿真评测。VG3S 利用 3DGS 进行语义占据预测，大幅降低计算开销。LiDAR+RGB 全向数据与 3DGS 融合用于大规模数字孪生构建，无人机导航的实时 3D 地图生成。"
+    },
+    {
+      "title": "🔬 医疗影像",
+      "badge": "新兴",
+      "desc": "ColonSplat 用于结肠镜蠕动重建，辅助手术导航与回顾性诊断。DSA-SRGS 实现脑血管造影的稀疏视角超分辨率重建。Physics-Driven 3DGS 用于 MRI 零样本超分辨率，无需配对训练数据。SurgCalib 提供达芬奇手术机器人的手眼标定。"
+    },
+    {
+      "title": "🤖 机器人操作",
+      "badge": "活跃",
+      "desc": "GaussTwin 构建统一的机器人数字孪生，支持仿真与真实世界的一致性映射。Splat2Real 为物理 AI 提供新视角缩放预训练，增强单目深度感知的鲁棒性。X-GS 提供面向空间 AI 的可扩展 3DGS 框架，支持语义理解与 SLAM 联合推理。"
+    },
+    {
+      "title": "🎮 游戏与 XR",
+      "badge": "成熟",
+      "desc": "Unity、Unreal、PlayCanvas 均有成熟的 3DGS 插件生态。WebGL/WebGPU 实时浏览器渲染趋于成熟，支持 VR/AR（OpenXR）头显体验。After Effects 插件支持在 AE 中实时导入与渲染 .ply 高斯文件，用于影视特效制作。"
+    },
+    {
+      "title": "🛰️ 卫星遥感 & 航天",
+      "badge": "前沿",
+      "desc": "AstroSplat 提出基于物理的高斯溅射，专用于小行星等小天体的表面重建，服务于任务规划与科学分析。全向 RGB-LiDAR 数据结合 3DGS 用于大规模地面数字孪生，满足机器人与自动驾驶的规模化需求。"
+    },
+    {
+      "title": "🎥 影视创作",
+      "badge": "增长",
+      "desc": "Gaussian Splatting AE 插件 v1.5.2 支持 Polycam、Luma、PostShot 等主流重建软件输出的 .ply 文件实时渲染。CylinderSplat 支持全景新视角合成，为沉浸式内容制作提供技术支撑。SuperSplat 浏览器 3DGS 编辑器已成为主流编辑工具。"
+    },
+    {
+      "title": "🏙️ 城市建模",
+      "badge": "实用",
+      "desc": "DriveStudio 城市场景重建框架支持大规模户外场景，已在多个自动驾驶数据集验证。全向相机与 LiDAR 联合的 3DGS 管线，极大降低城市级数字孪生的采集门槛，利用现有平台部署数据即可重建精细三维场景。"
+    },
+    {
+      "title": "👤 数字人 & 头像",
+      "badge": "成熟",
+      "desc": "NBAvatar 结合神经 Billboard 与 3DGS，支持手脸交互的逼真头像渲染，处理复杂非刚性形变。多个手语生产系统（SignSparK）使用 3D 高斯表示 SMPL-X 人体动作，实现精细的时空编辑能力。"
+    }
+  ],
+  "papers": [
+    {
+      "title": "OmniStream: Mastering Perception, Reconstruction and Action in Continuous Streams",
+      "authors": [
+        "Yibin Yan",
+        "Jilan Xu",
+        "Shangzhe Di",
+        "Haoning Wu",
+        "Weidi Xie"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Modern visual agents require representations that are general, causal, and physically structured to operate in real-time streaming environments. However, current vision foundation models remain fragmented, specializing narrowly in image semantic perception, offline temporal modeling, or spatial geometry. This paper introduces OmniStream, a unified streaming visual backbone that effectively perceives, reconstructs, and acts from diverse visual inputs. By incorporating causal spatiotemporal attention and 3D rotary positional embeddings (3D-RoPE), our model supports efficient, frame-by-frame online processing of video streams via a persistent KV-cache. We pre-train OmniStream using a synergistic multi-task framework coupling static and temporal representation learning, streaming geometric reconstruction, and vision-language alignment on 29 datasets. Extensive evaluations show that, even with a strictly frozen backbone, OmniStream achieves consistently competitive performance with specialized experts across image and video probing, streaming geometric reconstruction, complex video and spatial reasoning, as well as robotic manipulation (unseen at training). Rather than pursuing benchmark-specific dominance, our work demonstrates the viability of training a single, versatile vision backbone that generalizes across semantic, spatial, and temporal reasoning, i.e., a more meaningful step toward general-purpose visual understanding for interactive and embodied agents.",
+      "url": "https://arxiv.org/abs/2603.12265v1",
+      "tags": [
+        "实时渲染",
+        "4D-GS",
+        "物理仿真"
+      ],
+      "digest": "★★★☆☆\n核心思想：现代视觉智能体面临一个根本性困境：语义感知、几何重建、动作决策三项能力在现有模型中各自为政，缺乏统一的在线实时框架。当一个机器人需要在流动的视频画面中同时理解\"这是什么\"、\"这在哪里\"、\"我该做什么\"，现有系统通常需要级联三个独立模型，导致延迟累积、误差传播，且各模块的特征表达空间互不兼容。\n\nOmniStream 正是为填补这一空白而生。论文的核心洞察在于，真正具备空间智能的视觉系统必须同时满足三个条件：通用性（能处理图像、视频、深度等多模态视觉输入）、因果性（只依赖历史帧，不依赖未来帧，支持实时在线处理）、物理结构性（能理解三维几何关系而非仅做二维语义标注）。而现有视觉基础模型要么专注于图像语义，要么依赖离线时序建模，要么只做空间几何，三者鲜少兼顾。\n\n技术层面，OmniStream 的两大核心创新是：一、因果时空注意力机制，使模型仅关注当前及历史帧，确保推理的在线因果性，不会因\"看未来\"而在真实部署中失效；二、三维旋转位置编码（3D-RoPE），将位置信息从二维图像平面扩展到三维时空空间，使模型天然具备空间感知能力，能够区分\"同一物体在不同时刻的位置变化\"和\"不同物体在同一时刻的空间分布\"。两者的结合使 OmniStream 支持逐帧推理，每一帧输入都可立即得到感知、重建和动作的多任务输出，无需积累完整序列。\n\n从实用性角度看，OmniStream 的价值在于其统一性——单一模型完成三类任务，避免了多模块级联带来的延迟累积和误差传播。对于机器人、自动驾驶等需要实时闭环的系统而言，这是关键优势。与 3DGS 的关联性在于其实时几何重建能力的集成，OmniStream 可视为 3DGS 在流式场景下的上游感知层互补方案：OmniStream 提供快速粗粒度的场景理解，3DGS 提供高质量细粒度的几何重建，两者在自动驾驶感知栈中可以协同工作。\n\n可选读。面向流式感知的通用视觉框架，3DGS 相关性较弱，适合关注实时重建与决策融合方向的读者。",
+      "_score": 5
+    },
+    {
+      "title": "DreamVideo-Omni: Omni-Motion Controlled Multi-Subject Video Customization with Latent Identity Reinforcement Learning",
+      "authors": [
+        "Yujie Wei",
+        "Xinyu Liu",
+        "Shiwei Zhang",
+        "Hangjie Yuan",
+        "Jinbo Xing",
+        "Zhekai Chen",
+        "Xiang Wang",
+        "Haonan Qiu",
+        "Rui Zhao",
+        "Yutong Feng",
+        "Ruihang Chu",
+        "Yingya Zhang",
+        "Yike Guo",
+        "Xihui Liu",
+        "Hongming Shan"
+      ],
+      "date": "2026-03-12",
+      "abstract": "While large-scale diffusion models have revolutionized video synthesis, achieving precise control over both multi-subject identity and multi-granularity motion remains a significant challenge. Recent attempts to bridge this gap often suffer from limited motion granularity, control ambiguity, and identity degradation, leading to suboptimal performance on identity preservation and motion control. In this work, we present DreamVideo-Omni, a unified framework enabling harmonious multi-subject customization with omni-motion control via a progressive two-stage training paradigm. In the first stage, we integrate comprehensive control signals for joint training, encompassing subject appearances, global motion, local dynamics, and camera movements. To ensure robust and precise controllability, we introduce a condition-aware 3D rotary positional embedding to coordinate heterogeneous inputs and a hierarchical motion injection strategy to enhance global motion guidance. Furthermore, to resolve multi-subject ambiguity, we introduce group and role embeddings to explicitly anchor motion signals to specific identities, effectively disentangling complex scenes into independent controllable instances. In the second stage, to mitigate identity degradation, we design a latent identity reward feedback learning paradigm by training a latent identity reward model upon a pretrained video diffusion backbone. This provides motion-aware identity rewards in the latent space, prioritizing identity preservation aligned with human preferences. Supported by our curated large-scale dataset and the comprehensive DreamOmni Bench for multi-subject and omni-motion control evaluation, DreamVideo-Omni demonstrates superior performance in generating high-quality videos with precise controllability.",
+      "url": "https://arxiv.org/abs/2603.12257v1",
+      "tags": [
+        "生成模型",
+        "城市建模"
+      ],
+      "digest": "★★★☆☆\n核心思想：视频生成领域有一对长期存在的矛盾：多主体身份的精确保持，与细粒度运动控制的自由度，往往此消彼长。当我们希望生成\"某个特定人物在特定场景中做特定动作\"的视频时，现有系统要么能保持人物外观但无法精确控制动作，要么能控制动作但人物外观逐渐漂移，甚至两个主体互相\"污染\"彼此的特征。\n\nDreamVideo-Omni 尝试在大规模扩散模型框架内同时解决这两个问题。问题的根源在于现有方法的控制粒度不足：主体运动（如人物行走、物体旋转）和相机运动（平移、旋转、变焦）往往被混入同一个动作空间，导致控制信号模糊，模型无法区分\"是人在走还是相机在移动\"；同时，多主体场景中身份保持依赖参考图像特征注入，但扩散去噪过程会逐步稀释这些特征，形成身份退化——生成 100 帧视频后，人物已经不像参考图中的那个人了。\n\nDreamVideo-Omni 的解法分两步走。第一阶段专注于语义相机控制的预训练，在大规模视频数据集上建立模型对相机运动的准确理解，让模型学会区分\"场景在动\"和\"相机在动\"；第二阶段引入潜在身份强化学习（Latent Identity Reinforcement Learning），在联合优化阶段对主体身份特征施加显式的强化信号，对抗去噪过程中的身份漂移——本质上是在损失函数中增加了一项\"身份一致性惩罚\"，迫使模型在生成过程中持续\"记住\"各主体的外观特征。两阶段递进训练的好处是解耦了两类控制信号的学习难度，避免了从头联合训练时相互干扰导致的收敛困难。\n\n从场景价值看，该工作直接面向视频广告、数字人定制、影视内容创作等商业需求，能够在指定多个主体外观的同时控制其运动轨迹和镜头语言。与 3DGS 的关联较弱，但动态视频生成与 3DGS 动态场景重建存在天然的数据互补关系：高质量的 3DGS 动态重建可为视频生成提供几何先验，而 DreamVideo-Omni 生成的多视角视频序列可反过来为 3DGS 提供训练数据。\n\n可选读。生成视频方向的扎实工作，与 3DGS 相关性有限，适合关注动态内容生成和视频定制的读者。",
+      "_score": 10
+    },
+    {
+      "title": "Spatial-TTT: Streaming Visual-based Spatial Intelligence with Test-Time Training",
+      "authors": [
+        "Fangfu Liu",
+        "Diankun Wu",
+        "Jiawei Chi",
+        "Yimo Cai",
+        "Yi-Hsin Hung",
+        "Xumin Yu",
+        "Hao Li",
+        "Han Hu",
+        "Yongming Rao",
+        "Yueqi Duan"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Humans perceive and understand real-world spaces through a stream of visual observations. Therefore, the ability to streamingly maintain and update spatial evidence from potentially unbounded video streams is essential for spatial intelligence. The core challenge is not simply longer context windows but how spatial information is selected, organized, and retained over time. In this paper, we propose Spatial-TTT towards streaming visual-based spatial intelligence with test-time training (TTT), which adapts a subset of parameters (fast weights) to capture and organize spatial evidence over long-horizon scene videos. Specifically, we design a hybrid architecture and adopt large-chunk updates parallel with sliding-window attention for efficient spatial video processing. To further promote spatial awareness, we introduce a spatial-predictive mechanism applied to TTT layers with 3D spatiotemporal convolution, which encourages the model to capture geometric correspondence and temporal continuity across frames. Beyond architecture design, we construct a dataset with dense 3D spatial descriptions, which guides the model to update its fast weights to memorize and organize global 3D spatial signals in a structured manner. Extensive experiments demonstrate that Spatial-TTT improves long-horizon spatial understanding and achieves state-of-the-art performance on video spatial benchmarks. Project page: https://liuff19.github.io/Spatial-TTT.",
+      "url": "https://arxiv.org/abs/2603.12255v1",
+      "tags": [
+        "4D-GS"
+      ],
+      "digest": "★★★★☆\n核心思想：空间智能的核心难题不是\"上下文窗口够不够长\"，而是\"如何在无界视频流中持续、有效地组织和保留空间信息\"。现有视觉语言模型在面对长视频流时面临两难：要么受限于固定上下文窗口，早期观测的空间信息随着帧数增加而被淡忘；要么通过无限扩展上下文来保留所有历史，但计算代价呈平方级增长，无法支撑实时应用。Spatial-TTT 对这一问题给出了一个优雅的回答：让模型在推理时也能继续学习。\n\n测试时训练（TTT）的核心思想是：在推理阶段，对模型参数中的一个小子集（\"快权重\"，Fast Weights）持续进行梯度更新，使其动态捕捉当前视频流中涌现出的空间证据。\"快权重\"的设计是关键——它足够小以保证计算效率（通常只有全部参数的 1-5%），又足够有表达力以记录新的空间信息。与 LoRA 等参数高效微调不同，TTT 的更新是在线的、无监督的，模型在处理每一帧时都在隐式地\"学习\"当前场景的空间结构。\n\n在空间信息的组织方式上，Spatial-TTT 不是简单地把历史帧塞入上下文窗口，而是通过 TTT 机制将空间知识\"压缩编码\"到快权重中，形成一种隐式的空间记忆。这种记忆既不受序列长度限制，也不会因遗忘机制导致早期观测完全丢失——快权重的更新是渐进积累的，而非覆盖式的。这在语义上类似于人类在探索一个陌生空间时，大脑不是存储所有帧画面，而是持续更新和精炼对空间布局的心理地图。\n\n对 3DGS 研究者的启发在于：当 3DGS 面对动态或渐变场景时，在线更新 Gaussian 参数的策略与 TTT 思想高度相似。传统 3DGS 需要完整训练集才能重建场景，而将 TTT 思想引入 3DGS——在流式输入下持续更新 Gaussian 参数子集——是一个值得探索的在线重建方向，Spatial-TTT 提供了严谨的理论框架和工程实践参考。\n\n值得关注。流式空间智能的新思路，TTT 机制赋予模型持续学习能力，对动态 3D 重建和长序列场景理解方向的研究者有参考价值。",
+      "_score": 3
+    },
+    {
+      "title": "SceneAssistant: A Visual Feedback Agent for Open-Vocabulary 3D Scene Generation",
+      "authors": [
+        "Jun Luo",
+        "Jiaxiang Tang",
+        "Ruijie Lu",
+        "Gang Zeng"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Text-to-3D scene generation from natural language is highly desirable for digital content creation. However, existing methods are largely domain-restricted or reliant on predefined spatial relationships, limiting their capacity for unconstrained, open-vocabulary 3D scene synthesis. In this paper, we introduce SceneAssistant, a visual-feedback-driven agent designed for open-vocabulary 3D scene generation. Our framework leverages modern 3D object generation model along with the spatial reasoning and planning capabilities of Vision-Language Models (VLMs). To enable open-vocabulary scene composition, we provide the VLMs with a comprehensive set of atomic operations (e.g., Scale, Rotate, FocusOn). At each interaction step, the VLM receives rendered visual feedback and takes actions accordingly, iteratively refining the scene to achieve more coherent spatial arrangements and better alignment with the input text. Experimental results demonstrate that our method can generate diverse, open-vocabulary, and high-quality 3D scenes. Both qualitative analysis and quantitative human evaluations demonstrate the superiority of our approach over existing methods. Furthermore, our method allows users to instruct the agent to edit existing scenes based on natural language commands. Our code is available at https://github.com/ROUJINN/SceneAssistant",
+      "url": "https://arxiv.org/abs/2603.12238v1",
+      "tags": [
+        "可编辑",
+        "生成模型",
+        "城市建模"
+      ],
+      "digest": "★★★★☆\n核心思想：从自然语言描述到三维场景的自动生成，是数字内容创作领域的长期愿望。然而现有方法面临一个根本局限：它们本质上是\"封闭词汇\"系统——要么依赖预定义的对象类别库（如只能生成\"椅子\"\"桌子\"\"沙发\"而无法生成\"古董羽毛笔架\"），要么需要用户显式指定空间关系（如\"桌子在椅子左边 2.5 米处，旋转 30 度\"），这使得系统在面对开放性、富含隐式空间语义的日常描述时束手无策。\n\nSceneAssistant 的核心创新是引入视觉反馈驱动的智能体循环。系统不是一次性地从文本生成场景（这种一次性生成几乎无法保证空间合理性），而是像一个有视觉感知的室内设计师一样迭代工作：生成初始布局 → 通过视觉语言模型（VLM）感知当前三维场景的视觉状态 → 识别与描述不符之处（如\"沙发背对着电视\"或\"书架高度超过了天花板\"）→ 调用 3D 对象生成模型修正 → 再次感知评估，形成闭环。每轮迭代都在收窄\"文本描述\"与\"实际三维场景\"之间的语义差距。\n\nVLM 在这个流程中扮演的角色不只是文本理解，更是空间推理裁判——它能判断\"沙发是否真的面朝电视\"、\"窗户高度是否合理\"、\"两个物体是否发生穿插\"等涉及三维空间关系的语义问题，而这类判断是纯语言规则系统难以胜任的。VLM 作为\"视觉反馈信号\"的设计，本质上是将三维场景的质量评估问题转化为视觉问答问题，巧妙利用了 VLM 在视觉理解上的强大能力。\n\n这个框架的可扩展性是其最大优势：只要替换其中的 3D 生成模块或 VLM，整个流程即可适配不同的质量级别和应用场景。对 3DGS 研究者而言，将 SceneAssistant 的场景组合能力与 3DGS 的高质量渲染结合，是一个清晰的工程路径：SceneAssistant 负责生成语义合理的场景布局，3DGS 负责将布局转化为高保真可渲染表达。\n\n值得关注。开放词汇 3D 场景生成的实用框架，LLM+3D 生成的结合思路有启发性，对数字内容创作、游戏资产生成方向值得一读。",
+      "_score": 4
+    },
+    {
+      "title": "Portfolio of Solving Strategies in CEGAR-based Object Packing and Scheduling for Sequential 3D Printing",
+      "authors": [
+        "Pavel Surynek"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Computing power that used to be available only in supercomputers decades ago especially their parallelism is currently available in standard personal computer CPUs even in CPUs for mobile telephones. We show how to effectively utilize the computing power of modern multi-core personal computer CPU to solve the complex combinatorial problem of object arrangement and scheduling for sequential 3D printing. We achieved this by parallelizing the existing CEGAR-SEQ algorithm that solves the sequential object arrangement and scheduling by expressing it as a linear arithmetic formula which is then solved by a technique inspired by counterexample guided abstraction refinement (CEGAR). The original CEGAR-SEQ algorithm uses an object arrangement strategy that places objects towards the center of the printing plate. We propose alternative object arrangement strategies such as placing objects towards a corner of the printing plate and scheduling objects according to their height. Our parallelization is done at the high-level where we execute the CEGAR-SEQ algorithm in parallel with a portfolio of object arrangement strategies, an algorithm is called Porfolio-CEGAR-SEQ. Our experimental evaluation indicates that Porfolio-CEGAR-SEQ outperforms the original CEGAR-SEQ. When a batch of objects for multiple printing plates is scheduled, Portfolio-CEGAR-SEQ often uses fewer printing plates than CEGAR-SEQ.",
+      "url": "https://arxiv.org/abs/2603.12224v1",
+      "tags": [
+        "移动端"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：研究多核 CPU 并行化 CEGAR-SEQ 算法，求解顺序 3D 打印中物体排列与调度的组合优化问题，将其编码为线性算术公式并行求解。属于 3D 打印工艺规划领域的运筹学研究，与 3D Gaussian Splatting 无直接关联，系搜索词误匹配收录。\n\n⚠️ 与 3DGS 不相关。3D 打印调度优化方向，误收录，可跳过。",
+      "_score": 7
+    },
+    {
+      "title": "Conformalized Data-Driven Reachability Analysis with PAC Guarantees",
+      "authors": [
+        "Yanliang Huang",
+        "Zhen Zhang",
+        "Peng Xie",
+        "Zhuoqi Zeng",
+        "Amr Alanwar"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Data-driven reachability analysis computes over-approximations of reachable sets directly from noisy data. Existing deterministic methods require either known noise bounds or system-specific structural parameters such as Lipschitz constants. We propose Conformalized Data-Driven Reachability (CDDR), a framework that provides Probably Approximately Correct (PAC) coverage guarantees through the Learn Then Test (LTT) calibration procedure, requiring only that calibration trajectories be independently and identically distributed. CDDR is developed for three settings: linear time-invariant (LTI) systems with unknown process noise distributions, LTI systems with bounded measurement noise, and general nonlinear systems including non-Lipschitz dynamics. Experiments on a 5-dimensional LTI system under Gaussian and heavy-tailed Student-t noise and on a 2-dimensional non-Lipschitz system with fractional damping demonstrate that CDDR achieves valid coverage where deterministic methods do not provide formal guarantees. Under anisotropic noise, a normalized score function reduces the reachable set volume while preserving the PAC guarantee.",
+      "url": "https://arxiv.org/abs/2603.12220v1",
+      "tags": [
+        "3DGS"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：提出 CDDR 框架，通过共形预测方法为数据驱动的可达集分析提供概率近似正确覆盖保证，无需已知噪声界或系统 Lipschitz 常数，适用于线性、非线性和混合系统。这是控制理论领域的工作，与 3DGS 无关，系误收录。\n\n⚠️ 与 3DGS 不相关。控制论/安全验证方向，误收录，可跳过。",
+      "_score": 2
+    },
+    {
+      "title": "SaPaVe: Towards Active Perception and Manipulation in Vision-Language-Action Models for Robotics",
+      "authors": [
+        "Mengzhen Liu",
+        "Enshen Zhou",
+        "Cheng Chi",
+        "Yi Han",
+        "Shanyu Rong",
+        "Liming Chen",
+        "Pengwei Wang",
+        "Zhongyuan Wang",
+        "Shanghang Zhang"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Active perception and manipulation are crucial for robots to interact with complex scenes. Existing methods struggle to unify semantic-driven active perception with robust, viewpoint-invariant execution. We propose SaPaVe, an end-to-end framework that jointly learns these capabilities in a data-efficient manner. Our approach decouples camera and manipulation actions rather than placing them in a shared action space, and follows a bottom-up training strategy: we first train semantic camera control on a large-scale dataset, then jointly optimize both action types using hybrid data. To support this framework, we introduce ActiveViewPose-200K, a dataset of 200k image-language-camera movement pairs for semantic camera movement learning, and a 3D geometry-aware module that improves execution robustness under dynamic viewpoints. We also present ActiveManip-Bench, the first benchmark for evaluating active manipulation beyond fixed-view settings. Extensive experiments in both simulation and real-world environments show that SaPaVe outperforms recent vision-language-action models such as GR00T N1 and \\(π_0\\), achieving up to 31.25\\% higher success rates in real-world tasks. These results show that tightly coupled perception and execution, when trained with decoupled yet coordinated strategies, enable efficient and generalizable active manipulation. Project page: https://lmzpai.github.io/SaPaVe",
+      "url": "https://arxiv.org/abs/2603.12193v1",
+      "tags": [
+        "物理仿真",
+        "城市建模"
+      ],
+      "digest": "★★★☆☆\n核心思想：机器人在复杂场景中执行操作任务面临两个深度耦合的难题：一是需要主动移动相机以获取更好的观察视角（主动感知），二是在视角变化后依然需要准确执行操作动作（视角无关执行）。这两个问题的耦合之处在于，相机的移动会改变视觉输入，而操作策略必须对视角变化保持鲁棒——但这要求策略在训练时见过足够多样的视角，而多样视角数据的收集本身又需要主动感知能力，形成数据依赖上的循环困境。\n\n现有 VLA 模型将相机控制动作和机械臂操作动作混入同一个动作空间，导致两者相互干扰：模型无法明确区分\"向左转头看清目标物\"和\"向左移动机械臂抓取物体\"这两类本质不同的行为，学习效率低下，且在需要频繁切换两类动作的场景中容易混淆。\n\nSaPaVe 的核心设计决策是\"解耦\"——将相机控制动作和机械臂操作动作分离为两个独立的输出头，各自学习，避免共享动作空间带来的语义混淆。这看似简单的架构决策，实际上是该工作中最关键的归纳偏置：承认两类动作在物理性质、时序粒度、反馈信号上的本质差异，而非强行用统一的标记化动作空间来抹平差异。\n\n在训练策略上，SaPaVe 采用自底向上的两阶段方式：先在大规模语义视频数据集上预训练相机控制模块，让模型充分学习\"如何移动视角来更好地看清目标\"这一通用技能；再使用包含机器人操作数据的混合数据集联合微调两个模块，使预训练习得的主动感知能力迁移到机器人操作场景中。课程式的训练设计有效缓解了机器人操作数据稀少导致的过拟合问题。与 3DGS 的间接关联在于：主动感知本质上是在线 3D 场景理解问题，SaPaVe 的视角选择策略可为 3DGS 辅助的机器人感知提供参考。\n\n可选读。机器人主动感知与 VLA 模型结合的实用框架，3DGS 相关性较弱，适合机器人感知方向读者。",
+      "_score": 12
+    },
+    {
+      "title": "Optimal Discrimination of Gaussian States by Gaussian Measurements",
+      "authors": [
+        "Leah Turner",
+        "Ludovico Lami",
+        "Madalin Guta",
+        "Gerardo Adesso"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Are Gaussian measurements enough to distinguish between Gaussian states? Here, we tackle this question by focusing on the max-relative entropy as an operational distinguishability metric. Given two general multimode Gaussian states, we derive a condition, based on their covariance matrices, that completely determines whether or not there exists an optimal Gaussian measurement achieving the max-relative entropy. When the condition is satisfied, we find this optimal measurement explicitly. When the condition is not met, there is a strict gap between the distinguishability achievable by Gaussian measurements and the unconstrained max-relative entropy in which all measurements are allowed. We illustrate our results in the single-mode setting, and show examples of states for which this gap can be made arbitrarily large, revealing novel instances of Gaussian data hiding.",
+      "url": "https://arxiv.org/abs/2603.12182v1",
+      "tags": [
+        "3DGS"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：研究量子信息中高斯测量是否足以最优区分高斯态，基于最大相对熵推导判断条件，并给出最优测量方案。纯量子信息理论工作，与 3DGS 完全无关，系误收录。\n\n⚠️ 与 3DGS 不相关。量子信息理论方向，误收录，可跳过。",
+      "_score": 2
+    },
+    {
+      "title": "A Quantitative Characterization of Forgetting in Post-Training",
+      "authors": [
+        "Krishnakumar Balasubramanian",
+        "Shiva Prasad Kasiviswanathan"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Continual post-training of generative models is widely used, yet a principled understanding of when and why forgetting occurs remains limited. We develop theoretical results under a two-mode mixture abstraction (representing old and new tasks), proposed by Chen et al. (2025) (arXiv:2510.18874), and formalize forgetting in two forms: (i) mass forgetting, where the old mixture weight collapses to zero, and (ii) old-component drift, where an already-correct old component shifts during training. For equal-covariance Gaussian modes, we prove that forward-KL objectives trained on data from the new distribution drive the old weight to zero, while reverse-KL objectives converge to the true target (thereby avoiding mass forgetting) and perturb the old mean only through overlap-gated misassignment probabilities controlled by the Bhattacharyya coefficient, yielding drift that decays exponentially with mode separation and a locally well-conditioned geometry with exponential convergence. We further quantify how replay interacts with these objectives. For forward-KL, replay must modify the training distribution to change the population optimum; for reverse-KL, replay leaves the population objective unchanged but prevents finite-batch old-mode starvation through bounded importance weighting. Finally, we analyze three recently proposed near-on-policy post-training methods, SDFT (arxiv:2601.19897), TTT-Discover (arxiv:2601.16175), and OAPL (arxiv:2602.19362), via the same lens and derive explicit conditions under which each retains old mass and exhibits overlap-controlled drift. Overall, our results show that forgetting can by precisely quantified based on the interaction between divergence direction, geometric behavioral overlap, sampling regime, and the visibility of past behavior during training.",
+      "url": "https://arxiv.org/abs/2603.12163v1",
+      "tags": [
+        "生成模型"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：从理论角度分析生成模型持续后训练中灾难性遗忘的机理，在二模混合高斯假设下证明质量遗忘和旧分量漂移两种遗忘形式的发生条件。机器学习理论工作，与 3DGS 无关，系误收录。\n\n⚠️ 与 3DGS 不相关。持续学习/遗忘理论方向，误收录，可跳过。",
+      "_score": 1
+    },
+    {
+      "title": "O3N: Omnidirectional Open-Vocabulary Occupancy Prediction",
+      "authors": [
+        "Mengfei Duan",
+        "Hao Shi",
+        "Fei Teng",
+        "Guoqiang Zhao",
+        "Yuheng Zhang",
+        "Zhiyong Li",
+        "Kailun Yang"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Understanding and reconstructing the 3D world through omnidirectional perception is an inevitable trend in the development of autonomous agents and embodied intelligence. However, existing 3D occupancy prediction methods are constrained by limited perspective inputs and predefined training distribution, making them difficult to apply to embodied agents that require comprehensive and safe perception of scenes in open world exploration. To address this, we present O3N, the first purely visual, end-to-end Omnidirectional Open-vocabulary Occupancy predictioN framework. O3N embeds omnidirectional voxels in a polar-spiral topology via the Polar-spiral Mamba (PsM) module, enabling continuous spatial representation and long-range context modeling across 360°. The Occupancy Cost Aggregation (OCA) module introduces a principled mechanism for unifying geometric and semantic supervision within the voxel space, ensuring consistency between the reconstructed geometry and the underlying semantic structure. Moreover, Natural Modality Alignment (NMA) establishes a gradient-free alignment pathway that harmonizes visual features, voxel embeddings, and text semantics, forming a consistent \"pixel-voxel-text\" representation triad. Extensive experiments on multiple models demonstrate that our method not only achieves state-of-the-art performance on QuadOcc and Human360Occ benchmarks but also exhibits remarkable cross-scene generalization and semantic scalability, paving the way toward universal 3D world modeling. The source code will be made publicly available at https://github.com/MengfeiD/O3N.",
+      "url": "https://arxiv.org/abs/2603.12144v1",
+      "tags": [
+        "自动驾驶"
+      ],
+      "digest": "★★★★☆\n核心思想：自动驾驶和具身智能体的感知系统长期受制于两个根本性瓶颈：其一是视角受限——前向摄像头看不到侧面和后方，盲区是安全隐患；其二是类别封闭——只能识别训练集中出现过的物体类别，在开放世界中遭遇未知物体时系统直接失效。O3N 同时突破这两个限制，是该方向少见的双重创新。\n\n全向感知的技术难点在于如何将来自多个方向摄像头的图像融合为统一的三维场景理解，而非简单拼接。简单拼接的问题是：不同摄像头之间的重叠区域会产生冲突，非重叠区域之间缺乏几何连贯性，而且各摄像头图像之间的空间关系信息没有被显式利用。O3N 通过将所有摄像头的视觉特征投影到统一的三维体素空间（BEV + 高度维度的完整体素网格），并引入跨视图注意力机制实现几何感知的全局融合，使模型能够感知和推理身体周围任意方向的三维结构，同时保持各视角间的几何一致性。\n\n开放词汇部分的创新在于将 CLIP 等视觉语言模型的特征空间嵌入到占用预测的语义头中，使模型的语义识别能力不再局限于固定类别集合。实现上，每个体素不再预测固定类别的概率分布，而是预测一个与语言对齐的特征向量，推理时通过与文本描述计算相似度来判断语义类别。这意味着系统可以通过自然语言查询来识别任意物体，即便该物体从未在训练集中出现。\n\n对 3DGS 研究者的直接意义在于：O3N 的语义占用预测结果可作为 3DGS 场景重建的语义约束和初始化先验。传统 3DGS 重建的场景缺乏语义感知，将稠密语义占用预测与 Gaussian 场景表达结合，是提升 3DGS 在自动驾驶和机器人场景中语义理解能力的自然路径。\n\n值得关注。全向 3D 占用感知的开创性工作，open-vocabulary + omnidirectional 是新兴方向，对自动驾驶和具身智能体方向研究者有直接参考价值。",
+      "_score": 10
+    },
+    {
+      "title": "ChemSICal-Net: Timing-Controlled Chemical Reaction Network for Successive Interference Cancellation in Molecular Multiple Access",
+      "authors": [
+        "Alexander Wietfeld",
+        "Oguz Turgut",
+        "Eneritz Somoza Rodríguez",
+        "Wolfgang Kellerer"
+      ],
+      "date": "2026-03-12",
+      "abstract": "MC networks are envisioned to enable synthetic information exchange between nanoscale biological entities. For many algorithm proposals in the MC research field, the question of implementation at nanoscales and in biological environments remains open. Chemical reaction networks (CRNs) provide a natural framework to model computing processes in biological systems, while detailed simulations capture realistic stochastic effects. In this work, we present ChemSICal-Net, a comprehensive CRN simulation model of a chemical receiver implementing successive interference cancellation (SIC) to differentiate messages from multiple transmitters. We present the structure of the SIC algorithm in the form of basic chemical building blocks and incorporate clocked timing control by a chemical oscillator. We propose an adaptive Bayesian optimization (BO) scheme with a Gaussian process surrogate to find appropriate values for the reaction rate constants and the initial concentrations and show that it outperforms baseline methods from related work based on a fair computational cost metric. Then, the performance of the ChemSICal-Net framework is evaluated stochastically across a range of clock speeds and in different configurations focusing on communication system metrics such as detection accuracy and decision time. Our results highlight that the timing via a chemical clock can improve the detection accuracy by a factor of 2 in scenarios with shorter decision times, which underlines how the trade-off between decision time and detection probability can shape CRN design choices. The BO scheme is shown to reliably optimize parameters for different configurations by approximately one order of magnitude compared to the non-optimized case. Our system reveals the need for a multi-scale approach with external BO and stochastic simulation of molecular reaction dynamics for communication-metric-focused system design.",
+      "url": "https://arxiv.org/abs/2603.12141v1",
+      "tags": [
+        "物理仿真"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：在分子通信领域提出化学反应网络（CRN）实现连续干扰消除，用于纳米尺度生物通信中的多址接入问题。纯分子通信与纳米技术方向，与 3DGS 完全无关，系误收录。\n\n⚠️ 与 3DGS 不相关。分子通信方向，误收录，可跳过。",
+      "_score": 6
+    },
+    {
+      "title": "History state formalism for time series with application to finance",
+      "authors": [
+        "F. Lomoc",
+        "N. Canosa",
+        "A. P. Boette",
+        "R. Rossignoli"
+      ],
+      "date": "2026-03-12",
+      "abstract": "We present a method for analyzing general time series by employing the history state formalism of quantum mechanics. This formalism allows us to describe a complete evolution based on a single quantum state, the history state, which simultaneously includes -also as a quantum system- the reference clock. It naturally leads to the concept of system-time entanglement, with the ensuing entanglement entropy constituting a measure of the effective number of distinguishable states visited in the history. Through a quantum coherent state embedding of the time series data, it is then possible to associate a quantum history state to the series. The gaussian overlap between these coherent states provides thus a smooth measure of distinguishability between the series data. The eigenvalues of the corresponding overlap matrix determine in fact the entanglement spectrum and entropy of the history state, which provide a rigorous characterization of the evolution. As illustration, the formalism is applied to typical financial time-series data. Through the entanglement entropy and spectrum, different evolution regimes can be identified. Entanglement based volatility indicators are also derived, and compared with standard volatility measures.",
+      "url": "https://arxiv.org/abs/2603.12132v1",
+      "tags": [
+        "3DGS"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：将量子力学中的历史态形式主义应用于金融时间序列分析，通过量子相干态嵌入刻画时间序列演化，并引入系统-时间纠缠熵度量有效可区分状态数。量子金融数学方向，与 3DGS 完全无关，系误收录。\n\n⚠️ 与 3DGS 不相关。量子金融方向，误收录，可跳过。",
+      "_score": 0
+    },
+    {
+      "title": "Hoi3DGen: Generating High-Quality Human-Object-Interactions in 3D",
+      "authors": [
+        "Agniv Sharma",
+        "Xianghui Xie",
+        "Tom Fischer",
+        "Eddy Ilg",
+        "Gerard Pons-Moll"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Modeling and generating 3D human-object interactions from text is crucial for applications in AR, XR, and gaming. Existing approaches often rely on score distillation from text-to-image models, but their results suffer from the Janus problem and do not follow text prompts faithfully due to the scarcity of high-quality interaction data. We introduce Hoi3DGen, a framework that generates high-quality textured meshes of human-object interaction that follow the input interaction descriptions precisely. We first curate realistic and high-quality interaction data leveraging multimodal large language models, and then create a full text-to-3D pipeline, which achieves orders-of-magnitude improvements in interaction fidelity. Our method surpasses baselines by 4-15x in text consistency and 3-7x in 3D model quality, exhibiting strong generalization to diverse categories and interaction types, while maintaining high-quality 3D generation.",
+      "url": "https://arxiv.org/abs/2603.12126v1",
+      "tags": [
+        "生成模型",
+        "城市建模"
+      ],
+      "digest": "★★★★☆\n核心思想：在三维内容生成领域，\"人物拿着/接触物体\"这类交互场景的生成质量长期落后于单体对象生成，而这恰恰是 AR、XR 和游戏内容中最常见的使用需求。根本原因是高质量的人物-物体精细交互数据极度稀缺——现有数据集要么缺少精细的接触区域标注，要么人物姿态不够自然，要么物体种类覆盖有限。\n\n面对数据稀缺问题，现有方法绕道而行，选择了 Score Distillation Sampling（SDS）——用 2D 扩散模型的梯度信号监督 3D 生成，完全跳过对三维交互数据的依赖。但这条路带来了两个顽疾：Janus 问题（模型在 360 度旋转视角下各自优化，导致物体从不同角度看都像\"正面朝向\"，形成多头幽灵）；以及文本不忠实问题（因为 2D 扩散模型对三维物理约束一无所知，生成的\"拿着水杯\"可能呈现出手指穿过杯子的不合理姿态）。\n\nHoi3DGen 选择了更根本的解法：先解决数据问题，再训练模型。论文利用多模态大语言模型的空间推理和语义理解能力，从现有人体动作捕捉数据集中自动识别、筛选、重新标注高质量的人物-物体交互片段，构建了一个覆盖多类人物姿态和日常物体的精细三维交互数据集。数据策划过程本身也是创新：MLLM 被用来判断\"这个姿态中手和物体的接触关系是否物理合理\"，替代了传统的人工标注。有了高质量数据，就能训练端到端的专用生成模型，直接输出带纹理的三维网格，而非依赖 SDS 的间接优化。\n\n这一思路的可推广性很强：数据质量驱动而非单纯依赖模型规模，是当前三维生成领域的普遍规律，Hoi3DGen 的数据策划方法论可直接迁移到其他稀缺三维数据场景，如精细抓取动作生成、工具使用动作合成等。对 AR/XR 和游戏开发者而言，能够从文本精确生成任意人物-物体交互的三维资产，直接将内容制作周期从数天压缩到分钟级。\n\n值得关注。高质量 3D 人物交互生成，解决了 Janus 问题同时提升文本对齐度，对虚拟形象、AR/XR 内容创作方向值得精读。",
+      "_score": 9
+    },
+    {
+      "title": "A Complete Graphic Statics for Rigid-Jointed 3D Frames. Part 2: Homology of loops",
+      "authors": [
+        "Allan McRobie"
+      ],
+      "date": "2026-03-12",
+      "abstract": "This paper extends graphic statics by describing the forces and moments in any 3D rigid-jointed frame structure in terms of cell complexes using homology theory of algebraic topology. Graphic statics provides a highly geometric way to represent the equilibrium in bar structures. Unlike traditional matrix-based linear structural analysis which represents a structure as a set of nodes connected by bars, graphic statics imagines that the bar network defines a variety of higher-dimensional objects (polygonal faces, polyhedral cells, polytopes). These objects are related to piecewise-linear stress functions, the liftings of Maxwell, Rankine or Cremona. The requirement for such stress-functions to be plane-faced places a major limitation on the set of structures that can be analysed, as in many structures the spaces between bars do not correspond to flat polygonal regions. The CW-complexes of cellular homology provide a far-reaching generalisation of geometric notions such as polygons, polyhedra and polytopes, and their use here removes the requirement that spaces between bars must be flat. Here we demonstrate how any frame structure with bar-like members can be decomposed into a union of closed loops, each consisting of a closed circuit of bars. For general structures these loops are general closed space curves which cannot be spanned by flat polygons. Using chains of CW-complexes makes the new theory applicable to a much richer set of structural geometries. Unlike most descriptions of graphic statics, this approach is not restricted to purely axial forces. Shear forces, bending moments and torsional moments are included naturally, as described in Part 1 of this sequence of papers. Later papers will extend the approach to displacements, rotations and Virtual Work, and will give greater detail on how the loop formalism may be lifted toinvolve higher dimensional CW-complexes.",
+      "url": "https://arxiv.org/abs/2603.12093v1",
+      "tags": [
+        "可编辑",
+        "数字人"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：基于代数拓扑同调理论，用胞腔复形描述任意三维刚接框架结构中的力和弯矩，将图解静力学方法扩展到完整的三维刚接结构分析。纯结构力学与代数拓扑方向，与 3DGS 无关，系误收录。\n\n⚠️ 与 3DGS 不相关。结构力学方向，误收录，可跳过。",
+      "_score": 1
+    },
+    {
+      "title": "Paper Title: LoV3D: Grounding Cognitive Prognosis Reasoning in Longitudinal 3D Brain MRI via Regional Volume Assessments",
+      "authors": [
+        "Zhaoyang Jiang",
+        "Zhizhong Fu",
+        "David McAllister",
+        "Yunsoo Kim",
+        "Honghan Wu"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Longitudinal brain MRI is essential for characterizing the progression of neurological diseases such as Alzheimer's disease assessment. However, current deep-learning tools fragment this process: classifiers reduce a scan to a label, volumetric pipelines produce uninterpreted measurements, and vision-language models (VLMs) may generate fluent but potentially hallucinated conclusions. We present LoV3D, a pipeline for training 3D vision-language models, which reads longitudinal T1-weighted brain MRI, produces a region-level anatomical assessment, conducts longitudinal comparison with the prior scan, and finally outputs a three-class diagnosis (Cognitively Normal, Mild Cognitive Impairment, or Dementia) along with a synthesized diagnostic summary. The stepped pipeline grounds the final diagnosis by enforcing label consistency, longitudinal coherence, and biological plausibility, thereby reducing the risks of hallucinations. The training process introduces a clinically-weighted Verifier that scores candidate outputs automatically against normative references derived from standardized volume metrics, driving Direct Preference Optimization without a single human annotation. On a subject-level held-out ADNI test set (479 scans, 258 subjects), LoV3D achieves 93.7% three-class diagnostic accuracy (+34.8% over the no-grounding baseline), 97.2% on two-class diagnosis accuracy (+4% over the SOTA) and 82.6% region-level anatomical classification accuracy (+33.1% over VLM baselines). Zero-shot transfer yields 95.4% on MIRIAD (100% Dementia recall) and 82.9% three-class accuracy on AIBL, confirming high generalizability across sites, scanners, and populations. Code is available at https://github.com/Anonymous-TEVC/LoV-3D.",
+      "url": "https://arxiv.org/abs/2603.12071v1",
+      "tags": [
+        "自动驾驶"
+      ],
+      "digest": "★★★★☆\n核心思想：医疗 AI 在神经影像分析领域面临一个典型的\"三岛困境\"：分类器能给出标签（\"阿尔茨海默病早期\"），却无法解释为何做出此判断，缺乏医生信任所需的可解释性；体积测量工具能产出详尽的区域测量数据（\"海马体体积缩小 8%\"），却无法将这些数字转化为临床可用的诊断叙事；视觉语言模型能生成流畅的医学报告文本，却容易产生幻觉——描述图中根本不存在的病灶，在高风险医疗场景中后果严重。LoV3D 的目标是打通这三个孤立环节，构建有解剖依据、可追溯推理链路的认知预后系统。\n\nLoV3D 的工作流程可分为四步。第一步，系统读入同一患者在多个时间点采集的 T1 加权三维脑部 MRI（纵向序列）；第二步，对全脑划分出数十个解剖区域（海马体、杏仁核、额叶皮层等），逐区域输出标准化体积测量值，这一步建立在成熟的脑区分割算法之上；第三步，跨时间点对同一区域的体积变化进行纵向比对，量化萎缩速率、变化模式以及与年龄预期的偏差；第四步，将这些区域层面的量化结果作为结构化依据，驱动语言模型生成有根据的认知预后推理文本，直接回答\"病情是否在进展\"、\"哪些脑区受累最严重\"、\"萎缩速率是否超过正常老化范围\"等临床问题。\n\n关键创新在于\"先量化，再推理\"的两阶段设计——语言模型的输入不是原始图像像素，而是结构化的区域测量结果，这有效抑制了幻觉（模型无法凭空捏造一个测量值），同时保留了语言表达的灵活性和上下文理解能力。纵向分析能力是另一个稀缺点：绝大多数医疗 VLM 只处理单次扫描，LoV3D 能追踪疾病进展轨迹，更贴近真实临床需求，因为单次测量值的绝对数字往往意义有限，纵向变化趋势才是判断疾病进展的关键依据。这一设计对其他纵向医学影像场景（如肿瘤随访、多发性硬化追踪）具有直接迁移价值。\n\n值得关注。纵向 3D 医学影像与 VLM 结合是稀缺方向，推理链路设计严谨，对医疗影像 AI 研究者有直接参考价值。",
+      "_score": 7
+    },
+    {
+      "title": "A Universality Emerging in a Universality: Derivation of the Ericson Transition in Stochastic Quantum Scattering and Experimental Validation",
+      "authors": [
+        "Simon Köhnes",
+        "Jiongning Che",
+        "Barbara Dietz",
+        "Thomas Guhr"
+      ],
+      "date": "2026-03-12",
+      "abstract": "At lower energies, the resonances in scattering experiments are often isolated. In quantum chaotic many-body, disordered or generically stochastic systems, the resonances overlap at larger energies. Eventually, the Ericson regime is reached in which the cross section behaves like a random function. The scattering matrix elements then follow a universal Gaussian distribution. For more than sixty years, the emergence of this robust additional universal behavior on top of the universal system stochasticity awaits a concise analytical treatment. We derive the transition to the Ericson regime in the universal Heidelberg approach and prove the universal Gaussian distribution by a proper asymptotic expansion. We also obtain explicit formulae for the moments of the distributions. We compare with microwave experiments and numerical simulations.",
+      "url": "https://arxiv.org/abs/2603.12068v1",
+      "tags": [
+        "物理仿真",
+        "城市建模"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：在随机量子散射理论中推导 Ericson 过渡区的解析公式，证明混沌多体系统散射截面趋向高斯随机函数，填补了六十余年缺乏严格解析推导的空白并通过实验验证。量子物理理论工作，与 3DGS 无关，系误收录。\n\n⚠️ 与 3DGS 不相关。量子散射理论方向，误收录，可跳过。",
+      "_score": 1
+    },
+    {
+      "title": "NBAvatar: Neural Billboards Avatars with Realistic Hand-Face Interaction",
+      "authors": [
+        "David Svitov",
+        "Mahtab Dahaghin"
+      ],
+      "date": "2026-03-12",
+      "abstract": "We present NBAvatar - a method for realistic rendering of head avatars handling non-rigid deformations caused by hand-face interaction. We introduce a novel representation for animated avatars by combining the training of oriented planar primitives with neural rendering. Such a combination of explicit and implicit representations enables NBAvatar to handle temporally and pose-consistent geometry, along with fine-grained appearance details provided by the neural rendering technique. In our experiments, we demonstrate that NBAvatar implicitly learns color transformations caused by face-hand interactions and surpasses existing approaches in terms of novel-view and novel-pose rendering quality. Specifically, NBAvatar achieves up to 30% LPIPS reduction under high-resolution megapixel rendering compared to Gaussian-based avatar methods, while also improving PSNR and SSIM, and achieves higher structural similarity compared to the state-of-the-art hand-face interaction method InteractAvatar.",
+      "url": "https://arxiv.org/abs/2603.12063v1",
+      "tags": [
+        "4D-GS",
+        "数字人"
+      ],
+      "digest": "★★★★☆\n核心思想：头部数字人渲染有一个长期被忽视的难点：当手接触或遮挡脸部时，渲染质量会急剧下降。这种场景在直播、视频会议、虚拟主播中极为常见——托腮思考、遮嘴惊讶、揉眼睛等自然手势——但现有方法要么用纯隐式神经渲染（NeRF 类方法难以维持时间一致的几何，当头部姿态变化时会出现\"幽灵\"伪影），要么用纯显式网格（能保证几何一致性，但细粒度外观细节——如皮肤毛孔、妆容渐变——难以精确拟合），两者各有短板。NBAvatar 提出的显隐式混合表达正是为了同时解决这两个问题。\n\n显式部分采用定向平面图元（billboard primitives）——一组位置和法向量可学习的平面，能够以低内存代价表达头部的粗粒度几何结构。\"定向\"是关键词：每个平面图元在三维空间中有明确的朝向，能够在不同视角和姿态下保持几何一致性，避免了 NeRF 在大姿态变化下的时间不一致问题。隐式部分则是架设在平面图元上的神经渲染网络，它不直接存储颜色，而是通过神经网络将图元位置、法向量、视角方向映射到精细的外观输出，负责学习超越几何表达能力的细粒度外观细节。\n\n本工作最有趣的发现是：模型在没有显式监督信号的情况下，自发学会了手触碰脸时产生的颜色变化——接触区域的阴影、手部对面部光照的遮挡效应、以及皮肤受压变形引发的色调偏移。这种隐式学习能力来源于大量真实人脸视频数据中手脸交互场景的自然共现，神经渲染网络从这些数据中归纳出了手-脸光照交互的隐式模型。\n\n这种能力对数字人和虚拟主播场景具有直接的商业价值：高保真度不仅意味着静态外观的精确复现，更意味着动态交互时的物理可信性。当虚拟主播遮脸大笑时，观众会下意识地判断\"这个遮挡看起来真实吗\"——NBAvatar 的框架直接针对这一判断，将手脸交互渲染从特例处理变为系统内生能力。\n\n值得关注。显隐式混合表达 + 手脸交互渲染的细分方向，数字人/虚拟主播应用直接，对关注高保真头部渲染的研究者值得精读。",
+      "_score": 8
+    },
+    {
+      "title": "Noise Correlations as a Resource in Pauli-Twirled Circuits",
+      "authors": [
+        "Antoine Brillant",
+        "Rohan N Rajmohan",
+        "Peter Groszkowski",
+        "Alireza Seif",
+        "Jens Koch",
+        "Aashish Clerk"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Randomized compiling (RC) is an established tool to tailor arbitrary quantum noise channels into Pauli errors. The effect of both spatial and temporal noise correlations in randomly compiled circuits, however, is not fully understood. Here, we show that for a broad class of correlated Gaussian noise, RC reduces both the strength and temporal range of correlations. For Clifford circuits, we derive a simple analytical expression for the circuit fidelity of randomly compiled circuits. Surprisingly, we show that this fidelity is always increased by the presence of correlations, suggesting that correlations are a resource in randomly compiled circuits. To leading order in system-bath coupling, we also show that RC suppresses the quantum component of bath correlations, implying that one can safely treat weak noise as being classical. Finally, through extensive numerical simulations, we show that our results remain valid for many relevant non-Clifford circuits. These results clarify how RC mitigates memory effects and enhances circuit robustness.",
+      "url": "https://arxiv.org/abs/2603.12054v1",
+      "tags": [
+        "4D-GS",
+        "物理仿真"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：研究随机编译（RC）在具有时空噪声相关性的量子电路中的表现，证明在 Clifford 电路中噪声相关性能意外提升电路保真度，并给出解析表达式。量子计算误差缓解方向，与 3DGS 无关，系误收录。\n\n⚠️ 与 3DGS 不相关。量子计算方向，误收录，可跳过。",
+      "_score": 2
+    },
+    {
+      "title": "On Exotic Materials in 3D Linear Elasticity with High Symmetry Classes",
+      "authors": [
+        "Nicolas Auffray",
+        "Guangjin Mou",
+        "Boris Desmorat"
+      ],
+      "date": "2026-03-12",
+      "abstract": "An anisotropic elastic material is referred to as exotic when, under specific loadings, its mechanical response exhibits a higher degree of symmetry than that prescribed by its intrinsic material symmetry. Such materials, which may be regarded as lying, conceptually and functionally, between two distinct symmetry classes, are of significant practical relevance. They enable the tailored design of metamaterials capable of reconciling otherwise incompatible mechanical requirements; for example, achieving directional isotropy of the Young's modulus in an intrinsically anisotropic medium. This work focuses on the systematic classification of exotic structures within the framework of three-dimensional linear elasticity. An exhaustive classification is carried out, leading to the enumeration of 18 exotic structures corresponding to symmetry classes higher than orthotropy. Representative examples of exotic elastic behaviours are analysed in detail.",
+      "url": "https://arxiv.org/abs/2603.12019v1",
+      "tags": [
+        "物理仿真",
+        "城市建模"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：研究三维线弹性中的奇异材料——在特定载荷下力学响应呈现高于内禀对称性的材料，推导其判别条件，为设计能兼容矛盾力学要求的超材料提供理论基础，如在各向异性介质中实现方向等向杨氏模量。材料力学理论方向，与 3DGS 无关，系误收录。\n\n⚠️ 与 3DGS 不相关。材料力学方向，误收录，可跳过。",
+      "_score": 2
+    },
+    {
+      "title": "Nyxus: A Next Generation Image Feature Extraction Library for the Big Data and AI Era",
+      "authors": [
+        "Nicholas Schaub",
+        "Andriy Kharchenko",
+        "Hamdah Abbasi",
+        "Sameeul Samee",
+        "Hythem Sidky",
+        "Nathan Hotaling"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Modern imaging instruments can produce terabytes to petabytes of data for a single experiment. The biggest barrier to processing big image datasets has been computational, where image analysis algorithms often lack the efficiency needed to process such large datasets or make tradeoffs in robustness and accuracy. Deep learning algorithms have vastly improved the accuracy of the first step in an analysis workflow (region segmentation), but the expansion of domain specific feature extraction libraries across scientific disciplines has made it difficult to compare the performance and accuracy of extracted features. To address these needs, we developed a novel feature extraction library called Nyxus. Nyxus is designed from the ground up for scalable out-of-core feature extraction for 2D and 3D image data and rigorously tested against established standards. The comprehensive feature set of Nyxus covers multiple biomedical domains including radiomics and cellular analysis, and is designed for computational scalability across CPUs and GPUs. Nyxus has been packaged to be accessible to users of various skill sets and needs: as a Python package for code developers, a command line tool, as a Napari plugin for low to no-code users or users that want to visualize results, and as an Open Container Initiative (OCI) compliant container that can be used in cloud or super-computing workflows aimed at processing large data sets. Further, Nyxus enables a new methodological approach to feature extraction allowing for programmatic tuning of many features sets for optimal computational efficiency or coverage for use in novel machine learning and deep learning applications.",
+      "url": "https://arxiv.org/abs/2603.12016v1",
+      "tags": [
+        "可编辑",
+        "医疗"
+      ],
+      "digest": "★★☆☆☆\n核心思想：介绍 Nyxus，一个面向大数据和 AI 时代的高性能图像特征提取库，解决现有工具在 TB/PB 级图像数据集上计算效率不足、跨领域特征难以统一比较的问题，支持 CPU/GPU 加速和深度学习流程集成。与 3DGS 直接关联度低，属通用图像分析基础工具。\n\n一般性工作。图像特征提取工程库，3DGS 相关性弱，大规模图像分析流水线工程师可参考，研究向读者可跳过。",
+      "_score": 12
+    },
+    {
+      "title": "Pano360: Perspective to Panoramic Vision with Geometric Consistency",
+      "authors": [
+        "Zhengdong Zhu",
+        "Weiyi Xue",
+        "Zuyuan Yang",
+        "Wenlve Zhou",
+        "Zhiheng Zhou"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Prior panorama stitching approaches heavily rely on pairwise feature correspondences and are unable to leverage geometric consistency across multiple views. This leads to severe distortion and misalignment, especially in challenging scenes with weak textures, large parallax, and repetitive patterns. Given that multi-view geometric correspondences can be directly constructed in 3D space, making them more accurate and globally consistent, we extend the 2D alignment task to the 3D photogrammetric space. We adopt a novel transformer-based architecture to achieve 3D awareness and aggregate global information across all views. It directly utilizes camera poses to guide image warping for global alignment in 3D space and employs a multi-feature joint optimization strategy to compute the seams. Additionally, to establish an evaluation benchmark and train our network, we constructed a large-scale dataset of real-world scenes. Extensive experiments show that our method significantly outperforms existing alternatives in alignment accuracy and perceptual quality.",
+      "url": "https://arxiv.org/abs/2603.12013v1",
+      "tags": [
+        "城市建模"
+      ],
+      "digest": "★★★★☆\n核心思想：全景图像生成的传统做法是在二维像素空间中对齐多张透视图像，核心步骤是找到图像间的特征对应点，然后通过单应变换或光流场进行像素级对齐。这套流程在纹理丰富、视差小的场景中工作良好，但在三类场景中会系统性失败：弱纹理场景（纯色墙面无法提取可靠特征点）、大视差场景（相机移动较大时纯几何变换无法正确处理深度差异导致的内容变化）、重复纹理场景（重复的瓷砖/格子图案会导致大量虚假特征匹配）。这三类场景在建筑、室内等全景重建的主流应用场景中极为常见。\n\nPano360 的根本性转变是将对齐问题从二维提升到三维光度测量空间。具体地，系统先将每张输入透视图像的视觉特征\"投影提升\"到三维点云表达——利用深度估计或稀疏点云重建，为每个图像特征点赋予三维坐标，然后在三维空间中建立跨视图的几何对应关系。三维空间中的对应关系不受纹理是否丰富的影响，因为它依赖于几何一致性（同一物体表面的三维点在不同视角下应该对应到同一三维坐标）而非外观相似性（寻找颜色/梯度相似的像素块）。这一转变使 Pano360 在纹理挑战场景中的鲁棒性大幅提升。\n\nTransformer 架构的引入不只是为了特征聚合，更是为了建模不同视角间的长程依赖。两张相差 180 度的图像在像素空间中毫无关联，但在三维空间中可能共享同一物体的不同侧面。全局注意力机制能够跨越这种\"像素空间的距离\"，利用三维几何约束建立远距视角间的语义连接，确保全景图在 360 度范围内的几何一致性。\n\n对 3DGS 研究者的直接价值在于：Pano360 生成的高质量几何一致全景图像可直接作为 3DGS 训练的高质量输入。传统 3DGS 在 360 度室内场景中往往需要大量多视角图像，而 Pano360 能够从少量透视图像生成高质量全景，有望大幅降低 3DGS 的数据采集成本。\n\n值得关注。将拼接问题提升到 3D 光度测量空间是明智设计，对全景重建、360 度场景理解和 3DGS 数据预处理方向均有参考价值。",
+      "_score": 8
+    },
+    {
+      "title": "What is a minimum work transition in stochastic thermodynamics?",
+      "authors": [
+        "Paolo Muratore-Ginanneschi",
+        "Julia Sanders"
+      ],
+      "date": "2026-03-12",
+      "abstract": "We reassess the concept of transition at minimum work in classical stochastic finite-time thermodynamics, when the system dynamics is modelled by a diffusion process. We show that a well-posed formulation of the optimal control problem corresponding to the minimization of the mean work done on the system during a finite-time transition necessarily requires taking into account speed limits on control protocols. This fact has major qualitative consequences. First, it permits to discriminate between optimal swift engineered equilibration and transitions at minimum work. Second, it shows that in the limit when speed limits are removed, only transitions specified by generalized Schrödinger bridges admit a consistent physical interpretation. To illustrate these points, we focus on the simplest model problem: a levitating particle in a Gaussian moving trap.",
+      "url": "https://arxiv.org/abs/2603.11995v1",
+      "tags": [
+        "物理仿真",
+        "生成模型"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：重新审视随机热力学中最小功转变的概念，在扩散过程模型下证明最优控制问题的良定义需引入速度限制约束，由此区分最优急速均衡化与最小功转变两类本质不同的问题。随机热力学与最优控制理论方向，与 3DGS 无关，系误收录。\n\n⚠️ 与 3DGS 不相关。随机热力学方向，误收录，可跳过。",
+      "_score": 7
+    },
+    {
+      "title": "Ada3Drift: Adaptive Training-Time Drifting for One-Step 3D Visuomotor Robotic Manipulation",
+      "authors": [
+        "Chongyang Xu",
+        "Yixian Zou",
+        "Ziliang Feng",
+        "Fanman Meng",
+        "Shuaicheng Liu"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Diffusion-based visuomotor policies effectively capture multimodal action distributions through iterative denoising, but their high inference latency limits real-time robotic control. Recent flow matching and consistency-based methods achieve single-step generation, yet sacrifice the ability to preserve distinct action modes, collapsing multimodal behaviors into averaged, often physically infeasible trajectories. We observe that the compute budget asymmetry in robotics (offline training vs.\\ real-time inference) naturally motivates recovering this multimodal fidelity by shifting iterative refinement from inference time to training time. Building on this insight, we propose Ada3Drift, which learns a training-time drifting field that attracts predicted actions toward expert demonstration modes while repelling them from other generated samples, enabling high-fidelity single-step generation (1 NFE) from 3D point cloud observations. To handle the few-shot robotic regime, Ada3Drift further introduces a sigmoid-scheduled loss transition from coarse distribution learning to mode-sharpening refinement, and multi-scale field aggregation that captures action modes at varying spatial granularities. Experiments on three simulation benchmarks (Adroit, Meta-World, and RoboTwin) and real-world robotic manipulation tasks demonstrate that Ada3Drift achieves state-of-the-art performance while requiring $10\\times$ fewer function evaluations than diffusion-based alternatives.",
+      "url": "https://arxiv.org/abs/2603.11984v1",
+      "tags": [
+        "实时渲染",
+        "物理仿真",
+        "稀疏输入"
+      ],
+      "digest": "★★★★☆\n核心思想：机器人操控中的生成模型面临一个独特的工程矛盾：扩散策略生成质量高（能精确捕捉多模态动作分布——同一个杯子可以从左边或右边抓，这两种方式都是正确答案）但推理慢（需要 20-100 步迭代去噪，实时控制频率难以满足）；流匹配和一致性模型推理快（单步生成，可以达到 10ms 级别响应）但生成质量差——因为单步生成会将多模态动作分布\"平均化\"，产出处于各模式均值位置的、物理上不可行的轨迹（拿杯子时手从中间\"穿过\"的幽灵动作）。\n\nAda3Drift 的洞察来自一个常被忽视的现实：机器人系统在离线训练时算力充裕（可以让单个样本经历几十步迭代处理，GPU 时间充足），而在线推理时需要毫秒级响应（只能做一步计算）。这种训练-推理的算力不对称性提供了一个清晰的解法空间：把多步迭代的计算代价转移到训练阶段，用训练时的计算换推理时的效率，同时保留单步生成的实时性优势。\n\n具体实现上，Ada3Drift 在训练时为每个样本自适应地选择\"漂移幅度\"——对应于扩散过程中的漂移参数调整。对处于多模态边界区域的困难样本（比如抓取点在两个合法位置之间模糊的情况），系统在训练时增加迭代步数和更激进的噪声调度，让模型充分学习各个动作模式的精确边界，避免模式坍缩；对单模态的简单样本则快速通过，节省计算预算。\"自适应\"体现在这种计算资源的动态分配：将有限的训练算力集中投入到对最终性能影响最大的困难样本上。\n\n对三维视觉运动策略的具体意义在于：Ada3Drift 处理了机器人操控中普遍存在的\"多解问题\"——同一个装配任务，零件可以从多个合法方向接近；同一个抓取任务，夹爪可以以不同角度就位。多模态保真度在这里不是锦上添花，而是任务成功率的直接决定因素。单步推理实现使 Ada3Drift 能够在高频控制循环（>100Hz）中运行，将精细操控场景的生成策略从\"只能用于慢速任务\"变为\"可用于真实工业场景\"。\n\n值得关注。机器人单步生成保多模态分布的思路有创意，离线-在线算力非对称利用的视角值得借鉴，对机器人学习和具身智能方向值得精读。",
+      "_score": 6
+    },
+    {
+      "title": "Interference-Based 3D Optical Cold Damping of a Levitated Nanoparticle",
+      "authors": [
+        "Youssef Ezzo",
+        "Seyed Khalil Alavi",
+        "Sungkun Hong"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Achieving efficient three-dimensional feedback cooling of levitated nanoparticles is a key requirement for precision sensing and quantum control in levitated optomechanics. Here we demonstrate three-dimensional optical feedback cooling of a levitated nanoparticle using an interference-enhanced optical force generated within a single beam path. In this scheme, a weak auxiliary field co-propagates with the trapping tweezer and interferes with it to produce a tunable optical force that enables cold damping along all three center-of-mass motional axes without additional beam paths or trap reconfiguration. Using this approach, we cool a 142-nm-diameter silica nanoparticle in high vacuum to effective temperatures of 625.8, 711.6, and 19.9 mK along the $x$, $y$, and $z$ directions, respectively, at a pressure of $8.5\\times10^{-6}$ mbar. The cooling dynamics and their dependence on feedback gain and pressure are well described by a cold-damping model. Because the feedback force is generated optically, the scheme does not rely on electrical actuation and is directly compatible with neutral particles. These results establish interference-based optical forces as a simple and broadly applicable mechanism for three-dimensional feedback control in levitated optomechanics, with a clear pathway toward the quantum regime under improved vacuum and detection conditions.",
+      "url": "https://arxiv.org/abs/2603.11976v1",
+      "tags": [
+        "3DGS"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：演示利用单光束路径内的干涉增强光力，实现悬浮纳米粒子三个质心自由度的同时光学冷阻尼，无需额外光束路径或阱重新配置。精密测量与量子光力学方向，与 3DGS 无关，系误收录。\n\n⚠️ 与 3DGS 不相关。量子光力学方向，误收录，可跳过。",
+      "_score": 7
+    },
+    {
+      "title": "AstroSplat: Physics-Based Gaussian Splatting for Rendering and Reconstruction of Small Celestial Bodies",
+      "authors": [
+        "Jennifer Nolan",
+        "Travis Driver",
+        "John Christian"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Image-based surface reconstruction and characterization are crucial for missions to small celestial bodies (e.g., asteroids), as it informs mission planning, navigation, and scientific analysis. Recent advances in Gaussian splatting enable high-fidelity neural scene representations but typically rely on a spherical harmonic intensity parameterization that is strictly appearance-based and does not explicitly model material properties or light-surface interactions. We introduce AstroSplat, a physics-based Gaussian splatting framework that integrates planetary reflectance models to improve the autonomous reconstruction and photometric characterization of small-body surfaces from in-situ imagery. The proposed framework is validated on real imagery taken by NASA's Dawn mission, where we demonstrate superior rendering performance and surface reconstruction accuracy compared to the typical spherical harmonic parameterization.",
+      "url": "https://arxiv.org/abs/2603.11969v1",
+      "tags": [
+        "物理仿真",
+        "数字人",
+        "自动驾驶"
+      ],
+      "digest": "★★★★★\n核心思想：标准 3DGS 使用球谐函数（Spherical Harmonics）对每个高斯核的颜色外观进行建模，其本质是在建立一张\"从哪个方向看，这个点应该是什么颜色\"的查找表。这种纯外观拟合的方式对地球上的日常场景通常足够——因为日常场景的光照条件相对稳定，学到的球谐系数能够泛化到略微不同的光照角度。但对小行星、彗星等小天体，这一假设完全失效：航天器在轨道上绕天体运行时，太阳照射角度的变化范围可达 180 度，同一表面区域在不同光照下的外观差异极大；同时，小天体表面的反射特性往往高度非朗伯（Non-Lambertian），具有强烈的后向散射效应，纯外观拟合无法正确建模这种物理反射行为，导致重建结果对光照变化极度敏感。\n\nAstroSplat 将行星表面反射率物理模型（Hapke 模型、Lommel-Seeliger 模型等航天领域经过数十年验证的标准模型）直接嵌入高斯核的属性参数化中。每个高斯核不再存储球谐系数，而是存储物理可解释的材质参数：单散射反照率（描述表面对入射光的整体反射率）、散射相位函数参数（描述光线散射的方向偏好）、宏观粗糙度（描述表面微观几何对反射的统计影响）。渲染时，系统根据当前太阳方向、相机视角和每个高斯核的物理参数，用 Hapke 方程实时计算辐射出射量，而非查询预存的外观近似值。\n\n这一改动带来双重价值。其一是渲染泛化能力：模型学到的是在变化光照下稳定的物理材质参数，而非光照依赖的外观表观，因此在训练数据未覆盖的光照角度下依然能产出物理可信的渲染结果，这对依赖精确表面形状和材质信息进行任务规划的航天任务至关重要。其二是科学可解释性：重建得到的材质参数图（反照率图、粗糙度图）具有直接的科学意义——反照率分布揭示表面成分差异，可用于矿物识别和地质分析，是航天科学载荷数据处理的重要输入。\n\n这一框架的应用远不限于航天：工业检测中在强反光条件下对金属零件的精确几何重建、文物数字化中在不同展览灯光下的稳定复现、医疗内窥镜场景中受复杂光照影响的组织重建，都面临类似的\"光照变化+非朗伯反射\"问题，AstroSplat 的物理渲染融入框架提供了一套可迁移的解决方案。\n\n⭐ 强烈推荐精读。物理渲染融入 3DGS 是清晰的创新路径，不局限于航天应用，对 3DGS 材质感知重建方向有直接贡献，框架可迁移性强。",
+      "_score": 4
+    },
+    {
+      "title": "Energy Prediction on Sloping Ground for Quadruped Robots",
+      "authors": [
+        "Mohamed Ounally",
+        "Cyrille Pierre",
+        "Johann Laconte"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Energy management is a fundamental challenge for legged robots in outdoor environments. Endurance directly constrains mission success, while efficient resource use reduces ecological impact. This paper investigates how terrain slope and heading orientation influence the energetic cost of quadruped locomotion. We introduce a simple energy model that relies solely on standard onboard sensors, avoids specialized instrumentation, and remains applicable in previously unexplored environments. The model is identified from field runs on a commercial quadruped and expressed as a compact function of slope angle and heading. Field validation on natural terrain shows near-linear trends of force-equivalent cost with slope angle, consistently higher lateral costs, and additive behavior across trajectory segments, supporting path-level energy prediction for planning-oriented evaluation.",
+      "url": "https://arxiv.org/abs/2603.11963v1",
+      "tags": [
+        "压缩",
+        "可编辑",
+        "数字人"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：研究地形坡度和行进方向对四足机器人能耗的影响规律，提出仅依赖机载标准传感器的简洁能量预测模型，通过商用四足机器人的野外实测验证，可用于户外任务的能效规划。机器人运动能效方向，与 3DGS 无关，系误收录。\n\n⚠️ 与 3DGS 不相关。机器人运动规划方向，误收录，可跳过。",
+      "_score": 3
+    },
+    {
+      "title": "Bayesian Model Calibration with Integrated Discrepancy: Addressing Inexact Dislocation Dynamics Models",
+      "authors": [
+        "Liam Myhill",
+        "Enrique Martinez Saez",
+        "Sez Russcher"
+      ],
+      "date": "2026-03-12",
+      "abstract": "In this work, a novel approach to Bayesian model calibration routines is developed which reinterprets the traditional definition of model discrepancy as defined by Kennedy and O'Hagan (KOH). The novelty lies in the integration of $δ_θ(x_i)$ GPs within the simulator, which is approximated as a GP surrogate model to ensure computational tractability. This approach assumes that the utilized simulator sufficiently predicts observed trends when calibrated with respect to the application domain, and that all model-form errors can be attributed to uncertainty in the input parameters. In contrast, the KOH method assumes discrepancy to be inherently decoupled from the simulator, acting as a 'catch-all' for various sources of model error. The new method is applied to Molecular Dynamics observations of the critical stress to drive dislocation dipoles, and equivalent predictions using a Discrete Dislocation Dynamics simulator whose coarse-grained physical interpretation of the underlying physical mechanisms requires calibration against MD observations. We present an overview of similar state-aware calibration routines; differentiate the provided approach through redefining the commonly used discrepancy Gaussian process and benchmark against KOH. A philosophical argument as to when application of the proposed method is appropriate is provided, and future directions for expanding upon this methodology are proposed.",
+      "url": "https://arxiv.org/abs/2603.11960v1",
+      "tags": [
+        "物理仿真"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：提出一种贝叶斯模型校准新方法，将模型差异函数嵌入仿真器内部而非作为独立外部项，通过高斯过程代理模型保证计算可行性，应用于位错动力学模型的参数校准。计算力学与不确定性量化方向，与 3DGS 无关，系误收录。\n\n⚠️ 与 3DGS 不相关。计算力学方向，误收录，可跳过。",
+      "_score": 5
+    },
+    {
+      "title": "Revealing 3D orientation and strain heterogeneity in calcite generated by bio-cementation",
+      "authors": [
+        "Marilyn Sarkis",
+        "James A. D. Ball",
+        "Michela La Bella",
+        "Antoine Naillon",
+        "Christian Geindreau",
+        "Fabrice Emeriault",
+        "Carsten Detlefs",
+        "Can Yildirim"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Bio-cementation uses bacterially induced calcite to bind sand grains, offering a low-carbon approach to soil stabilization. However, the 3D morphology, orientation texture, and internal strain states of individual calcite bonds remain insufficiently characterized. Here, we combine computed micro-tomography, 3D X-ray Diffraction (3DXRD), and Dark-Field X-ray Microscopy (DFXM) to nondestructively characterize grain morphology, crystallographic orientation, and both type II (intergranular) and type III (intragranular) elastic strains in calcite formed at sand-sand contacts during bio-cementation. Tomography establishes the sample morphology and the cemented contact architecture; 3DXRD provides grain-averaged orientation and strain states; and DFXM resolves sub-grain misorientations and localized strain concentrations generated during growth with 100 nm resolution. The combined results show that calcite precipitation through bio-cementation produces anisotropic internal strain and distinct sub-domain structures that can influence bond integrity and load transfer at the macroscopic scale.",
+      "url": "https://arxiv.org/abs/2603.11932v1",
+      "tags": [
+        "物理仿真"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：联合使用微 CT、3D X 射线衍射和暗场 X 射线显微镜，对生物固化形成的方解石键进行无损三维表征，揭示其取向织构和弹性应变异质性，为理解生物固化机理提供定量依据。材料科学与土木工程方向，与 3DGS 无关，系误收录。\n\n⚠️ 与 3DGS 不相关。材料表征方向，误收录，可跳过。",
+      "_score": 0
+    },
+    {
+      "title": "InSpatio-WorldFM: An Open-Source Real-Time Generative Frame Model",
+      "authors": [
+        " InSpatio Team",
+        "Xiaoyu Zhang",
+        "Weihong Pan",
+        "Zhichao Ye",
+        "Jialin Liu",
+        "Yipeng Chen",
+        "Nan Wang",
+        "Xiaojun Xiang",
+        "Weijian Xie",
+        "Yifu Wang",
+        "Haoyu Ji",
+        "Siji Pan",
+        "Zhewen Le",
+        "Jing Guo",
+        "Xianbin Liu",
+        "Donghui Shen",
+        "Ziqiang Zhao",
+        "Haomin Liu",
+        "Guofeng Zhang"
+      ],
+      "date": "2026-03-12",
+      "abstract": "We present InSpatio-WorldFM, an open-source real-time frame model for spatial intelligence. Unlike video-based world models that rely on sequential frame generation and incur substantial latency due to window-level processing, InSpatio-WorldFM adopts a frame-based paradigm that generates each frame independently, enabling low-latency real-time spatial inference. By enforcing multi-view spatial consistency through explicit 3D anchors and implicit spatial memory, the model preserves global scene geometry while maintaining fine-grained visual details across viewpoint changes. We further introduce a progressive three-stage training pipeline that transforms a pretrained image diffusion model into a controllable frame model and finally into a real-time generator through few-step distillation. Experimental results show that InSpatio-WorldFM achieves strong multi-view consistency while supporting interactive exploration on consumer-grade GPUs, providing an efficient alternative to traditional video-based world models for real-time world simulation.",
+      "url": "https://arxiv.org/abs/2603.11911v1",
+      "tags": [
+        "实时渲染",
+        "物理仿真",
+        "生成模型"
+      ],
+      "digest": "★★★★★\n核心思想：视频世界模型的主流范式是序列生成——基于历史帧预测未来帧序列，用自回归或扩散过程建模时间连续性。这个范式的固有缺陷是延迟：每次需要新帧时必须等待序列级处理完成，且序列越长计算代价越高，使其难以嵌入机器人控制、AR/VR 等需要亚 100ms 响应的在线系统中。更深层的问题是序列生成范式天然倾向于建模时间连续性，而非空间几何一致性——生成的帧序列在视觉上连贯，但不同视角的画面可能违反基本的三维几何约束（同一物体在两个视角下的大小关系不符合透视规律）。\n\nInSpatio-WorldFM 彻底抛弃了序列生成范式，转而采用帧级独立生成：每一帧的生成是独立完成的，不依赖其他帧的生成结果，也不需要维护自回归历史状态。这一决策使推理延迟从序列级降至帧级，实现了真正的实时性。\n\n空间一致性的维持不靠时序依赖，而靠两类显式约束共同作用。第一类是三维锚点（3D Anchors）：系统维护一组关键三维点，这些点在所有视角的图像中都有明确的对应坐标约束，每帧生成时都以这些锚点的投影位置作为几何\"锚链\"，确保不同视角渲染的内容在三维上一致——就像摄影测量中的控制点，为独立生成的帧提供绝对的几何基准。第二类是隐式空间记忆（Implicit Spatial Memory）：一个轻量级的循环状态编码器，跨帧积累场景的高级语义和结构信息，为每帧生成提供场景级别的全局上下文，防止连续帧之间出现语义突变（物体突然消失或改变材质）。\n\n三个关键词定义了 InSpatio-WorldFM 的价值主张：开源（降低研究门槛，可作为基线）、实时（可嵌入在线系统）、空间一致（生成结果可用于三维场景理解）。对 3DGS 研究者最直接的价值是合成数据生成：InSpatio-WorldFM 可以为任意指定场景生成空间一致的多视角图像序列，作为高质量合成训练数据缓解真实数据稀缺；其三维锚点机制与 3DGS 的显式三维 Gaussian 表达天然兼容，以 3DGS 重建结果作为锚点初始化 InSpatio-WorldFM，可构成\"重建驱动生成\"的闭环系统。\n\n⭐ 强烈推荐精读。开源+实时+空间一致性三者兼顾，是世界模型领域少见的工程友好型工作，对关注实时 3D 场景生成和替代 3DGS 表达的研究者有重要参考价值。",
+      "_score": 6
+    },
+    {
+      "title": "Multi-branch Shell Models of Two-Dimensional Turbulence exhibit Dual Energy-Enstrophy Cascades",
+      "authors": [
+        "Flavio Tuteri",
+        "Sergio Chibbaro",
+        "Alexandros Alexakis"
+      ],
+      "date": "2026-03-12",
+      "abstract": "Classical shell models of turbulence do not display dual cascade - inverse of energy and direct of enstrophy - because they fail to reproduce the right thermal spectra. We propose here a multi-branch shell model, including a geometry hierarchically organized across scales, in order to overcome this limitation. For this model, we demonstrate numerically both the agreement of the thermal spectra with those of two-dimensional fluid equations and the emergence of a statistically stationary dual cascade. This construction also allows us to study local transfers and to investigate both self-similarity and non-Gaussianity.",
+      "url": "https://arxiv.org/abs/2603.11892v1",
+      "tags": [
+        "3DGS"
+      ],
+      "digest": "★☆☆☆☆\n核心思想：提出多分支壳模型以再现二维湍流的热谱和双级联现象（能量逆级联与涡量正级联），突破传统壳模型无法显示双级联的局限，并通过数值实验验证稳态双级联的出现。流体力学与湍流理论方向，与 3DGS 无关，系误收录。\n\n⚠️ 与 3DGS 不相关。湍流理论方向，误收录，可跳过。",
+      "_score": 0
+    }
+  ],
+  "tools": [
+    {
+      "name": "🏆 gaussian-splatting",
+      "lang": "Python/CUDA",
+      "desc": "原始官方实现，由 INRIA 团队发布。学术和工程领域的标准参考实现，GitHub Stars 超 10k，是所有后续工作的基础。",
+      "url": "https://github.com/graphdeco-inria/gaussian-splatting"
+    },
+    {
+      "name": "⚡ gsplat (nerfstudio)",
+      "lang": "Python/CUDA",
+      "desc": "Nerfstudio 项目的高性能 3DGS 库，Apache-2.0 许可，提供模块化 CUDA 渲染器，已成为学术界最常用的 3DGS 基础库之一。",
+      "url": "https://github.com/nerfstudio-project/gsplat"
+    },
+    {
+      "name": "🏎️ LichtFeld-Studio",
+      "lang": "C++/CUDA",
+      "desc": "GPL-3.0 高性能 C++ 实现，支持 ImprovedGS+ 等最新算法，是目前速度最快的 3DGS 实现之一，适合生产环境部署。",
+      "url": "https://github.com/LichtFeld/LichtFeld-Studio"
+    },
+    {
+      "name": "🌍 OpenSplat",
+      "lang": "C++/CPU+GPU",
+      "desc": "跨平台方案，支持 CPU 和 GPU，AGPL-3.0 许可，无需高端 NVIDIA GPU 即可运行 3DGS，大幅降低硬件门槛。",
+      "url": "https://github.com/pierotofy/OpenSplat"
+    },
+    {
+      "name": "🌐 GaussianSplats3D",
+      "lang": "JavaScript/Three.js",
+      "desc": "基于 Three.js 的 WebGL 3DGS 实时渲染器，支持在浏览器中直接查看 .splat/.ply 文件，无需安装任何本地软件。",
+      "url": "https://github.com/mkkellogg/GaussianSplats3D"
+    },
+    {
+      "name": "✏️ SuperSplat",
+      "lang": "JavaScript",
+      "desc": "PlayCanvas 出品的浏览器端 3DGS 编辑器，支持直接在网页中对高斯场景进行选择、删除、变换等编辑操作，已成为主流编辑工具。",
+      "url": "https://playcanvas.com/supersplat/editor"
+    },
+    {
+      "name": "🎮 Unity Plugin",
+      "lang": "C#",
+      "desc": "aras-p 开发的 Unity 3DGS 插件，支持在 Unity 引擎中直接导入和渲染 3DGS 场景，已有多个版本，广泛用于游戏和 XR 开发。",
+      "url": "https://github.com/aras-p/UnityGaussianSplatting"
+    },
+    {
+      "name": "🎬 Blender Add-on",
+      "lang": "Python",
+      "desc": "多个 Blender 插件（ReshotAI、KIRI、404-Repo）支持在 Blender 中导入、编辑和渲染 3DGS 文件，与主流 3D 制作管线无缝集成。",
+      "url": "https://github.com/ReshotAI/gaussian-splatting-blender-addon"
+    },
+    {
+      "name": "🏙️ DriveStudio",
+      "lang": "Python",
+      "desc": "专为自动驾驶场景设计的城市场景重建框架，已在 Waymo、nuScenes 等大规模数据集上验证，是 3DGS 在自动驾驶领域的标准工具。",
+      "url": "https://github.com/ziyc/drivestudio"
+    },
+    {
+      "name": "📦 GSCodecStudio",
+      "lang": "Python",
+      "desc": "专注于 3DGS 压缩和动态场景处理的工具集，集成多种压缩算法，支持 3DGS 数据的高效存储和传输，是压缩研究的重要平台。",
+      "url": "https://github.com/yzslab/gaussian-splatting-lightning"
+    },
+    {
+      "name": "🔄 SplatTransform",
+      "lang": "Node.js",
+      "desc": "PlayCanvas 出品的 CLI 工具，支持 .ply/.splat/.spz/.ksplat 等多种格式之间的转换与编辑，是 3DGS 工作流中不可缺少的格式转换工具。",
+      "url": "https://github.com/playcanvas/splat-transform"
+    },
+    {
+      "name": "🤖 ROSplat",
+      "lang": "Python/ROS2",
+      "desc": "将 3DGS 与 ROS2 机器人操作系统集成，支持机器人应用中的实时 3DGS 场景建图与定位，是 3DGS 进入机器人领域的桥梁。",
+      "url": "https://github.com/shadygm/ROSplat"
+    },
+    {
+      "name": "🥽 Splatapult (OpenXR)",
+      "lang": "C++/OpenGL",
+      "desc": "支持 OpenXR 的 3DGS VR 渲染器，使用 C++ 和 OpenGL 实现，可在主流 VR 头显上直接体验 3DGS 场景，支持 6DoF 交互。",
+      "url": "https://github.com/hyperlogic/splatapult"
+    }
+  ],
+  "industry": [
+    {
+      "title": "🎬 影视与创意制作加速落地",
+      "desc": "After Effects 的 Gaussian Splatting 插件已发展至 v1.5.2，支持 Polycam、Luma AI、PostShot 等主流重建软件的输出文件，实时导入 3DGS 场景进行粒子特效制作。主要商业平台持续跟进：",
+      "bullets": [
+        "▶ Polycam、Luma AI 已将 3DGS 集成为主要重建输出格式，用户可一键生成 .ply 文件",
+        "▶ PlayCanvas 引擎全面集成 3DGS 支持，SuperSplat 成为浏览器端主流编辑器",
+        "▶ Metaverse Standards Forum（2025年1月、5月）多次讨论 Gaussian Splat 标准化方向",
+        "▶ 游戏引擎（Unity、Unreal、Godot）均有成熟插件，XR 应用开发门槛大幅降低"
+      ]
+    },
+    {
+      "title": "🚗 自动驾驶仿真成为战略方向",
+      "desc": "3DGS 在自动驾驶领域的应用从研究走向产业，主要体现在闭环仿真、传感器数据扩增和数字孪生构建三个方向。",
+      "bullets": [
+        "▶ 多家自动驾驶公司（Waymo、百度 Apollo、小鹏等）内部使用 3DGS/NeRF 构建仿真场景",
+        "▶ DriveStudio、UniSim 等开源框架支持从街道采集数据快速重建可渲染的 3D 驾驶场景",
+        "▶ 4DGS 动态场景重建支持行人、车辆等动态元素，实现更真实的闭环测试环境",
+        "▶ LiDAR+Camera 融合 3DGS 管线降低高精地图构建成本，月更新频率从周提升至小时级"
+      ]
+    },
+    {
+      "title": "🏥 医疗影像进入实验性应用阶段",
+      "desc": "3DGS 在医疗领域的探索正从概念验证走向实验性临床应用，覆盖内窥镜、血管造影、MRI 等多个医疗影像模态。",
+      "bullets": [
+        "▶ 结肠镜 3D 重建支持手术导航，有望替代传统 CT 重建用于术前规划",
+        "▶ 脑血管造影稀疏视角重建降低辐射剂量，实现从稀疏投影重建精细血管树",
+        "▶ MRI 零样本超分辨率有望在低场强设备上获得高分辨率图像，降低医疗设备成本",
+        "▶ 达芬奇手术机器人手眼标定基于 3DGS，提升微创手术精确性"
+      ]
+    },
+    {
+      "title": "🤖 机器人与具身智能深度融合",
+      "desc": "3DGS 已成为机器人领域场景表示的核心技术路线，推动具身智能从结构化环境走向真实世界复杂场景。",
+      "bullets": [
+        "▶ 基于 3DGS 的 SLAM 系统（VarSplat、MipSLAM）提供高质量实时地图，支持长期持续建图",
+        "▶ 3DGS 数字孪生（GaussTwin）支持机器人操作策略在虚拟环境中的训练与迁移",
+        "▶ 边缘设备上的持续学习 3DGS（VBGS）支持机器人在线更新场景模型，无需云端支持",
+        "▶ X-GS 等框架整合感知与建图，推动机器人具身空间智能的统一表示"
+      ]
+    }
+  ],
+  "future": [
+    {
+      "icon": "🧠",
+      "title": "大规模 3DGS 基础模型",
+      "desc": "类似视觉基础模型（SAM、DINOv2），3DGS 领域正在涌现大规模预训练模型，如 ReCoSplat 等前向网络。预计将出现能一次性重建多种场景类型的通用 3DGS 基础模型。",
+      "tags": []
+    },
+    {
+      "icon": "💻",
+      "title": "端侧实时渲染普及",
+      "desc": "Mobile-GS 等工作推动 3DGS 在手机、AR 眼镜等端侧设备实时渲染，Apple Vision Pro、Meta Quest 等 XR 设备将成为主要消费端，3DGS 内容消费有望大规模普及。",
+      "tags": []
+    },
+    {
+      "icon": "🎭",
+      "title": "可控生成与编辑",
+      "desc": "3DGS 与扩散模型的深度结合将使文本/图像驱动的 3D 内容生成和精细编辑成为可能，VIRGi 等工作已在可编辑性方向取得进展，预计将出现更强大的 3DGS 内容创作工具。",
+      "tags": []
+    },
+    {
+      "icon": "🌍",
+      "title": "城市级大场景重建",
+      "desc": "从单室内场景扩展到城市级大规模场景是重要方向，Grendel（分布式计算）等框架已支持多 GPU 并行重建，结合流式传输技术，城市级数字孪生的实时更新将成现实。",
+      "tags": []
+    }
+  ]
+}

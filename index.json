@@ -1,0 +1,212 @@
+[
+  {
+    "id": "ai_games_20260328",
+    "topic": "ai_games",
+    "label": "AI 与游戏",
+    "emoji": "🎮",
+    "date": "20260328",
+    "count": 30,
+    "file": "ai_games_20260328.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "ai_apps_20260328",
+    "topic": "ai_apps",
+    "label": "AI 应用",
+    "emoji": "📱",
+    "date": "20260328",
+    "count": 30,
+    "file": "ai_apps_20260328.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "openclaw_20260328",
+    "topic": "openclaw",
+    "label": "OpenClaw / AI Agent",
+    "emoji": "🦞",
+    "date": "20260328",
+    "count": 0,
+    "file": "openclaw_20260328.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "3d_web_20260328",
+    "topic": "3d_web",
+    "label": "3D + Web",
+    "emoji": "🕸️",
+    "date": "20260328",
+    "count": 30,
+    "file": "3d_web_20260328.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "world_model_20260328",
+    "topic": "world_model",
+    "label": "世界模型 / 空间智能",
+    "emoji": "🌍",
+    "date": "20260328",
+    "count": 0,
+    "file": "world_model_20260328.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "3d_ai_20260328",
+    "topic": "3d_ai",
+    "label": "3D + AI 生成",
+    "emoji": "🎨",
+    "date": "20260328",
+    "count": 24,
+    "file": "3d_ai_20260328.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "3dgs_20260328",
+    "topic": "3dgs",
+    "label": "3D Gaussian Splatting",
+    "emoji": "🌐",
+    "date": "20260328",
+    "count": 30,
+    "file": "3dgs_20260328.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "ai_games_20260321",
+    "topic": "ai_games",
+    "label": "AI 与游戏",
+    "emoji": "🎮",
+    "date": "20260321",
+    "count": 30,
+    "file": "ai_games_20260321.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "ai_apps_20260321",
+    "topic": "ai_apps",
+    "label": "AI 应用",
+    "emoji": "📱",
+    "date": "20260321",
+    "count": 30,
+    "file": "ai_apps_20260321.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "openclaw_20260321",
+    "topic": "openclaw",
+    "label": "OpenClaw / AI Agent",
+    "emoji": "🦞",
+    "date": "20260321",
+    "count": 30,
+    "file": "openclaw_20260321.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "3d_web_20260321",
+    "topic": "3d_web",
+    "label": "3D + Web",
+    "emoji": "🕸️",
+    "date": "20260321",
+    "count": 30,
+    "file": "3d_web_20260321.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "world_model_20260321",
+    "topic": "world_model",
+    "label": "世界模型 / 空间智能",
+    "emoji": "🌍",
+    "date": "20260321",
+    "count": 0,
+    "file": "world_model_20260321.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "3d_ai_20260321",
+    "topic": "3d_ai",
+    "label": "3D + AI 生成",
+    "emoji": "🎨",
+    "date": "20260321",
+    "count": 24,
+    "file": "3d_ai_20260321.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "3dgs_20260321",
+    "topic": "3dgs",
+    "label": "3D Gaussian Splatting",
+    "emoji": "🌐",
+    "date": "20260321",
+    "count": 30,
+    "file": "3dgs_20260321.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "3d_ai_20260316",
+    "topic": "3d_ai",
+    "label": "3D + AI 生成",
+    "emoji": "🎨",
+    "date": "20260316",
+    "count": 10,
+    "file": "3d_ai_20260316.2.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "openclaw_20260316",
+    "topic": "openclaw",
+    "label": "OpenClaw / AI Agent",
+    "emoji": "🦞",
+    "date": "20260316",
+    "count": 0,
+    "file": "openclaw_20260316.5.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "ai_apps_20260316",
+    "topic": "ai_apps",
+    "label": "AI 应用",
+    "emoji": "📱",
+    "date": "20260316",
+    "count": 10,
+    "file": "ai_apps_20260316.2.json",
+    "overview_bg": ""
+  },
+  {
+    "id": "world_model_20260316",
+    "topic": "world_model",
+    "label": "世界模型 / 空间智能",
+    "emoji": "🌍",
+    "date": "20260316",
+    "count": 0,
+    "file": "world_model_20260316.2.json",
+    "overview_bg": "「世界模型」和「空间智能」是当前 AI 领域最受关注的方向之一：前者指能够预测环境状态演化的内部模型（代表：Genie、DIAMOND、DreamerV3），后者指 AI 系统对三维物理世界的感知、推理与交互能力。两者正在具身智能（机器人导航/操作）、自动驾驶、多模态大模型三个轨道上加速融合。本周报告覆盖视频预测型世界…"
+  },
+  {
+    "id": "ai_games_20260316",
+    "topic": "ai_games",
+    "label": "AI 与游戏",
+    "emoji": "🎮",
+    "date": "20260316",
+    "count": 22,
+    "file": "ai_games_20260316.json",
+    "overview_bg": "AI 正在从根本上重塑游戏行业的每个环节：内容生成（3D 资产、关卡、对话）、NPC 智能（行为树→LLM 驱动）、玩家体验（自适应难度、个性化叙事）和开发工具（代码生成、测试自动化）。NVIDIA ACE、Inworld AI 等平台让智能 NPC 进入商业游戏；程序化内容生成（PCG）结合 AI 开始产出真正无限多…"
+  },
+  {
+    "id": "3d_web_20260316",
+    "topic": "3d_web",
+    "label": "3D + Web",
+    "emoji": "🕸️",
+    "date": "20260316",
+    "count": 15,
+    "file": "3d_web_20260316.json",
+    "overview_bg": "WebGPU 的正式落地（Chrome 113，2023）标志着浏览器三维渲染进入新纪元：计算着色器、直接 GPU 访问、无 WebGL 限制，使得原本只能在原生应用运行的神经渲染、实时光追、大规模粒子仿真开始在浏览器中成为可能。同时，Three.js r160+、Babylon.js 6.x、WebGPU-based…"
+  },
+  {
+    "id": "3dgs_20260316",
+    "topic": "3dgs",
+    "label": "3D Gaussian Splatting",
+    "emoji": "🌐",
+    "date": "20260316",
+    "count": 30,
+    "file": "3dgs_20260316.json",
+    "overview_bg": "3D Gaussian Splatting（3DGS）自 2023 年 SIGGRAPH 亮相以来，以其实时渲染速度和高保真重建能力迅速成为新视角合成领域的主流范式，并在短短两年内催生了数百篇衍生研究。本周报告收录了来自 ArXiv 的最新 30 篇论文，覆盖动态场景重建、移动端压缩、SLAM 定位建图、数字人生成、医…"
+  }
+]

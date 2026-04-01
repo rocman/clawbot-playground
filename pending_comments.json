@@ -1,0 +1,139 @@
+{
+  "report_file": "/root/.openclaw/workspace/ai_games_20260328.json",
+  "items": [
+    {
+      "id": "hn:36522665",
+      "type": "hn",
+      "title": "Valve is not willing to publish games with AI generated content anymore?",
+      "title_zh": "",
+      "desc": "",
+      "points": 622,
+      "comments": 395
+    },
+    {
+      "id": "hn:40426382",
+      "type": "hn",
+      "title": "Building an AI game studio: what we've learned so far",
+      "title_zh": "",
+      "desc": "",
+      "points": 287,
+      "comments": 297
+    },
+    {
+      "id": "hn:38318889",
+      "type": "hn",
+      "title": "Death by AI – a free Jackbox style party game. AI judges your plans to survive",
+      "title_zh": "",
+      "desc": "",
+      "points": 476,
+      "comments": 179
+    },
+    {
+      "id": "hn:17748749",
+      "type": "hn",
+      "title": "The Total Beginner's Guide to Game AI",
+      "title_zh": "",
+      "desc": "",
+      "points": 477,
+      "comments": 57
+    },
+    {
+      "id": "hn:22216472",
+      "type": "hn",
+      "title": "Game AI Pro",
+      "title_zh": "",
+      "desc": "",
+      "points": 389,
+      "comments": 60
+    },
+    {
+      "id": "hn:36376071",
+      "type": "hn",
+      "title": "Infinite Photorealistic Worlds Using Procedural Generation",
+      "title_zh": "",
+      "desc": "",
+      "points": 306,
+      "comments": 76
+    },
+    {
+      "id": "bili:BV1sk4y1T761",
+      "type": "bili",
+      "title": "如何不写代码却能制作你人生中的第一个游戏",
+      "desc": "这期视频用到的人工智能工具：\n\n代码：ChatGPT\n绘画：Leonardo.ai\n音效：jsfxr\n\n发布游戏网址：\nitch.io ： https://itch.io/games\n体验我的游戏：\nhttps://nostest.itch.io/\n\n游戏里所有文件下载（包括所有代码以及图片）：\n链接: https://pan.baidu.com/s/1svpOJydlCZpd88-bgoIxVw",
+      "play": 12304598,
+      "author": "从零开始MrZero"
+    },
+    {
+      "id": "bili:BV1RQm7BtE89",
+      "type": "bili",
+      "title": "独立游戏的春天？AI强爆了！",
+      "desc": "一天时间、0 行代码、3 款网页游戏上线。这个曾经代表着高技术门槛、需要团队爆肝的“游戏开发”，为什么在AI时代变得如此触手可及？从被 AI 写的“无敌外挂”虐杀，到目睹“数字生命宇宙”的崩坏与重生，我用亚马逊的Kiro Agentic IDE 8小时速通了游戏创作。今天我们就来聊聊，在智能体接管代码的时代，为什么你的“审美”和“判断力”，才是未来真正的硬通货！",
+      "play": 558892,
+      "author": "林亦LYi"
+    },
+    {
+      "id": "bili:BV1C86PBSEyb",
+      "type": "bili",
+      "title": "不用AI，一行代码没写也能做游戏？怎么做到的！",
+      "desc": "来玩一下：https://gd.games/qieli/qielisurvivor",
+      "play": 352823,
+      "author": "大狸子切切里"
+    },
+    {
+      "id": "bili:BV1Y3rHBSE1n",
+      "type": "bili",
+      "title": "AI开发游戏，真的靠谱吗？",
+      "desc": "AI到底是如何彻底改变了写代码这件事？作为游戏开发者，我从手写代码到用AI生成项目，亲身体验了这场变革。当工具越来越聪明，什么才是我们真正该关注的事？这期视频聊聊我自己的思考！",
+      "play": 155907,
+      "author": "秦无邪OvO"
+    },
+    {
+      "id": "bili:BV11cPKzDEA8",
+      "type": "bili",
+      "title": "当三国游戏NPC有AI意识，我们能否统一三国？？？【合集版】",
+      "desc": "整合版~~",
+      "play": 78002,
+      "author": "藏心鱼圆"
+    },
+    {
+      "id": "gh:affaan-m_everything-claude-code",
+      "type": "github",
+      "name": "affaan-m/everything-claude-code",
+      "desc": "The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.",
+      "stars": 112116,
+      "weekly_stars": 22821
+    },
+    {
+      "id": "gh:bytedance_deer-flow",
+      "type": "github",
+      "name": "bytedance/deer-flow",
+      "desc": "An open-source long-horizon SuperAgent harness that researches, codes, and creates. With the help of sandboxes, memories, tools, skill, subagents and message gateway, it handles different levels of tasks that could take minutes to hours.",
+      "stars": 50042,
+      "weekly_stars": 16126
+    },
+    {
+      "id": "gh:Crosstalk-Solutions_project-nomad",
+      "type": "github",
+      "name": "Crosstalk-Solutions/project-nomad",
+      "desc": "Project N.O.M.A.D, is a self-contained, offline survival computer packed with critical tools, knowledge, and AI to keep you informed and empowered—anytime, anywhere.",
+      "stars": 18205,
+      "weekly_stars": 14631
+    },
+    {
+      "id": "gh:FujiwaraChoki_MoneyPrinterV2",
+      "type": "github",
+      "name": "FujiwaraChoki/MoneyPrinterV2",
+      "desc": "Automate the process of making money online.",
+      "stars": 26672,
+      "weekly_stars": 10352
+    },
+    {
+      "id": "gh:TauricResearch_TradingAgents",
+      "type": "github",
+      "name": "TauricResearch/TradingAgents",
+      "desc": "TradingAgents: Multi-Agents LLM Financial Trading Framework",
+      "stars": 42821,
+      "weekly_stars": 9209
+    }
+  ]
+}

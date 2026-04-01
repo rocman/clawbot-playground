@@ -1,0 +1,801 @@
+{
+  "topic": "3d_web",
+  "label": "3D + Web",
+  "desc": "WebGPU、WebGL、浏览器实时渲染、Three.js生态、Web端神经渲染",
+  "generated": "2026-03-28 04:30",
+  "papers": [
+    {
+      "title": "ShotStream: Streaming Multi-Shot Video Generation for Interactive Storytelling",
+      "authors": [
+        "Yawen Luo",
+        "Xiaoyu Shi",
+        "Junhao Zhuang",
+        "Yutian Chen",
+        "Quande Liu",
+        "Xintao Wang",
+        "Pengfei Wan",
+        "Tianfan Xue"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Multi-shot video generation is crucial for long narrative storytelling, yet current bidirectional architectures suffer from limited interactivity and high latency. We propose ShotStream, a novel causal multi-shot architecture that enables interactive storytelling and efficient on-the-fly frame generation. By reformulating the task as next-shot generation conditioned on historical context, ShotStream allows users to dynamically instruct ongoing narratives via streaming prompts. We achieve this by first fine-tuning a text-to-video model into a bidirectional next-shot generator, which is then distilled into a causal student via Distribution Matching Distillation. To overcome the challenges of inter-shot consistency and error accumulation inherent in autoregressive generation, we introduce two key innovations. First, a dual-cache memory mechanism preserves visual coherence: a global context cache retains conditional frames for inter-shot consistency, while a local context cache holds generated frames within the current shot for intra-shot consistency. And a RoPE discontinuity indicator is employed to explicitly distinguish the two caches to eliminate ambiguity. Second, to mitigate error accumulation, we propose a two-stage distillation strategy. This begins with intra-shot self-forcing conditioned on ground-truth historical shots and progressively extends to inter-shot self-forcing using self-generated histories, effectively bridging the train-test gap. Extensive experiments demonstrate that ShotStream generates coherent multi-shot videos with sub-second latency, achieving 16 FPS on a single GPU. It matches or exceeds the quality of slower bidirectional models, paving the way for real-time interactive storytelling. Training and inference code, as well as the models, are available on our",
+      "url": "https://arxiv.org/abs/2603.25746v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染"
+      ]
+    },
+    {
+      "title": "Less Gaussians, Texture More: 4K Feed-Forward Textured Splatting",
+      "authors": [
+        "Yixing Lao",
+        "Xuyang Bai",
+        "Xiaoyang Wu",
+        "Nuoyuan Yan",
+        "Zixin Luo",
+        "Tian Fang",
+        "Jean-Daniel Nahmias",
+        "Yanghai Tsin",
+        "Shiwei Li",
+        "Hengshuang Zhao"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Existing feed-forward 3D Gaussian Splatting methods predict pixel-aligned primitives, leading to a quadratic growth in primitive count as resolution increases. This fundamentally limits their scalability, making high-resolution synthesis such as 4K intractable. We introduce LGTM (Less Gaussians, Texture More), a feed-forward framework that overcomes this resolution scaling barrier. By predicting compact Gaussian primitives coupled with per-primitive textures, LGTM decouples geometric complexity from rendering resolution. This approach enables high-fidelity 4K novel view synthesis without per-scene optimization, a capability previously out of reach for feed-forward methods, all while using significantly fewer Gaussian primitives. Project page: https://yxlao.github.io/lgtm/",
+      "url": "https://arxiv.org/abs/2603.25745v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "新视角合成"
+      ]
+    },
+    {
+      "title": "Drive My Way: Preference Alignment of Vision-Language-Action Model for Personalized Driving",
+      "authors": [
+        "Zehao Wang",
+        "Huaide Jiang",
+        "Shuaiwu Dong",
+        "Yuping Wang",
+        "Hang Qiu",
+        "Jiachen Li"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Human driving behavior is inherently personal, which is shaped by long-term habits and influenced by short-term intentions. Individuals differ in how they accelerate, brake, merge, yield, and overtake across diverse situations. However, existing end-to-end autonomous driving systems either optimize for generic objectives or rely on fixed driving modes, lacking the ability to adapt to individual preferences or interpret natural language intent. To address this gap, we propose Drive My Way (DMW), a personalized Vision-Language-Action (VLA) driving framework that aligns with users' long-term driving habits and adapts to real-time user instructions. DMW learns a user embedding from our personalized driving dataset collected across multiple real drivers and conditions the policy on this embedding during planning, while natural language instructions provide additional short-term guidance. Closed-loop evaluation on the Bench2Drive benchmark demonstrates that DMW improves style instruction adaptation, and user studies show that its generated behaviors are recognizable as each driver's own style, highlighting personalization as a key capability for human-centered autonomous driving. Our data and code are available at https://dmw-cvpr.github.io/.",
+      "url": "https://arxiv.org/abs/2603.25740v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "BizGenEval: A Systematic Benchmark for Commercial Visual Content Generation",
+      "authors": [
+        "Yan Li",
+        "Zezi Zeng",
+        "Ziwei Zhou",
+        "Xin Gao",
+        "Muzhao Tian",
+        "Yifan Yang",
+        "Mingxi Cheng",
+        "Qi Dai",
+        "Yuqing Yang",
+        "Lili Qiu",
+        "Zhendong Wang",
+        "Zhengyuan Yang",
+        "Xue Yang",
+        "Lijuan Wang",
+        "Ji Li",
+        "Chong Luo"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Recent advances in image generation models have expanded their applications beyond aesthetic imagery toward practical visual content creation. However, existing benchmarks mainly focus on natural image synthesis and fail to systematically evaluate models under the structured and multi-constraint requirements of real-world commercial design tasks. In this work, we introduce BizGenEval, a systematic benchmark for commercial visual content generation. The benchmark spans five representative document types: slides, charts, webpages, posters, and scientific figures, and evaluates four key capability dimensions: text rendering, layout control, attribute binding, and knowledge-based reasoning, forming 20 diverse evaluation tasks. BizGenEval contains 400 carefully curated prompts and 8000 human-verified checklist questions to rigorously assess whether generated images satisfy complex visual and semantic constraints. We conduct large-scale benchmarking on 26 popular image generation systems, including state-of-the-art commercial APIs and leading open-source models. The results reveal substantial capability gaps between current generative models and the requirements of professional visual content creation. We hope BizGenEval serves as a standardized benchmark for real-world commercial visual content generation.",
+      "url": "https://arxiv.org/abs/2603.25732v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模",
+        "开源"
+      ]
+    },
+    {
+      "title": "SoftMimicGen: A Data Generation System for Scalable Robot Learning in Deformable Object Manipulation",
+      "authors": [
+        "Masoud Moghani",
+        "Mahdi Azizian",
+        "Animesh Garg",
+        "Yuke Zhu",
+        "Sean Huver",
+        "Ajay Mandlekar"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Large-scale robot datasets have facilitated the learning of a wide range of robot manipulation skills, but these datasets remain difficult to collect and scale further, owing to the intractable amount of human time, effort, and cost required. Simulation and synthetic data generation have proven to be an effective alternative to fuel this need for data, especially with the advent of recent work showing that such synthetic datasets can dramatically reduce real-world data requirements and facilitate generalization to novel scenarios unseen in real-world demonstrations. However, this paradigm has been limited to rigid-body tasks, which are easy to simulate. Deformable object manipulation encompasses a large portion of real-world manipulation and remains a crucial gap to address towards increasing adoption of the synthetic simulation data paradigm. In this paper, we introduce SoftMimicGen, an automated data generation pipeline for deformable object manipulation tasks. We introduce a suite of high-fidelity simulation environments that encompasses a wide range of deformable objects (stuffed animal, rope, tissue, towel) and manipulation behaviors (high-precision threading, dynamic whipping, folding, pick-and-place), across four robot embodiments: a single-arm manipulator, bimanual arms, a humanoid, and a surgical robot. We apply SoftMimicGen to generate datasets across the task suite, train high-performing policies from the data, and systematically analyze the data generation system. Project website: \\href{https://softmimicgen.github.io}{softmimicgen.github.io}.",
+      "url": "https://arxiv.org/abs/2603.25725v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "城市建模",
+        "医疗"
+      ]
+    },
+    {
+      "title": "Krylov-space anatomy and spread complexity of a disordered quantum spin chain",
+      "authors": [
+        "Bikram Pain",
+        "David E. Logan",
+        "Sthitadhi Roy"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We investigate the anatomy and complexity of quantum states in Krylov space, in the ergodic and many-body localised (MBL) phases of a disordered, interacting spin chain. The Krylov basis generated by the Hamiltonian from an initial state provides a representation in which the spread of the time-evolving state constitutes a basis-optimised measure of complexity. We show that the long-time Krylov spread complexity sharply distinguishes the two phases. In the ergodic phase, the infinite-time complexity scales linearly with the Fock-space dimension, indicating that the state spreads over a finite fraction of the Krylov chain. By contrast, it grows sublinearly in the MBL phase, implying that the long-time state occupies only a vanishing fraction of the chain. Further, the profile of the infinite-time state along the Krylov chain exhibits a stretched-exponential decay in the MBL phase. This behaviour reflects a broad distribution of decay lengthscales, associated with different eigenstates contributing to the long-time state. Consistently, a large-deviation analysis of the statistics of eigenstate spread complexities shows that while the ergodic phase receives contributions from almost all eigenstates, the complexity in the MBL phase is dominated by a vanishing fraction of eigenstates, which have anomalously large complexity relative to the typical ones.",
+      "url": "https://arxiv.org/abs/2603.25724v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-Web"
+      ]
+    },
+    {
+      "title": "No Hard Negatives Required: Concept Centric Learning Leads to Compositionality without Degrading Zero-shot Capabilities of Contrastive Models",
+      "authors": [
+        "Hai X. Pham",
+        "David T. Hoffmann",
+        "Ricardo Guerrero",
+        "Brais Martinez"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Contrastive vision-language (V&L) models remain a popular choice for various applications. However, several limitations have emerged, most notably the limited ability of V&L models to learn compositional representations. Prior methods often addressed this limitation by generating custom training data to obtain hard negative samples. Hard negatives have been shown to improve performance on compositionality tasks, but are often specific to a single benchmark, do not generalize, and can cause substantial degradation of basic V&L capabilities such as zero-shot or retrieval performance, rendering them impractical. In this work we follow a different approach. We identify two root causes that limit compositionality performance of V&Ls: 1) Long training captions do not require a compositional representation; and 2) The final global pooling in the text and image encoders lead to a complete loss of the necessary information to learn binding in the first place. As a remedy, we propose two simple solutions: 1) We obtain short concept centric caption parts using standard NLP software and align those with the image; and 2) We introduce a parameter-free cross-modal attention-pooling to obtain concept centric visual embeddings from the image encoder. With these two changes and simple auxiliary contrastive losses, we obtain SOTA performance on standard compositionality benchmarks, while maintaining or improving strong zero-shot and retrieval capabilities. This is achieved without increasing inference cost. We release the code for this work at https://github.com/SamsungLabs/concept_centric_clip.",
+      "url": "https://arxiv.org/abs/2603.25722v1",
+      "source": "arxiv",
+      "tags": [
+        "开源"
+      ]
+    },
+    {
+      "title": "Compiling molecular ultrastructure into neural dynamics",
+      "authors": [
+        "Konrad P. Kording",
+        "Anton Arkhipov",
+        "Davy Deng",
+        "Sean Escola",
+        "Seth G. N. Grant",
+        "Gal Haspel",
+        "Michał Januszewski",
+        "Narayanan Kasthuri",
+        "Nina Khera",
+        "Richie E. Kohman",
+        "Grace Lindsay",
+        "Jeantine Lunshof",
+        "Adam Marblestone",
+        "David A. Markowitz",
+        "Jordan Matelsky",
+        "Brett Mensh",
+        "Patrick Mineault",
+        "Andrew Payne",
+        "Joanne Peng",
+        "Xaq Pitkow",
+        "Philip Shiu",
+        "Gregor Schuhknecht",
+        "Sven Truckenbrodt",
+        "Joshua T. Vogelstein",
+        "Edward S. Boyden"
+      ],
+      "date": "2026-03-26",
+      "abstract": "High-resolution brain imaging can now capture not just synapse locations but their molecular composition, with the cost of such mapping falling exponentially. Yet such ultrastructural data has so far told us little about local neuronal physiology - specifically, the parameters (e.g., synaptic efficacies, local conductances) that govern neural dynamics. We propose to translate molecularly annotated ultrastructure into physiology, introducing the concept of an ultrastructure-to-dynamics compiler: a learned mapping from molecularly annotated ultrastructure to simulator-ready, uncertainty-aware physiological parameters. The requirement is paired training data, with jointly acquired ultrastructure from imaging, and dynamical responses to perturbations from physiological experiments. With this data we can train models that predict local physiology directly from structure. Such a compiler would support biophysical simulations by turning anatomical maps into models of circuit dynamics, shifting structure-to-function from a descriptive program to a predictive one and opening routes to understanding neural computation and forecasting intervention effects.",
+      "url": "https://arxiv.org/abs/2603.25713v1",
+      "source": "arxiv",
+      "tags": [
+        "SLAM"
+      ]
+    },
+    {
+      "title": "Dark Transition Magnetic Moments of Majorana Neutrinos Mediated by a Dark Photon",
+      "authors": [
+        "Haohao Zhang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Standard Model predictions for Majorana neutrino transition magnetic moments (TMMs) are subject to severe chiral and GIM-like suppressions, rendering them vanishingly small. To dynamically generate a macroscopic TMM, we propose a dark sector framework featuring a $U(1)_D$ gauge symmetry, a vector-like lepton doublet, and two complex dark scalars. We demonstrate that while fermion-radiated loop amplitudes identically cancel due to Majorana self-conjugacy, a chirally enhanced dark TMM is successfully generated exclusively through scalar-radiated loops. This mechanism safely shifts the required chirality flip onto the heavy internal fermion line and utilizes a misaligned double-scalar mixing in flavor space to evade the Majorana antisymmetry prohibition. We systematically confront this tensor portal framework with multi-frontier experimental constraints. Since the dark TMM generation is inextricably linked to charged lepton flavor violation, the internal Yukawa couplings are stringently capped by the latest $μ\\to e γ$ limits from MEG II. Concurrently, the visible-dark kinetic mixing portal is heavily bottlenecked by missing energy and mono-photon searches at NA64 and BaBar. Our global phenomenological analysis reveals that the synergistic theoretical upper bound dictated by these indirect high-energy probes completely eclipses the direct scattering constraints from Borexino. This establishes a strict phenomenological hierarchy: high-intensity cLFV probes and accelerator-based dark sector searches jointly possess the overwhelmingly dominant exclusionary power over direct solar neutrino limits for such microscopic magnetic moment models.",
+      "url": "https://arxiv.org/abs/2603.25704v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-Web"
+      ]
+    },
+    {
+      "title": "Magnetic field Controlled Anderson Delocalization in a Spinful Non-Hermitian Chain",
+      "authors": [
+        "Moirangthem Sanahal",
+        "Subhasis Panda",
+        "Snehasish Nandy"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Anderson localization (AL) and the non-Hermitian skin effect (NHSE) represent two paradigmatic localization phenomena driven, respectively, by disorder and non-Hermiticity. In one-dimensional (1D) non-Hermitian systems, these factors are known to compete and provide a smooth crossover between AL and NHSE upon parameter tuning. Here, we show that this interplay is fundamentally enriched in spinful systems, where an external magnetic field acts as an additional degree to manipulate the localization behavior. By investigating a disordered 1D spinful non-Hermitian chain, we demonstrate that under appropriately correlated disorder configurations across spin sectors, the magnetic field enhances the AL $\\rightarrow$ NHSE crossover. Interestingly, this facilitates the Anderson delocalization transition even in strongly disordered systems where states would otherwise be Anderson localized. By analyzing the inverse participation ratio and the mean center of mass, we map the resulting triple interplay between disorder, non-Hermiticity, and the magnetic field strength, identifying regimes of Anderson localization and skin accumulation. We further reveal that this magnetic field driven delocalization phenomenon originates from an effective suppression of disorder strength via Zeeman-induced inter-chain coupling across the spin sectors.",
+      "url": "https://arxiv.org/abs/2603.25700v1",
+      "source": "arxiv",
+      "tags": [
+        "SLAM",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Neural Network Conversion of Machine Learning Pipelines",
+      "authors": [
+        "Man-Ling Sung",
+        "Jan Silovsky",
+        "Man-Hung Siu",
+        "Herbert Gish",
+        "Chinnu Pittapally"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Transfer learning and knowledge distillation has recently gained a lot of attention in the deep learning community. One transfer approach, the student-teacher learning, has been shown to successfully create ``small'' student neural networks that mimic the performance of a much bigger and more complex ``teacher'' networks. In this paper, we investigate an extension to this approach and transfer from a non-neural-based machine learning pipeline as teacher to a neural network (NN) student, which would allow for joint optimization of the various pipeline components and a single unified inference engine for multiple ML tasks. In particular, we explore replacing the random forest classifier by transfer learning to a student NN. We experimented with various NN topologies on 100 OpenML tasks in which random forest has been one of the best solutions. Our results show that for the majority of the tasks, the student NN can indeed mimic the teacher if one can select the right NN hyper-parameters. We also investigated the use of random forest for selecting the right NN hyper-parameters.",
+      "url": "https://arxiv.org/abs/2603.25699v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-Web"
+      ]
+    },
+    {
+      "title": "Nonlinear Information from DESI Luminous Red Galaxies: An Emulator-Based Analysis of Pre- and Post-Reconstruction Power Spectra",
+      "authors": [
+        "Yuting Wang",
+        "Gong-Bo Zhao",
+        "Kazuya Koyama",
+        "Ruiyang Zhao",
+        "Takahiro Nishimichi",
+        "Zhongxu Zhai",
+        "Héctor Gil-Marín",
+        "Hanyu Zhang",
+        "Jessica Nicole Aguilar",
+        "Steven Ahlen",
+        "Florian Beutler",
+        "Davide Bianchi",
+        "David Brooks",
+        "Francisco Javier Castander",
+        "Todd Claybaugh",
+        "Andrei Cuceu",
+        "Axel de la Macorra",
+        "Arnaud de Mattia",
+        "Biprateep Dey",
+        "Peter Doel",
+        "Daniel J. Eisenstein",
+        "Simone Ferraro",
+        "Jaime E. Forero-Romero",
+        "Enrique Gaztañaga",
+        "Satya Gontcho A Gontcho",
+        "Gan Gu",
+        "Gaston Gutierrez",
+        "ChangHoon Hahn",
+        "Klaus Honscheid",
+        "Cullan Howlett",
+        "Dick Joyce",
+        "Stephanie Juneau",
+        "Robert Kehoe",
+        "David Kirkby",
+        "Theodore Kisner",
+        "Jean-Paul Kneib",
+        "Anthony Kremin",
+        "Claire Lamman",
+        "Martin Landriau",
+        "Laurent Le Guillou",
+        "Marc Manera",
+        "Aaron Meisner",
+        "Roman Miquel",
+        "Seshadri Nadathur",
+        "Jeffrey A. Newman",
+        "Enrique Paillas",
+        "Will J. Percival",
+        "Francisco Prada",
+        "Ignasi Pérez-Ràfols",
+        "Alberto J. Rosado-Marín",
+        "Ashley J. Ross",
+        "Graziano Rossi",
+        "Lado Samushia",
+        "Eusebio Sanchez",
+        "Edward F. Schlafly",
+        "David Schlegel",
+        "Michael Schubnell",
+        "Hee-Jong Seo",
+        "Joseph Harry Silber",
+        "David Sprayberry",
+        "Gregory Tarlé",
+        "Xiaoma Wang",
+        "Benjamin Alan Weaver",
+        "Shuo Yuan"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We present joint measurements of the pre- and post-reconstruction power spectra, $P_{\\rm pre}$ and $P_{\\rm post}$, together with their cross-power spectrum, $P_{\\rm cross}$, for the Luminous Red Galaxies (LRGs) in the DESI Data Release 1 (DR1). We jointly analyse these observables with an emulator-based full-shape modeling framework, thereby, for the first time, we extract complementary nonlinear information from the galaxy density field before and after reconstruction in real survey data. Specifically, including $P_{\\rm post}$ and $P_{\\rm cross}$ in addition to $P_{\\rm pre}$ (hereafter $P_{\\rm all}$) yields an improvement of approximately $18$-$27\\%$ in the $σ_8$ constraint in both $Λ$CDM and $w$CDM, depending on the redshift bin, relative to the $P_{\\rm pre}$-only analysis with the cosmic microwave background distance priors (hereafter CMB). In $w$CDM, the joint CMB+$P_{\\rm all}$ analysis can tighten the constraints on $w$ by approximately $5$-$15\\%$ across the two LRG redshift bins, compared to the CMB+$P_{\\rm pre}$ combination. Further incorporating the Type Ia supernova dataset and comparing the cosmological constraints in $w$CDM from each individual power-spectrum component with those from the full combination, we find that $P_{\\rm all}$ consistently provides the tightest constraints. From the joint CMB+$P_{\\rm all}$+DES-Dovekie dataset, we obtain $Ω_m = 0.314 \\pm 0.0048$ and $w = -0.988 \\pm 0.023$ for the \\texttt{LRG1} sample, and $Ω_m = 0.318 \\pm 0.0046$ and $w = -0.988 \\pm 0.025$ for \\texttt{LRG2}. These results demonstrate that combining pre- and post-reconstruction power spectra with their cross-correlation enables DESI to harvest additional nonlinear information, leading to tighter constraints on cosmological parameters.",
+      "url": "https://arxiv.org/abs/2603.25693v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-Web"
+      ]
+    },
+    {
+      "title": "LEMMA: Laplacian pyramids for Efficient Marine SeMAntic Segmentation",
+      "authors": [
+        "Ishaan Gakhar",
+        "Laven Srivastava",
+        "Sankarshanaa Sagaram",
+        "Aditya Kasliwal",
+        "Ujjwal Verma"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Semantic segmentation in marine environments is crucial for the autonomous navigation of unmanned surface vessels (USVs) and coastal Earth Observation events such as oil spills. However, existing methods, often relying on deep CNNs and transformer-based architectures, face challenges in deployment due to their high computational costs and resource-intensive nature. These limitations hinder the practicality of real-time, low-cost applications in real-world marine settings.   To address this, we propose LEMMA, a lightweight semantic segmentation model designed specifically for accurate remote sensing segmentation under resource constraints. The proposed architecture leverages Laplacian Pyramids to enhance edge recognition, a critical component for effective feature extraction in complex marine environments for disaster response, environmental surveillance, and coastal monitoring. By integrating edge information early in the feature extraction process, LEMMA eliminates the need for computationally expensive feature map computations in deeper network layers, drastically reducing model size, complexity and inference time. LEMMA demonstrates state-of-the-art performance across datasets captured from diverse platforms while reducing trainable parameters and computational requirements by up to 71x, GFLOPs by up to 88.5\\%, and inference time by up to 84.65\\%, as compared to existing models. Experimental results highlight its effectiveness and real-world applicability, including 93.42\\% IoU on the Oil Spill dataset and 98.97\\% mIoU on Mastr1325.",
+      "url": "https://arxiv.org/abs/2603.25689v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "实时渲染",
+        "可编辑"
+      ]
+    },
+    {
+      "title": "Intelligent Navigation and Obstacle-Aware Fabrication for Mobile Additive Manufacturing Systems",
+      "authors": [
+        "Yifei Li",
+        "Ruizhe Fu",
+        "Huihang Liu",
+        "Guha Manogharan",
+        "Feng Ju",
+        "Ilya Kovalenko"
+      ],
+      "date": "2026-03-26",
+      "abstract": "As the demand for mass customization increases, manufacturing systems must become more flexible and adaptable to produce personalized products efficiently. Additive manufacturing (AM) enhances production adaptability by enabling on-demand fabrication of customized components directly from digital models, but its flexibility remains constrained by fixed equipment layouts. Integrating mobile robots addresses this limitation by allowing manufacturing resources to move and adapt to changing production requirements. Mobile AM Robots (MAMbots) combine AM with mobile robotics to produce and transport components within dynamic manufacturing environments. However, the dynamic manufacturing environments introduce challenges for MAMbots. Disturbances such as obstacles and uneven terrain can disrupt navigation stability, which in turn affects printing accuracy and surface quality. This work proposes a universal mobile printing-and-delivery platform that couples navigation and material deposition, addressing the limitations of earlier frameworks that treated these processes separately. A real-time control framework is developed to plan and control the robot's navigation, ensuring safe motion, obstacle avoidance, and path stability while maintaining print quality. The closed-loop integration of sensing, mobility, and manufacturing provides real-time feedback for motion and process control, enabling MAMbots to make autonomous decisions in dynamic environments. The framework is validated through simulations and real-world experiments that test its adaptability to trajectory variations and external disturbances. Coupled navigation and printing together enable MAMbots to plan safe, adaptive trajectories, improving flexibility and adaptability in manufacturing.",
+      "url": "https://arxiv.org/abs/2603.25688v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "实时渲染",
+        "数字人"
+      ]
+    },
+    {
+      "title": "On Neural Scaling Laws for Weather Emulation through Continual Training",
+      "authors": [
+        "Shashank Subramanian",
+        "Alexander Kiefer",
+        "Arnur Nigmetov",
+        "Amir Gholami",
+        "Dmitriy Morozov",
+        "Michael W. Mahoney"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Neural scaling laws, which in some domains can predict the performance of large neural networks as a function of model, data, and compute scale, are the cornerstone of building foundation models in Natural Language Processing and Computer Vision. We study neural scaling in Scientific Machine Learning, focusing on models for weather forecasting. To analyze scaling behavior in as simple a setting as possible, we adopt a minimal, scalable, general-purpose Swin Transformer architecture, and we use continual training with constant learning rates and periodic cooldowns as an efficient training strategy. We show that models trained in this minimalist way follow predictable scaling trends and even outperform standard cosine learning rate schedules. Cooldown phases can be re-purposed to improve downstream performance, e.g., enabling accurate multi-step rollouts over longer forecast horizons as well as sharper predictions through spectral loss adjustments. We also systematically explore a wide range of model and dataset sizes under various compute budgets to construct IsoFLOP curves, and we identify compute-optimal training regimes. Extrapolating these trends to larger scales highlights potential performance limits, demonstrating that neural scaling can serve as an important diagnostic for efficient resource allocation. We open-source our code for reproducibility.",
+      "url": "https://arxiv.org/abs/2603.25687v1",
+      "source": "arxiv",
+      "tags": [
+        "开源"
+      ]
+    },
+    {
+      "title": "Uncertainty-Guided Label Rebalancing for CPS Safety Monitoring",
+      "authors": [
+        "John Ayotunde",
+        "Qinghua Xu",
+        "Guancheng Wang",
+        "Lionel C. Briand"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Safety monitoring is essential for Cyber-Physical Systems (CPSs). However, unsafe events are rare in real-world CPS operations, creating an extreme class imbalance that degrades safety predictors. Standard rebalancing techniques perform poorly on time-series CPS telemetry, either generating unrealistic synthetic samples or overfitting on the minority class. Meanwhile, behavioral uncertainty in CPS operations, defined as the degree of doubt or uncertainty in CPS decisions , is often correlated with safety outcomes but unexplored in safety monitoring. To that end, we propose U-Balance, a supervised approach that leverages behavioral uncertainty to rebalance imbalanced datasets prior to training a safety predictor. U-Balance first trains a GatedMLP-based uncertainty predictor that summarizes each telemetry window into distributional kinematic features and outputs an uncertainty score. It then applies an uncertainty-guided label rebalancing (uLNR) mechanism that probabilistically relabels \\textit{safe}-labeled windows with unusually high uncertainty as \\textit{unsafe}, thereby enriching the minority class with informative boundary samples without synthesizing new data. Finally, a safety predictor is trained on the rebalanced dataset for safety monitoring. We evaluate U-Balance on a large-scale UAV benchmark with a 46:1 safe-to-unsafe ratio. Results confirm a moderate but significant correlation between behavioral uncertainty and safety. We then identify uLNR as the most effective strategy to exploit uncertainty information, compared to direct early and late fusion. U-Balance achieves a 0.806 F1 score, outperforming the strongest baseline by 14.3 percentage points, while maintaining competitive inference efficiency. Ablation studies confirm that both the GatedMLP-based uncertainty predictor and the uLNR mechanism contribute significantly to U-Balance's effectiveness.",
+      "url": "https://arxiv.org/abs/2603.25670v1",
+      "source": "arxiv",
+      "tags": [
+        "城市建模",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Experimental Analysis of FreeRTOS Dependability through Targeted Fault Injection Campaigns",
+      "authors": [
+        "Luca Mannella",
+        "Stefano Di Carlo",
+        "Alessandro Savino"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Real-Time Operating Systems (RTOSes) play a crucial role in safety-critical domains, where deterministic and predictable task execution is essential. Yet they are increasingly exposed to ionizing radiation, which can compromise system dependability.   To assess FreeRTOS under such conditions, we introduce KRONOS, a software-based, non-intrusive post-propagation Fault Injection (FI) framework that injects transient and permanent faults into Operating System-visible kernel data structures without specialized hardware or debug interfaces. Using KRONOS, we conduct an extensive FI campaign on core FreeRTOS kernel components, including scheduler-related variables and Task Control Blocks (TCBs), characterizing the impact of kernel-level corruptions on functional correctness, timing behavior, and availability.   The results show that corruption of pointer and key scheduler-related variables frequently leads to crashes, whereas many TCB fields have only a limited impact on system availability.",
+      "url": "https://arxiv.org/abs/2603.25666v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染",
+        "数字人"
+      ]
+    },
+    {
+      "title": "Non-linear Sigma Model for the Surface Code with Coherent Errors",
+      "authors": [
+        "Stephen W. Yan",
+        "Yimu Bao",
+        "Sagar Vijay"
+      ],
+      "date": "2026-03-26",
+      "abstract": "The surface code is a promising platform for a quantum memory, but its threshold under coherent errors remains incompletely understood. We study maximum-likelihood decoding of the square-lattice surface code in the presence of single-qubit unitary rotations that create electric anyon excitations. We microscopically derive a non-linear sigma model with target space $\\mathrm{SO}(2n)/\\mathrm{U}(n)$ as the effective long-distance theory of this decoding problem, with distinct replica limits: $n\\to1$ for optimal decoding, which assumes knowledge of the coherent rotation angle, and $n\\to0$ for suboptimal decoding with imperfect angle information. This exposes a sharp distinction between the two decoders. The suboptimal decoder supports a ``thermal-metal'' phase, a non-decodable regime that is qualitatively distinct from the conventional non-decodable phase of the surface code under incoherent Pauli errors. By contrast, the metal phase cannot arise in optimal decoding, since the metallic fixed-point becomes unstable in the $n\\to 1$ replica limit. We argue that optimal decoding may be possible up to the maximally-coherent rotation angle. Within the sigma model description, we show that the decoding fidelity is related to twist defects of the order-parameter field, yielding quantitative predictions for its system-size dependence near the metallic fixed point for both decoders. We examine our analytic predictions for the decoding fidelity as well as other physical observables with extensive numerical simulations. We discuss how the symmetries and the target space for the sigma model rely on the lattice of the surface code, and how a stable thermal metal phase can arise in optimal decoding when the syndromes reside on a non-bipartite lattice.",
+      "url": "https://arxiv.org/abs/2603.25665v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人"
+      ]
+    },
+    {
+      "title": "Fast-dVLA: Accelerating Discrete Diffusion VLA to Real-Time Performance",
+      "authors": [
+        "Wenxuan Song",
+        "Jiayi Chen",
+        "Shuai Chen",
+        "Jingbo Wang",
+        "Pengxiang Ding",
+        "Han Zhao",
+        "Yikai Qin",
+        "Xinhu Zheng",
+        "Donglin Wang",
+        "Yan Wang",
+        "Haoang Li"
+      ],
+      "date": "2026-03-26",
+      "abstract": "This paper proposes a novel approach to address the challenge that pretrained VLA models often fail to effectively improve performance and reduce adaptation costs during standard supervised finetuning (SFT). Some advanced finetuning methods with auxiliary training objectives can improve performance and reduce the number of convergence steps. However, they typically incur significant computational overhead due to the additional losses from auxiliary tasks. To simultaneously achieve the enhanced capabilities of auxiliary training with the simplicity of standard SFT, we decouple the two objectives of auxiliary task training within the parameter space, namely, enhancing general capabilities and fitting task-specific action distributions. To deliver this goal, we only need to train the model to converge on a small-scale task set using two distinct training strategies. The difference between the resulting model parameters can then be interpreted as capability vectors provided by auxiliary tasks. These vectors are then merged with pretrained parameters to form a capability-enhanced meta model. Moreover, when standard SFT is augmented with a lightweight orthogonal regularization loss, the merged model attains performance comparable to auxiliary finetuned baselines with reduced computational overhead. Experimental results demonstrate that this approach is highly effective across diverse robot tasks. Project page: https://chris1220313648.github.io/Fast-dVLA/",
+      "url": "https://arxiv.org/abs/2603.25661v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "实时渲染",
+        "数字人"
+      ]
+    },
+    {
+      "title": "Symplectic Split-Operator Propagators from Tridiagonalized Multi-Mode Bosonic Hilbert Spaces for Bose-Hubbard Hamiltonians",
+      "authors": [
+        "Denys I. Bondar",
+        "Ole Steuernagel"
+      ],
+      "date": "2026-03-26",
+      "abstract": "In this methods paper, we show how to tridia\\-go\\-nalize two families of bosonic multimode systems: optomechanical and Bose-Hubbard hamiltonians. Using tools from number theory, we devise a rendering of these systems in the form of exact $D \\times D$ tridiagonal symmetric matrices with real-valued entries. Such matrices can subsequently be exactly diagonalized using specialized sparse-matrix algorithms that need on the order of $D \\ln(D)$ steps. This makes it possible to describe systems with much larger numbers of basis states than available to date. It also allows for efficient diagonal representation of large, accurate, symplectic split-operator propagators for which we moreover show that the required basis changes can be implemented by simple re-indexing, at marginal computational cost.",
+      "url": "https://arxiv.org/abs/2603.25639v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-Web"
+      ]
+    },
+    {
+      "title": "Accurate Surface and Reflectance Modelling from 3D Radar Data with Neural Radiance Fields",
+      "authors": [
+        "Judith Treffler",
+        "Vladimír Kubelka",
+        "Henrik Andreasson",
+        "Martin Magnusson"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Robust scene representation is essential for autonomous systems to safely operate in challenging low-visibility environments. Radar has a clear advantage over cameras and lidars in these conditions due to its resilience to environmental factors such as fog, smoke, or dust. However, radar data is inherently sparse and noisy, making reliable 3D surface reconstruction challenging. To address these challenges, we propose a neural implicit approach for 3D mapping from radar point clouds, which jointly models scene geometry and view-dependent radar intensities. Our method leverages a memory-efficient hybrid feature encoding to learn a continuous Signed Distance Field (SDF) for surface reconstruction, while also capturing radar-specific reflective properties. We show that our approach produces smoother, more accurate 3D surface reconstructions compared to existing lidar-based reconstruction methods applied to radar data, and can reconstruct view-dependent radar intensities. We also show that in general, as input point clouds get sparser, neural implicit representations render more faithful surfaces, compared to traditional explicit SDFs and meshing techniques.",
+      "url": "https://arxiv.org/abs/2603.25623v1",
+      "source": "arxiv",
+      "tags": [
+        "SLAM",
+        "数字人",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "Spatiotemporal System Forecasting with Irregular Time Steps via Masked Autoencoder",
+      "authors": [
+        "Kewei Zhu",
+        "Yanze Xin",
+        "Jinwei Hu",
+        "Xiaoyuan Cheng",
+        "Yiming Yang",
+        "Sibo Cheng"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Predicting high-dimensional dynamical systems with irregular time steps presents significant challenges for current data-driven algorithms. These irregularities arise from missing data, sparse observations, or adaptive computational techniques, reducing prediction accuracy. To address these limitations, we propose a novel method: a Physics-Spatiotemporal Masked Autoencoder. This method integrates convolutional autoencoders for spatial feature extraction with masked autoencoders optimised for irregular time series, leveraging attention mechanisms to reconstruct the entire physical sequence in a single prediction pass. The model avoids the need for data imputation while preserving physical integrity of the system. Here, 'physics' refers to high-dimensional fields generated by underlying dynamical systems, rather than the enforcement of explicit physical constraints or PDE residuals. We evaluate this approach on multiple simulated datasets and real-world ocean temperature data. The results demonstrate that our method achieves significant improvements in prediction accuracy, robustness to nonlinearities, and computational efficiency over traditional convolutional and recurrent network methods. The model shows potential for capturing complex spatiotemporal patterns without requiring domain-specific knowledge, with applications in climate modelling, fluid dynamics, ocean forecasting, environmental monitoring, and scientific computing.",
+      "url": "https://arxiv.org/abs/2603.25597v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "POP-CORN: Validation of a new coronal hole detection tool based on neural networks",
+      "authors": [
+        "K. H. P. Henadhira Arachchige",
+        "B. Perri",
+        "A. S. Brun"
+      ],
+      "date": "2026-03-26",
+      "abstract": "The properties and spatial distribution of large-scale structures of the solar corona determine the observed solar wind structure at 1 au. Coronal holes are a major source of fast solar wind, an important geo-effective component, and appear as large dark patches in extreme ultraviolet images. Solar observatories provide images of the solar corona at different wavelengths, enabling identification of coronal hole morphology and other large-scale structures along a given line of sight. The problem is that although models exist, few work in real time, separate coronal holes from other dark features, or are fully automatic and suitable for comparison with models. The main goal of this work is to develop an automatic threshold-based coronal hole detection tool across solar cycles 23, 24, and 25 using artificial intelligence. The only user input is the date, enabling retrieval of the threshold value used to detect coronal hole contours in line-of-sight extreme ultraviolet images from SDO/AIA and SoHO/EIT. We retrieve data affecting the threshold due to contrast changes from the Heliophysics Events Knowledge database for large-scale features such as active regions, solar flares, coronal mass ejections, and filaments, and engineer them to train the neural network model (POP-CORN). The model input comprises categorical features of large-scale structures in the solar corona, including spatial distribution and properties such as solar flare class by intensity. The neural network model is trained to achieve higher accuracy and determines the threshold needed to detect coronal holes, allowing their boundaries to be identified automatically and consistently. We conclude that properties of large-scale structures affect the determination of coronal hole regions, and incorporating these properties into training improves detection.",
+      "url": "https://arxiv.org/abs/2603.25591v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Towards Generalizable Robotic Data Flywheel: High-Dimensional Factorization and Composition",
+      "authors": [
+        "Yuyang Xiao",
+        "Yifei Zhou",
+        "Haoran Wang",
+        "Wenxuan Ou",
+        "Yuxiao Liu"
+      ],
+      "date": "2026-03-26",
+      "abstract": "The lack of sufficiently diverse data, coupled with limited data efficiency, remains a major bottleneck for generalist robotic models, yet systematic strategies for collecting and curating such data are not fully explored. Task diversity arises from implicit factors that are sparsely distributed across multiple dimensions and are difficult to define explicitly. To address this challenge, we propose F-ACIL, a heuristic factor-aware compositional iterative learning framework that enables structured data factorization and promotes compositional generalization. F-ACIL decomposes the data distribution into structured factor spaces such as object, action, and environment. Based on the factorized formulation, we develop a factor-wise data collection and an iterative training paradigm that promotes compositional generalization over the high-dimensional factor space, leading to more effective utilization of real-world robotic demonstrations. With extensive real-world experiments, we show that F-ACIL can achieve more than 45% performance gains with 5-10$\\times$ fewer demonstrations comparing to that of which without the strategy. The results suggest that structured factorization offers a practical pathway toward efficient compositional generalization in real-world robotic learning. We believe F-ACIL can inspire more systematic research on building generalizable robotic data flywheel strategies. More demonstrations can be found at: https://f-acil.github.io/",
+      "url": "https://arxiv.org/abs/2603.25583v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "具身智能"
+      ]
+    },
+    {
+      "title": "UNIC: Neural Garment Deformation Field for Real-time Clothed Character Animation",
+      "authors": [
+        "Chengfeng Zhao",
+        "Junbo Qi",
+        "Yulou Liu",
+        "Zhiyang Dou",
+        "Minchen Li",
+        "Taku Komura",
+        "Ziwei Liu",
+        "Wenping Wang",
+        "Yuan Liu"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Simulating physically realistic garment deformations is an essential task for virtual immersive experience, which is often achieved by physics simulation methods. However, these methods are typically time-consuming, computationally demanding, and require costly hardware, which is not suitable for real-time applications. Recent learning-based methods tried to resolve this problem by training graph neural networks to learn the garment deformation on vertices, which, however, fail to capture the intricate deformation of complex garment meshes with complex topologies. In this paper, we introduce a novel neural deformation field-based method, named UNIC, to animate the garments of an avatar in real time, given the motion sequences. Our key idea is to learn the instance-specific neural deformation field to animate the garment meshes. Such an instance-specific learning scheme does not require UNIC to generalize to new garments but only to new motion sequences, which greatly reduces the difficulty in training and improves the deformation quality. Moreover, neural deformation fields map the 3D points to their deformation offsets, which not only avoids handling topologies of the complex garments but also injects a natural smoothness constraint in the deformation learning. Extensive experiments have been conducted on various kinds of garment meshes to demonstrate the effectiveness and efficiency of UNIC over baseline methods, making it potentially practical and useful in real-world interactive applications like video games.",
+      "url": "https://arxiv.org/abs/2603.25580v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染",
+        "4D/动态",
+        "数字人"
+      ]
+    },
+    {
+      "title": "The Rules-and-Facts Model for Simultaneous Generalization and Memorization in Neural Networks",
+      "authors": [
+        "Gabriele Farné",
+        "Fabrizio Boncoraglio",
+        "Lenka Zdeborová"
+      ],
+      "date": "2026-03-26",
+      "abstract": "A key capability of modern neural networks is their capacity to simultaneously learn underlying rules and memorize specific facts or exceptions. Yet, theoretical understanding of this dual capability remains limited. We introduce the Rules-and-Facts (RAF) model, a minimal solvable setting that enables precise characterization of this phenomenon by bridging two classical lines of work in the statistical physics of learning: the teacher-student framework for generalization and Gardner-style capacity analysis for memorization. In the RAF model, a fraction $1 - \\varepsilon$ of training labels is generated by a structured teacher rule, while a fraction $\\varepsilon$ consists of unstructured facts with random labels. We characterize when the learner can simultaneously recover the underlying rule - allowing generalization to new data - and memorize the unstructured examples. Our results quantify how overparameterization enables the simultaneous realization of these two objectives: sufficient excess capacity supports memorization, while regularization and the choice of kernel or nonlinearity control the allocation of capacity between rule learning and memorization. The RAF model provides a theoretical foundation for understanding how modern neural networks can infer structure while storing rare or non-compressible information.",
+      "url": "https://arxiv.org/abs/2603.25579v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Physics-informed structured learning of a class of recurrent neural networks with guaranteed properties",
+      "authors": [
+        "Daniele Ravasio",
+        "Claudia Sbardi",
+        "Marcello Farina",
+        "Andrea Ballarino"
+      ],
+      "date": "2026-03-26",
+      "abstract": "This paper proposes a physics-informed learning framework for a class of recurrent neural networks tailored to large-scale and networked systems. The approach aims to learn control-oriented models that preserve the structural and stability properties of the plant. The learning algorithm is formulated as a convex optimisation problem, allowing the inclusion of linear matrix inequality constraints to enforce desired system features. Furthermore, when the plant exhibits structural modularity, the resulting optimisation problem can be parallelised, requiring communication only among neighbouring subsystems. Simulation results show the effectiveness of the proposed approach.",
+      "url": "https://arxiv.org/abs/2603.25574v1",
+      "source": "arxiv",
+      "tags": [
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Neural-Network Holographic Model of the QCD Phase Transition under Lattice and HRG Constraints",
+      "authors": [
+        "De-Xing Zhu",
+        "Li-Qiang Zhu",
+        "Xun Chen",
+        "De-Fu Hou",
+        "Kai Zhou"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Within a neural-network-based holographic framework, we incorporate lattice QCD (LQCD) and Hadron Resonance Gas (HRG) data to train the model and predict the location of the QCD critical endpoint (CEP). The training dataset consists of the entropy density, baryon number susceptibility, and baryon density. The metric warp factor $A(z)$ and the gauge kinetic function $f(z)$ are parameterized by neural networks and determined through the training procedure. The resulting model reproduces the equation of state at vanishing chemical potential in good agreement with both LQCD and HRG data. Extending the analysis to finite chemical potential, we solve the equations of motion and obtain thermodynamic observables consistent with LQCD results at finite density. After incorporating the HRG constraints, the predicted position of the CEP shifts toward larger chemical potentials compared to recent studies. We further employ symbolic regression to derive analytic expressions for $A(z)$ and $f(z)$, providing convenient functional forms for future phenomenological applications. Finally, we perform a data-driven validation using synthetic thermodynamic data generated from an existing analytical holographic model. The neural-network framework reproduces the corresponding CEP location with good accuracy, showing close agreement within numerical uncertainties.",
+      "url": "https://arxiv.org/abs/2603.25571v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-Web"
+      ]
+    },
+    {
+      "title": "A Mamba-based Perceptual Loss Function for Learning-based UGC Transcoding",
+      "authors": [
+        "Zihao Qi",
+        "Chen Feng",
+        "Fan Zhang",
+        "Xiaozhong Xu",
+        "Shan Liu",
+        "David Bull"
+      ],
+      "date": "2026-03-26",
+      "abstract": "In user-generated content (UGC) transcoding, source videos typically suffer various degradations due to prior compression, editing, or suboptimal capture conditions. Consequently, existing video compression paradigms that solely optimize for fidelity relative to the reference become suboptimal, as they force the codec to replicate the inherent artifacts of the non-pristine source. To address this, we propose a novel perceptually inspired loss function for learning-based UGC video transcoding that redefines the role of the reference video, shifting it from a ground-truth pixel anchor to an informative contextual guide. Specifically, we train a lightweight neural quality model based on a Selective Structured State-Space Model (Mamba) optimized using a weakly-supervised Siamese ranking strategy. The proposed model is then integrated into the rate-distortion optimization (RDO) process of two neural video codecs (DCVC and HiNeRV) as a loss function, aiming to generate reconstructed content with improved perceptual quality. Our experiments demonstrate that this framework achieves substantial coding gains over both autoencoder and implicit neural representation-based baselines, with 8.46% and 12.89% BD-rate savings, respectively.",
+      "url": "https://arxiv.org/abs/2603.25566v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "压缩",
+        "可编辑"
+      ]
+    },
+    {
+      "title": "Stochastic Multipath Routing for High-Throughput Entanglement Distribution in Quantum Repeater Networks",
+      "authors": [
+        "Ankit Mishra",
+        "Kang Hao Cheong"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Quantum repeater networks distribute entanglement over lossy links while many users share a limited pool of entangled pairs. Most existing routing schemes either always use a single best path or rely on global optimizations that are hard to run in real time. Here we propose and analyze a simple alternative: a stochastic multipath rule in which each entanglement request is sent at random along one of several edge-disjoint repeater paths, with a single parameter that controls the bias between shorter and longer routes. Using a distance-dependent lossy network model with finite per-link capacities and probabilistic entanglement swapping, we develop an analytic description of the resulting end-to-end entanglement rate as a function of this bias and validate it with large-scale numerical simulations. We find that an intermediate bias consistently outperforms both deterministic extremes across distances, traffic patterns, attenuation, swapping noise, and congestion, bringing the rate close to simple capacity upper bounds and making link usage more even across networks. These results identify stochastic multipath routing as a lightweight classical control strategy for boosting performance and scalability in near-term quantum repeater networks.",
+      "url": "https://arxiv.org/abs/2603.25563v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "实时渲染",
+        "自动驾驶"
+      ]
+    }
+  ],
+  "hot_topics": [
+    {
+      "title": "Chrome ships WebGPU",
+      "url": "https://developer.chrome.com/blog/webgpu-release/",
+      "hn_url": "https://news.ycombinator.com/item?id=35465729",
+      "points": 936,
+      "comments": 398,
+      "author": "itsuka",
+      "date": "2023-04-06",
+      "hn_id": "35465729",
+      "comment": ""
+    },
+    {
+      "title": "M1 MacBook Air hits 900 GFlops in the browser with Safari's experimental WebGPU",
+      "url": "https://jott.live/markdown/m1_webgpu_perf",
+      "hn_url": "https://news.ycombinator.com/item?id=26333369",
+      "points": 433,
+      "comments": 470,
+      "author": "brrrrrm",
+      "date": "2021-03-03",
+      "hn_id": "26333369",
+      "comment": ""
+    },
+    {
+      "title": "3D Map of Shinjuku Station in Three.js",
+      "url": "https://satoshi7190.github.io/Shinjuku-indoor-threejs-demo/",
+      "hn_url": "https://news.ycombinator.com/item?id=38786581",
+      "points": 847,
+      "comments": 185,
+      "author": "brw",
+      "date": "2023-12-27",
+      "hn_id": "38786581",
+      "comment": ""
+    },
+    {
+      "title": "I want to talk about WebGPU",
+      "url": "https://cohost.org/mcc/post/1406157-i-want-to-talk-about-webgpu",
+      "hn_url": "https://news.ycombinator.com/item?id=35800988",
+      "points": 672,
+      "comments": 238,
+      "author": "pjmlp",
+      "date": "2023-05-03",
+      "hn_id": "35800988",
+      "comment": ""
+    },
+    {
+      "title": "Show HN: ChartGPU – WebGPU-powered charting library (1M points at 60fps)",
+      "url": "https://github.com/ChartGPU/ChartGPU",
+      "hn_url": "https://news.ycombinator.com/item?id=46706528",
+      "points": 670,
+      "comments": 214,
+      "author": "huntergemmer",
+      "date": "2026-01-21",
+      "hn_id": "46706528",
+      "comment": ""
+    },
+    {
+      "title": "Live Coding in VR with Oculus Rift, Firefox WebVR, JavaScript, Three.js [video]",
+      "url": "https://www.youtube.com/watch?v=db-7J5OaSag",
+      "hn_url": "https://news.ycombinator.com/item?id=8411638",
+      "points": 719,
+      "comments": 126,
+      "author": "adamnemecek",
+      "date": "2014-10-05",
+      "hn_id": "8411638",
+      "comment": ""
+    }
+  ],
+  "trending_repos": [
+    {
+      "name": "affaan-m/everything-claude-code",
+      "url": "https://github.com/affaan-m/everything-claude-code",
+      "desc": "The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.",
+      "stars": 112084,
+      "weekly_stars": 22821,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "bytedance/deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "desc": "An open-source long-horizon SuperAgent harness that researches, codes, and creates. With the help of sandboxes, memories, tools, skill, subagents and message gateway, it handles different levels of tasks that could take minutes to hours.",
+      "stars": 50034,
+      "weekly_stars": 16126,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "Crosstalk-Solutions/project-nomad",
+      "url": "https://github.com/Crosstalk-Solutions/project-nomad",
+      "desc": "Project N.O.M.A.D, is a self-contained, offline survival computer packed with critical tools, knowledge, and AI to keep you informed and empowered—anytime, anywhere.",
+      "stars": 18184,
+      "weekly_stars": 14631,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "FujiwaraChoki/MoneyPrinterV2",
+      "url": "https://github.com/FujiwaraChoki/MoneyPrinterV2",
+      "desc": "Automate the process of making money online.",
+      "stars": 26666,
+      "weekly_stars": 10352,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "TauricResearch/TradingAgents",
+      "url": "https://github.com/TauricResearch/TradingAgents",
+      "desc": "TradingAgents: Multi-Agents LLM Financial Trading Framework",
+      "stars": 42811,
+      "weekly_stars": 9209,
+      "date": "2026-03-28"
+    }
+  ],
+  "bili_videos": [
+    {
+      "title": "three.js全网最全最新入门课程（2024年6月更新）【搞定前端前沿技术】",
+      "url": "https://www.bilibili.com/video/BV1Gg411X7FY",
+      "author": "老陈打码",
+      "play": 783742,
+      "danmaku": 3964,
+      "date": 1655447785,
+      "desc": "虽然是入门课程，也是目前全网最全最细的web 3d可视化技术，大家加油学起来!\n代码素材模型请加，老陈代码素材粉丝群：1098210757\nThreejs官方文档我镜像的地址:https://www.three3d.cn/\nThree入门课程文档逐步更新到b站文集：https://www.bilibili.com/read/readlist/rl594352\n如果还想继续深入学习，可以加我wx：1",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "【3D Web】3D网页交互开发可以有多简单",
+      "url": "https://www.bilibili.com/video/BV1Vh411r7XW",
+      "author": "Blender中文社区",
+      "play": 83008,
+      "danmaku": 45,
+      "date": 1627013112,
+      "desc": "在Verge3D的帮助下，复杂的3D网页技术将快速变得亲民起来，它允许Blender艺术家创建基于Web沉浸式的的体验。",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "WebGPU教程  2023版本  配源码和电子书   持续更新中",
+      "url": "https://www.bilibili.com/video/BV11M41137UH",
+      "author": "郭隆邦",
+      "play": 45256,
+      "danmaku": 324,
+      "date": 1683509253,
+      "desc": "课程来自three.js中文网发布：http://www.webgl3d.cn/",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "WebGPU小白入门（一）：如何零基础创建第一个WebGPU项目！",
+      "url": "https://www.bilibili.com/video/BV1uu411B7uq",
+      "author": "Orillusion官方",
+      "play": 19654,
+      "danmaku": 50,
+      "date": 1648046185,
+      "desc": "我们即将迎来WebGPU正式版发布，想了解WebGPU开发技术吗？快来关注我们吧，我们将会持续性与大家分享关于WebGPU技术的干货！",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "2023最新WEBGPU快速入门课程",
+      "url": "https://www.bilibili.com/video/BV11o4y1c7Zj",
+      "author": "老陈打码",
+      "play": 12048,
+      "danmaku": 18,
+      "date": 1683662709,
+      "desc": "课程代码资料分享交流群：1098210757",
+      "comment": "",
+      "source": "bilibili"
+    }
+  ],
+  "xhs_notes": []
+}

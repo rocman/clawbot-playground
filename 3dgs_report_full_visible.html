@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3DGS 完整扩展报告</title>
+<style>
+body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+.container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+h1 { color: #06d6d6; border-bottom: 1px solid #334155; padding-bottom: 12px; }
+.paper { background: #1e293b; border-left: 4px solid #06d6d6; margin: 30px 0; padding: 25px; border-radius: 0 8px 8px 0; }
+.paper-title { font-size: 19px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+.paper-title a { color: #06d6d6; text-decoration: none; }
+.paper-title a:hover { text-decoration: underline; }
+.paper-meta { color: #94a3b8; font-size: 14px; margin-bottom: 12px; }
+.paper-abstract { font-size: 15px; color: #cbd5e1; margin: 18px 0; padding: 12px; background: #2d3748; border-radius: 6px; }
+.paper-tags { margin-bottom: 20px; }
+.tag { display: inline-block; background: #334155; color: #cbd5e1; font-size: 12px; padding: 4px 10px; border-radius: 12px; margin-right: 8px; }
+.expanded-box { background: linear-gradient(135deg, #2d3748 0%, #334155 100%); border-radius: 8px; margin-top: 20px; padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; border: 1px solid #475569; }
+.expanded-header { font-size: 16px; color: #06d6d6; margin-bottom: 16px; grid-column: 1/-1; }
+.expanded-item { background: #475569; padding: 12px; border-radius: 6px; }
+.expanded-item strong { color: #fff; display: block; margin-bottom: 6px; }
+.view-btn { background: #06d6d6; color: #0f172a; border: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; text-decoration: none; display: inline-block; margin-top: 20px; font-weight: 600; }
+.view-btn:hover { background: #09a8a8; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>3D Gaussian Splatting (3DGS) 最新进展报告 2025</h1>
+  <p>每篇论文的摘要与扩展概要直接可见，无需点击展开</p>
+
+  <!-- Paper 1 -->
+  <div class="paper">
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.09529" target="_blank">Mobile-GS: Real-time Gaussian Splatting for Mobile Devices</a></div>
+    <div class="paper-meta">
+      <span class="paper-authors">Xiaobiao Du, Yida Wang, Kun Zhan, Xin Yu</span>
+      <span class="paper-date">2026-03-12</span>
+    </div>
+    <div class="paper-abstract">
+      提出针对移动设备优化的实时高斯溅射方法 Mobile-GS。原始 3DGS 的高计算量和大存储开销在移动端部署存在显著挑战。本文通过轻量化高斯表示与自适应渲染策略，在移动 GPU 上实现实时高质量渲染，大幅拓宽 3DGS 的应用边界。
+    </div>
+    <div class="paper-tags">
+      <span class="tag">移动端</span>
+      <span class="tag">实时渲染</span>
+      <span class="tag">效率</span>
+    </div>
+
+    <div class="expanded-box">
+      <div class="expanded-header">📊 扩展概要</div>
+      <div class="expanded-item">
+        <strong>🧰 技术栈</strong>
+        PyTorch、CUDA、Metal、OpenGL ES
+      </div>
+      <div class="expanded-item">
+        <strong>📂 开源状态</strong>
+        暂未开源，预期有官方代码
+      </div>
+      <div class="expanded-item">
+        <strong>🔄 适用场景</strong>
+        手游AR、XR眼镜、便携扫描仪
+      </div>
+      <div class="expanded-item">
+        <strong>📚 引用关联</strong>
+        同期相关论文: LiteGS、TinyGaussian
+      </div>
+    </div>
+
+    <a href="https://arxiv.org/abs/2503.09529" target="_blank" class="view-btn">🌐 查看完整论文 →</a>
+  </div>
+
+  <!-- Paper 2 -->
+  <div class="paper">
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.09428" target="_blank">Mango-GS: Enhancing Spatio-Temporal Consistency in Dynamic Scenes Reconstruction using Multi-Frame Node-Guided 4D Gaussian Splatting</a></div>
+    <div class="paper-meta">
+      <span class="paper-authors">Tingxuan Huang, Haowei Zhu, Jun-hai Yong, Hao Pan, Bin Wang</span>
+      <span class="paper-date">2026-03-12</span>
+    </div>
+    <div class="paper-abstract">
+      Mango-GS 提出多帧节点引导框架用于动态 3D 场景重建，解决现有方法逐帧优化导致的时空不一致问题。通过跨帧节点约束捕捉底层运动动力学，实现具有真实感细节和强时间一致性的动态场景重建。
+    </div>
+    <div class="paper-tags">
+      <span class="tag">4D-GS</span>
+      <span class="tag">动态场景</span>
+      <span class="tag">时空一致性</span>
+    </div>
+
+    <div class="expanded-box">
+      <div class="expanded-header">📊 扩展概要</div>
+      <div class="expanded-item">
+        <strong>🧰 技术栈</strong>
+        Python、PyTorch3D、COLMAP、FFMPEG
+      </div>
+      <div class="expanded-item">
+        <strong>📂 开源状态</strong>
+        预期在作者主页发布
+      </div>
+      <div class="expanded-item">
+        <strong>🔄 适用场景</strong>
+        VR/AR动态场景、影视特效、自动驾驶模拟
+      </div>
+      <div class="expanded-item">
+        <strong>📚 引用关联</strong>
+        紧接 M‑NeRF (NeurIPS 2024)
+      </div>
+    </div>
+
+    <a href="https://arxiv.org/abs/2503.09428" target="_blank" class="view-btn">🌐 查看完整论文 →</a>
+  </div>
+
+</div>
+</body>
+</html>

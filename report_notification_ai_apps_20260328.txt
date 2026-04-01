@@ -1,0 +1,22 @@
+周报生成任务执行记录 - AI 应用领域
+=====================================
+
+执行时间：2026-03-28 04:50:00（周六）
+任务ID：cron:d7030794-2fb1-4584-b88c-9873b3d6a968
+
+命令执行：python3 build_report.py --topic ai_apps --max 30
+
+生成结果：
+- 报告文件：ai_apps_20260328.json (61.8 KB)
+- 论文数量：30篇（去重后）
+- 热点统计：HN 6条，GitHub 5条，B站 5条，小红书 0条
+
+报告链接：
+https://workspacej9jjy0b2zdgg0ebafo-8080.gz.cloudide.woa.com/report.html#ai_apps_20260328
+
+通知状态：
+- 企业微信群消息：已发送 ✅
+- 群聊ID：aibY2r-rXTKG9AJ1bKpoPbL69AcynSnoUvy
+- 发送时间：2026-03-28 04:51
+
+任务状态：成功完成

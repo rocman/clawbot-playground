@@ -1,0 +1,630 @@
+{
+  "topic": "3d_ai",
+  "label": "3D + AI 生成",
+  "desc": "Text/Image → 3D、4D动态生成、3D编辑与风格化、数字人",
+  "generated": "2026-03-28 04:10",
+  "papers": [
+    {
+      "title": "ShotStream: Streaming Multi-Shot Video Generation for Interactive Storytelling",
+      "authors": [
+        "Yawen Luo",
+        "Xiaoyu Shi",
+        "Junhao Zhuang",
+        "Yutian Chen",
+        "Quande Liu",
+        "Xintao Wang",
+        "Pengfei Wan",
+        "Tianfan Xue"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Multi-shot video generation is crucial for long narrative storytelling, yet current bidirectional architectures suffer from limited interactivity and high latency. We propose ShotStream, a novel causal multi-shot architecture that enables interactive storytelling and efficient on-the-fly frame generation. By reformulating the task as next-shot generation conditioned on historical context, ShotStream allows users to dynamically instruct ongoing narratives via streaming prompts. We achieve this by first fine-tuning a text-to-video model into a bidirectional next-shot generator, which is then distilled into a causal student via Distribution Matching Distillation. To overcome the challenges of inter-shot consistency and error accumulation inherent in autoregressive generation, we introduce two key innovations. First, a dual-cache memory mechanism preserves visual coherence: a global context cache retains conditional frames for inter-shot consistency, while a local context cache holds generated frames within the current shot for intra-shot consistency. And a RoPE discontinuity indicator is employed to explicitly distinguish the two caches to eliminate ambiguity. Second, to mitigate error accumulation, we propose a two-stage distillation strategy. This begins with intra-shot self-forcing conditioned on ground-truth historical shots and progressively extends to inter-shot self-forcing using self-generated histories, effectively bridging the train-test gap. Extensive experiments demonstrate that ShotStream generates coherent multi-shot videos with sub-second latency, achieving 16 FPS on a single GPU. It matches or exceeds the quality of slower bidirectional models, paving the way for real-time interactive storytelling. Training and inference code, as well as the models, are available on our",
+      "url": "https://arxiv.org/abs/2603.25746v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染"
+      ]
+    },
+    {
+      "title": "Less Gaussians, Texture More: 4K Feed-Forward Textured Splatting",
+      "authors": [
+        "Yixing Lao",
+        "Xuyang Bai",
+        "Xiaoyang Wu",
+        "Nuoyuan Yan",
+        "Zixin Luo",
+        "Tian Fang",
+        "Jean-Daniel Nahmias",
+        "Yanghai Tsin",
+        "Shiwei Li",
+        "Hengshuang Zhao"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Existing feed-forward 3D Gaussian Splatting methods predict pixel-aligned primitives, leading to a quadratic growth in primitive count as resolution increases. This fundamentally limits their scalability, making high-resolution synthesis such as 4K intractable. We introduce LGTM (Less Gaussians, Texture More), a feed-forward framework that overcomes this resolution scaling barrier. By predicting compact Gaussian primitives coupled with per-primitive textures, LGTM decouples geometric complexity from rendering resolution. This approach enables high-fidelity 4K novel view synthesis without per-scene optimization, a capability previously out of reach for feed-forward methods, all while using significantly fewer Gaussian primitives. Project page: https://yxlao.github.io/lgtm/",
+      "url": "https://arxiv.org/abs/2603.25745v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "新视角合成"
+      ]
+    },
+    {
+      "title": "MuRF: Unlocking the Multi-Scale Potential of Vision Foundation Models",
+      "authors": [
+        "Bocheng Zou",
+        "Mu Cai",
+        "Mark Stanley",
+        "Dingfu Lu",
+        "Yong Jae Lee"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Vision Foundation Models (VFMs) have become the cornerstone of modern computer vision, offering robust representations across a wide array of tasks. While recent advances allow these models to handle varying input sizes during training, inference typically remains restricted to a single, fixed scale. This prevalent single-scale paradigm overlooks a fundamental property of visual perception: varying resolutions offer complementary inductive biases, where low-resolution views excel at global semantic recognition and high-resolution views are essential for fine-grained refinement. In this work, we propose Multi-Resolution Fusion (MuRF), a simple yet universally effective strategy to harness this synergy at inference time. Instead of relying on a single view, MuRF constructs a unified representation by processing an image at multiple resolutions through a frozen VFM and fusing the resulting features. The universality of MuRF is its most compelling attribute. It is not tied to a specific architecture, serving instead as a fundamental, training-free enhancement to visual representation. We empirically validate this by applying MuRF to a broad spectrum of critical computer vision tasks across multiple distinct VFM families - primarily DINOv2, but also demonstrating successful generalization to contrastive models like SigLIP2.",
+      "url": "https://arxiv.org/abs/2603.25744v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-AI"
+      ]
+    },
+    {
+      "title": "RefAlign: Representation Alignment for Reference-to-Video Generation",
+      "authors": [
+        "Lei Wang",
+        "YuXin Song",
+        "Ge Wu",
+        "Haocheng Feng",
+        "Hang Zhou",
+        "Jingdong Wang",
+        "Yaxing Wang",
+        "jian Yang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Reference-to-video (R2V) generation is a controllable video synthesis paradigm that constrains the generation process using both text prompts and reference images, enabling applications such as personalized advertising and virtual try-on. In practice, existing R2V methods typically introduce additional high-level semantic or cross-modal features alongside the VAE latent representation of the reference image and jointly feed them into the diffusion Transformer (DiT). These auxiliary representations provide semantic guidance and act as implicit alignment signals, which can partially alleviate pixel-level information leakage in the VAE latent space. However, they may still struggle to address copy--paste artifacts and multi-subject confusion caused by modality mismatch across heterogeneous encoder features. In this paper, we propose RefAlign, a representation alignment framework that explicitly aligns DiT reference-branch features to the semantic space of a visual foundation model (VFM). The core of RefAlign is a reference alignment loss that pulls the reference features and VFM features of the same subject closer to improve identity consistency, while pushing apart the corresponding features of different subjects to enhance semantic discriminability. This simple yet effective strategy is applied only during training, incurring no inference-time overhead, and achieves a better balance between text controllability and reference fidelity. Extensive experiments on the OpenS2V-Eval benchmark demonstrate that RefAlign outperforms current state-of-the-art methods in TotalScore, validating the effectiveness of explicit reference alignment for R2V tasks.",
+      "url": "https://arxiv.org/abs/2603.25743v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "Vega: Learning to Drive with Natural Language Instructions",
+      "authors": [
+        "Sicheng Zuo",
+        "Yuxuan Li",
+        "Wenzhao Zheng",
+        "Zheng Zhu",
+        "Jie Zhou",
+        "Jiwen Lu"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Vision-language-action models have reshaped autonomous driving to incorporate languages into the decision-making process. However, most existing pipelines only utilize the language modality for scene descriptions or reasoning and lack the flexibility to follow diverse user instructions for personalized driving. To address this, we first construct a large-scale driving dataset (InstructScene) containing around 100,000 scenes annotated with diverse driving instructions with the corresponding trajectories. We then propose a unified Vision-Language-World-Action model, Vega, for instruction-based generation and planning. We employ the autoregressive paradigm to process visual inputs (vision) and language instructions (language) and the diffusion paradigm to generate future predictions (world modeling) and trajectories (action). We perform joint attention to enable interactions between the modalities and use individual projection layers for different modalities for more capabilities. Extensive experiments demonstrate that our method not only achieves superior planning performance but also exhibits strong instruction-following abilities, paving the way for more intelligent and personalized driving systems.",
+      "url": "https://arxiv.org/abs/2603.25741v1",
+      "source": "arxiv",
+      "tags": [
+        "自动驾驶",
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Drive My Way: Preference Alignment of Vision-Language-Action Model for Personalized Driving",
+      "authors": [
+        "Zehao Wang",
+        "Huaide Jiang",
+        "Shuaiwu Dong",
+        "Yuping Wang",
+        "Hang Qiu",
+        "Jiachen Li"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Human driving behavior is inherently personal, which is shaped by long-term habits and influenced by short-term intentions. Individuals differ in how they accelerate, brake, merge, yield, and overtake across diverse situations. However, existing end-to-end autonomous driving systems either optimize for generic objectives or rely on fixed driving modes, lacking the ability to adapt to individual preferences or interpret natural language intent. To address this gap, we propose Drive My Way (DMW), a personalized Vision-Language-Action (VLA) driving framework that aligns with users' long-term driving habits and adapts to real-time user instructions. DMW learns a user embedding from our personalized driving dataset collected across multiple real drivers and conditions the policy on this embedding during planning, while natural language instructions provide additional short-term guidance. Closed-loop evaluation on the Bench2Drive benchmark demonstrates that DMW improves style instruction adaptation, and user studies show that its generated behaviors are recognizable as each driver's own style, highlighting personalization as a key capability for human-centered autonomous driving. Our data and code are available at https://dmw-cvpr.github.io/.",
+      "url": "https://arxiv.org/abs/2603.25740v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "PSDesigner: Automated Graphic Design with a Human-Like Creative Workflow",
+      "authors": [
+        "Xincheng Shuai",
+        "Song Tang",
+        "Yutong Huang",
+        "Henghui Ding",
+        "Dacheng Tao"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Graphic design is a creative and innovative process that plays a crucial role in applications such as e-commerce and advertising. However, developing an automated design system that can faithfully translate user intentions into editable design files remains an open challenge. Although recent studies have leveraged powerful text-to-image models and MLLMs to assist graphic design, they typically simplify professional workflows, resulting in limited flexibility and intuitiveness. To address these limitations, we propose PSDesigner, an automated graphic design system that emulates the creative workflow of human designers. Building upon multiple specialized components, PSDesigner collects theme-related assets based on user instructions, and autonomously infers and executes tool calls to manipulate design files, such as integrating new assets or refining inferior elements. To endow the system with strong tool-use capabilities, we construct a design dataset, CreativePSD, which contains a large amount of high-quality PSD design files annotated with operation traces across a wide range of design scenarios and artistic styles, enabling models to learn expert design procedures. Extensive experiments demonstrate that PSDesigner outperforms existing methods across diverse graphic design tasks, empowering non-specialists to conveniently create production-quality designs.",
+      "url": "https://arxiv.org/abs/2603.25738v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "MegaFlow: Zero-Shot Large Displacement Optical Flow",
+      "authors": [
+        "Dingxi Zhang",
+        "Fangjinhua Wang",
+        "Marc Pollefeys",
+        "Haofei Xu"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Accurate estimation of large displacement optical flow remains a critical challenge. Existing methods typically rely on iterative local search or/and domain-specific fine-tuning, which severely limits their performance in large displacement and zero-shot generalization scenarios. To overcome this, we introduce MegaFlow, a simple yet powerful model for zero-shot large displacement optical flow. Rather than relying on highly complex, task-specific architectural designs, MegaFlow adapts powerful pre-trained vision priors to produce temporally consistent motion fields. In particular, we formulate flow estimation as a global matching problem by leveraging pre-trained global Vision Transformer features, which naturally capture large displacements. This is followed by a few lightweight iterative refinements to further improve the sub-pixel accuracy. Extensive experiments demonstrate that MegaFlow achieves state-of-the-art zero-shot performance across multiple optical flow benchmarks. Moreover, our model also delivers highly competitive zero-shot performance on long-range point tracking benchmarks, demonstrating its robust transferability and suggesting a unified paradigm for generalizable motion estimation. Our project page is at: https://kristen-z.github.io/projects/megaflow.",
+      "url": "https://arxiv.org/abs/2603.25739v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "4D/动态"
+      ]
+    },
+    {
+      "title": "How good was my shot? Quantifying Player Skill Level in Table Tennis",
+      "authors": [
+        "Akihiro Kubota",
+        "Tomoya Hasegawa",
+        "Ryo Kawahara",
+        "Ko Nishino"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Gauging an individual's skill level is crucial, as it inherently shapes their behavior. Quantifying skill, however, is challenging because it is latent to the observed actions. To explore skill understanding in human behavior, we focus on dyadic sports -- specifically table tennis -- where skill manifests not just in complex movements, but in the subtle nuances of execution conditioned on game context. Our key idea is to learn a generative model of each player's tactical racket strokes and jointly embed them in a common latent space that encodes individual characteristics, including those pertaining to skill levels. By training these player models on a large-scale dataset of 3D-reconstructed professional matches and conditioning them on comprehensive game context -- including player positioning and opponent behaviors -- the models capture individual tactical identities within their latent space. We probe this learned player space and find that it reflects distinct play styles and attributes that collectively represent skill. By training a simple relative ranking network on these embeddings, we demonstrate that both relative and absolute skill predictions can be achieved. These results demonstrate that the learned player space effectively quantifies skill levels, providing a foundation for automated skill assessment in complex, interactive behaviors.",
+      "url": "https://arxiv.org/abs/2603.25736v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Training the Knowledge Base through Evidence Distillation and Write-Back Enrichment",
+      "authors": [
+        "Yuxing Lu",
+        "Xukai Zhao",
+        "Wei Wu",
+        "Jinzhuo Wang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "The knowledge base in a retrieval-augmented generation (RAG) system is typically assembled once and never revised, even though the facts a query requires are often fragmented across documents and buried in irrelevant content. We argue that the knowledge base should be treated as a trainable component and propose WriteBack-RAG, a framework that uses labeled examples to identify where retrieval succeeds, isolate the relevant documents, and distill them into compact knowledge units that are indexed alongside the original corpus. Because the method modifies only the corpus, it can be applied once as an offline preprocessing step and combined with any RAG pipeline. Across four RAG methods, six benchmarks, and two LLM backbones, WriteBack-RAG improves every evaluated setting, with gains averaging +2.14%. Cross-method transfer experiments further show that the distilled knowledge benefits RAG pipelines other than the one used to produce it, confirming that the improvement resides in the corpus itself.",
+      "url": "https://arxiv.org/abs/2603.25737v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩"
+      ]
+    },
+    {
+      "title": "Unleashing Guidance Without Classifiers for Human-Object Interaction Animation",
+      "authors": [
+        "Ziyin Wang",
+        "Sirui Xu",
+        "Chuan Guo",
+        "Bing Zhou",
+        "Jiangshan Gong",
+        "Jian Wang",
+        "Yu-Xiong Wang",
+        "Liang-Yan Gui"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Generating realistic human-object interaction (HOI) animations remains challenging because it requires jointly modeling dynamic human actions and diverse object geometries. Prior diffusion-based approaches often rely on hand-crafted contact priors or human-imposed kinematic constraints to improve contact quality. We propose LIGHT, a data-driven alternative in which guidance emerges from the denoising pace itself, reducing dependence on manually designed priors. Building on diffusion forcing, we factor the representation into modality-specific components and assign individualized noise levels with asynchronous denoising schedules. In this paradigm, cleaner components guide noisier ones through cross-attention, yielding guidance without auxiliary classifiers. We find that this data-driven guidance is inherently contact-aware, and can be enhanced when training is augmented with a broad spectrum of synthetic object geometries, encouraging invariance of contact semantics to geometric diversity. Extensive experiments show that pace-induced guidance more effectively mirrors the benefits of contact priors than conventional classifier-free guidance, while achieving higher contact fidelity, more realistic HOI generation, and stronger generalization to unseen objects and tasks.",
+      "url": "https://arxiv.org/abs/2603.25734v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型"
+      ]
+    },
+    {
+      "title": "SlotVTG: Object-Centric Adapter for Generalizable Video Temporal Grounding",
+      "authors": [
+        "Jiwook Han",
+        "Geo Ahn",
+        "Youngrae Kim",
+        "Jinwoo Choi"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Multimodal Large Language Models (MLLMs) have shown strong performance on Video Temporal Grounding (VTG). However, their coarse recognition capabilities are insufficient for fine-grained temporal understanding, making task-specific fine-tuning indispensable. This fine-tuning causes models to memorize dataset-specific shortcuts rather than faithfully grounding in the actual visual content, leading to poor Out-of-Domain (OOD) generalization. Object-centric learning offers a promising remedy by decomposing scenes into entity-level representations, but existing approaches require re-running the entire multi-stage training pipeline from scratch. We propose SlotVTG, a framework that steers MLLMs toward object-centric, input-grounded visual reasoning at minimal cost. SlotVTG introduces a lightweight slot adapter that decomposes visual tokens into abstract slots via slot attention and reconstructs the original sequence, where objectness priors from a self-supervised vision model encourage semantically coherent slot formation. Cross-domain evaluation on standard VTG benchmarks demonstrates that our approach significantly improves OOD robustness while maintaining competitive In-Domain (ID) performance with minimal overhead.",
+      "url": "https://arxiv.org/abs/2603.25733v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "4D/动态",
+        "可编辑"
+      ]
+    },
+    {
+      "title": "BizGenEval: A Systematic Benchmark for Commercial Visual Content Generation",
+      "authors": [
+        "Yan Li",
+        "Zezi Zeng",
+        "Ziwei Zhou",
+        "Xin Gao",
+        "Muzhao Tian",
+        "Yifan Yang",
+        "Mingxi Cheng",
+        "Qi Dai",
+        "Yuqing Yang",
+        "Lili Qiu",
+        "Zhendong Wang",
+        "Zhengyuan Yang",
+        "Xue Yang",
+        "Lijuan Wang",
+        "Ji Li",
+        "Chong Luo"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Recent advances in image generation models have expanded their applications beyond aesthetic imagery toward practical visual content creation. However, existing benchmarks mainly focus on natural image synthesis and fail to systematically evaluate models under the structured and multi-constraint requirements of real-world commercial design tasks. In this work, we introduce BizGenEval, a systematic benchmark for commercial visual content generation. The benchmark spans five representative document types: slides, charts, webpages, posters, and scientific figures, and evaluates four key capability dimensions: text rendering, layout control, attribute binding, and knowledge-based reasoning, forming 20 diverse evaluation tasks. BizGenEval contains 400 carefully curated prompts and 8000 human-verified checklist questions to rigorously assess whether generated images satisfy complex visual and semantic constraints. We conduct large-scale benchmarking on 26 popular image generation systems, including state-of-the-art commercial APIs and leading open-source models. The results reveal substantial capability gaps between current generative models and the requirements of professional visual content creation. We hope BizGenEval serves as a standardized benchmark for real-world commercial visual content generation.",
+      "url": "https://arxiv.org/abs/2603.25732v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模",
+        "开源"
+      ]
+    },
+    {
+      "title": "PackForcing: Short Video Training Suffices for Long Video Sampling and Long Context Inference",
+      "authors": [
+        "Xiaofeng Mao",
+        "Shaohao Rui",
+        "Kaining Ying",
+        "Bo Zheng",
+        "Chuanhao Li",
+        "Mingmin Chi",
+        "Kaipeng Zhang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Autoregressive video diffusion models have demonstrated remarkable progress, yet they remain bottlenecked by intractable linear KV-cache growth, temporal repetition, and compounding errors during long-video generation. To address these challenges, we present PackForcing, a unified framework that efficiently manages the generation history through a novel three-partition KV-cache strategy. Specifically, we categorize the historical context into three distinct types: (1) Sink tokens, which preserve early anchor frames at full resolution to maintain global semantics; (2) Mid tokens, which achieve a massive spatiotemporal compression (32x token reduction) via a dual-branch network fusing progressive 3D convolutions with low-resolution VAE re-encoding; and (3) Recent tokens, kept at full resolution to ensure local temporal coherence. To strictly bound the memory footprint without sacrificing quality, we introduce a dynamic top-$k$ context selection mechanism for the mid tokens, coupled with a continuous Temporal RoPE Adjustment that seamlessly re-aligns position gaps caused by dropped tokens with negligible overhead. Empowered by this principled hierarchical context compression, PackForcing can generate coherent 2-minute, 832x480 videos at 16 FPS on a single H200 GPU. It achieves a bounded KV cache of just 4 GB and enables a remarkable 24x temporal extrapolation (5s to 120s), operating effectively either zero-shot or trained on merely 5-second clips. Extensive results on VBench demonstrate state-of-the-art temporal consistency (26.07) and dynamic degree (56.25), proving that short-video supervision is sufficient for high-quality, long-video synthesis. https://github.com/ShandaAI/PackForcing",
+      "url": "https://arxiv.org/abs/2603.25730v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染",
+        "4D/动态",
+        "压缩"
+      ]
+    },
+    {
+      "title": "AnyHand: A Large-Scale Synthetic Dataset for RGB(-D) Hand Pose Estimation",
+      "authors": [
+        "Chen Si",
+        "Yulin Liu",
+        "Bo Ai",
+        "Jianwen Xie",
+        "Rolandos Alexandros Potamias",
+        "Chuanxia Zheng",
+        "Hao Su"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We present AnyHand, a large-scale synthetic dataset designed to advance the state of the art in 3D hand pose estimation from both RGB-only and RGB-D inputs. While recent works with foundation approaches have shown that an increase in the quantity and diversity of training data can markedly improve performance and robustness in hand pose estimation, existing real-world-collected datasets on this task are limited in coverage, and prior synthetic datasets rarely provide occlusions, arm details, and aligned depth together at scale. To address this bottleneck, our AnyHand contains 2.5M single-hand and 4.1M hand-object interaction RGB-D images, with rich geometric annotations. In the RGB-only setting, we show that extending the original training sets of existing baselines with AnyHand yields significant gains on multiple benchmarks (FreiHAND and HO-3D), even when keeping the architecture and training scheme fixed. More impressively, the model trained with AnyHand shows stronger generalization to the out-of-domain HO-Cap dataset, without any fine-tuning. We also contribute a lightweight depth fusion module that can be easily integrated into existing RGB-based models. Trained with AnyHand, the resulting RGB-D model achieves superior performance on the HO-3D benchmark, showing the benefits of depth integration and the effectiveness of our synthetic data.",
+      "url": "https://arxiv.org/abs/2603.25726v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "PixelSmile: Toward Fine-Grained Facial Expression Editing",
+      "authors": [
+        "Jiabin Hua",
+        "Hengyuan Xu",
+        "Aojie Li",
+        "Wei Cheng",
+        "Gang Yu",
+        "Xingjun Ma",
+        "Yu-Gang Jiang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Fine-grained facial expression editing has long been limited by intrinsic semantic overlap. To address this, we construct the Flex Facial Expression (FFE) dataset with continuous affective annotations and establish FFE-Bench to evaluate structural confusion, editing accuracy, linear controllability, and the trade-off between expression editing and identity preservation. We propose PixelSmile, a diffusion framework that disentangles expression semantics via fully symmetric joint training. PixelSmile combines intensity supervision with contrastive learning to produce stronger and more distinguishable expressions, achieving precise and stable linear expression control through textual latent interpolation. Extensive experiments demonstrate that PixelSmile achieves superior disentanglement and robust identity preservation, confirming its effectiveness for continuous, controllable, and fine-grained expression editing, while naturally supporting smooth expression blending.",
+      "url": "https://arxiv.org/abs/2603.25728v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "Back to Basics: Revisiting ASR in the Age of Voice Agents",
+      "authors": [
+        "Geeyang Tay",
+        "Wentao Ma",
+        "Jaewon Lee",
+        "Yuzhi Tang",
+        "Daniel Lee",
+        "Weisu Yin",
+        "Dongming Shen",
+        "Silin Meng",
+        "Yi Zhu",
+        "Mu Li",
+        "Alex Smola"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Automatic speech recognition (ASR) systems have achieved near-human accuracy on curated benchmarks, yet still fail in real-world voice agents under conditions that current evaluations do not systematically cover. Without diagnostic tools that isolate specific failure factors, practitioners cannot anticipate which conditions, in which languages, will cause what degree of degradation. We introduce WildASR, a multilingual (four-language) diagnostic benchmark sourced entirely from real human speech that factorizes ASR robustness along three axes: environmental degradation, demographic shift, and linguistic diversity. Evaluating seven widely used ASR systems, we find severe and uneven performance degradation, and model robustness does not transfer across languages or conditions. Critically, models often hallucinate plausible but unspoken content under partial or degraded inputs, creating concrete safety risks for downstream agent behavior. Our results demonstrate that targeted, factor-isolated evaluation is essential for understanding and improving ASR reliability in production systems. Besides the benchmark itself, we also present three analytical tools that practitioners can use to guide deployment decisions.",
+      "url": "https://arxiv.org/abs/2603.25727v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-AI"
+      ]
+    },
+    {
+      "title": "SoftMimicGen: A Data Generation System for Scalable Robot Learning in Deformable Object Manipulation",
+      "authors": [
+        "Masoud Moghani",
+        "Mahdi Azizian",
+        "Animesh Garg",
+        "Yuke Zhu",
+        "Sean Huver",
+        "Ajay Mandlekar"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Large-scale robot datasets have facilitated the learning of a wide range of robot manipulation skills, but these datasets remain difficult to collect and scale further, owing to the intractable amount of human time, effort, and cost required. Simulation and synthetic data generation have proven to be an effective alternative to fuel this need for data, especially with the advent of recent work showing that such synthetic datasets can dramatically reduce real-world data requirements and facilitate generalization to novel scenarios unseen in real-world demonstrations. However, this paradigm has been limited to rigid-body tasks, which are easy to simulate. Deformable object manipulation encompasses a large portion of real-world manipulation and remains a crucial gap to address towards increasing adoption of the synthetic simulation data paradigm. In this paper, we introduce SoftMimicGen, an automated data generation pipeline for deformable object manipulation tasks. We introduce a suite of high-fidelity simulation environments that encompasses a wide range of deformable objects (stuffed animal, rope, tissue, towel) and manipulation behaviors (high-precision threading, dynamic whipping, folding, pick-and-place), across four robot embodiments: a single-arm manipulator, bimanual arms, a humanoid, and a surgical robot. We apply SoftMimicGen to generate datasets across the task suite, train high-performing policies from the data, and systematically analyze the data generation system. Project website: \\href{https://softmimicgen.github.io}{softmimicgen.github.io}.",
+      "url": "https://arxiv.org/abs/2603.25725v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "城市建模",
+        "医疗"
+      ]
+    },
+    {
+      "title": "R-C2: Cycle-Consistent Reinforcement Learning Improves Multimodal Reasoning",
+      "authors": [
+        "Zirui Zhang",
+        "Haoyu Dong",
+        "Kexin Pei",
+        "Chengzhi Mao"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Robust perception and reasoning require consistency across sensory modalities. Yet current multimodal models often violate this principle, yielding contradictory predictions for visual and textual representations of the same concept. Rather than masking these failures with standard voting mechanisms, which can amplify systematic biases, we show that cross-modal inconsistency provides a rich and natural signal for learning. We introduce RC2, a reinforcement learning framework that resolves internal conflicts by enforcing cross-modal cycle consistency. By requiring a model to perform backward inference, switch modalities, and reliably reconstruct the answer through forward inference, we obtain a dense, label-free reward. This cyclic constraint encourages the model to align its internal representations autonomously. Optimizing for this structure mitigates modality-specific errors and improves reasoning accuracy by up to 7.6 points. Our results suggest that advanced reasoning emerges not only from scaling data, but also from enforcing a structurally consistent understanding of the world.",
+      "url": "https://arxiv.org/abs/2603.25720v1",
+      "source": "arxiv",
+      "tags": [
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "Provably Efficient Long-Time Exponential Decompositions of Non-Markovian Gaussian Baths",
+      "authors": [
+        "Zhen Huang",
+        "Zhiyan Ding",
+        "Ke Wang",
+        "Jason Kaye",
+        "Xiantao Li",
+        "Lin Lin"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Gaussian baths are widely used to model non-Markovian environments, yet the cost of accurate simulation at long times remains poorly understood, especially when spectral densities exhibit nonanalytic behavior as in a range of realistic models. We rigorously bound the complexity of representing bath correlation functions on a time interval $[0,T]$ by sums of complex exponentials, as employed in recent variants of pseudomode and hierarchical equations of motion methods. These bounds make explicit the dependence on the maximal simulation time $T$, inverse temperature $β$, and the type and strength of singularities in an effective spectral density. For a broad class of spectral densities, the required number of exponentials is bounded independently of $T$, achieving time-uniform complexity. The $T$-dependence emerges only as polylogarithmic factors for spectral densities with strong singularities, such as step discontinuities and inverse power-law divergences. The temperature dependence is mild for bosonic environments and disappears entirely for fermionic environments. Thus, the true bottleneck for long-time simulation is not the simulation duration itself, but rather the presence of sharp nonanalytic features in the bath spectrum. Our results are instructive both for long-time simulation of non-Markovian open quantum systems, as well as for Markovian embeddings of classical generalized Langevin equations with memory kernels.",
+      "url": "https://arxiv.org/abs/2603.25708v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑"
+      ]
+    },
+    {
+      "title": "The Kitchen Loop: User-Spec-Driven Development for a Self-Evolving Codebase",
+      "authors": [
+        "Yannick Roy"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Code production is now a commodity; the bottleneck is knowing what to build and proving it works. We present the Kitchen Loop, a framework for autonomous, self-evolving software built on a unified trust model: (1) a specification surface enumerating what the product claims to support; (2) 'As a User x 1000', where an LLM agent exercises that surface as a synthetic power user at 1,000x human cadence; (3) Unbeatable Tests, ground-truth verification the code author cannot fake; and (4) Drift Control, continuous quality measurement with automated pause gates. We validate across two production systems over 285+ iterations, producing 1,094+ merged pull requests with zero regressions detected by the regression oracle (methodology in Section 6.1). We observe emergent properties at scale: multi-iteration self-correction chains, autonomous infrastructure healing, and monotonically improving quality gates. The primitives are not new; our contribution is their composition into a production-tested system with the operational discipline that makes long-running autonomous evolution safe.",
+      "url": "https://arxiv.org/abs/2603.25697v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "Input-Output Price Parity and Farm Profitability: A Strategic Perspective for Karnataka",
+      "authors": [
+        " Vaishnavi",
+        " Lokesha",
+        " H.",
+        " Vedamurthy",
+        "K. B.",
+        "Manojkumar Patil"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Agricultural pricing policies are crucial for farm profitability and food security in India. This study analysed how input and output prices significantly influence the profitability of cereals in Karnataka, with the strategic support prices playing a crucial role in maintaining the price parity. The average annual TFP growth was 1.041 per cent. Rising input costs, particularly for human labour, led to reduced profitability for Jowar (6.12 per cent) and Ragi (4.89 per cent). The net effect was adverse for Jowar (-1.50 per cent) and Ragi (-0.86 per cent) due to rising input costs outpacing output prices. The study recommended increasing the MSP for Jowar (60 per cent) and Ragi (46.24 per cent) above the existing levels. A strategic price adjusted for changing input costs can stabilise farm incomes and promote sustainable production, enabling efficient pricing policies.",
+      "url": "https://arxiv.org/abs/2603.25696v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-AI"
+      ]
+    },
+    {
+      "title": "Pseudogap and Non-Fermi-liquid criticality in double Kondo model for bilayer nickelates",
+      "authors": [
+        "Jing-Yu Zhao",
+        "Ya-Hui Zhang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Motivated by recent experimental progress on high-temperature superconductivity in bilayer nickelates, we investigate the phase diagram of the normal state in a bilayer Kondo lattice model using single-site dynamical mean-field theory (DMFT). When the interlayer tunneling $t_\\perp$ is absent, we identify a non-Fermi-liquid (NFL) critical point tuned by the interlayer spin coupling $J_\\perp$ or hole doping $x$, which separates a standard Fermi liquid in the overdoped region from a distinct pseudogap (PG) metal in the underdoped regime. This PG phase, which we term the `second Fermi liquid' (sFL), exhibits small hole pockets and violates the perturbative Luttinger theorem despite the absence of symmetry breaking or fractionalization. The PG metal behaves like a heavy Fermi liquid, with small quasi-particle residue and large effective mass. We also provide an intuitive analytical description of the pseudogap and the ground-state wave function based on an ancilla-fermion framework. Inside the PG phase, we interpret the ancilla fermion as a spin-polaron and demonstrate a Kondo-like resonance peak in the spectral function of this composite fermion directly in DMFT calculation. Extending the analysis to finite $t_\\perp$, we apply this framework to the bilayer nickelate $\\mathrm{La}_3\\mathrm{Ni}_2\\mathrm{O}_7$. We propose that current experimental samples ($x \\approx 0.5$) reside in the overdoped FL regime, suggesting that the pseudogap phase and the NFL criticality may be accessed via electron doping.",
+      "url": "https://arxiv.org/abs/2603.25742v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-AI"
+      ]
+    },
+    {
+      "title": "Parameterizing Dark Energy at the density level: A two-parameter alternative to CPL",
+      "authors": [
+        "Gabriele Montefalcone",
+        "Richard Stiskalek"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We introduce a minimal two-parameter formulation of the dark energy (DE) density evolution normalized to its present-day value, $f_{\\rm DE}(z) \\equiv ρ_{\\rm DE}(z)/ρ_{\\rm DE,0}$, in terms of $f_p\\equiv f_{\\rm DE}(z_p)$ and the DE equation of state $w_p\\equiv w(z_p)$, at a pivot redshift $z_p$. This provides an alternative framework for assessing the evidence for evolving DE, complementary to the established Chevallier-Polarski-Linder (CPL) parameterization. By parameterizing the DE density directly, the $(w_p,\\,f_p)$ formulation avoids the approximate degeneracies intrinsic to the $(w_0,\\,w_a)$ basis -- in particular the weak sensitivity of the expansion history to $w_a$ -- while reproducing the background evolution of representative quintessence models with equivalent accuracy. Confronting it with the latest baryon acoustic oscillation (BAO) measurements from DESI, a prior on early-universe parameters from Planck cosmic microwave background (CMB) observations, and Type Ia supernovae (SNe) data, we find that the $w_p$ and $f_p$ parameters are both tightly constrained and sensitive to distinct subsets of the data. Specifically, $w_p$ is measured to percent-level precision by BAO and CMB alone, while $f_p$ is pinned down by the independent matter density constraint that only SNe provide. Including the Pantheon+ SNe sample, we obtain $w_p = -1.04 \\pm 0.04$ and $f_p = 1.07 \\pm 0.04$, with similar results when using the DESY5 SNe sample. The preference for evolving DE over $Λ$CDM remains below $3σ$ across all dataset combinations, comparable to that obtained with CPL. Notably, the proximity of both $w_p$ and $f_p$ to their cosmological constant values of $(-1,1)$ -- precisely at the epoch where the data are most sensitive -- deepens the coincidence previously identified in the CPL framework, reinforcing the case for caution in interpreting the current evidence for dynamical DE.",
+      "url": "https://arxiv.org/abs/2603.25735v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-AI"
+      ]
+    }
+  ],
+  "hot_topics": [
+    {
+      "title": "DreamFusion: Text-to-3D using 2D Diffusion",
+      "url": "https://dreamfusion3d.github.io",
+      "hn_url": "https://news.ycombinator.com/item?id=33025446",
+      "points": 833,
+      "comments": 201,
+      "author": "nullptr_deref",
+      "date": "2022-09-29",
+      "hn_id": "33025446",
+      "comment": ""
+    },
+    {
+      "title": "Hunyuan3D 2.0 – High-Resolution 3D Assets Generation",
+      "url": "https://github.com/Tencent/Hunyuan3D-2",
+      "hn_url": "https://news.ycombinator.com/item?id=42786040",
+      "points": 323,
+      "comments": 142,
+      "author": "TheGuyWhoCodes",
+      "date": "2025-01-21",
+      "hn_id": "42786040",
+      "comment": ""
+    },
+    {
+      "title": "Stable Fast 3D: Rapid 3D Asset Generation from Single Images",
+      "url": "https://stability.ai/news/introducing-stable-fast-3d",
+      "hn_url": "https://news.ycombinator.com/item?id=41130042",
+      "points": 321,
+      "comments": 84,
+      "author": "meetpateltech",
+      "date": "2024-08-01",
+      "hn_id": "41130042",
+      "comment": ""
+    },
+    {
+      "title": "A working implementation of text-to-3D DreamFusion, powered by Stable Diffusion",
+      "url": "https://github.com/ashawkey/stable-dreamfusion",
+      "hn_url": "https://news.ycombinator.com/item?id=33109243",
+      "points": 286,
+      "comments": 71,
+      "author": "nopinsight",
+      "date": "2022-10-06",
+      "hn_id": "33109243",
+      "comment": ""
+    },
+    {
+      "title": "WorldGen – Text to Immersive 3D Worlds",
+      "url": "https://www.meta.com/en-gb/blog/worldgen-3d-world-generation-reality-labs-generative-ai-research/",
+      "hn_url": "https://news.ycombinator.com/item?id=46018380",
+      "points": 253,
+      "comments": 81,
+      "author": "smusamashah",
+      "date": "2025-11-22",
+      "hn_id": "46018380",
+      "comment": ""
+    },
+    {
+      "title": "AI for generative design: Plain text to 3D Designs",
+      "url": "https://blog.insightdatascience.com/ai-for-3d-generative-design-17503d0b3943",
+      "hn_url": "https://news.ycombinator.com/item?id=22640407",
+      "points": 239,
+      "comments": 48,
+      "author": "tf_12",
+      "date": "2020-03-20",
+      "hn_id": "22640407",
+      "comment": ""
+    }
+  ],
+  "trending_repos": [
+    {
+      "name": "affaan-m/everything-claude-code",
+      "url": "https://github.com/affaan-m/everything-claude-code",
+      "desc": "The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.",
+      "stars": 112070,
+      "weekly_stars": 22821,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "bytedance/deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "desc": "An open-source long-horizon SuperAgent harness that researches, codes, and creates. With the help of sandboxes, memories, tools, skill, subagents and message gateway, it handles different levels of tasks that could take minutes to hours.",
+      "stars": 50032,
+      "weekly_stars": 16126,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "Crosstalk-Solutions/project-nomad",
+      "url": "https://github.com/Crosstalk-Solutions/project-nomad",
+      "desc": "Project N.O.M.A.D, is a self-contained, offline survival computer packed with critical tools, knowledge, and AI to keep you informed and empowered—anytime, anywhere.",
+      "stars": 18174,
+      "weekly_stars": 14631,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "FujiwaraChoki/MoneyPrinterV2",
+      "url": "https://github.com/FujiwaraChoki/MoneyPrinterV2",
+      "desc": "Automate the process of making money online.",
+      "stars": 26662,
+      "weekly_stars": 10352,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "TauricResearch/TradingAgents",
+      "url": "https://github.com/TauricResearch/TradingAgents",
+      "desc": "TradingAgents: Multi-Agents LLM Financial Trading Framework",
+      "stars": 42806,
+      "weekly_stars": 9209,
+      "date": "2026-03-28"
+    }
+  ],
+  "bili_videos": [
+    {
+      "title": "五款ai生成3D工具大比拼！！！AI能否取代传统3D工作？",
+      "url": "https://www.bilibili.com/video/BV1dmQ3YcEsA",
+      "author": "魔型鲨",
+      "play": 143589,
+      "danmaku": 557,
+      "date": 1741938417,
+      "desc": "AI工具网址：\n混元3D：https://3d.hunyuan.tencent.com/\nRodin：https://hyper3d.ai/\nTripo：https://www.tripo3d.ai/app/home\nTrellis：https://trellis3d.github.io/\nMeshy：https://www.meshy.ai/discover\n强烈推荐大家玩一下~上手简单没有门槛",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "劝退！普通人敢学3D建模，骂醒一个算一个，建模师都不愿说的秘密！！！(自学建模/建模教程/数字媒体/游戏建模）",
+      "url": "https://www.bilibili.com/video/BV1Rq6CB7EHE",
+      "author": "zbrush官方教学",
+      "play": 123388,
+      "danmaku": 157,
+      "date": 1769842038,
+      "desc": "劝退！普通人敢学3D建模，骂醒一个算一个！\n建模交流群（970161236）里免费解答建模问题~（评论：111秒通过）\n有免费的安装包，建模素材，快捷键大全，学习教程、模型等等…\n3D建模：可以做游戏、影视、动漫、3D打印、手办、VR等",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "Owen来造｜AI生成3D全攻略!! 如何让AI成为真正的生产力工具？ (Tripo AI)",
+      "url": "https://www.bilibili.com/video/BV1XLgDz6E6r",
+      "author": "Owen来造",
+      "play": 91909,
+      "danmaku": 125,
+      "date": 1751371200,
+      "desc": "-",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "2D转3D成熟倒计时！2023(最全)AIGC-3D技术总结，一个视频搞懂AI生成3D模型",
+      "url": "https://www.bilibili.com/video/BV1TG411B7B5",
+      "author": "AI研究室-帆哥",
+      "play": 50486,
+      "danmaku": 204,
+      "date": 1704636938,
+      "desc": "2023年我们见证了AI生成图像的快速进化，同样在这一年，AI生成3D虽然相对之下默默无闻，但也出现了很多重要的技术，实现了从0到1的突破。\n相信2024年一定会迎来AI生成3D技术的突飞猛进。这个视频我们一起看一下2023年AI生成3D有哪些重要工作，提前了解。为后面的成熟做好准备。",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "AI 3D建模大比拼！Meshy、Tripo、混元、Rodin谁最强？附送0基础手搓3D打印教程！",
+      "url": "https://www.bilibili.com/video/BV1YScpz3Er1",
+      "author": "Lala罐头",
+      "play": 33322,
+      "danmaku": 54,
+      "date": 1771043518,
+      "desc": "",
+      "comment": "",
+      "source": "bilibili"
+    }
+  ],
+  "xhs_notes": []
+}

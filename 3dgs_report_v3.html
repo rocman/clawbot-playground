@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3DGS 完整扩展报告</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+.container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+h1 { color: #06d6d6; font-size: 26px; border-bottom: 1px solid #334155; padding-bottom: 12px; margin-bottom: 8px; }
+.subtitle { color: #94a3b8; font-size: 15px; margin-bottom: 30px; }
+
+.paper { background: #1e293b; border-left: 4px solid #06d6d6; margin: 24px 0; padding: 22px 24px; border-radius: 0 8px 8px 0; }
+.paper-num { color: #475569; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.paper-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.paper-title a { color: #fff; text-decoration: none; }
+.paper-title a:hover { color: #06d6d6; }
+.paper-meta { color: #64748b; font-size: 13px; margin-bottom: 14px; }
+.paper-abstract { font-size: 14px; color: #cbd5e1; padding: 12px 14px; background: #253047; border-radius: 6px; margin-bottom: 16px; }
+.paper-tags { margin-bottom: 18px; }
+.tag { display: inline-block; background: #334155; color: #94a3b8; font-size: 12px; padding: 3px 10px; border-radius: 10px; margin-right: 6px; margin-bottom: 4px; }
+
+.paper-footer { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+.btn-expand { background: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+.btn-expand:hover { background: #475569; border-color: #64748b; }
+.btn-expand.active { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
+.btn-expand .arrow { transition: transform 0.25s; display: inline-block; }
+.btn-expand.active .arrow { transform: rotate(90deg); }
+.btn-arxiv { background: #b91c1c; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s; }
+.btn-arxiv:hover { background: #dc2626; }
+
+.expanded-box { overflow: hidden; max-height: 0; transition: max-height 0.35s ease, opacity 0.35s ease, margin 0.35s ease; opacity: 0; margin-top: 0; margin-bottom: 0; }
+.expanded-box.open { max-height: 400px; opacity: 1; margin-top: 16px; margin-bottom: 16px; }
+.expanded-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; background: #1a2744; border-radius: 8px; padding: 18px; border: 1px solid #334155; }
+.expanded-item strong { color: #06d6d6; font-size: 13px; display: block; margin-bottom: 5px; }
+.expanded-item { font-size: 13px; color: #cbd5e1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>3D Gaussian Splatting (3DGS) 最新进展报告 2025</h1>
+  <p class="subtitle">论文摘要直接可见 · 点击"扩展概要"查看更多 · 原文链接常驻</p>
+
+  <div class="paper" data-id="1">
+    <div class="paper-num">Paper 01 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.09529" target="_blank">Mobile-GS: Real-time Gaussian Splatting for Mobile Devices</a></div>
+    <div class="paper-meta">Xiaobiao Du · Yida Wang · Kun Zhan · Xin Yu</div>
+    <div class="paper-abstract">提出针对移动设备优化的实时高斯溅射方法 Mobile-GS。原始 3DGS 的高计算量和大存储开销在移动端部署存在显著挑战。本文通过轻量化高斯表示与自适应渲染策略，在移动 GPU 上实现实时高质量渲染，大幅拓宽 3DGS 的应用边界。</div>
+    <div class="paper-tags"><span class="tag">移动端</span><span class="tag">实时渲染</span><span class="tag">效率</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、Metal、OpenGL ES</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>暂未开源，预期有官方代码</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>手游AR、XR眼镜、便携扫描仪</div>
+        <div class="expanded-item"><strong>📚 引用关联</strong>同期相关论文: LiteGS、TinyGaussian</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.09529" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper" data-id="2">
+    <div class="paper-num">Paper 02 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.09428" target="_blank">Mango-GS: Enhancing Spatio-Temporal Consistency in Dynamic Scenes Reconstruction using Multi-Frame Node-Guided 4D Gaussian Splatting</a></div>
+    <div class="paper-meta">Tingxuan Huang · Haowei Zhu · Jun-hai Yong · Hao Pan · Bin Wang</div>
+    <div class="paper-abstract">Mango-GS 提出多帧节点引导框架用于动态 3D 场景重建，解决现有方法逐帧优化导致的时空不一致问题。通过跨帧节点约束捕捉底层运动动力学，实现具有真实感细节和强时间一致性的动态场景重建。</div>
+    <div class="paper-tags"><span class="tag">4D-GS</span><span class="tag">动态场景</span><span class="tag">时空一致性</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>Python、PyTorch3D、COLMAP、FFMPEG</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预期在作者主页发布</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、自动驾驶模拟</div>
+        <div class="expanded-item"><strong>📚 引用关联</strong>紧接 M‑NeRF (NeurIPS 2024)</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.09428" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper" data-id="3">
+    <div class="paper-num">Paper 03 · 2026-03-11</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.08723" target="_blank">InstantHDR: Single-forward Gaussian Splatting for High Dynamic Range 3D Reconstruction</a></div>
+    <div class="paper-meta">Dingqiang Ye · Jiacong Xu · Jianglu Ping · Yuxiang Guo · Chao Fan · Vishal M. Patel</div>
+    <div class="paper-abstract">InstantHDR 提出单次前向推理即可完成 HDR 三维重建的高斯溅射方法。解决了传统多曝光融合方法流程复杂的问题，通过端到端网络直接从 LDR 图像序列重建 HDR 3DGS 场景，显著提升重建效率。</div>
+    <div class="paper-tags"><span class="tag">HDR</span><span class="tag">3DGS</span><span class="tag">单次推理</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、OpenEXR、HLG/HDR10</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>有官方实现，链接未公开</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>影视后期、高端摄影、HDR内容制作</div>
+        <div class="expanded-item"><strong>📚 引用关联</strong>引自 HDR-GS (ECCV 2024)</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.08723" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggle(btn) {
+  const paper = btn.closest('.paper');
+  const box = paper.querySelector('.expanded-box');
+  const isOpen = box.classList.contains('open');
+  box.classList.toggle('open', !isOpen);
+  btn.classList.toggle('active', !isOpen);
+  btn.querySelector('.arrow').style.transform = isOpen ? '' : 'rotate(90deg)';
+  btn.innerHTML = (isOpen ? '<span class="arrow">▶</span> 扩展概要' : '<span class="arrow" style="transform:rotate(90deg)">▶</span> 收起概要');
+}
+</script>
+</body>
+</html>

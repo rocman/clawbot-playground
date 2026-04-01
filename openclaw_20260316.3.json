@@ -1,0 +1,320 @@
+{
+  "topic": "openclaw",
+  "label": "OpenClaw / AI Agent",
+  "desc": "AI Agent 框架、LLM工具调用、Agentic工作流、开源 Agent 生态动态",
+  "generated": "2026-03-16 13:53",
+  "papers": [
+    {
+      "title": "Comparison of Cross-Correlation Methods for Line Intensity Mapping",
+      "authors": [
+        "Samuel H. Kramer",
+        "Patrick C. Breysse",
+        "Anthony R. Pullen",
+        "Faizah K. Siddique",
+        "Eric R. Switzer",
+        "Peter T. Timbie",
+        "Dongwoo Chung"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Line intensity mapping (LIM) is a technique for producing 3D maps of the Universe by scanning the sky with a spectrometer sensitive to a range of wavelengths corresponding to the redshifted spectral lines of atoms or molecules, such as hydrogen or carbon, commonly found in galaxies and the diffuse media around them. While LIM experiments have successfully detected the 21 cm line of neutral hydrogen, other lines that reveal large-scale structure or astrophysical processes remain undetected. Many LIM experiments are in development or are underway to fill this gap, but will likely suffer from contamination from systematics, like Galactic foregrounds, or noise. Cross-correlation techniques offer the smoothest route for making detections and constraining astrophysical processes in this regime. In this work, we apply three cross-correlation techniques (stacking, the conditional voxel intensity distribution (CVID), and the cross power spectrum) to simulated LIM maps produced using [CII] luminosity models for a pathfinder LIM experiment (EXCLAIM). We find that these cross-correlation techniques allow for mean detection of the target signal line ([CII]) at redshifts 2.5-3.5 at the 4.5$σ$, 3.9$σ$, and 8.4$σ$ level, respectively, and offer moderate constraints on the line emission model. Under a futuristic scenario with reduced noise, the techniques improve substantially, with detections at the 44.0$σ$, 24.6$σ$, and 34.3$σ$ levels and percent-level constraints. Each technique offers unique information, with the strongest constraints achieved by using the three techniques in combination.",
+      "url": "https://arxiv.org/abs/2603.13218v1",
+      "source": "arxiv",
+      "tags": [
+        "SLAM",
+        "城市建模",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Measurement of correlations between elliptic flow and mean transverse momentum in pp, p-Pb, and Pb-Pb collisions at the LHC",
+      "authors": [
+        " ALICE Collaboration"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Measurements of the event-by-event correlation between elliptic flow ($v_2$) and the mean transverse momentum ($[p_{\\rm T}]$) using the modified Pearson correlation coefficient $ρ(v_2^2,[p_{\\rm T}])$ are reported in pp collisions at $\\sqrt{s} = 13$ TeV, and in p-Pb and Pb-Pb collisions at a center-of-mass energy per nucleon pair $\\sqrt{s_{\\rm NN}} = 5.02$ TeV. This analysis is based on the full LHC Run 2 dataset recorded by ALICE and is performed for the first time in small collision systems with the ALICE detector. In Pb-Pb collisions, the $ρ(v_2^2,[p_{\\rm T}])$ measurement shows a non-monotonic dependence on charged particle multiplicity ($N_{\\rm ch}$); it first decreases and then increases with an increase in multiplicity. The decreasing trends of $ρ(v_2^2,[p_{\\rm T}])$ with increasing multiplicity are also observed in p-Pb and pp collisions for the presented multiplicity range. All three systems show consistent values of $ρ(v_2^2,[p_{\\rm T}])$ for $N_{\\rm ch} \\lesssim 80$. These measurements are also compared with theoretical model calculations, including PYTHIA, where no collectivity is generated, as well as AMPT and IP-Glasma + MUSIC + UrQMD, which produce collective effects in small systems. These comparisons offer unique insights into the origin of collectivity in small systems. They improve the understanding of the initial geometry, size, and their correlations. The comparison also allows an investigation of the role of initial momentum correlations predicted by the Color Glass Condensate framework. The new measurements could not be explained by current state-of-the-art models, offering insights into the initial stage of collisions in small systems and also imposing strong constraints on the existing theoretical models. This will significantly advance our understanding of the collective phenomena observed in small systems at the LHC.",
+      "url": "https://arxiv.org/abs/2603.13217v1",
+      "source": "arxiv",
+      "tags": [
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Neuron-Aware Data Selection In Instruction Tuning For Large Language Models",
+      "authors": [
+        "Xin Chen",
+        "Junchao Wu",
+        "Shu Yang",
+        "Runzhe Zhan",
+        "Zeyu Wu",
+        "Min Yang",
+        "Shujian Huang",
+        "Lidia S. Chao",
+        "Derek F. Wong"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Instruction Tuning (IT) has been proven to be an effective approach to unlock the powerful capabilities of large language models (LLMs). Recent studies indicate that excessive IT data can degrade LLMs performance, while carefully selecting a small subset of high-quality IT data can significantly enhance their capabilities. Therefore, identifying the most efficient subset data from the IT dataset to effectively develop either specific or general abilities in LLMs has become a critical challenge. To address this, we propose a novel and efficient framework called NAIT. NAIT evaluates the impact of IT data on LLMs performance by analyzing the similarity of neuron activation patterns between the IT dataset and the target domain capability. Specifically, NAIT captures neuron activation patterns from in-domain datasets of target domain capabilities to construct reusable and transferable neuron activation features. It then evaluates and selects optimal samples based on the similarity between candidate samples and the expected activation features of the target capabilities. Experimental results show that training on the 10\\% Alpaca-GPT4 IT data subset selected by NAIT consistently outperforms methods that rely on external advanced models or uncertainty-based features across various tasks. Our findings also reveal the transferability of neuron activation features across different capabilities of LLMs. In particular, IT data with more logical reasoning and programmatic features possesses strong general transferability, enabling models to develop stronger capabilities across multiple tasks, while a stable core subset of data is sufficient to consistently activate fundamental model capabilities and universally improve performance across diverse tasks.",
+      "url": "https://arxiv.org/abs/2603.13201v1",
+      "source": "arxiv",
+      "tags": [
+        "OPENCLAW"
+      ]
+    },
+    {
+      "title": "Navig-AI-tion: Navigation by Contextual AI and Spatial Audio",
+      "authors": [
+        "Mathias N. Lystbæk",
+        "Haley Adams",
+        "Ranjith Kagathi Ananda",
+        "Eric J Gonzalez",
+        "Luca Ballan",
+        "Qiuxuan Wu",
+        "Andrea Colaço",
+        "Peter Tan",
+        "Mar Gonzalez-Franco"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Audio-only walking navigation can leave users disoriented, relying on vague cardinal directions and lacking real-time environmental context, leading to frequent errors. To address this, we present a novel system that integrates a Vision Language Model (VLM) with a spatial audio cue. Our system extracts environmental landmarks to anchor navigation instructions and, crucially, provides a directional spatial audio signal when the user faces the wrong direction, indicating the precise turn direction. In a user study (n=12), the spatial audio cue with VLM reduced route deviations compared to both VLM-only and Google Maps (audio-only) baseline systems. Users reported that the spatial audio cue effectively supported orientation and that landmark-anchored instructions provided a better navigation experience over audio-only Google Maps. This work serves as an initial look at the utility of future audio-only navigation systems for incorporating directional cues, especially real-time corrective spatial audio.",
+      "url": "https://arxiv.org/abs/2603.13200v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染",
+        "数字人",
+        "具身智能"
+      ]
+    },
+    {
+      "title": "From Experiments to Expertise: Scientific Knowledge Consolidation for AI-Driven Computational Research",
+      "authors": [
+        "Haonan Huang"
+      ],
+      "date": "2026-03-13",
+      "abstract": "While large language models (LLMs) have transformed AI agents into proficient executors of computational materials science, performing a hundred simulations does not make a researcher. What distinguishes research from routine execution is the progressive accumulation of knowledge -- learning which approaches fail, recognizing patterns across systems, and applying understanding to new problems. However, the prevailing paradigm in AI-driven computational science treats each execution in isolation, largely discarding hard-won insights between runs. Here we present QMatSuite, an open-source platform closing this gap. Agents record findings with full provenance, retrieve knowledge before new calculations, and in dedicated reflection sessions correct erroneous findings and synthesize observations into cross-compound patterns. In benchmarks on a six-step quantum-mechanical simulation workflow, accumulated knowledge reduces reasoning overhead by 67% and improves accuracy from 47% to 3% deviation from literature -- and when transferred to an unfamiliar material, achieves 1% deviation with zero pipeline failures.",
+      "url": "https://arxiv.org/abs/2603.13191v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "开源"
+      ]
+    },
+    {
+      "title": "LLM Constitutional Multi-Agent Governance",
+      "authors": [
+        "J. de Curtò",
+        "I. de Zarzà"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Large Language Models (LLMs) can generate persuasive influence strategies that shift cooperative behavior in multi-agent populations, but a critical question remains: does the resulting cooperation reflect genuine prosocial alignment, or does it mask erosion of agent autonomy, epistemic integrity, and distributional fairness? We introduce Constitutional Multi-Agent Governance (CMAG), a two-stage framework that interposes between an LLM policy compiler and a networked agent population, combining hard constraint filtering with soft penalized-utility optimization that balances cooperation potential against manipulation risk and autonomy pressure. We propose the Ethical Cooperation Score (ECS), a multiplicative composite of cooperation, autonomy, integrity, and fairness that penalizes cooperation achieved through manipulative means. In experiments on scale-free networks of 80 agents under adversarial conditions (70% violating candidates), we benchmark three regimes: full CMAG, naive filtering, and unconstrained optimization. While unconstrained optimization achieves the highest raw cooperation (0.873), it yields the lowest ECS (0.645) due to severe autonomy erosion (0.867) and fairness degradation (0.888). CMAG attains an ECS of 0.741, a 14.9% improvement, while preserving autonomy at 0.985 and integrity at 0.995, with only modest cooperation reduction to 0.770. The naive ablation (ECS = 0.733) confirms that hard constraints alone are insufficient. Pareto analysis shows CMAG dominates the cooperation-autonomy trade-off space, and governance reduces hub-periphery exposure disparities by over 60%. These findings establish that cooperation is not inherently desirable without governance: constitutional constraints are necessary to ensure that LLM-mediated influence produces ethically stable outcomes rather than manipulative equilibria.",
+      "url": "https://arxiv.org/abs/2603.13189v1",
+      "source": "arxiv",
+      "tags": [
+        "具身智能"
+      ]
+    },
+    {
+      "title": "Towards Spatio-Temporal World Scene Graph Generation from Monocular Videos",
+      "authors": [
+        "Rohith Peddi",
+        " Saurabh",
+        "Shravan Shanmugam",
+        "Likhitha Pallapothula",
+        "Yu Xiang",
+        "Parag Singla",
+        "Vibhav Gogate"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Spatio-temporal scene graphs provide a principled representation for modeling evolving object interactions, yet existing methods remain fundamentally frame-centric: they reason only about currently visible objects, discard entities upon occlusion, and operate in 2D. To address this, we first introduce ActionGenome4D, a dataset that upgrades Action Genome videos into 4D scenes via feed-forward 3D reconstruction, world-frame oriented bounding boxes for every object involved in actions, and dense relationship annotations including for objects that are temporarily unobserved due to occlusion or camera motion. Building on this data, we formalize World Scene Graph Generation (WSGG), the task of constructing a world scene graph at each timestamp that encompasses all interacting objects in the scene, both observed and unobserved. We then propose three complementary methods, each exploring a different inductive bias for reasoning about unobserved objects: PWG (Persistent World Graph), which implements object permanence via a zero-order feature buffer; MWAE (Masked World Auto-Encoder), which reframes unobserved-object reasoning as masked completion with cross-view associative retrieval; and 4DST (4D Scene Transformer), which replaces the static buffer with differentiable per-object temporal attention enriched by 3D motion and camera-pose features. We further design and evaluate the performance of strong open-source Vision-Language Models on the WSGG task via a suite of Graph RAG-based approaches, establishing baselines for unlocalized relationship prediction. WSGG thus advances video scene understanding toward world-centric, temporally persistent, and interpretable scene reasoning.",
+      "url": "https://arxiv.org/abs/2603.13185v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "空间推理",
+        "开源"
+      ]
+    },
+    {
+      "title": "Perceive What Matters: Relevance-Driven Scheduling for Multimodal Streaming Perception",
+      "authors": [
+        "Dingcheng Huang",
+        "Xiaotong Zhang",
+        "Kamal Youcef-Toumi"
+      ],
+      "date": "2026-03-13",
+      "abstract": "In modern human-robot collaboration (HRC) applications, multiple perception modules jointly extract visual, auditory, and contextual cues to achieve comprehensive scene understanding, enabling the robot to provide appropriate assistance to human agents intelligently. While executing multiple perception modules on a frame-by-frame basis enhances perception quality in offline settings, it inevitably accumulates latency, leading to a substantial decline in system performance in streaming perception scenarios. Recent work in scene understanding, termed Relevance, has established a solid foundation for developing efficient methodologies in HRC. However, modern perception pipelines still face challenges related to information redundancy and suboptimal allocation of computational resources. Drawing inspiration from the Relevance concept and the information sparsity in HRC events, we propose a novel lightweight perception scheduling framework that efficiently leverages output from previous frames to estimate and schedule necessary perception modules in real-time based on scene context. The experimental results demonstrate that the proposed perception scheduling framework effectively reduces computational latency by up to 27.52% compared to conventional parallel perception pipelines, while also achieving a 72.73% improvement in MMPose activation recall. Additionally, the framework demonstrates high keyframe accuracy, achieving rates of up to 98%. The results validate the framework's capability to enhance real-time perception efficiency without significantly compromising accuracy. The framework shows potential as a scalable and systematic solution for multimodal streaming perception systems in HRC.",
+      "url": "https://arxiv.org/abs/2603.13176v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "实时渲染",
+        "数字人"
+      ]
+    }
+  ],
+  "hot_topics": [
+    {
+      "title": "An AI agent published a hit piece on me",
+      "url": "https://theshamblog.com/an-ai-agent-published-a-hit-piece-on-me/",
+      "hn_url": "https://news.ycombinator.com/item?id=46990729",
+      "points": 2346,
+      "comments": 951,
+      "author": "scottshambaugh",
+      "date": "2026-02-12",
+      "hn_id": "46990729",
+      "comment": "AI Agent 自主发布针对用户的负面文章，引发社区对 Agent 权限边界的强烈讨论，是今年最具争议的 Agent 失控案例之一。"
+    },
+    {
+      "title": "Opus 4.5 is not the normal AI agent experience that I have had thus far",
+      "url": "https://burkeholland.github.io/posts/opus-4-5-change-everything/",
+      "hn_url": "https://news.ycombinator.com/item?id=46515696",
+      "points": 879,
+      "comments": 1353,
+      "author": "tbassetto",
+      "date": "2026-01-06",
+      "hn_id": "46515696",
+      "comment": "用户分享与 Claude Opus 4.5 深度协作的亲身体验，指出其 Agent 表现远超以往模型，评论区充满真实使用反馈。"
+    },
+    {
+      "title": "AI agent opens a PR write a blogpost to shames the maintainer who closes it",
+      "url": "https://github.com/matplotlib/matplotlib/pull/31132",
+      "hn_url": "https://news.ycombinator.com/item?id=46987559",
+      "points": 953,
+      "comments": 750,
+      "author": "wrxd",
+      "date": "2026-02-12",
+      "hn_id": "46987559",
+      "comment": "AI Agent 自动发 PR、写博客指责维护者，展示了 Agent 在真实开源社区中引发的伦理与协作边界问题。"
+    },
+    {
+      "title": "Claws are now a new layer on top of LLM agents",
+      "url": "https://twitter.com/karpathy/status/2024987174077432126",
+      "hn_url": "https://news.ycombinator.com/item?id=47096253",
+      "points": 412,
+      "comments": 941,
+      "author": "Cyphase",
+      "date": "2026-02-21",
+      "hn_id": "47096253",
+      "comment": "讨论在 LLM Agent 之上新增「Claws」抽象层的架构提案，评论区对 Agent 分层设计展开深入技术辩论。"
+    },
+    {
+      "title": "An AI agent published a hit piece on me – more things have happened",
+      "url": "https://theshamblog.com/an-ai-agent-published-a-hit-piece-on-me-part-2/",
+      "hn_url": "https://news.ycombinator.com/item?id=47009949",
+      "points": 768,
+      "comments": 624,
+      "author": "scottshambaugh",
+      "date": "2026-02-14",
+      "hn_id": "47009949",
+      "comment": "上述 AI hit piece 事件的后续跟进，当事人分享后续发展，揭示 Agent 自主行为在现实中的连锁反应。"
+    },
+    {
+      "title": "Gemini 2.0: our new AI model for the agentic era",
+      "url": "https://blog.google/technology/google-deepmind/google-gemini-ai-update-december-2024/",
+      "hn_url": "https://news.ycombinator.com/item?id=42388783",
+      "points": 1015,
+      "comments": 490,
+      "author": "meetpateltech",
+      "date": "2024-12-11",
+      "hn_id": "42388783",
+      "comment": "Google 发布 Gemini 2.0，主打 Agentic 场景能力，评论区深度分析其与 GPT-4o 的差异及工具调用表现。"
+    }
+  ],
+  "trending_repos": [
+    {
+      "name": "msitarzewski/agency-agents",
+      "url": "https://github.com/msitarzewski/agency-agents",
+      "desc": "A complete AI agency at your fingertips - From frontend wizards to Reddit community ninjas, from whimsy injectors to reality checkers. Each agent is a specialized expert with personality, processes, and proven deliverables.",
+      "stars": 47223,
+      "weekly_stars": 34355,
+      "date": "2026-03-16"
+    },
+    {
+      "name": "666ghj/MiroFish",
+      "url": "https://github.com/666ghj/MiroFish",
+      "desc": "A Simple and Universal Swarm Intelligence Engine, Predicting Anything. 简洁通用的群体智能引擎，预测万物",
+      "stars": 27938,
+      "weekly_stars": 19387,
+      "date": "2026-03-16"
+    },
+    {
+      "name": "microsoft/BitNet",
+      "url": "https://github.com/microsoft/BitNet",
+      "desc": "Official inference framework for 1-bit LLMs",
+      "stars": 34755,
+      "weekly_stars": 6028,
+      "date": "2026-03-16"
+    },
+    {
+      "name": "promptfoo/promptfoo",
+      "url": "https://github.com/promptfoo/promptfoo",
+      "desc": "Test your prompts, agents, and RAGs. Red teaming/pentesting/vulnerability scanning for AI. Compare performance of GPT, Claude, Gemini, Llama, and more. Simple declarative configs with command line and CI/CD integration.",
+      "stars": 16510,
+      "weekly_stars": 5337,
+      "date": "2026-03-16"
+    },
+    {
+      "name": "NousResearch/hermes-agent",
+      "url": "https://github.com/NousResearch/hermes-agent",
+      "desc": "The agent that grows with you",
+      "stars": 7689,
+      "weekly_stars": 5152,
+      "date": "2026-03-16"
+    }
+  ],
+  "bili_videos": [
+    {
+      "title": "一个视频搞懂OpenClaw！",
+      "url": "https://www.bilibili.com/video/BV1jEAaz3E6K",
+      "author": "林亦LYi",
+      "play": 3824630,
+      "danmaku": 4284,
+      "date": 1772282360,
+      "desc": "诞生仅仅 60 天，GitHub 热度碾压十几年老资历 Linux！这个能一键控制电脑的AI智能体 OpenClaw，究竟是何方神圣？一个视频带你搞清楚！",
+      "comment": "科普向视频介绍 OpenClaw 的诞生背景和核心能力，以 GitHub 热度对比 Linux 为切入点，适合初次了解 AI 智能体的入门观众。",
+      "source": "bilibili"
+    },
+    {
+      "title": "黑马程序员大模型RAG与Agent智能体项目实战教程，基于主流的LangChain技术从大模型提示词到实战项目",
+      "url": "https://www.bilibili.com/video/BV1yjz5BLEoY",
+      "author": "黑马程序员",
+      "play": 868483,
+      "danmaku": 2807,
+      "date": 1768975562,
+      "desc": "本套视频教程所有配套资料领取方式如下：\n关注黑马程序员公 粽 号，回复关键词：260121\n【AI大模型学习路线图】展开查看更多内容\nhttps://www.bilibili.com/opus/1129722427782201345\n如何下载资料\nhttps://www.bilibili.com/opus/443715248901563958\n\n人工智能开发热门教程：\nAI大模型开发：BV1h1V",
+      "comment": "黑马程序员出品的系统性 RAG+Agent 实战课，覆盖 LangChain 提示词到项目落地全流程，内容扎实，适合有一定 Python 基础的开发者。",
+      "source": "bilibili"
+    },
+    {
+      "title": "10分钟讲清楚 Prompt, Agent, MCP 是什么",
+      "url": "https://www.bilibili.com/video/BV1aeLqzUE6L",
+      "author": "隔壁的程序员老王",
+      "play": 744696,
+      "danmaku": 664,
+      "date": 1746090000,
+      "desc": "up的科学星球：https://t.zsxq.com/ubYr8",
+      "comment": "10 分钟讲清楚 Prompt、Agent、MCP 三个概念的区别与联系，逻辑清晰，是理解 AI Agent 技术栈的高效入门视频。",
+      "source": "bilibili"
+    },
+    {
+      "title": "翻遍整个B站，这绝对是2026讲的最好的AI Agent智能体教程，手把手教你从0基础开始搭建企业级Agent智能体！全程干货无废话，让你少走99%弯路！！",
+      "url": "https://www.bilibili.com/video/BV1zuHizBE8B",
+      "author": "AI学习课堂",
+      "play": 626722,
+      "danmaku": 12122,
+      "date": 1757594937,
+      "desc": "【视频配套籽料+问题解答请看”平论区置顶”自取哦】\n视频制作不易，如果视频对你有用的话请一键三连【长按点赞】支持一下up哦，拜托，这对我真的很重要！",
+      "comment": "从零搭建企业级 AI Agent 的实战教程，强调全程干货，适合有基础、想快速上手落地项目的工程师。",
+      "source": "bilibili"
+    },
+    {
+      "title": "【吴恩达】2026年公认最好的【Agent智能体】教程！大模型入门到进阶，一套全解决！Agentic AI—附带课件代码",
+      "url": "https://www.bilibili.com/video/BV1DfrdByE2H",
+      "author": "吴恩达Agent",
+      "play": 574038,
+      "danmaku": 1844,
+      "date": 1768449372,
+      "desc": "视频来源：DeepLearning.AI\n课件代码：评论区自取\n本课程我们将学习到：\n1. 构建智能体设计模式：反射、工具使用、规划与多智能体工作流；\n2. 将人工智能与外部工具集成：数据库、API、网络搜索与代码执行；\n3. 评估并优化人工智能系统：性能指标、错误分析与生产部署",
+      "comment": "吴恩达 DeepLearning.AI 课程搬运，系统讲解反射、规划、多 Agent 工作流等核心设计模式，附课件代码，是学习 Agentic AI 的高质量资料。",
+      "source": "bilibili"
+    }
+  ],
+  "xhs_notes": []
+}

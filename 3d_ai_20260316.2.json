@@ -1,0 +1,364 @@
+{
+  "topic": "3d_ai",
+  "label": "3D + AI 生成",
+  "desc": "Text/Image → 3D、4D动态生成、3D编辑与风格化、数字人",
+  "generated": "2026-03-16 14:54",
+  "papers": [
+    {
+      "title": "PhysMoDPO: Physically-Plausible Humanoid Motion with Preference Optimization",
+      "authors": [
+        "Yangsong Zhang",
+        "Anujith Muraleedharan",
+        "Rikhat Akizhanov",
+        "Abdul Ahad Butt",
+        "Gül Varol",
+        "Pascal Fua",
+        "Fabio Pizzati",
+        "Ivan Laptev"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Recent progress in text-conditioned human motion generation has been largely driven by diffusion models trained on large-scale human motion data. Building on this progress, recent methods attempt to transfer such models for character animation and real robot control by applying a Whole-Body Controller (WBC) that converts diffusion-generated motions into executable trajectories. While WBC trajectories become compliant with physics, they may expose substantial deviations from original motion. To address this issue, we here propose PhysMoDPO, a Direct Preference Optimization framework. Unlike prior work that relies on hand-crafted physics-aware heuristics such as foot-sliding penalties, we integrate WBC into our training pipeline and optimize diffusion model such that the output of WBC becomes compliant both with physics and original text instructions. To train PhysMoDPO we deploy physics-based and task-specific rewards and use them to assign preference to synthesized trajectories. Our extensive experiments on text-to-motion and spatial control tasks demonstrate consistent improvements of PhysMoDPO in both physical realism and task-related metrics on simulated robots. Moreover, we demonstrate that PhysMoDPO results in significant improvements when applied to zero-shot motion transfer in simulation and for real-world deployment on a G1 humanoid robot.",
+      "url": "https://arxiv.org/abs/2603.13228v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模",
+        "具身智能"
+      ]
+    },
+    {
+      "title": "Representation Learning for Spatiotemporal Physical Systems",
+      "authors": [
+        "Helen Qu",
+        "Rudy Morel",
+        "Michael McCabe",
+        "Alberto Bietti",
+        "François Lanusse",
+        "Shirley Ho",
+        "Yann LeCun"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Machine learning approaches to spatiotemporal physical systems have primarily focused on next-frame prediction, with the goal of learning an accurate emulator for the system's evolution in time. However, these emulators are computationally expensive to train and are subject to performance pitfalls, such as compounding errors during autoregressive rollout. In this work, we take a different perspective and look at scientific tasks further downstream of predicting the next frame, such as estimation of a system's governing physical parameters. Accuracy on these tasks offers a uniquely quantifiable glimpse into the physical relevance of the representations of these models. We evaluate the effectiveness of general-purpose self-supervised methods in learning physics-grounded representations that are useful for downstream scientific tasks. Surprisingly, we find that not all methods designed for physical modeling outperform generic self-supervised learning methods on these tasks, and methods that learn in the latent space (e.g., joint embedding predictive architectures, or JEPAs) outperform those optimizing pixel-level prediction objectives. Code is available at https://github.com/helenqu/physical-representation-learning.",
+      "url": "https://arxiv.org/abs/2603.13227v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "开源"
+      ]
+    },
+    {
+      "title": "Visual-ERM: Reward Modeling for Visual Equivalence",
+      "authors": [
+        "Ziyu Liu",
+        "Shengyuan Ding",
+        "Xinyu Fang",
+        "Xuanlang Dai",
+        "Penghui Yang",
+        "Jianze Liang",
+        "Jiaqi Wang",
+        "Kai Chen",
+        "Dahua Lin",
+        "Yuhang Zang"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Vision-to-code tasks require models to reconstruct structured visual inputs, such as charts, tables, and SVGs, into executable or structured representations with high visual fidelity. While recent Large Vision Language Models (LVLMs) achieve strong results via supervised fine-tuning, reinforcement learning remains challenging due to misaligned reward signals. Existing rewards either rely on textual rules or coarse visual embedding similarity, both of which fail to capture fine-grained visual discrepancies and are vulnerable to reward hacking. We propose Visual Equivalence Reward Model (Visual-ERM), a multimodal generative reward model that provides fine-grained, interpretable, and task-agnostic feedback to evaluate vision-to-code quality directly in the rendered visual space. Integrated into RL, Visual-ERM improves Qwen3-VL-8B-Instruct by +8.4 on chart-to-code and yields consistent gains on table and SVG parsing (+2.7, +4.1 on average), and further strengthens test-time scaling via reflection and revision. We also introduce VisualCritic-RewardBench (VC-RewardBench), a benchmark for judging fine-grained image-to-image discrepancies on structured visual data, where Visual-ERM at 8B decisively outperforms Qwen3-VL-235B-Instruct and approaches leading closed-source models. Our results suggest that fine-grained visual reward supervision is both necessary and sufficient for vision-to-code RL, regardless of task specificity.",
+      "url": "https://arxiv.org/abs/2603.13224v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "A Generative Model of Conspicuous Consumption and Status Signaling",
+      "authors": [
+        "Logan Cross",
+        "Jordi Grau-Moya",
+        "William A. Cunningham",
+        "Alexander Sasha Vezhnevets",
+        "Joel Z. Leibo"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Status signaling drives human behavior and the allocation of scarce resources such as mating opportunities, yet the generative mechanisms governing how specific goods, signals, or behaviors acquire prestige remain a puzzle. Classical frameworks, such as Costly Signaling Theory, treat preferences as fixed and struggle to explain how semiotic meaning changes based on context or drifts dynamically over time, occasionally reaching tipping points. In this work, we propose a computational theory of status grounded in the theory of appropriateness, positing that status symbols emerge endogenously through a feedback loop of social observation and predictive pattern completion. We validate this theory using simulations of groups of Large Language Model (LLM)-based agents in the Concordia framework. By experimentally manipulating social visibility within naturalistic agent daily routines, we demonstrate that social interactions transform functional demand into status-seeking behavior. We observe the emergence of price run-ups and positive price elasticity (Veblen effects) for both real-world luxury items and procedurally generated synthetic goods, ruling out pretraining bias as the sole driver. Furthermore, we demonstrate that \"influencer\" agents can drive the endogenous formation of distinct subcultures through targeted sanctioning, and find that similar social influence effects generalize to non-monetary signaling behaviors. This work provides a generative bridge between micro-level cognition and macro-level economic and sociological phenomena, offering a new methodology for forecasting how cultural conventions emerge from interaction.",
+      "url": "https://arxiv.org/abs/2603.13220v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Comparison of Cross-Correlation Methods for Line Intensity Mapping",
+      "authors": [
+        "Samuel H. Kramer",
+        "Patrick C. Breysse",
+        "Anthony R. Pullen",
+        "Faizah K. Siddique",
+        "Eric R. Switzer",
+        "Peter T. Timbie",
+        "Dongwoo Chung"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Line intensity mapping (LIM) is a technique for producing 3D maps of the Universe by scanning the sky with a spectrometer sensitive to a range of wavelengths corresponding to the redshifted spectral lines of atoms or molecules, such as hydrogen or carbon, commonly found in galaxies and the diffuse media around them. While LIM experiments have successfully detected the 21 cm line of neutral hydrogen, other lines that reveal large-scale structure or astrophysical processes remain undetected. Many LIM experiments are in development or are underway to fill this gap, but will likely suffer from contamination from systematics, like Galactic foregrounds, or noise. Cross-correlation techniques offer the smoothest route for making detections and constraining astrophysical processes in this regime. In this work, we apply three cross-correlation techniques (stacking, the conditional voxel intensity distribution (CVID), and the cross power spectrum) to simulated LIM maps produced using [CII] luminosity models for a pathfinder LIM experiment (EXCLAIM). We find that these cross-correlation techniques allow for mean detection of the target signal line ([CII]) at redshifts 2.5-3.5 at the 4.5$σ$, 3.9$σ$, and 8.4$σ$ level, respectively, and offer moderate constraints on the line emission model. Under a futuristic scenario with reduced noise, the techniques improve substantially, with detections at the 44.0$σ$, 24.6$σ$, and 34.3$σ$ levels and percent-level constraints. Each technique offers unique information, with the strongest constraints achieved by using the three techniques in combination.",
+      "url": "https://arxiv.org/abs/2603.13218v1",
+      "source": "arxiv",
+      "tags": [
+        "SLAM",
+        "城市建模",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Measurement of correlations between elliptic flow and mean transverse momentum in pp, p-Pb, and Pb-Pb collisions at the LHC",
+      "authors": [
+        " ALICE Collaboration"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Measurements of the event-by-event correlation between elliptic flow ($v_2$) and the mean transverse momentum ($[p_{\\rm T}]$) using the modified Pearson correlation coefficient $ρ(v_2^2,[p_{\\rm T}])$ are reported in pp collisions at $\\sqrt{s} = 13$ TeV, and in p-Pb and Pb-Pb collisions at a center-of-mass energy per nucleon pair $\\sqrt{s_{\\rm NN}} = 5.02$ TeV. This analysis is based on the full LHC Run 2 dataset recorded by ALICE and is performed for the first time in small collision systems with the ALICE detector. In Pb-Pb collisions, the $ρ(v_2^2,[p_{\\rm T}])$ measurement shows a non-monotonic dependence on charged particle multiplicity ($N_{\\rm ch}$); it first decreases and then increases with an increase in multiplicity. The decreasing trends of $ρ(v_2^2,[p_{\\rm T}])$ with increasing multiplicity are also observed in p-Pb and pp collisions for the presented multiplicity range. All three systems show consistent values of $ρ(v_2^2,[p_{\\rm T}])$ for $N_{\\rm ch} \\lesssim 80$. These measurements are also compared with theoretical model calculations, including PYTHIA, where no collectivity is generated, as well as AMPT and IP-Glasma + MUSIC + UrQMD, which produce collective effects in small systems. These comparisons offer unique insights into the origin of collectivity in small systems. They improve the understanding of the initial geometry, size, and their correlations. The comparison also allows an investigation of the role of initial momentum correlations predicted by the Color Glass Condensate framework. The new measurements could not be explained by current state-of-the-art models, offering insights into the initial stage of collisions in small systems and also imposing strong constraints on the existing theoretical models. This will significantly advance our understanding of the collective phenomena observed in small systems at the LHC.",
+      "url": "https://arxiv.org/abs/2603.13217v1",
+      "source": "arxiv",
+      "tags": [
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Divergent diagrams of folds associated with reflections",
+      "authors": [
+        "Patrícia Hernandes Baptistelli",
+        "Maria Elenice Rodrigues Hernandes",
+        "Miriam Manoel"
+      ],
+      "date": "2026-03-13",
+      "abstract": "We analyse divergent diagrams of \\(k\\)-fold map-germs on \\((\\mathbb{C}^n,0)\\), for $k, n \\geq 2$, associated with reflections, adapting to the complex setting the theory of folds associated with involutions on \\((\\mathbb{R}^n,0)\\). In the complex case, a \\(k\\)-fold is naturally related to a cyclic group generated by a reflection, which guides the analytic classification of singularities. Under the conditions of transversality and linearity of the associated reflections, certain conditions related to the nontrivial eigenvalues appear as invariants by simultaneous conjugacy. We also provide a complete classification of pairs of transversal linear reflections and the corresponding divergent diagrams.",
+      "url": "https://arxiv.org/abs/2603.13216v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-AI"
+      ]
+    },
+    {
+      "title": "Out of Sight, Out of Mind? Evaluating State Evolution in Video World Models",
+      "authors": [
+        "Ziqi Ma",
+        "Mengzhan Liufu",
+        "Georgia Gkioxari"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Evolutions in the world, such as water pouring or ice melting, happen regardless of being observed. Video world models generate \"worlds\" via 2D frame observations. Can these generated \"worlds\" evolve regardless of observation? To probe this question, we design a benchmark to evaluate whether video world models can decouple state evolution from observation. Our benchmark, STEVO-Bench, applies observation control to evolving processes via instructions of occluder insertion, turning off the light, or specifying camera \"lookaway\" trajectories. By evaluating video models with and without camera control for a diverse set of naturally-occurring evolutions, we expose their limitations in decoupling state evolution from observation. STEVO-Bench proposes an evaluation protocol to automatically detect and disentangle failure modes of video world models across key aspects of natural state evolution. Analysis of STEVO-Bench results provide new insight into potential data and architecture bias of present-day video world models. Project website: https://glab-caltech.github.io/STEVOBench/. Blog: https://ziqi-ma.github.io/blog/2026/outofsight/",
+      "url": "https://arxiv.org/abs/2603.13215v1",
+      "source": "arxiv",
+      "tags": [
+        "世界模型"
+      ]
+    },
+    {
+      "title": "Investigating mixed-integer programming approaches for the $p$-$α$-closest-center problem",
+      "authors": [
+        "Elisabeth Gaar",
+        "Sara Joosten",
+        "Markus Sinnl"
+      ],
+      "date": "2026-03-13",
+      "abstract": "In this work, we introduce and study the $p$-$α$-closest-center problem ($pα$CCP), which generalizes the $p$-second-center problem, a recently emerged variant of the classical $p$-center problem. In the $pα$CCP, we are given sets of customers and potential facility locations, distances between each customer and potential facility location as well as two integers $p$ and $α$. The goal is to open facilities at $p$ of the potential facility locations, such that the maximum $α$-distance between each customer and the open facilities is minimized. The $α$-distance of a customer is defined as the sum of distances from the customer to its $α$ closest open facilities. If $α$ is one, the $pα$CCP is the $p$-center problem, and for $α$ being two, the $p$-second-center problem is obtained, for which the only existing algorithm in literature is a variable neighborhood search (VNS).   We present four mixed-integer programming (MIP) formulations for the $pα$CCP, strengthen them by adding valid and optimality-preserving inequalities and conduct a polyhedral study to prove relationships between their linear programming relaxations. Moreover, we present iterative procedures for lifting some valid inequalities to improve initial lower bounds on the optimal objective function value of the $pα$CCP and characterize the best lower bounds obtainable by this iterative lifting approach.   Based on our theoretical findings, we develop a branch-and-cut algorithm (B&C) to solve the $pα$CCP exactly. We improve its performance by a starting and a primal heuristic, variable fixings and separating inequalities. In our computational study, we investigate the effect of the various ingredients of our B&C on benchmark instances from related literature. Our B&C is able to prove optimality for 17 of the 40 instances from the work on the VNS heuristic.",
+      "url": "https://arxiv.org/abs/2603.13214v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-AI"
+      ]
+    },
+    {
+      "title": "Challenging the Weak Cosmic Censorship with Phantom Fields",
+      "authors": [
+        "Giovanni Caridi",
+        "Fabrizio Corelli",
+        "Paolo Pani"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Penrose's weak cosmic censorship conjecture asserts that spacetime singularities produced by gravitational collapse are generically hidden behind event horizons, thus preventing them from causally influencing distant observers and preserving the predictability of the exterior region. In this work, we probe this conjecture in a setup that deliberately violates one of its central assumptions - the dominant energy condition - by considering the spherical collapse of a phantom scalar field with negative energy density. In principle, such a field could produce a Schwarzschild geometry with negative mass and therefore no event horizon. Our aim is to assess whether, once the dominant energy condition is abandoned, the fully coupled evolution of matter and geometry can dynamically generate or expose naked singularities, thereby probing the robustness of cosmic censorship. To this end, we perform high-accuracy numerical relativity simulations based on fourth-order finite-difference schemes. Starting from smooth, asymptotically flat initial data representing regular phantom scalar wave packets, we follow their fully nonlinear evolution through collapse or dispersion. While an ordinary (positive-energy) scalar field exhibits the standard Choptuik critical behavior at the threshold of black-hole formation, the phantom field displays qualitatively different dynamics. For all amplitudes considered, we find no evidence for trapped surfaces, naked singularities, or alternative stationary end states. Instead, the phantom scalar field always disperses, suggesting that cosmic censorship remains dynamically preserved even in the presence of negative-energy matter.",
+      "url": "https://arxiv.org/abs/2603.13210v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人"
+      ]
+    }
+  ],
+  "hot_topics": [
+    {
+      "title": "DreamFusion: Text-to-3D using 2D Diffusion",
+      "url": "https://dreamfusion3d.github.io",
+      "hn_url": "https://news.ycombinator.com/item?id=33025446",
+      "points": 833,
+      "comments": 201,
+      "author": "nullptr_deref",
+      "date": "2022-09-29",
+      "hn_id": "33025446",
+      "comment": "Google Research 提出的里程碑方法，把 Stable Diffusion 的语义理解能力迁移到 3D 场景，开创了「Score Distillation Sampling」这一文生 3D 的核心范式。",
+      "title_zh": "DreamFusion：用 2D 扩散模型实现文生 3D"
+    },
+    {
+      "title": "Hunyuan3D 2.0 – High-Resolution 3D Assets Generation",
+      "url": "https://github.com/Tencent/Hunyuan3D-2",
+      "hn_url": "https://news.ycombinator.com/item?id=42786040",
+      "points": 323,
+      "comments": 142,
+      "author": "TheGuyWhoCodes",
+      "date": "2025-01-21",
+      "hn_id": "42786040",
+      "comment": "腾讯开源的高分辨率 3D 生成模型，支持从图片或文字直接生成带纹理的高质量 3D 资产，在生成精度和速度上较上一代显著提升。",
+      "title_zh": "混元 3D 2.0：高分辨率 3D 资产生成"
+    },
+    {
+      "title": "Stable Fast 3D: Rapid 3D Asset Generation from Single Images",
+      "url": "https://stability.ai/news/introducing-stable-fast-3d",
+      "hn_url": "https://news.ycombinator.com/item?id=41130042",
+      "points": 321,
+      "comments": 84,
+      "author": "meetpateltech",
+      "date": "2024-08-01",
+      "hn_id": "41130042",
+      "comment": "Stability AI 发布的单图重建方案，主打秒级生成，是当前生产环境中可实用的 3D 资产快速获取工具之一。",
+      "title_zh": "Stable Fast 3D：单图快速生成 3D 资产"
+    },
+    {
+      "title": "A working implementation of text-to-3D DreamFusion, powered by Stable Diffusion",
+      "url": "https://github.com/ashawkey/stable-dreamfusion",
+      "hn_url": "https://news.ycombinator.com/item?id=33109243",
+      "points": 286,
+      "comments": 71,
+      "author": "nopinsight",
+      "date": "2022-10-06",
+      "hn_id": "33109243",
+      "comment": "社区对 DreamFusion 的开源复现，让更多开发者得以直接上手实验文生 3D 技术，是早期文生 3D 工程化的重要节点。",
+      "title_zh": "DreamFusion 开源复现，基于 Stable Diffusion"
+    },
+    {
+      "title": "WorldGen – Text to Immersive 3D Worlds",
+      "url": "https://www.meta.com/en-gb/blog/worldgen-3d-world-generation-reality-labs-generative-ai-research/",
+      "hn_url": "https://news.ycombinator.com/item?id=46018380",
+      "points": 253,
+      "comments": 81,
+      "author": "smusamashah",
+      "date": "2025-11-22",
+      "hn_id": "46018380",
+      "comment": "从文本描述直接生成可交互 3D 场景，打通「写一段描述→获得完整 3D 世界」的全流程，适合游戏和虚拟现实场景开发者关注。",
+      "title_zh": "WorldGen：文字生成沉浸式 3D 世界"
+    },
+    {
+      "title": "AI for generative design: Plain text to 3D Designs",
+      "url": "https://blog.insightdatascience.com/ai-for-3d-generative-design-17503d0b3943",
+      "hn_url": "https://news.ycombinator.com/item?id=22640407",
+      "points": 239,
+      "comments": 48,
+      "author": "tf_12",
+      "date": "2020-03-20",
+      "hn_id": "22640407",
+      "comment": "探索将自然语言描述转化为工业级 3D 设计的可行性，对传统 CAD 工作流有潜在颠覆意义，切入点是工程和产品设计场景。",
+      "title_zh": "AI 生成式设计：纯文本生成 3D 工程模型"
+    }
+  ],
+  "trending_repos": [
+    {
+      "name": "msitarzewski/agency-agents",
+      "url": "https://github.com/msitarzewski/agency-agents",
+      "desc": "A complete AI agency at your fingertips - From frontend wizards to Reddit community ninjas, from whimsy injectors to reality checkers. Each agent is a specialized expert with personality, processes, and proven deliverables.",
+      "stars": 47392,
+      "weekly_stars": 34355,
+      "date": "2026-03-16",
+      "comment": "一站式 AI 中介平台框架，本周增 3.4 万 star，在 3D 内容生产的自动化调度场景中有潜在应用价值。"
+    },
+    {
+      "name": "666ghj/MiroFish",
+      "url": "https://github.com/666ghj/MiroFish",
+      "desc": "A Simple and Universal Swarm Intelligence Engine, Predicting Anything. 简洁通用的群体智能引擎，预测万物",
+      "stars": 28085,
+      "weekly_stars": 19387,
+      "date": "2026-03-16",
+      "comment": "通用群体智能引擎，基于仿生算法实现多 Agent 协同，本周增 1.9 万 star，在 3D 场景中可用于群体角色动画和路径规划。"
+    },
+    {
+      "name": "microsoft/BitNet",
+      "url": "https://github.com/microsoft/BitNet",
+      "desc": "Official inference framework for 1-bit LLMs",
+      "stars": 34769,
+      "weekly_stars": 6028,
+      "date": "2026-03-16",
+      "comment": "微软 1-bit 大模型推理框架，大幅降低本地运行 AI 模型的硬件门槛，对端侧 3D 内容生成场景有间接价值。"
+    },
+    {
+      "name": "promptfoo/promptfoo",
+      "url": "https://github.com/promptfoo/promptfoo",
+      "desc": "Test your prompts, agents, and RAGs. Red teaming/pentesting/vulnerability scanning for AI. Compare performance of GPT, Claude, Gemini, Llama, and more. Simple declarative configs with command line and CI/CD integration.",
+      "stars": 16530,
+      "weekly_stars": 5337,
+      "date": "2026-03-16",
+      "comment": "专为 Prompt 和 RAG 设计的测试红队工具，可用于 3D 生成提示词的自动化质量评估流程。"
+    },
+    {
+      "name": "NousResearch/hermes-agent",
+      "url": "https://github.com/NousResearch/hermes-agent",
+      "desc": "The agent that grows with you",
+      "stars": 7705,
+      "weekly_stars": 5152,
+      "date": "2026-03-16",
+      "comment": "Nous Research 自适应 Agent 框架，可作为 3D 内容生成 Pipeline 中的智能调度层集成使用。"
+    }
+  ],
+  "bili_videos": [
+    {
+      "title": "五款ai生成3D工具大比拼！！！AI能否取代传统3D工作？",
+      "url": "https://www.bilibili.com/video/BV1dmQ3YcEsA",
+      "author": "魔型鲨",
+      "play": 141246,
+      "danmaku": 547,
+      "date": 1741938417,
+      "desc": "AI工具网址：\n混元3D：https://3d.hunyuan.tencent.com/\nRodin：https://hyper3d.ai/\nTripo：https://www.tripo3d.ai/app/home\nTrellis：https://trellis3d.github.io/\nMeshy：https://www.meshy.ai/discover\n强烈推荐大家玩一下~上手简单没有门槛",
+      "comment": "横评混元 3D、Rodin 等五款主流 AI 3D 生成工具，从生成质量、易用性和商用可行性多维度对比，是工具选型的实用参考。",
+      "source": "bilibili"
+    },
+    {
+      "title": "这可能是全网最简单的用deepseek生成3D模型的教程，只需要3步就能生成一个可以商用的3D模型",
+      "url": "https://www.bilibili.com/video/BV1FpPVegEVF",
+      "author": "饭特惜",
+      "play": 29884,
+      "danmaku": 6,
+      "date": 1740561900,
+      "desc": "",
+      "comment": "以 DeepSeek 驱动 3D 模型生成为主题，三步完成可商用 3D 模型，适合对 AI 3D 工具感兴趣但无技术背景的创意从业者入门。",
+      "source": "bilibili"
+    },
+    {
+      "title": "AI 3D建模大比拼！Meshy、Tripo、混元、Rodin谁最强？附送0基础手搓3D打印教程！",
+      "url": "https://www.bilibili.com/video/BV1YScpz3Er1",
+      "author": "Lala罐头",
+      "play": 24365,
+      "danmaku": 42,
+      "date": 1771043518,
+      "desc": "",
+      "comment": "对 Meshy、Tripo、混元、Rodin 四款 3D 生成工具进行横向评测，附带零基础 3D 打印实操教程，兼顾工具评测与动手实践。",
+      "source": "bilibili"
+    },
+    {
+      "title": "stable diffusion手把手教制作3d人物",
+      "url": "https://www.bilibili.com/video/BV1ck4y1q7Rc",
+      "author": "小科5351",
+      "play": 23050,
+      "danmaku": 44,
+      "date": 1680335209,
+      "desc": "人物动作：\n(from_above:1.3), 从上面，(from_below:1.3),从下面，(from_side:1.3),从一边，(from_behind:1.3),从后面\n运动控制\n(hand_on_hip:1.2), 手放在臀部，(sitting:1.2),坐\n正向咒语：\n3d artwork,1girl, (light blue hair 0.8), beautiful red ey",
+      "comment": "讲解用 Stable Diffusion 生成 3D 人物的工作流，内容偏技术，适合已有 SD 基础、想延伸到 3D 角色生成方向的创作者。",
+      "source": "bilibili"
+    },
+    {
+      "title": "LTX2.3 全面进化，数字人、图生视频、文生视频，高清画质工作流",
+      "url": "https://www.bilibili.com/video/BV1MFNAzUEF8",
+      "author": "三层楼的小肥猴",
+      "play": 20185,
+      "danmaku": 14,
+      "date": 1772882326,
+      "desc": "粉丝注册福利，注册领1000RH币：https://www.runninghub.cn/?inviteCode=rh-v1325\n\n在线工作流----------------------------------- \n工作流：LTX-2.3 数字人对口型 高清画质工作流\n体验地址：https://www.runninghub.cn/post/2029940383601397761/?inviteCo",
+      "comment": "LTX 2.3 视频生成模型更新介绍，覆盖数字人、图生视频、文生视频等多场景高清工作流，对数字内容制作有较强参考价值。",
+      "source": "bilibili"
+    }
+  ],
+  "xhs_notes": []
+}

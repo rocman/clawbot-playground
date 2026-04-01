@@ -1,0 +1,129 @@
+{
+  "overview": {
+    "background": "WebGPU 的正式落地（Chrome 113，2023）标志着浏览器三维渲染进入新纪元：计算着色器、直接 GPU 访问、无 WebGL 限制，使得原本只能在原生应用运行的神经渲染、实时光追、大规模粒子仿真开始在浏览器中成为可能。同时，Three.js r160+、Babylon.js 6.x、WebGPU-based Wgpu/Bevy 等生态持续成熟，Web 端三维创作与体验工具正在打破原生应用的垄断。本周报告覆盖 WebGPU 技术前沿、神经渲染 Web 化、三维 Web 框架动态、浏览器实时渲染工具等方向。",
+    "stats": [
+      { "value": "WebGPU", "label": "2023 正式落地 Chrome/Firefox/Safari" },
+      { "value": "Three.js", "label": "r170+ 持续迭代，生态最大" },
+      { "value": "3DGS", "label": "浏览器端高斯溅射渲染已成熟" },
+      { "value": "WASM", "label": "WebAssembly 打通原生渲染管线" }
+    ]
+  },
+  "tech": [
+    {
+      "icon": "⚡",
+      "title": "WebGPU 计算管线",
+      "desc": "WebGPU 的 Compute Shader 让浏览器首次拥有通用 GPU 计算能力。粒子仿真、光线追踪、神经网络推理均可在 GPU 端并行完成，性能接近原生 Vulkan/Metal，是高性能 Web 三维体验的基础设施革命。",
+      "tags": ["WebGPU", "Compute Shader", "GPU并行"]
+    },
+    {
+      "icon": "🌐",
+      "title": "浏览器端神经渲染",
+      "desc": "3DGS、NeRF 的 Web 化已有成熟方案：SuperSplat（PlayCanvas）、Gaussian-Splats-3D、three-gaussian-splats 等库支持在浏览器中实时渲染高斯场景，无需安装任何软件，扫描即可分享三维现实。",
+      "tags": ["神经渲染", "3DGS-Web", "WebGL/WebGPU"]
+    },
+    {
+      "icon": "🏗️",
+      "title": "Web 三维框架演进",
+      "desc": "Three.js（r170+）持续扩展 WebGPU 后端支持；Babylon.js 6.x 集成 Havok 物理引擎与 WebGPU 渲染；React Three Fiber 使声明式三维开发成为主流；PlayCanvas、A-Frame、Troika-3D 各有细分生态。",
+      "tags": ["Three.js", "Babylon.js", "React Three Fiber"]
+    },
+    {
+      "icon": "🔧",
+      "title": "WebAssembly + 原生渲染桥接",
+      "desc": "通过 WASM 将 C++/Rust 编写的渲染引擎（Filament、WGPU/Bevy、Godot Web Export）编译到浏览器，在保留原生性能的同时实现免安装分发，是游戏和专业三维工具 Web 化的主流路径。",
+      "tags": ["WebAssembly", "Rust/WGPU", "原生性能"]
+    }
+  ],
+  "apps": [
+    {
+      "icon": "🛍️",
+      "title": "电商与产品三维展示",
+      "desc": "Three.js/Babylon.js 驱动的产品 360° 展示、AR 试穿/试摆在电商场景全面铺开。Apple AR Quick Look、Google Scene Viewer 让消费者无需 App 即可在浏览器中预览真实尺寸的商品。",
+      "tags": ["电商AR", "产品可视化", "Web XR"]
+    },
+    {
+      "icon": "🏛️",
+      "title": "数字孪生与空间计算",
+      "desc": "CesiumJS、Deck.gl、Three.js + GIS 数据构建了城市级 Web 三维平台。工业数字孪生、BIM 可视化、城市规划仿真开始在浏览器内完成，无需专用客户端。",
+      "tags": ["数字孪生", "GIS", "城市可视化"]
+    },
+    {
+      "icon": "🎮",
+      "title": "Web 游戏与元宇宙入口",
+      "desc": "WebGPU 将 Web 游戏的画质上限大幅提升；Roblox、Fortnite 等主要平台均已或计划支持 Web 端访问；WebXR 为 VR/AR 体验提供标准浏览器入口，无需应用商店分发。",
+      "tags": ["Web游戏", "WebXR", "元宇宙"]
+    }
+  ],
+  "tools": [
+    {
+      "name": "🏆 Three.js",
+      "lang": "JavaScript/TypeScript",
+      "desc": "Web 三维生态最大框架，r170+ 全面接入 WebGPU 后端，React Three Fiber 生态使其进入主流前端开发工作流。GitHub Stars 100k+。",
+      "url": "https://github.com/mrdoob/three.js"
+    },
+    {
+      "name": "⚡ SuperSplat (PlayCanvas)",
+      "lang": "JavaScript/WebGPU",
+      "desc": "浏览器端 3DGS 查看与编辑器，支持导入 .ply/.splat 文件实时渲染，无需安装，是展示高斯溅射场景的最便捷 Web 工具。",
+      "url": "https://playcanvas.com/supersplat"
+    },
+    {
+      "name": "🌐 Babylon.js",
+      "lang": "TypeScript",
+      "desc": "微软维护的企业级 Web 三维引擎，集成 Havok 物理、WebGPU 渲染、WebXR 支持，适合游戏和工业级应用。",
+      "url": "https://github.com/BabylonJS/Babylon.js"
+    },
+    {
+      "name": "🗺️ CesiumJS",
+      "lang": "JavaScript",
+      "desc": "面向地理空间的 Web 三维平台，支持 3D Tiles、glTF、地形渲染，城市级数字孪生和 GIS 可视化的标准选择。",
+      "url": "https://github.com/CesiumGS/cesium"
+    },
+    {
+      "name": "🔧 wgpu (Rust)",
+      "lang": "Rust/WebAssembly",
+      "desc": "跨平台 WebGPU 实现，同时支持原生（Vulkan/Metal/DX12）和 Web（WebAssembly），Bevy 游戏引擎的渲染后端，是 Rust Web 三维生态的核心。",
+      "url": "https://github.com/gfx-rs/wgpu"
+    }
+  ],
+  "industry": [
+    {
+      "title": "🌐 主流浏览器全面支持 WebGPU",
+      "desc": "Chrome 113（2023-05）、Firefox Nightly、Safari TP 相继落地 WebGPU，结束了 WebGL 十余年的垄断局面。W3C WebGPU 规范持续迭代，bindless texture、ray tracing extension 提案已进入草案阶段。",
+      "bullets": [
+        "▶ Chrome 113 正式发布 WebGPU，支持 Windows/macOS/ChromeOS",
+        "▶ Safari 18 (iOS 17.4+) 全面开放 WebGPU，覆盖 iPhone/iPad",
+        "▶ Firefox 124 开启 WebGPU 默认支持"
+      ]
+    },
+    {
+      "title": "🏗️ Web 三维工具商业化加速",
+      "desc": "Web 端三维创作与分享工具正从开发者玩具走向商业产品，Spline、Vectary、Sketchfab 均获得显著用户增长。",
+      "bullets": [
+        "▶ Spline 月活超过 100 万，Web 端三维设计进入非专业用户群体",
+        "▶ Sketchfab 被 Epic 收购后与 Fab（资产市场）深度整合",
+        "▶ PlayCanvas 云端协作三维开发平台用户量持续增长"
+      ]
+    }
+  ],
+  "future": [
+    {
+      "icon": "🚀",
+      "title": "WebGPU 光追与高级特效",
+      "desc": "W3C 正在起草 WebGPU Ray Tracing Extension，浏览器实时光追将在未来 1-2 年内成为现实，届时 Web 端渲染质量将无限接近原生游戏引擎。",
+      "tags": ["WebGPU光追", "实时渲染", "W3C标准"]
+    },
+    {
+      "icon": "🥽",
+      "title": "WebXR 与空间计算融合",
+      "desc": "随着 Apple Vision Pro、Meta Quest 3 的普及，WebXR 成为 XR 内容分发的免安装标准入口。三维 Web 体验将无缝过渡到沉浸式空间计算环境。",
+      "tags": ["WebXR", "空间计算", "Vision Pro"]
+    },
+    {
+      "icon": "🤖",
+      "title": "AI 驱动的 Web 三维生成",
+      "desc": "Text→3D 模型与 Web 渲染框架的结合将使「用自然语言创建交互式三维网页」成为可能，Spline AI 等早期探索已展示了这一方向的潜力。",
+      "tags": ["AI生成", "Text→3D", "Web创作"]
+    }
+  ]
+}

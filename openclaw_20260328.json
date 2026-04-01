@@ -1,0 +1,175 @@
+{
+  "topic": "openclaw",
+  "label": "OpenClaw / AI Agent",
+  "desc": "AI Agent 框架、LLM工具调用、Agentic工作流、开源 Agent 生态动态",
+  "generated": "2026-03-28 04:41",
+  "papers": [],
+  "hot_topics": [
+    {
+      "title": "An AI agent published a hit piece on me",
+      "url": "https://theshamblog.com/an-ai-agent-published-a-hit-piece-on-me/",
+      "hn_url": "https://news.ycombinator.com/item?id=46990729",
+      "points": 2346,
+      "comments": 951,
+      "author": "scottshambaugh",
+      "date": "2026-02-12",
+      "hn_id": "46990729",
+      "comment": ""
+    },
+    {
+      "title": "Opus 4.5 is not the normal AI agent experience that I have had thus far",
+      "url": "https://burkeholland.github.io/posts/opus-4-5-change-everything/",
+      "hn_url": "https://news.ycombinator.com/item?id=46515696",
+      "points": 879,
+      "comments": 1353,
+      "author": "tbassetto",
+      "date": "2026-01-06",
+      "hn_id": "46515696",
+      "comment": ""
+    },
+    {
+      "title": "OpenCode – Open source AI coding agent",
+      "url": "https://opencode.ai/",
+      "hn_url": "https://news.ycombinator.com/item?id=47460525",
+      "points": 1269,
+      "comments": 621,
+      "author": "rbanffy",
+      "date": "2026-03-20",
+      "hn_id": "47460525",
+      "comment": ""
+    },
+    {
+      "title": "AI agent opens a PR write a blogpost to shames the maintainer who closes it",
+      "url": "https://github.com/matplotlib/matplotlib/pull/31132",
+      "hn_url": "https://news.ycombinator.com/item?id=46987559",
+      "points": 953,
+      "comments": 750,
+      "author": "wrxd",
+      "date": "2026-02-12",
+      "hn_id": "46987559",
+      "comment": ""
+    },
+    {
+      "title": "Claws are now a new layer on top of LLM agents",
+      "url": "https://twitter.com/karpathy/status/2024987174077432126",
+      "hn_url": "https://news.ycombinator.com/item?id=47096253",
+      "points": 412,
+      "comments": 941,
+      "author": "Cyphase",
+      "date": "2026-02-21",
+      "hn_id": "47096253",
+      "comment": ""
+    },
+    {
+      "title": "An AI agent published a hit piece on me – more things have happened",
+      "url": "https://theshamblog.com/an-ai-agent-published-a-hit-piece-on-me-part-2/",
+      "hn_url": "https://news.ycombinator.com/item?id=47009949",
+      "points": 768,
+      "comments": 624,
+      "author": "scottshambaugh",
+      "date": "2026-02-14",
+      "hn_id": "47009949",
+      "comment": ""
+    }
+  ],
+  "trending_repos": [
+    {
+      "name": "affaan-m/everything-claude-code",
+      "url": "https://github.com/affaan-m/everything-claude-code",
+      "desc": "The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.",
+      "stars": 112093,
+      "weekly_stars": 22821,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "bytedance/deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "desc": "An open-source long-horizon SuperAgent harness that researches, codes, and creates. With the help of sandboxes, memories, tools, skill, subagents and message gateway, it handles different levels of tasks that could take minutes to hours.",
+      "stars": 50038,
+      "weekly_stars": 16126,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "Crosstalk-Solutions/project-nomad",
+      "url": "https://github.com/Crosstalk-Solutions/project-nomad",
+      "desc": "Project N.O.M.A.D, is a self-contained, offline survival computer packed with critical tools, knowledge, and AI to keep you informed and empowered—anytime, anywhere.",
+      "stars": 18192,
+      "weekly_stars": 14631,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "FujiwaraChoki/MoneyPrinterV2",
+      "url": "https://github.com/FujiwaraChoki/MoneyPrinterV2",
+      "desc": "Automate the process of making money online.",
+      "stars": 26668,
+      "weekly_stars": 10352,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "TauricResearch/TradingAgents",
+      "url": "https://github.com/TauricResearch/TradingAgents",
+      "desc": "TradingAgents: Multi-Agents LLM Financial Trading Framework",
+      "stars": 42815,
+      "weekly_stars": 9209,
+      "date": "2026-03-28"
+    }
+  ],
+  "bili_videos": [
+    {
+      "title": "黑马程序员大模型RAG与Agent智能体项目实战教程，基于主流的LangChain技术从大模型提示词到实战项目",
+      "url": "https://www.bilibili.com/video/BV1yjz5BLEoY",
+      "author": "黑马程序员",
+      "play": 1230776,
+      "danmaku": 4200,
+      "date": 1768975562,
+      "desc": "本套视频教程所有配套资料领取方式如下：\n关注黑马程序员公 粽 号，回复关键词：260121\n【AI大模型学习路线图】展开查看更多内容\nhttps://www.bilibili.com/opus/1129722427782201345\n如何下载资料\nhttps://www.bilibili.com/opus/443715248901563958\n\n人工智能开发热门教程：\nAI大模型开发：BV1h1V",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "【吴恩达】2026年公认最好的【Agent智能体】教程！大模型入门到进阶，一套全解决！Agentic AI—附带课件代码",
+      "url": "https://www.bilibili.com/video/BV1DfrdByE2H",
+      "author": "吴恩达Agent",
+      "play": 901850,
+      "danmaku": 2486,
+      "date": 1768449372,
+      "desc": "视频来源：DeepLearning.AI\n课件代码：评论区自取\n本课程我们将学习到：\n1. 构建智能体设计模式：反射、工具使用、规划与多智能体工作流；\n2. 将人工智能与外部工具集成：数据库、API、网络搜索与代码执行；\n3. 评估并优化人工智能系统：性能指标、错误分析与生产部署",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "10分钟讲清楚 Prompt, Agent, MCP 是什么",
+      "url": "https://www.bilibili.com/video/BV1aeLqzUE6L",
+      "author": "隔壁的程序员老王",
+      "play": 762773,
+      "danmaku": 675,
+      "date": 1746090000,
+      "desc": "up的科学星球：https://t.zsxq.com/ubYr8",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "【闪客】一口气拆穿Skill/MCP/RAG/Agent/OpenClaw底层逻辑",
+      "url": "https://www.bilibili.com/video/BV1ojfDBSEPv",
+      "author": "飞天闪客",
+      "play": 643638,
+      "danmaku": 2065,
+      "date": 1770133043,
+      "desc": "被人负责造词，我负责帮大家吃词",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "翻遍整个B站，这绝对是2026讲的最好的AI Agent智能体教程，手把手教你从0基础开始搭建企业级Agent智能体！全程干货无废话，让你少走99%弯路！！",
+      "url": "https://www.bilibili.com/video/BV1zuHizBE8B",
+      "author": "AI学习课堂",
+      "play": 639626,
+      "danmaku": 12861,
+      "date": 1757594937,
+      "desc": "【视频配套籽料+问题解答请看”平论区置顶”自取哦】\n视频制作不易，如果视频对你有用的话请一键三连【长按点赞】支持一下up哦，拜托，这对我真的很重要！",
+      "comment": "",
+      "source": "bilibili"
+    }
+  ],
+  "xhs_notes": []
+}

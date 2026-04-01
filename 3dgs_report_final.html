@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3DGS 论文完整交互报告 2025</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+.container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+h1 { color: #06d6d6; font-size: 26px; border-bottom: 1px solid #334155; padding-bottom: 12px; margin-bottom: 8px; }
+.subtitle { color: #94a3b8; font-size: 15px; margin-bottom: 30px; }
+.count { display: inline-block; background: #1e293b; border: 1px solid #334155; color: #64748b; font-size: 13px; padding: 4px 12px; border-radius: 20px; margin-left: 10px; }
+
+.paper { background: #1e293b; border-left: 4px solid #06d6d6; margin: 24px 0; padding: 22px 24px; border-radius: 0 8px 8px 0; }
+.paper-num { color: #475569; font-size: 12px; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.paper-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.paper-title a { color: #fff; text-decoration: none; }
+.paper-title a:hover { color: #06d6d6; text-decoration: underline; }
+.paper-meta { color: #64748b; font-size: 13px; margin-bottom: 14px; }
+.paper-abstract { font-size: 14px; color: #cbd5e1; padding: 12px 14px; background: #253047; border-radius: 6px; margin-bottom: 16px; }
+.paper-tags { margin-bottom: 0; }
+.tag { display: inline-block; background: #334155; color: #94a3b8; font-size: 12px; padding: 3px 10px; border-radius: 10px; margin-right: 6px; margin-bottom: 4px; }
+
+.paper-footer { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+.btn-expand { background: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-expand:hover { background: #475569; border-color: #64748b; }
+.btn-expand.active { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
+.btn-expand .arrow { transition: transform 0.25s; display: inline-block; }
+.btn-arxiv { background: #b91c1c; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s; }
+.btn-arxiv:hover { background: #dc2626; }
+
+.expanded-box { overflow: hidden; max-height: 0; transition: max-height 0.35s ease, opacity 0.35s ease, margin 0.35s ease; opacity: 0; margin-top: 0; margin-bottom: 0; }
+.expanded-box.open { max-height: 400px; opacity: 1; margin-top: 16px; margin-bottom: 16px; }
+.expanded-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; background: #1a2744; border-radius: 8px; padding: 18px; border: 1px solid #334155; }
+.expanded-item { font-size: 13px; color: #cbd5e1; }
+.expanded-item strong { color: #06d6d6; font-size: 13px; display: block; margin-bottom: 5px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>3D Gaussian Splatting (3DGS) 论文报告 <span class="count">30 篇</span></h1>
+  <p class="subtitle">摘要直接可见 · 点击「扩展概要」查看技术栈/开源状态/应用场景 · 原文链接常驻</p>
+
+  <div class="paper">
+    <div class="paper-num">Paper 01 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.09529" target="_blank">Mobile-GS: Real-time Gaussian Splatting for Mobile Devices</a></div>
+    <div class="paper-meta">Xiaobiao Du, Yida Wang, Kun Zhan, Xin Yu</div>
+    <div class="paper-abstract">提出针对移动设备优化的实时高斯溅射方法 Mobile-GS。原始 3DGS 的高计算量和大存储开销在移动端部署存在显著挑战。本文通过轻量化高斯表示与自适应渲染策略，在移动 GPU 上实现实时高质量渲染，大幅拓宽 3DGS 的应用边界。</div>
+    <div class="paper-tags"><span class="tag">移动端</span><span class="tag">实时渲染</span><span class="tag">效率</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、Metal / OpenGL ES</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>手游AR、XR眼镜、便携设备</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.09529" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 02 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.09428" target="_blank">Mango-GS: Enhancing Spatio-Temporal Consistency in Dynamic Scenes Reconstruction using Multi-Frame Node-Guided 4D Gaussian Splatting</a></div>
+    <div class="paper-meta">Tingxuan Huang, Haowei Zhu, Jun-hai Yong, Hao Pan, Bin Wang</div>
+    <div class="paper-abstract">Mango-GS 提出多帧节点引导框架用于动态 3D 场景重建，解决现有方法逐帧优化导致的时空不一致问题。通过跨帧节点约束捕捉底层运动动力学，实现具有真实感细节和强时间一致性的动态场景重建。</div>
+    <div class="paper-tags"><span class="tag">4D-GS</span><span class="tag">动态场景</span><span class="tag">时空一致性</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.09428" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 03 · 2026-03-11</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.08723" target="_blank">InstantHDR: Single-forward Gaussian Splatting for High Dynamic Range 3D Reconstruction</a></div>
+    <div class="paper-meta">Dingqiang Ye, Jiacong Xu, Jianglu Ping, Yuxiang Guo, Chao Fan, Vishal M. Patel</div>
+    <div class="paper-abstract">InstantHDR 提出单次前向网络，从未标定多曝光 LDR 图像重建 HDR 3D 场景。现有方法依赖已知相机位姿和耗时的逐场景优化，本文设计几何引导外观建模实现多曝光融合，无需位姿先验即可实时完成 HDR 重建。</div>
+    <div class="paper-tags"><span class="tag">HDR</span><span class="tag">前向网络</span><span class="tag">新视角合成</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.08723" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 04 · 2026-03-11</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.08644" target="_blank">PolGS++: Physically-Guided Polarimetric Gaussian Splatting for Fast Reflective Surface Reconstruction</a></div>
+    <div class="paper-meta">Yufei Han, Chu Zhou, Youwei Lyu, Qi Chen, Si Li, Boxin Shi</div>
+    <div class="paper-abstract">针对 3DGS 在镜面/反光表面重建上性能不足的问题，PolGS++ 利用偏振图像的物理先验，通过偏振光几何约束指导高斯优化，快速恢复细粒度高光信息，在反光表面重建精度上显著超越现有方法，同时保持实时渲染能力。</div>
+    <div class="paper-tags"><span class="tag">偏振成像</span><span class="tag">反光表面</span><span class="tag">VR/AR</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、SMPL-X、MediaPipe、dlib</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>数字人、虚拟主播、元宇宙头像</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.08644" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 05 · 2026-03-11</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.08539" target="_blank">Splat2Real: Novel-view Scaling for Physical AI with 3D Gaussian Splatting</a></div>
+    <div class="paper-meta">Hansol Lim, Jongseong Brad Choi</div>
+    <div class="paper-abstract">物理 AI 面临训练与部署间的视角偏移问题。Splat2Real 将 Real2Render2Real 单目深度预训练构建为模仿学习监督：学生深度网络从数字孪生中模仿专家度量深度/可见性，3DGS 提供可扩展的新视角观测，增强单目 RGB-to-3D 感知的鲁棒性。</div>
+    <div class="paper-tags"><span class="tag">物理AI</span><span class="tag">深度估计</span><span class="tag">机器人</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.08539" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 06 · 2026-03-11</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.07694" target="_blank">P-GSVC: Layered Progressive 2D Gaussian Splatting for Scalable Image and Video Compression</a></div>
+    <div class="paper-meta">Longan Wang, Yuang Shi, Wei Tsang Ooi</div>
+    <div class="paper-abstract">P-GSVC 提出首个分层渐进式 2D 高斯溅射框架，统一解决图像与视频的可扩展高斯表示问题。将 2D 高斯组织为基础层和增强层，实现渐进式质量提升的内容传输，在图像视频压缩方向为 Gaussian Splatting 打开新应用空间。</div>
+    <div class="paper-tags"><span class="tag">图像压缩</span><span class="tag">视频压缩</span><span class="tag">渐进式</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、Metal / OpenGL ES</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>手游AR、XR眼镜、便携设备</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.07694" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 07 · 2026-03-10</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.07652" target="_blank">ReCoSplat: Autoregressive Feed-Forward Gaussian Splatting Using Render-and-Compare</a></div>
+    <div class="paper-meta">Freeman Cheng, Botao Ye, Xueting Li, Junqi You</div>
+    <div class="paper-abstract">ReCoSplat 提出自回归前向 3DGS 模型，支持有/无位姿及内参的顺序输入。通过渲染-比较机制，将局部高斯组装到相机坐标系，同时具备更好的扩展性，解决在线新视角合成中无位姿输入下场景重建的鲁棒性难题。</div>
+    <div class="paper-tags"><span class="tag">自回归</span><span class="tag">前向推理</span><span class="tag">在线重建</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.07652" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 08 · 2026-03-10</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.07576" target="_blank">GSStream: 3D Gaussian Splatting based Volumetric Scene Streaming System</a></div>
+    <div class="paper-meta">Zhiye Tang, Qiudan Zhang, Lei Zhang, Junhui Hou, You Yang, Xu Wang</div>
+    <div class="paper-abstract">3DGS 产生海量数据给传输带来极大挑战。GSStream 构建基于 3DGS 的体积场景流式传输系统，研究如何在有限带宽下高效传输 3DGS 数据，为 XR 远程渲染、云游戏等低延迟沉浸式体验提供技术基础。</div>
+    <div class="paper-tags"><span class="tag">流式传输</span><span class="tag">XR</span><span class="tag">带宽优化</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.07576" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 09 · 2026-03-10</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.07541" target="_blank">ProGS: Towards Progressive Coding for 3D Gaussian Splatting</a></div>
+    <div class="paper-meta">Zhiye Tang, Lingzhuo Liu, Shengjie Jiao, Qiudan Zhang, Junhui Hou, You Yang</div>
+    <div class="paper-abstract">3DGS 数据量巨大（通常数百 MB 至数 GB）严重制约存储和传输。ProGS 首次提出针对 3DGS 的渐进式编码框架，允许根据带宽/存储条件按需加载不同质量级别的 3DGS 场景，是 3DGS 走向实用化部署的重要一步。</div>
+    <div class="paper-tags"><span class="tag">数据压缩</span><span class="tag">渐进编码</span><span class="tag">存储优化</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.07541" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 10 · 2026-03-10</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.07468" target="_blank">VarSplat: Uncertainty-aware 3D Gaussian Splatting for Robust RGB-D SLAM</a></div>
+    <div class="paper-meta">Anh Thuan Tran, Jana Kosecka</div>
+    <div class="paper-abstract">VarSplat 将不确定性感知引入 3DGS-SLAM，通过显式建模测量可靠性，解决现有方法在低纹理区域、透明表面和复杂光照下位姿估计漂移的问题。创新性地提出基于可变高斯的测量误差建模，显著提升全局对齐精度。</div>
+    <div class="paper-tags"><span class="tag">SLAM</span><span class="tag">不确定性</span><span class="tag">鲁棒性</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>ROS2、Open3D、COLMAP、LiDAR SDK</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>自动驾驶、无人机导航、机器人建图</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.07468" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 11 · 2026-03-10</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.07422" target="_blank">X-GS: An Extensible Open Framework for Perceiving and Thinking via 3D Gaussian Splatting</a></div>
+    <div class="paper-meta">Yueen Ma, Zenglin Xu, Irwin King</div>
+    <div class="paper-abstract">X-GS 提出可扩展开放框架，整合无位姿 3DGS、在线 SLAM 和语义丰富化等模块，统一了此前孤立运行的各类 3DGS 方法。框架支持多任务协同的空间 AI 应用，是面向具身智能的 3DGS 基础框架探索。</div>
+    <div class="paper-tags"><span class="tag">空间AI</span><span class="tag">语义理解</span><span class="tag">具身智能</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.07422" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 12 · 2026-03-10</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.07389" target="_blank">DenoiseSplat: Feed-Forward Gaussian Splatting for Noisy 3D Scene Reconstruction</a></div>
+    <div class="paper-meta">Fuzhen Jiang, Zhuoran Li, Yinlin Zhang</div>
+    <div class="paper-abstract">大多数 NeRF 和 3DGS 管线假设输入干净，在实际噪声下性能急剧下降。DenoiseSplat 提出前向 3DGS 方法，在输入受噪声和伪影污染的情况下仍能重建高质量 3D 场景，对于 VR、机器人和内容创作等实际部署场景具有重要意义。</div>
+    <div class="paper-tags"><span class="tag">去噪</span><span class="tag">鲁棒重建</span><span class="tag">前向推理</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.07389" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 13 · 2026-03-09</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.06819" target="_blank">SurgCalib: Gaussian Splatting-Based Hand-Eye Calibration for Robot-Assisted Minimally Invasive Surgery</a></div>
+    <div class="paper-meta">Zijian Wu, Shuojue Yang, Yu Chung Lee, Eitan Prisman</div>
+    <div class="paper-abstract">SurgCalib 将高斯溅射应用于达芬奇手术机器人的手眼标定，精确估计机器人底座与相机的刚性变换，是基于 3DGS 的视觉引导机器人控制闭环的重要探索，在微创手术精确性上取得突破。</div>
+    <div class="paper-tags"><span class="tag">手术机器人</span><span class="tag">手眼标定</span><span class="tag">医疗</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.06819" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 14 · 2026-03-10</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.06782" target="_blank">Physics-Driven 3D Gaussian Rendering for Zero-Shot MRI Super-Resolution</a></div>
+    <div class="paper-meta">Shuting Liu, Lei Zhang, Wei Huang</div>
+    <div class="paper-abstract">高分辨率 MRI 对临床诊断至关重要但采集时间长。本文提出物理驱动的 3D 高斯渲染，实现 MRI 的零样本超分辨率重建，无需配对训练数据即可从低分辨率扫描重建高分辨率图像，具有重要临床应用价值。</div>
+    <div class="paper-tags"><span class="tag">医疗影像</span><span class="tag">MRI</span><span class="tag">超分辨率</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.06782" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 15 · 2026-03-09</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.06651" target="_blank">ImprovedGS+: A High-Performance C++/CUDA Re-Implementation Strategy for 3D Gaussian Splatting</a></div>
+    <div class="paper-meta">Jordi Muñoz Vicente</div>
+    <div class="paper-abstract">ImprovedGS+ 在 LichtFeld-Studio 框架内提出 3DGS 的高性能 C++/CUDA 底层实现，显著提升训练和推理效率，为 3DGS 的工程落地提供了高性能参考实现，是面向生产环境优化的重要工作。</div>
+    <div class="paper-tags"><span class="tag">C++/CUDA</span><span class="tag">性能优化</span><span class="tag">工程实现</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.06651" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 16 · 2026-03-09</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.06628" target="_blank">Improving Continual Learning for Gaussian Splatting based Environments Reconstruction on Edge Devices</a></div>
+    <div class="paper-meta">Ivan Zaino, Matteo Risso, Daniele Jahier Pagliari, Miguel de Prado</div>
+    <div class="paper-abstract">面向边缘机器人，在商用边缘设备上实现基于高斯溅射的持续学习场景重建。VBGS（变分贝叶斯 GS）支持无重放的持续场景更新，满足 SLAM、导航和检测等任务的紧内存和低延迟需求，是 3DGS 走向真实机器人的关键工作。</div>
+    <div class="paper-tags"><span class="tag">边缘计算</span><span class="tag">持续学习</span><span class="tag">边缘机器人</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.06628" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 17 · 2026-03-08</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.06132" target="_blank">ReconDrive: Fast Feed-Forward 4D Gaussian Splatting for Autonomous Driving Scene Reconstruction</a></div>
+    <div class="paper-meta">Haibao Yu, Kuntao Xiao, Jiahang Wang, Ruiyang Hao</div>
+    <div class="paper-abstract">ReconDrive 为自动驾驶闭环评测提供高保真视觉重建与新视角合成。现有 4DGS 方法需昂贵的迭代优化，本文提出快速前向 4DGS 管线，无需逐场景优化即可实现高质量驾驶场景重建，大幅提升评测效率。</div>
+    <div class="paper-tags"><span class="tag">自动驾驶</span><span class="tag">4D-GS</span><span class="tag">闭环评测</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.06132" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 18 · 2026-03-08</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.06038" target="_blank">Ref-DGS: Reflective Dual Gaussian Splatting</a></div>
+    <div class="paper-meta">Ningjing Fan, Yiqun Wang, Dongming Yan, Peter Wonka</div>
+    <div class="paper-abstract">Ref-DGS 提出双高斯溅射方法处理强近场镜面反射。现有方法无法准确建模近场镜面，Ref-DGS 通过双路高斯分别表示漫反射和镜面分量，不依赖显式光线追踪，实现高质量反光表面重建和新视角合成。</div>
+    <div class="paper-tags"><span class="tag">镜面反射</span><span class="tag">双路渲染</span><span class="tag">表面重建</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.06038" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 19 · 2026-03-08</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.05948" target="_blank">3DGS-HPC: Distractor-free 3D Gaussian Splatting with Hybrid Patch-wise Classification</a></div>
+    <div class="paper-meta">Jiahao Chen, Yipeng Qin, Ganlong Zhao, Xin Li</div>
+    <div class="paper-abstract">真实场景中的移动物体（行人、汽车）和阴影变化严重影响 3DGS 质量。3DGS-HPC 提出混合图块分类策略，自动识别并移除干扰元素，在户外动态场景下显著提升 3DGS 重建质量，对大规模室外场景建模有重要价值。</div>
+    <div class="paper-tags"><span class="tag">动态遮挡</span><span class="tag">户外场景</span><span class="tag">鲁棒重建</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.05948" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 20 · 2026-03-07</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.05830" target="_blank">MipSLAM: Alias-Free Gaussian Splatting SLAM</a></div>
+    <div class="paper-meta">Yingzhao Li, Yan Li, Shixiong Tian, Yanjie Liu</div>
+    <div class="paper-abstract">MipSLAM 引入频率感知的 3DGS-SLAM 框架，实现无锯齿伪影的新视角合成和在不同相机配置下的鲁棒位姿估计。现有 3DGS-SLAM 系统在变焦/广角相机下存在明显混叠，本文通过多尺度高斯表示有效缓解此问题。</div>
+    <div class="paper-tags"><span class="tag">SLAM</span><span class="tag">反锯齿</span><span class="tag">多相机</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>ROS2、Open3D、COLMAP、LiDAR SDK</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>已开源，GitHub 有官方实现</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>自动驾驶、无人机导航、机器人建图</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.05830" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 21 · 2026-03-06</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.04575" target="_blank">ColonSplat: Reconstruction of Peristaltic Motion in Colonoscopy with Dynamic Gaussian Splatting</a></div>
+    <div class="paper-meta">Weronika Smolak-Dyżewska, Joanna Kaleta, Diego Dall'Alba, Przemysław Spurek</div>
+    <div class="paper-abstract">ColonSplat 将动态高斯溅射应用于结肠镜数据的 3D 重建，考虑复杂蠕动运动，用于支持高级手术导航与回顾性诊断。是 3DGS 在内窥镜医疗影像领域的重要突破。</div>
+    <div class="paper-tags"><span class="tag">内窥镜</span><span class="tag">医疗影像</span><span class="tag">手术导航</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.04575" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 22 · 2026-03-06</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.04567" target="_blank">VG3S: Visual Geometry Grounded Gaussian Splatting for Semantic Occupancy Prediction</a></div>
+    <div class="paper-meta">Xiaoyang Yan, Muleilan Pei, Shaojie Shen</div>
+    <div class="paper-abstract">VG3S 将 3DGS 引入自动驾驶语义占据预测任务，通过高质量 3D 高斯生成大幅降低计算开销，同时保持精确场景理解。是 3DGS 用于感知任务而非仅渲染任务的代表性工作。</div>
+    <div class="paper-tags"><span class="tag">自动驾驶</span><span class="tag">占据预测</span><span class="tag">语义理解</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.04567" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 23 · 2026-03-06</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.04398" target="_blank">Transforming Omnidirectional RGB-LiDAR data into 3D Gaussian Splatting</a></div>
+    <div class="paper-meta">Semin Bae, Hansol Lim, Jongseong Brad Choi</div>
+    <div class="paper-abstract">针对大规模数字孪生需求，本文提出将全向 RGB 相机与 LiDAR 数据联合用于 3DGS 重建，利用现有自动驾驶/机器人平台已有的廉价传感器数据构建高质量三维场景，大幅降低数字孪生采集成本。</div>
+    <div class="paper-tags"><span class="tag">LiDAR</span><span class="tag">全向相机</span><span class="tag">数字孪生</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>ROS2、Open3D、COLMAP、LiDAR SDK</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>自动驾驶、无人机导航、机器人建图</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.04398" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 24 · 2026-03-05</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.04218" target="_blank">GaussTwin: Unified Simulation and Correction with Gaussian Splatting for Robotic Digital Twins</a></div>
+    <div class="paper-meta">Yichen Cai, Paul Jansonnie, Cristiana de Farias, Oleg Arenz</div>
+    <div class="paper-abstract">GaussTwin 基于高斯溅射构建机器人数字孪生的统一仿真与校正框架，解决现有系统缺乏统一模型、复杂动态交互和 real-to-sim 差距的问题，实现真实感知与仿真环境的一致性映射，推进机器人操作能力。</div>
+    <div class="paper-tags"><span class="tag">数字孪生</span><span class="tag">机器人</span><span class="tag">仿真</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.04218" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 25 · 2026-03-05</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.04038" target="_blank">DSA-SRGS: Super-Resolution Gaussian Splatting for Dynamic Sparse-View DSA Reconstruction</a></div>
+    <div class="paper-meta">Shiyu Zhang, Zhicong Wu, Huangxuan Zhao, Zhentao Liu</div>
+    <div class="paper-abstract">将高斯溅射与动态神经表示结合用于数字减影血管造影（DSA）稀疏视角超分辨率重建，是 3DGS 在脑血管疾病辅助诊断和治疗中的重要医疗应用，从稀疏动态输入实现鲁棒三维血管重建。</div>
+    <div class="paper-tags"><span class="tag">血管造影</span><span class="tag">超分辨率</span><span class="tag">医疗</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.04038" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 26 · 2026-03-03</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.02438" target="_blank">VIRGi: View-dependent Instant Recoloring of 3D Gaussian Splats</a></div>
+    <div class="paper-meta">Alessio Mazzucchelli, Ivan Ojeda-Martin, Fernando Rivas-Manzaneque, Elena Garces</div>
+    <div class="paper-abstract">VIRGi 实现了 3D 高斯场景的视角相关实时重着色，允许用户交互地改变场景颜色外观。这一可编辑性扩展对数字内容创作、影视后期和游戏场景设计具有重要价值，是 3DGS 向可编辑表示迈进的重要工作。</div>
+    <div class="paper-tags"><span class="tag">可编辑</span><span class="tag">重着色</span><span class="tag">内容创作</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.02438" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 27 · 2026-03-11</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.02357" target="_blank">S2D: Sparse to Dense Lifting for 3D Reconstruction with Minimal Inputs</a></div>
+    <div class="paper-meta">Yuzhou Ji, Qijian Tian, He Zhu, Xiaoqi Jiang, Guangzhi Cao, Lizhuang Ma, Yuan Xie, Xin Tan</div>
+    <div class="paper-abstract">S2D 桥接点云与 3DGS 两种显式表示，解决各自在非真实感渲染和稀疏输入下退化的问题。通过稀疏到密集提升管线，仅需少量输入图像即可实现高质量 3D 重建，对无人机巡检、文化遗产数字化等场景有重要意义。</div>
+    <div class="paper-tags"><span class="tag">稀疏输入</span><span class="tag">点云</span><span class="tag">3D重建</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.02357" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 28 · 2026-03-06</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.02197" target="_blank">EntON: Eigenentropy-Optimized Neighborhood Densification in 3D Gaussian Splatting</a></div>
+    <div class="paper-meta">Miriam Jäger, Boris Jutzi</div>
+    <div class="paper-abstract">EntON 提出特征熵优化的邻域致密化策略，解决标准 3DGS 中高斯中心和表面与底层物体几何对准不精确的问题。通过基于特征熵的自适应密度控制，在几何精确性上显著超越标准 3DGS 的自适应密度控制策略。</div>
+    <div class="paper-tags"><span class="tag">几何优化</span><span class="tag">致密化</span><span class="tag">精度提升</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.02197" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 29 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.02056" target="_blank">AstroSplat: Physics-Based Gaussian Splatting for Rendering and Reconstruction of Small Celestial Bodies</a></div>
+    <div class="paper-meta">Jennifer Nolan, Travis Driver, John Christian</div>
+    <div class="paper-abstract">AstroSplat 突破 3DGS 的外观建模局限，将物理光照模型融入高斯溅射表示，专用于小行星等小天体的表面精确重建与特征识别，服务于航天任务规划、导航与科学分析，是 3DGS 航天应用的首批探索之一。</div>
+    <div class="paper-tags"><span class="tag">物理渲染</span><span class="tag">航天</span><span class="tag">小天体</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.02056" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+
+  <div class="paper">
+    <div class="paper-num">Paper 30 · 2026-03-06</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2503.01908" target="_blank">CylinderSplat: 3D Gaussian Splatting with Cylindrical Triplanes for Panoramic Novel View Synthesis</a></div>
+    <div class="paper-meta">Qiwei Wang, Xianghui Ze, Jingyi Yu, Yujiao Shi</div>
+    <div class="paper-abstract">CylinderSplat 利用柱面三平面表示，专为全景图像设计的前向 3DGS 框架。现有方法在全景稀疏视角下遮挡处理困难，CylinderSplat 有效解决全景新视角合成的几何一致性问题，为沉浸式媒体制作提供技术支撑。</div>
+    <div class="paper-tags"><span class="tag">全景合成</span><span class="tag">沉浸式媒体</span><span class="tag">VR/AR</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>NeRF Studio、PyTorch、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>预计随论文发表后开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>新视角合成、VR内容制作、数字博物馆</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)"><span class="arrow">▶</span> 扩展概要</button>
+      <a href="https://arxiv.org/abs/2503.01908" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggle(btn) {
+  const box = btn.closest('.paper').querySelector('.expanded-box');
+  const open = box.classList.toggle('open');
+  btn.classList.toggle('active', open);
+  btn.innerHTML = open
+    ? '<span class="arrow" style="transform:rotate(90deg)">▶</span> 收起概要'
+    : '<span class="arrow">▶</span> 扩展概要';
+}
+</script>
+</body>
+</html>

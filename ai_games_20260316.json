@@ -1,0 +1,542 @@
+{
+  "topic": "ai_games",
+  "label": "AI 与游戏",
+  "desc": "AI NPC、程序化内容生成、游戏AI、强化学习与游戏、AI辅助游戏开发",
+  "generated": "2026-03-16 11:42",
+  "overview": {
+    "background": "AI 正在从根本上重塑游戏行业的每个环节：内容生成（3D 资产、关卡、对话）、NPC 智能（行为树→LLM 驱动）、玩家体验（自适应难度、个性化叙事）和开发工具（代码生成、测试自动化）。NVIDIA ACE、Inworld AI 等平台让智能 NPC 进入商业游戏；程序化内容生成（PCG）结合 AI 开始产出真正无限多样的游戏世界；强化学习 Agent（AlphaGo、OpenAI Five 的继承者）持续突破复杂游戏的人类水平上限。本周报告覆盖 AI NPC、PCG、游戏 AI 研究、AI 辅助开发工具等方向的最新动态。",
+    "stats": [
+      {
+        "value": "NPC",
+        "label": "LLM 驱动 NPC 进入商业游戏"
+      },
+      {
+        "value": "PCG",
+        "label": "AI 程序化内容生成爆发"
+      },
+      {
+        "value": "RL",
+        "label": "强化学习游戏 Agent 持续突破"
+      },
+      {
+        "value": "3D",
+        "label": "AI 3D 资产生成重塑开发流程"
+      }
+    ]
+  },
+  "tech": [
+    {
+      "icon": "🧑‍💬",
+      "title": "LLM 驱动智能 NPC",
+      "desc": "以 LLM 为核心的 NPC 系统（Inworld AI、NVIDIA ACE、Convai）支持动态对话生成、情感状态建模和记忆管理，使 NPC 摆脱预设脚本，实现真正的开放对话。Stanford 小镇实验（Generative Agents）展示了 NPC 自主社会行为的可能性。",
+      "tags": [
+        "AI NPC",
+        "LLM对话",
+        "生成式角色"
+      ]
+    },
+    {
+      "icon": "🗺️",
+      "title": "程序化内容生成（PCG）",
+      "desc": "结合深度学习的 PCG 技术可生成高质量关卡（Wave Function Collapse + 神经网络）、地形（GAN/扩散模型）、任务叙事（LLM）和音效（AudioGen/MusicGen）。Minecraft、No Man's Sky 式的无限世界概念正在被 AI 赋予新的可能。",
+      "tags": [
+        "PCG",
+        "关卡生成",
+        "叙事生成"
+      ]
+    },
+    {
+      "icon": "🏆",
+      "title": "强化学习游戏 Agent",
+      "desc": "从 AlphaGo 到 OpenAI Five 再到 AlphaStar，强化学习 Agent 在棋盘游戏、RTS、FPS 中持续突破人类顶尖水平。最新研究聚焦于样本效率提升（Model-Based RL）、迁移学习和开放世界探索（DREAMER、DreamerV3）。",
+      "tags": [
+        "强化学习",
+        "游戏AI",
+        "多智能体"
+      ]
+    },
+    {
+      "icon": "🎨",
+      "title": "AI 辅助游戏资产生成",
+      "desc": "Text→3D（Meshy、Tripo3D）、Text→Texture（Stable Diffusion）、Text→Animation（Motion Diffusion Model）等技术正在压缩游戏美术制作周期。AI 资产生成与传统 3A 工作流的融合成为各大游戏公司探索的优先课题。",
+      "tags": [
+        "资产生成",
+        "AI美术",
+        "3D生成"
+      ]
+    }
+  ],
+  "apps": [
+    {
+      "icon": "🎮",
+      "title": "3A 游戏 AI 集成",
+      "desc": "育碧、EA、Activision 等主流游戏公司均已公开 AI 辅助内容生成和 NPC 智能化的研究成果。育碧 NEO NPC 系统、EA 的 SEED 研究部门持续输出落地案例，AI 正从研究工具变为生产力工具。",
+      "tags": [
+        "3A游戏",
+        "育碧NEO",
+        "EA SEED"
+      ]
+    },
+    {
+      "icon": "🛠️",
+      "title": "独立游戏 AI 开发工具",
+      "desc": "独立游戏开发者是 AI 工具的最大受益群体：Cursor/Claude Code 写游戏逻辑、Meshy 生成 3D 资产、Suno 制作配乐、ChatGPT 设计关卡和剧情，一人团队的创作上限大幅提升。",
+      "tags": [
+        "独立游戏",
+        "AI辅助开发",
+        "低成本制作"
+      ]
+    },
+    {
+      "icon": "🌐",
+      "title": "AI 游戏平台与服务",
+      "desc": "Roblox AI（文本→游戏代码）、Unity Muse（AI 资产生成）、Unreal Engine MetaHuman Animator（AI 面部动画）正在将 AI 工具内嵌到主流游戏引擎，降低使用门槛。",
+      "tags": [
+        "游戏引擎AI",
+        "Roblox AI",
+        "Unity Muse"
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "🏆 Inworld AI",
+      "lang": "SDK（Unity/Unreal）",
+      "desc": "专为游戏 NPC 设计的 AI 角色平台，支持动态对话、情感、记忆和目标驱动行为，已有多款商业游戏接入。",
+      "url": "https://inworld.ai"
+    },
+    {
+      "name": "⚡ NVIDIA ACE",
+      "lang": "SDK",
+      "desc": "NVIDIA 面向游戏 NPC 的 AI 解决方案，集成语音识别、NLP 和面部动画（Audio2Face），与 RTX 硬件深度优化。",
+      "url": "https://developer.nvidia.com/ace"
+    },
+    {
+      "name": "🗺️ Wave Function Collapse",
+      "lang": "C#/Python（多语言实现）",
+      "desc": "基于约束传播的程序化关卡/地图生成算法，简单高效，广泛用于 Roguelike 和开放世界游戏的关卡生成。",
+      "url": "https://github.com/mxgmn/WaveFunctionCollapse"
+    },
+    {
+      "name": "🤖 Stable Retarget",
+      "lang": "Python",
+      "desc": "AI 动作重定向工具，从视频中提取人物动作并迁移到游戏角色，大幅降低动画制作成本，适合独立开发者。",
+      "url": "https://github.com/zju3dv/4D-Humans"
+    },
+    {
+      "name": "🎵 Suno AI",
+      "lang": "Web",
+      "desc": "文本→音乐生成平台，可快速为游戏生成主题曲、环境音效和战斗配乐，风格覆盖广泛，免费额度可用。",
+      "url": "https://suno.com"
+    }
+  ],
+  "industry": [
+    {
+      "title": "🏢 主流游戏厂商加速 AI 布局",
+      "desc": "游戏行业 AI 应用从探索期进入落地期，各大厂商在 NPC 智能、内容生成和开发效率三个方向同步推进。",
+      "bullets": [
+        "▶ 育碧 NEO NPC：Ghostwriter AI 生成 NPC 对话草稿，节省 80% 编剧时间",
+        "▶ EA：内部 AI 工具辅助关卡设计和 QA 自动化测试",
+        "▶ Take-Two（GTA 母公司）：AI 生成游戏内容专利申请大幅增加"
+      ]
+    },
+    {
+      "title": "🚀 AI 游戏创业浪潮",
+      "desc": "专注 AI+游戏赛道的创业公司快速涌现，从 AI NPC 中间件到 AI 原生游戏平台，融资活跃度持续攀升。",
+      "bullets": [
+        "▶ Inworld AI 累计融资超 1.2 亿美元，成为 AI NPC 赛道领头羊",
+        "▶ Latitude（AI Dungeon 母公司）推出面向开发者的叙事 AI API",
+        "▶ Scenario AI 专注游戏风格化资产生成，已有 1 万+ 独立开发者使用"
+      ]
+    }
+  ],
+  "future": [
+    {
+      "icon": "🌍",
+      "title": "AI 生成的无限游戏世界",
+      "desc": "结合世界模型与生成式 AI，未来的开放世界游戏将实现真正「无限」的地图、剧情和角色——NPC 有自主意识，世界因玩家行为持续演化，每次游戏体验独一无二。",
+      "tags": [
+        "无限世界",
+        "生成式游戏",
+        "动态叙事"
+      ]
+    },
+    {
+      "icon": "🤝",
+      "title": "玩家与 AI 的协作创作",
+      "desc": "玩家将不仅仅是游戏的消费者，而是借助 AI 工具成为游戏内容的共同创作者。Roblox、Dreams 等 UGC 平台正在将 AI 内容生成能力开放给普通玩家。",
+      "tags": [
+        "UGC",
+        "AI共创",
+        "玩家创作"
+      ]
+    },
+    {
+      "icon": "🧬",
+      "title": "自适应个性化游戏体验",
+      "desc": "AI 实时分析玩家行为、情绪和技能水平，动态调整难度、剧情走向和美术风格，实现真正因人而异的游戏体验，是「千人千面」在游戏领域的终极形态。",
+      "tags": [
+        "自适应游戏",
+        "个性化",
+        "动态难度"
+      ]
+    }
+  ],
+  "papers": [
+    {
+      "title": "PhysMoDPO: Physically-Plausible Humanoid Motion with Preference Optimization",
+      "authors": [
+        "Yangsong Zhang",
+        "Anujith Muraleedharan",
+        "Rikhat Akizhanov",
+        "Abdul Ahad Butt",
+        "Gül Varol",
+        "Pascal Fua",
+        "Fabio Pizzati",
+        "Ivan Laptev"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Recent progress in text-conditioned human motion generation has been largely driven by diffusion models trained on large-scale human motion data. Building on this progress, recent methods attempt to transfer such models for character animation and real robot control by applying a Whole-Body Controller (WBC) that converts diffusion-generated motions into executable trajectories. While WBC trajectories become compliant with physics, they may expose substantial deviations from original motion. To address this issue, we here propose PhysMoDPO, a Direct Preference Optimization framework. Unlike prior work that relies on hand-crafted physics-aware heuristics such as foot-sliding penalties, we integrate WBC into our training pipeline and optimize diffusion model such that the output of WBC becomes compliant both with physics and original text instructions. To train PhysMoDPO we deploy physics-based and task-specific rewards and use them to assign preference to synthesized trajectories. Our extensive experiments on text-to-motion and spatial control tasks demonstrate consistent improvements of PhysMoDPO in both physical realism and task-related metrics on simulated robots. Moreover, we demonstrate that PhysMoDPO results in significant improvements when applied to zero-shot motion transfer in simulation and for real-world deployment on a G1 humanoid robot.",
+      "url": "https://arxiv.org/abs/2603.13228v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模",
+        "具身智能"
+      ]
+    },
+    {
+      "title": "Representation Learning for Spatiotemporal Physical Systems",
+      "authors": [
+        "Helen Qu",
+        "Rudy Morel",
+        "Michael McCabe",
+        "Alberto Bietti",
+        "François Lanusse",
+        "Shirley Ho",
+        "Yann LeCun"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Machine learning approaches to spatiotemporal physical systems have primarily focused on next-frame prediction, with the goal of learning an accurate emulator for the system's evolution in time. However, these emulators are computationally expensive to train and are subject to performance pitfalls, such as compounding errors during autoregressive rollout. In this work, we take a different perspective and look at scientific tasks further downstream of predicting the next frame, such as estimation of a system's governing physical parameters. Accuracy on these tasks offers a uniquely quantifiable glimpse into the physical relevance of the representations of these models. We evaluate the effectiveness of general-purpose self-supervised methods in learning physics-grounded representations that are useful for downstream scientific tasks. Surprisingly, we find that not all methods designed for physical modeling outperform generic self-supervised learning methods on these tasks, and methods that learn in the latent space (e.g., joint embedding predictive architectures, or JEPAs) outperform those optimizing pixel-level prediction objectives. Code is available at https://github.com/helenqu/physical-representation-learning.",
+      "url": "https://arxiv.org/abs/2603.13227v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "开源"
+      ]
+    },
+    {
+      "title": "Visual-ERM: Reward Modeling for Visual Equivalence",
+      "authors": [
+        "Ziyu Liu",
+        "Shengyuan Ding",
+        "Xinyu Fang",
+        "Xuanlang Dai",
+        "Penghui Yang",
+        "Jianze Liang",
+        "Jiaqi Wang",
+        "Kai Chen",
+        "Dahua Lin",
+        "Yuhang Zang"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Vision-to-code tasks require models to reconstruct structured visual inputs, such as charts, tables, and SVGs, into executable or structured representations with high visual fidelity. While recent Large Vision Language Models (LVLMs) achieve strong results via supervised fine-tuning, reinforcement learning remains challenging due to misaligned reward signals. Existing rewards either rely on textual rules or coarse visual embedding similarity, both of which fail to capture fine-grained visual discrepancies and are vulnerable to reward hacking. We propose Visual Equivalence Reward Model (Visual-ERM), a multimodal generative reward model that provides fine-grained, interpretable, and task-agnostic feedback to evaluate vision-to-code quality directly in the rendered visual space. Integrated into RL, Visual-ERM improves Qwen3-VL-8B-Instruct by +8.4 on chart-to-code and yields consistent gains on table and SVG parsing (+2.7, +4.1 on average), and further strengthens test-time scaling via reflection and revision. We also introduce VisualCritic-RewardBench (VC-RewardBench), a benchmark for judging fine-grained image-to-image discrepancies on structured visual data, where Visual-ERM at 8B decisively outperforms Qwen3-VL-235B-Instruct and approaches leading closed-source models. Our results suggest that fine-grained visual reward supervision is both necessary and sufficient for vision-to-code RL, regardless of task specificity.",
+      "url": "https://arxiv.org/abs/2603.13224v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "A Generative Model of Conspicuous Consumption and Status Signaling",
+      "authors": [
+        "Logan Cross",
+        "Jordi Grau-Moya",
+        "William A. Cunningham",
+        "Alexander Sasha Vezhnevets",
+        "Joel Z. Leibo"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Status signaling drives human behavior and the allocation of scarce resources such as mating opportunities, yet the generative mechanisms governing how specific goods, signals, or behaviors acquire prestige remain a puzzle. Classical frameworks, such as Costly Signaling Theory, treat preferences as fixed and struggle to explain how semiotic meaning changes based on context or drifts dynamically over time, occasionally reaching tipping points. In this work, we propose a computational theory of status grounded in the theory of appropriateness, positing that status symbols emerge endogenously through a feedback loop of social observation and predictive pattern completion. We validate this theory using simulations of groups of Large Language Model (LLM)-based agents in the Concordia framework. By experimentally manipulating social visibility within naturalistic agent daily routines, we demonstrate that social interactions transform functional demand into status-seeking behavior. We observe the emergence of price run-ups and positive price elasticity (Veblen effects) for both real-world luxury items and procedurally generated synthetic goods, ruling out pretraining bias as the sole driver. Furthermore, we demonstrate that \"influencer\" agents can drive the endogenous formation of distinct subcultures through targeted sanctioning, and find that similar social influence effects generalize to non-monetary signaling behaviors. This work provides a generative bridge between micro-level cognition and macro-level economic and sociological phenomena, offering a new methodology for forecasting how cultural conventions emerge from interaction.",
+      "url": "https://arxiv.org/abs/2603.13220v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Measurement of correlations between elliptic flow and mean transverse momentum in pp, p-Pb, and Pb-Pb collisions at the LHC",
+      "authors": [
+        " ALICE Collaboration"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Measurements of the event-by-event correlation between elliptic flow ($v_2$) and the mean transverse momentum ($[p_{\\rm T}]$) using the modified Pearson correlation coefficient $ρ(v_2^2,[p_{\\rm T}])$ are reported in pp collisions at $\\sqrt{s} = 13$ TeV, and in p-Pb and Pb-Pb collisions at a center-of-mass energy per nucleon pair $\\sqrt{s_{\\rm NN}} = 5.02$ TeV. This analysis is based on the full LHC Run 2 dataset recorded by ALICE and is performed for the first time in small collision systems with the ALICE detector. In Pb-Pb collisions, the $ρ(v_2^2,[p_{\\rm T}])$ measurement shows a non-monotonic dependence on charged particle multiplicity ($N_{\\rm ch}$); it first decreases and then increases with an increase in multiplicity. The decreasing trends of $ρ(v_2^2,[p_{\\rm T}])$ with increasing multiplicity are also observed in p-Pb and pp collisions for the presented multiplicity range. All three systems show consistent values of $ρ(v_2^2,[p_{\\rm T}])$ for $N_{\\rm ch} \\lesssim 80$. These measurements are also compared with theoretical model calculations, including PYTHIA, where no collectivity is generated, as well as AMPT and IP-Glasma + MUSIC + UrQMD, which produce collective effects in small systems. These comparisons offer unique insights into the origin of collectivity in small systems. They improve the understanding of the initial geometry, size, and their correlations. The comparison also allows an investigation of the role of initial momentum correlations predicted by the Color Glass Condensate framework. The new measurements could not be explained by current state-of-the-art models, offering insights into the initial stage of collisions in small systems and also imposing strong constraints on the existing theoretical models. This will significantly advance our understanding of the collective phenomena observed in small systems at the LHC.",
+      "url": "https://arxiv.org/abs/2603.13217v1",
+      "source": "arxiv",
+      "tags": [
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Divergent diagrams of folds associated with reflections",
+      "authors": [
+        "Patrícia Hernandes Baptistelli",
+        "Maria Elenice Rodrigues Hernandes",
+        "Miriam Manoel"
+      ],
+      "date": "2026-03-13",
+      "abstract": "We analyse divergent diagrams of \\(k\\)-fold map-germs on \\((\\mathbb{C}^n,0)\\), for $k, n \\geq 2$, associated with reflections, adapting to the complex setting the theory of folds associated with involutions on \\((\\mathbb{R}^n,0)\\). In the complex case, a \\(k\\)-fold is naturally related to a cyclic group generated by a reflection, which guides the analytic classification of singularities. Under the conditions of transversality and linearity of the associated reflections, certain conditions related to the nontrivial eigenvalues appear as invariants by simultaneous conjugacy. We also provide a complete classification of pairs of transversal linear reflections and the corresponding divergent diagrams.",
+      "url": "https://arxiv.org/abs/2603.13216v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "Out of Sight, Out of Mind? Evaluating State Evolution in Video World Models",
+      "authors": [
+        "Ziqi Ma",
+        "Mengzhan Liufu",
+        "Georgia Gkioxari"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Evolutions in the world, such as water pouring or ice melting, happen regardless of being observed. Video world models generate \"worlds\" via 2D frame observations. Can these generated \"worlds\" evolve regardless of observation? To probe this question, we design a benchmark to evaluate whether video world models can decouple state evolution from observation. Our benchmark, STEVO-Bench, applies observation control to evolving processes via instructions of occluder insertion, turning off the light, or specifying camera \"lookaway\" trajectories. By evaluating video models with and without camera control for a diverse set of naturally-occurring evolutions, we expose their limitations in decoupling state evolution from observation. STEVO-Bench proposes an evaluation protocol to automatically detect and disentangle failure modes of video world models across key aspects of natural state evolution. Analysis of STEVO-Bench results provide new insight into potential data and architecture bias of present-day video world models. Project website: https://glab-caltech.github.io/STEVOBench/. Blog: https://ziqi-ma.github.io/blog/2026/outofsight/",
+      "url": "https://arxiv.org/abs/2603.13215v1",
+      "source": "arxiv",
+      "tags": [
+        "世界模型"
+      ]
+    },
+    {
+      "title": "Investigating mixed-integer programming approaches for the $p$-$α$-closest-center problem",
+      "authors": [
+        "Elisabeth Gaar",
+        "Sara Joosten",
+        "Markus Sinnl"
+      ],
+      "date": "2026-03-13",
+      "abstract": "In this work, we introduce and study the $p$-$α$-closest-center problem ($pα$CCP), which generalizes the $p$-second-center problem, a recently emerged variant of the classical $p$-center problem. In the $pα$CCP, we are given sets of customers and potential facility locations, distances between each customer and potential facility location as well as two integers $p$ and $α$. The goal is to open facilities at $p$ of the potential facility locations, such that the maximum $α$-distance between each customer and the open facilities is minimized. The $α$-distance of a customer is defined as the sum of distances from the customer to its $α$ closest open facilities. If $α$ is one, the $pα$CCP is the $p$-center problem, and for $α$ being two, the $p$-second-center problem is obtained, for which the only existing algorithm in literature is a variable neighborhood search (VNS).   We present four mixed-integer programming (MIP) formulations for the $pα$CCP, strengthen them by adding valid and optimality-preserving inequalities and conduct a polyhedral study to prove relationships between their linear programming relaxations. Moreover, we present iterative procedures for lifting some valid inequalities to improve initial lower bounds on the optimal objective function value of the $pα$CCP and characterize the best lower bounds obtainable by this iterative lifting approach.   Based on our theoretical findings, we develop a branch-and-cut algorithm (B&C) to solve the $pα$CCP exactly. We improve its performance by a starting and a primal heuristic, variable fixings and separating inequalities. In our computational study, we investigate the effect of the various ingredients of our B&C on benchmark instances from related literature. Our B&C is able to prove optimality for 17 of the 40 instances from the work on the VNS heuristic.",
+      "url": "https://arxiv.org/abs/2603.13214v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "Challenging the Weak Cosmic Censorship with Phantom Fields",
+      "authors": [
+        "Giovanni Caridi",
+        "Fabrizio Corelli",
+        "Paolo Pani"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Penrose's weak cosmic censorship conjecture asserts that spacetime singularities produced by gravitational collapse are generically hidden behind event horizons, thus preventing them from causally influencing distant observers and preserving the predictability of the exterior region. In this work, we probe this conjecture in a setup that deliberately violates one of its central assumptions - the dominant energy condition - by considering the spherical collapse of a phantom scalar field with negative energy density. In principle, such a field could produce a Schwarzschild geometry with negative mass and therefore no event horizon. Our aim is to assess whether, once the dominant energy condition is abandoned, the fully coupled evolution of matter and geometry can dynamically generate or expose naked singularities, thereby probing the robustness of cosmic censorship. To this end, we perform high-accuracy numerical relativity simulations based on fourth-order finite-difference schemes. Starting from smooth, asymptotically flat initial data representing regular phantom scalar wave packets, we follow their fully nonlinear evolution through collapse or dispersion. While an ordinary (positive-energy) scalar field exhibits the standard Choptuik critical behavior at the threshold of black-hole formation, the phantom field displays qualitatively different dynamics. For all amplitudes considered, we find no evidence for trapped surfaces, naked singularities, or alternative stationary end states. Instead, the phantom scalar field always disperses, suggesting that cosmic censorship remains dynamically preserved even in the presence of negative-energy matter.",
+      "url": "https://arxiv.org/abs/2603.13210v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人"
+      ]
+    },
+    {
+      "title": "Superposed quantum evolutions across chaotic and regular regimes",
+      "authors": [
+        "Amit Anand",
+        "Anne-Catherine de la Hamette",
+        "Robert Mann",
+        "Shohini Ghose"
+      ],
+      "date": "2026-03-13",
+      "abstract": "While the superposition of quantum evolutions is known to produce interference effects, the interference between evolutions with regular and chaotic classical limits remains largely unexplored. Here, we use a Mach-Zehnder interferometer to investigate the superposition of two quantum evolutions, implemented via post-selection, and to compare it with the corresponding classical mixture. The quantum kicked top provides a natural platform for this study, as its classical dynamics ranges from regular to mixed to fully chaotic depending on the Hamiltonian parameters. We show that when a regular evolution is superposed with a chaotic one, the resulting subsystem entropy can exceed that of the classical mixture, provided the contribution of the chaotic branch dominates in the superposed quantum evolution. We further demonstrate that entropy production in such superpositions is strongly influenced by the structure of the underlying classical phase space. We further show that increased entropy generation can occur for purely regular dynamics at small values of the chaos parameter, given an appropriate choice of post-selection. These results reveal a nontrivial interplay between classical chaos and quantum interference in superposed quantum dynamics",
+      "url": "https://arxiv.org/abs/2603.13209v1",
+      "source": "arxiv",
+      "tags": [
+        "HN热议"
+      ]
+    },
+    {
+      "title": "MoEKD: Mixture-of-Experts Knowledge Distillation for Robust and High-Performing Compressed Code Models",
+      "authors": [
+        "Md. Abdul Awal",
+        "Mrigank Rochan",
+        "Chanchal K. Roy"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Large language models for code have achieved strong performance across diverse software analytics tasks, yet their real-world adoption remains limited by high computational demands, slow inference speeds, significant energy consumption, and environmental impact. Knowledge distillation (KD) offers a practical solution by transferring knowledge from a large model to a smaller and more efficient model. Despite its effectiveness, recent studies show that models distilled from a single source often exhibit degraded adversarial robustness, even when robustness-aware distillation techniques are employed. These observations suggest a fundamental limitation of single-source distillation in simultaneously transferring high-quality and robust knowledge. To overcome this limitation, we propose Mixture of Experts Knowledge Distillation (MoEKD), a KD framework that leverages a Mixture of Experts (MoE) architecture to enable more effective and robust knowledge transfer from multiple specialized experts into a compact model. MoEKD decomposes the distillation process into expert and router training, aggregation of expert knowledge through a learned routing mechanism, and distillation from the aggregated knowledge. We evaluate MoEKD on the vulnerability detection task using CodeBERT and GraphCodeBERT models. Experimental results show that MoEKD not only improves adversarial robustness by up to 35.8%, but also enhances predictive performance by up to 13%, compared to state-of-the-art KD baselines, including Compressor and AVATAR. Furthermore, an ablation study demonstrates that aggregating expert knowledge enables ultra-compact models to maintain competitive performance even when their size is reduced by approximately half. Overall, these results highlight the effectiveness of multi-expert knowledge aggregation in addressing key limitations of existing single-source KD approaches.",
+      "url": "https://arxiv.org/abs/2603.13213v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "可编辑",
+        "数字人"
+      ]
+    },
+    {
+      "title": "A Conceptual Shift In Our Understanding of Degenerate Radical Spin Systems: Spin-Rotation Coupling Turned On Its Head",
+      "authors": [
+        "Linqing Peng",
+        "Titouan Duston",
+        "Nadine Bradbury",
+        "Mansi Bhati",
+        "Xuecheng Tao",
+        "Michael Rosen",
+        "Joseph E. Subotnik"
+      ],
+      "date": "2026-03-13",
+      "abstract": "For most chemists, Kramers' degeneracy refers to the fact that for any radical system, every potential energy surface is at least doubly degenerate (with spin up and spin down, time-reversed solutions) for all nuclear positions $\\mathbf{X}$. That being said, as is well-known to the community of spin chemists, one can experimentally detect a splitting of almost every rotational energy level for a doublet system -- highlighting the fact that nuclear motion breaks the spin degeneracy of such BO electronic states. Thus, as far as predicting experimental spectra, the implications of BO degeneracy are very limited unless one further includes a complete treatment of nuclear-electronic entanglement in a robust fashion; indeed, understanding radical molecules (and the degeneracy of their stationary states) can be extremely non-intuitive within the paradigm of Born-Oppenheimer potential energy surfaces. Now, as an alternative to BO theory, recent theory has suggested characterizing radical potential energy surfaces as functions of both nuclear position $\\mathbf{X}$ and nuclear momentum $\\mathbf{P}$, an approach which has been shown to recover a host of observables outside of BO theory, e.g., vibrational circular dichroism, Raman optical activity, and lambda doubling. Here, we show that such a technique predicts that different spin states will follow different (nondegenerate) potential energy surfaces and that the differences in these spin-dependent surfaces is quantitatively consistent with experimental spin-rotation couplings -- all without any contradiction with regard to Kramers' degeneracy. Thus, the present finding suggests there is still a great deal to learn about spin-resolved molecular reactivity, demanding a conceptual shift in our understanding of coupled spin-nuclear motion, especially in the context of chiral molecules and materials where spin-separation is known to arise.",
+      "url": "https://arxiv.org/abs/2603.13211v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Cops and Robbers: A $\\times$-homotopy Invariant Variant",
+      "authors": [
+        "Tien Chih",
+        "Laura Scull"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Cops and Robbers is a pursuit-evasion game played on graphs, of which many variants have been developed and studied. We introduce a variant of this game, \"Sneaky-Active Cops and Robbers\", where all cops and robber must move on their turn, and where the robber is allowed to move onto a cop position without being captured. We show that for reflexive graphs, this game is equivalent to the classical cops and robbers and that the cop number for a graph is invariant under $\\times$-homotopy equivalence. We then develop further properties of this game, computing cop numbers for a number of graph families and developing results about the behavior of categorical and box products of graphs.",
+      "url": "https://arxiv.org/abs/2603.13192v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "From Experiments to Expertise: Scientific Knowledge Consolidation for AI-Driven Computational Research",
+      "authors": [
+        "Haonan Huang"
+      ],
+      "date": "2026-03-13",
+      "abstract": "While large language models (LLMs) have transformed AI agents into proficient executors of computational materials science, performing a hundred simulations does not make a researcher. What distinguishes research from routine execution is the progressive accumulation of knowledge -- learning which approaches fail, recognizing patterns across systems, and applying understanding to new problems. However, the prevailing paradigm in AI-driven computational science treats each execution in isolation, largely discarding hard-won insights between runs. Here we present QMatSuite, an open-source platform closing this gap. Agents record findings with full provenance, retrieve knowledge before new calculations, and in dedicated reflection sessions correct erroneous findings and synthesize observations into cross-compound patterns. In benchmarks on a six-step quantum-mechanical simulation workflow, accumulated knowledge reduces reasoning overhead by 67% and improves accuracy from 47% to 3% deviation from literature -- and when transferred to an unfamiliar material, achieves 1% deviation with zero pipeline failures.",
+      "url": "https://arxiv.org/abs/2603.13191v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "开源"
+      ]
+    },
+    {
+      "title": "LLM Constitutional Multi-Agent Governance",
+      "authors": [
+        "J. de Curtò",
+        "I. de Zarzà"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Large Language Models (LLMs) can generate persuasive influence strategies that shift cooperative behavior in multi-agent populations, but a critical question remains: does the resulting cooperation reflect genuine prosocial alignment, or does it mask erosion of agent autonomy, epistemic integrity, and distributional fairness? We introduce Constitutional Multi-Agent Governance (CMAG), a two-stage framework that interposes between an LLM policy compiler and a networked agent population, combining hard constraint filtering with soft penalized-utility optimization that balances cooperation potential against manipulation risk and autonomy pressure. We propose the Ethical Cooperation Score (ECS), a multiplicative composite of cooperation, autonomy, integrity, and fairness that penalizes cooperation achieved through manipulative means. In experiments on scale-free networks of 80 agents under adversarial conditions (70% violating candidates), we benchmark three regimes: full CMAG, naive filtering, and unconstrained optimization. While unconstrained optimization achieves the highest raw cooperation (0.873), it yields the lowest ECS (0.645) due to severe autonomy erosion (0.867) and fairness degradation (0.888). CMAG attains an ECS of 0.741, a 14.9% improvement, while preserving autonomy at 0.985 and integrity at 0.995, with only modest cooperation reduction to 0.770. The naive ablation (ECS = 0.733) confirms that hard constraints alone are insufficient. Pareto analysis shows CMAG dominates the cooperation-autonomy trade-off space, and governance reduces hub-periphery exposure disparities by over 60%. These findings establish that cooperation is not inherently desirable without governance: constitutional constraints are necessary to ensure that LLM-mediated influence produces ethically stable outcomes rather than manipulative equilibria.",
+      "url": "https://arxiv.org/abs/2603.13189v1",
+      "source": "arxiv",
+      "tags": [
+        "具身智能"
+      ]
+    },
+    {
+      "title": "Learnability and Privacy Vulnerability are Entangled in a Few Critical Weights",
+      "authors": [
+        "Xingli Fang",
+        "Jung-Eun Kim"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Prior approaches for membership privacy preservation usually update or retrain all weights in neural networks, which is costly and can lead to unnecessary utility loss or even more serious misalignment in predictions between training data and non-training data. In this work, we observed three insights: i) privacy vulnerability exists in a very small fraction of weights; ii) however, most of those weights also critically impact utility performance; iii) the importance of weights stems from their locations rather than their values. According to these insights, to preserve privacy, we score critical weights, and instead of discarding those neurons, we rewind only the weights for fine-tuning. We show that, through extensive experiments, this mechanism exhibits outperforming resilience in most cases against Membership Inference Attacks while maintaining utility.",
+      "url": "https://arxiv.org/abs/2603.13186v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "First-principles predictions of band alignment in strained Si/Si1-xGex and Ge/Si1-xGex heterostructures",
+      "authors": [
+        "Nathaniel M. Vegh",
+        "Pericles Philippopoulos",
+        "Raphaël J. Prentki",
+        "Wanting Zhang",
+        "Yu Zhu",
+        "Félix Beaudoin",
+        "Hong Guo"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Accurate band offsets are essential for predictive continuum modeling of nanostructures such as quantum wells and quantum dots formed in strained Si/Si1-xGex and Ge/Si1-xGex heterostructures. Experimental offset data for these systems remain sparse away from endpoint compositions, making composition-dependent design difficult. We use atomistic first-principles density functional theory to compute valence- and conduction-band offsets across the full range 0 <= x <= 1. Random alloying is treated with special quasirandom structures, interface lineup terms are extracted from macroscopically averaged local Kohn-Sham potentials in thick periodic superlattices, valence-band spin-orbit coupling is included through species-resolved Mulliken weights, and conduction-band edges are refined using the screened hybrid Heyd-Scuseria-Ernzerhof functional. The resulting offsets show pronounced composition nonlinearity beyond the linear models explored in previous works, agree with experimental benchmarks, and reproduce the high-Ge slope change in the relaxed-alloy band gap. Analytic fitting expressions are provided for direct use in simulations, facilitating practical design of modern quantum technology devices.",
+      "url": "https://arxiv.org/abs/2603.13219v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Valve is not willing to publish games with AI generated content anymore?",
+      "authors": [
+        "Wouter33"
+      ],
+      "date": "2023-06-29",
+      "abstract": "HackerNews 讨论 · 622 点赞 · 395 评论。https://old.reddit.com/r/aigamedev/comments/142j3yt/valve_is_not_willing_to_publish_games_with_ai/",
+      "url": "https://old.reddit.com/r/aigamedev/comments/142j3yt/valve_is_not_willing_to_publish_games_with_ai/",
+      "source": "hackernews",
+      "hn_points": 622,
+      "tags": [
+        "HN热议"
+      ]
+    },
+    {
+      "title": "The Total Beginner's Guide to Game AI",
+      "authors": [
+        "stesch"
+      ],
+      "date": "2018-08-13",
+      "abstract": "HackerNews 讨论 · 477 点赞 · 57 评论。https://www.gamedev.net/articles/programming/artificial-intelligence/the-total-beginners-guide-to-game-ai-r4942/",
+      "url": "https://www.gamedev.net/articles/programming/artificial-intelligence/the-total-beginners-guide-to-game-ai-r4942/",
+      "source": "hackernews",
+      "hn_points": 477,
+      "tags": [
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Death by AI – a free Jackbox style party game. AI judges your plans to survive",
+      "authors": [
+        "overactor"
+      ],
+      "date": "2023-11-18",
+      "abstract": "HackerNews 讨论 · 476 点赞 · 179 评论。https://deathbyai.gg",
+      "url": "https://deathbyai.gg",
+      "source": "hackernews",
+      "hn_points": 476,
+      "tags": [
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Game AI Pro",
+      "authors": [
+        "SimplyUseless"
+      ],
+      "date": "2020-02-02",
+      "abstract": "HackerNews 讨论 · 389 点赞 · 60 评论。http://www.gameaipro.com/",
+      "url": "http://www.gameaipro.com/",
+      "source": "hackernews",
+      "hn_points": 389,
+      "tags": [
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Infinite Photorealistic Worlds Using Procedural Generation",
+      "authors": [
+        "cpeterso"
+      ],
+      "date": "2023-06-18",
+      "abstract": "HackerNews 讨论 · 306 点赞 · 76 评论。https://arxiv.org/abs/2306.09310",
+      "url": "https://arxiv.org/abs/2306.09310",
+      "source": "hackernews",
+      "hn_points": 306,
+      "tags": [
+        "HN热议"
+      ]
+    }
+  ]
+}

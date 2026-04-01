@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3DGS 论文报告 2026-03-16</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+.container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+h1 { color: #06d6d6; font-size: 26px; border-bottom: 1px solid #334155; padding-bottom: 12px; margin-bottom: 8px; }
+.subtitle { color: #94a3b8; font-size: 15px; margin-bottom: 30px; }
+.count { display: inline-block; background: #1e293b; border: 1px solid #334155; color: #64748b; font-size: 13px; padding: 4px 12px; border-radius: 20px; margin-left: 10px; }
+.paper { background: #1e293b; border-left: 4px solid #06d6d6; margin: 24px 0; padding: 22px 24px; border-radius: 0 8px 8px 0; }
+.paper-num { color: #475569; font-size: 12px; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.paper-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.paper-title a { color: #fff; text-decoration: none; }
+.paper-title a:hover { color: #06d6d6; text-decoration: underline; }
+.paper-meta { color: #64748b; font-size: 13px; margin-bottom: 14px; }
+.paper-abstract { font-size: 14px; color: #cbd5e1; padding: 12px 14px; background: #253047; border-radius: 6px; margin-bottom: 16px; }
+.paper-tags { margin-bottom: 0; }
+.tag { display: inline-block; background: #334155; color: #94a3b8; font-size: 12px; padding: 3px 10px; border-radius: 10px; margin-right: 6px; margin-bottom: 4px; }
+.paper-footer { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+.btn-expand { background: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-expand:hover { background: #475569; border-color: #64748b; }
+.btn-expand.active { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
+.btn-arxiv { background: #b91c1c; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s; }
+.btn-arxiv:hover { background: #dc2626; }
+.expanded-box { overflow: hidden; max-height: 0; transition: max-height 0.35s ease, opacity 0.35s ease, margin 0.35s ease; opacity: 0; margin-top: 0; margin-bottom: 0; }
+.expanded-box.open { max-height: 400px; opacity: 1; margin-top: 16px; margin-bottom: 16px; }
+.expanded-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; background: #1a2744; border-radius: 8px; padding: 18px; border: 1px solid #334155; }
+.expanded-item { font-size: 13px; color: #cbd5e1; }
+.expanded-item strong { color: #06d6d6; font-size: 13px; display: block; margin-bottom: 5px; }
+.footer { text-align: center; color: #475569; font-size: 13px; padding: 40px 0 20px; border-top: 1px solid #1e293b; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>3D Gaussian Splatting 论文报告 <span class="count">30 篇</span></h1>
+  <p class="subtitle">摘要直接可见 · 点击「扩展概要」查看技术栈/开源状态/应用场景 · 原文链接常驻 · 生成时间：2026-03-16 08:21</p>
+  <div class="paper">
+    <div class="paper-num">Paper 01 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12265v1" target="_blank">OmniStream: Mastering Perception, Reconstruction and Action in Continuous Streams</a></div>
+    <div class="paper-meta">Yibin Yan · Jilan Xu · Shangzhe Di · Haoning Wu · Weidi Xie</div>
+    <div class="paper-abstract">Modern visual agents require representations that are general, causal, and physically structured to operate in real-time streaming environments. However, current vision foundation models remain fragmented, specializing narrowly in image semantic perception, offline temporal modeling, or spatial geometry. This paper introduces OmniStream, a unified streaming visual backbone that effectively perceiv…</div>
+    <div class="paper-tags"><span class="tag">实时渲染</span><span class="tag">4D-GS</span><span class="tag">物理仿真</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12265v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 02 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12257v1" target="_blank">DreamVideo-Omni: Omni-Motion Controlled Multi-Subject Video Customization with Latent Identity Reinforcement Learning</a></div>
+    <div class="paper-meta">Yujie Wei · Xinyu Liu · Shiwei Zhang · Hangjie Yuan · Jinbo Xing et al.</div>
+    <div class="paper-abstract">While large-scale diffusion models have revolutionized video synthesis, achieving precise control over both multi-subject identity and multi-granularity motion remains a significant challenge. Recent attempts to bridge this gap often suffer from limited motion granularity, control ambiguity, and identity degradation, leading to suboptimal performance on identity preservation and motion control. In…</div>
+    <div class="paper-tags"><span class="tag">生成模型</span><span class="tag">城市建模</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12257v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 03 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12255v1" target="_blank">Spatial-TTT: Streaming Visual-based Spatial Intelligence with Test-Time Training</a></div>
+    <div class="paper-meta">Fangfu Liu · Diankun Wu · Jiawei Chi · Yimo Cai · Yi-Hsin Hung et al.</div>
+    <div class="paper-abstract">Humans perceive and understand real-world spaces through a stream of visual observations. Therefore, the ability to streamingly maintain and update spatial evidence from potentially unbounded video streams is essential for spatial intelligence. The core challenge is not simply longer context windows but how spatial information is selected, organized, and retained over time. In this paper, we propo…</div>
+    <div class="paper-tags"><span class="tag">4D-GS</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12255v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 04 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12238v1" target="_blank">SceneAssistant: A Visual Feedback Agent for Open-Vocabulary 3D Scene Generation</a></div>
+    <div class="paper-meta">Jun Luo · Jiaxiang Tang · Ruijie Lu · Gang Zeng</div>
+    <div class="paper-abstract">Text-to-3D scene generation from natural language is highly desirable for digital content creation. However, existing methods are largely domain-restricted or reliant on predefined spatial relationships, limiting their capacity for unconstrained, open-vocabulary 3D scene synthesis. In this paper, we introduce SceneAssistant, a visual-feedback-driven agent designed for open-vocabulary 3D scene gene…</div>
+    <div class="paper-tags"><span class="tag">可编辑</span><span class="tag">生成模型</span><span class="tag">城市建模</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、Segment Anything、CLIP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>内容创作、3D编辑工具、VR资产</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12238v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 05 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12224v1" target="_blank">Portfolio of Solving Strategies in CEGAR-based Object Packing and Scheduling for Sequential 3D Printing</a></div>
+    <div class="paper-meta">Pavel Surynek</div>
+    <div class="paper-abstract">Computing power that used to be available only in supercomputers decades ago especially their parallelism is currently available in standard personal computer CPUs even in CPUs for mobile telephones. We show how to effectively utilize the computing power of modern multi-core personal computer CPU to solve the complex combinatorial problem of object arrangement and scheduling for sequential 3D prin…</div>
+    <div class="paper-tags"><span class="tag">移动端</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、Metal / OpenGL ES</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>手游AR、XR眼镜、便携设备</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12224v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 06 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12220v1" target="_blank">Conformalized Data-Driven Reachability Analysis with PAC Guarantees</a></div>
+    <div class="paper-meta">Yanliang Huang · Zhen Zhang · Peng Xie · Zhuoqi Zeng · Amr Alanwar</div>
+    <div class="paper-abstract">Data-driven reachability analysis computes over-approximations of reachable sets directly from noisy data. Existing deterministic methods require either known noise bounds or system-specific structural parameters such as Lipschitz constants. We propose Conformalized Data-Driven Reachability (CDDR), a framework that provides Probably Approximately Correct (PAC) coverage guarantees through the Learn…</div>
+    <div class="paper-tags"><span class="tag">3DGS</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12220v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 07 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12193v1" target="_blank">SaPaVe: Towards Active Perception and Manipulation in Vision-Language-Action Models for Robotics</a></div>
+    <div class="paper-meta">Mengzhen Liu · Enshen Zhou · Cheng Chi · Yi Han · Shanyu Rong et al.</div>
+    <div class="paper-abstract">Active perception and manipulation are crucial for robots to interact with complex scenes. Existing methods struggle to unify semantic-driven active perception with robust, viewpoint-invariant execution. We propose SaPaVe, an end-to-end framework that jointly learns these capabilities in a data-efficient manner. Our approach decouples camera and manipulation actions rather than placing them in a s…</div>
+    <div class="paper-tags"><span class="tag">物理仿真</span><span class="tag">城市建模</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12193v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 08 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12182v1" target="_blank">Optimal Discrimination of Gaussian States by Gaussian Measurements</a></div>
+    <div class="paper-meta">Leah Turner · Ludovico Lami · Madalin Guta · Gerardo Adesso</div>
+    <div class="paper-abstract">Are Gaussian measurements enough to distinguish between Gaussian states? Here, we tackle this question by focusing on the max-relative entropy as an operational distinguishability metric. Given two general multimode Gaussian states, we derive a condition, based on their covariance matrices, that completely determines whether or not there exists an optimal Gaussian measurement achieving the max-rel…</div>
+    <div class="paper-tags"><span class="tag">3DGS</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12182v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 09 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12163v1" target="_blank">A Quantitative Characterization of Forgetting in Post-Training</a></div>
+    <div class="paper-meta">Krishnakumar Balasubramanian · Shiva Prasad Kasiviswanathan</div>
+    <div class="paper-abstract">Continual post-training of generative models is widely used, yet a principled understanding of when and why forgetting occurs remains limited. We develop theoretical results under a two-mode mixture abstraction (representing old and new tasks), proposed by Chen et al. (2025) (arXiv:2510.18874), and formalize forgetting in two forms: (i) mass forgetting, where the old mixture weight collapses to ze…</div>
+    <div class="paper-tags"><span class="tag">生成模型</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>Diffusers、ControlNet、PyTorch</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D内容生成、游戏资产制作、AIGC</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12163v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 10 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12144v1" target="_blank">O3N: Omnidirectional Open-Vocabulary Occupancy Prediction</a></div>
+    <div class="paper-meta">Mengfei Duan · Hao Shi · Fei Teng · Guoqiang Zhao · Yuheng Zhang et al.</div>
+    <div class="paper-abstract">Understanding and reconstructing the 3D world through omnidirectional perception is an inevitable trend in the development of autonomous agents and embodied intelligence. However, existing 3D occupancy prediction methods are constrained by limited perspective inputs and predefined training distribution, making them difficult to apply to embodied agents that require comprehensive and safe perceptio…</div>
+    <div class="paper-tags"><span class="tag">自动驾驶</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、SMPL-X、MediaPipe</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>数字人、虚拟主播、元宇宙头像</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12144v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 11 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12141v1" target="_blank">ChemSICal-Net: Timing-Controlled Chemical Reaction Network for Successive Interference Cancellation in Molecular Multiple Access</a></div>
+    <div class="paper-meta">Alexander Wietfeld · Oguz Turgut · Eneritz Somoza Rodríguez · Wolfgang Kellerer</div>
+    <div class="paper-abstract">MC networks are envisioned to enable synthetic information exchange between nanoscale biological entities. For many algorithm proposals in the MC research field, the question of implementation at nanoscales and in biological environments remains open. Chemical reaction networks (CRNs) provide a natural framework to model computing processes in biological systems, while detailed simulations capture…</div>
+    <div class="paper-tags"><span class="tag">物理仿真</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12141v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 12 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12132v1" target="_blank">History state formalism for time series with application to finance</a></div>
+    <div class="paper-meta">F. Lomoc · N. Canosa · A. P. Boette · R. Rossignoli</div>
+    <div class="paper-abstract">We present a method for analyzing general time series by employing the history state formalism of quantum mechanics. This formalism allows us to describe a complete evolution based on a single quantum state, the history state, which simultaneously includes -also as a quantum system- the reference clock. It naturally leads to the concept of system-time entanglement, with the ensuing entanglement en…</div>
+    <div class="paper-tags"><span class="tag">3DGS</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12132v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 13 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12126v1" target="_blank">Hoi3DGen: Generating High-Quality Human-Object-Interactions in 3D</a></div>
+    <div class="paper-meta">Agniv Sharma · Xianghui Xie · Tom Fischer · Eddy Ilg · Gerard Pons-Moll</div>
+    <div class="paper-abstract">Modeling and generating 3D human-object interactions from text is crucial for applications in AR, XR, and gaming. Existing approaches often rely on score distillation from text-to-image models, but their results suffer from the Janus problem and do not follow text prompts faithfully due to the scarcity of high-quality interaction data. We introduce Hoi3DGen, a framework that generates high-quality…</div>
+    <div class="paper-tags"><span class="tag">生成模型</span><span class="tag">城市建模</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、SMPL-X、MediaPipe</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>数字人、虚拟主播、元宇宙头像</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12126v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 14 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12093v1" target="_blank">A Complete Graphic Statics for Rigid-Jointed 3D Frames. Part 2: Homology of loops</a></div>
+    <div class="paper-meta">Allan McRobie</div>
+    <div class="paper-abstract">This paper extends graphic statics by describing the forces and moments in any 3D rigid-jointed frame structure in terms of cell complexes using homology theory of algebraic topology. Graphic statics provides a highly geometric way to represent the equilibrium in bar structures. Unlike traditional matrix-based linear structural analysis which represents a structure as a set of nodes connected by b…</div>
+    <div class="paper-tags"><span class="tag">可编辑</span><span class="tag">数字人</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、Segment Anything、CLIP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>内容创作、3D编辑工具、VR资产</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12093v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 15 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12071v1" target="_blank">Paper Title: LoV3D: Grounding Cognitive Prognosis Reasoning in Longitudinal 3D Brain MRI via Regional Volume Assessments</a></div>
+    <div class="paper-meta">Zhaoyang Jiang · Zhizhong Fu · David McAllister · Yunsoo Kim · Honghan Wu</div>
+    <div class="paper-abstract">Longitudinal brain MRI is essential for characterizing the progression of neurological diseases such as Alzheimer's disease assessment. However, current deep-learning tools fragment this process: classifiers reduce a scan to a label, volumetric pipelines produce uninterpreted measurements, and vision-language models (VLMs) may generate fluent but potentially hallucinated conclusions. We present Lo…</div>
+    <div class="paper-tags"><span class="tag">自动驾驶</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、SMPL-X、MediaPipe</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>数字人、虚拟主播、元宇宙头像</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12071v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 16 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12068v1" target="_blank">A Universality Emerging in a Universality: Derivation of the Ericson Transition in Stochastic Quantum Scattering and Experimental Validation</a></div>
+    <div class="paper-meta">Simon Köhnes · Jiongning Che · Barbara Dietz · Thomas Guhr</div>
+    <div class="paper-abstract">At lower energies, the resonances in scattering experiments are often isolated. In quantum chaotic many-body, disordered or generically stochastic systems, the resonances overlap at larger energies. Eventually, the Ericson regime is reached in which the cross section behaves like a random function. The scattering matrix elements then follow a universal Gaussian distribution. For more than sixty ye…</div>
+    <div class="paper-tags"><span class="tag">物理仿真</span><span class="tag">城市建模</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、SMPL-X、MediaPipe</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>数字人、虚拟主播、元宇宙头像</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12068v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 17 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12063v1" target="_blank">NBAvatar: Neural Billboards Avatars with Realistic Hand-Face Interaction</a></div>
+    <div class="paper-meta">David Svitov · Mahtab Dahaghin</div>
+    <div class="paper-abstract">We present NBAvatar - a method for realistic rendering of head avatars handling non-rigid deformations caused by hand-face interaction. We introduce a novel representation for animated avatars by combining the training of oriented planar primitives with neural rendering. Such a combination of explicit and implicit representations enables NBAvatar to handle temporally and pose-consistent geometry, …</div>
+    <div class="paper-tags"><span class="tag">4D-GS</span><span class="tag">数字人</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12063v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 18 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12054v1" target="_blank">Noise Correlations as a Resource in Pauli-Twirled Circuits</a></div>
+    <div class="paper-meta">Antoine Brillant · Rohan N Rajmohan · Peter Groszkowski · Alireza Seif · Jens Koch et al.</div>
+    <div class="paper-abstract">Randomized compiling (RC) is an established tool to tailor arbitrary quantum noise channels into Pauli errors. The effect of both spatial and temporal noise correlations in randomly compiled circuits, however, is not fully understood. Here, we show that for a broad class of correlated Gaussian noise, RC reduces both the strength and temporal range of correlations. For Clifford circuits, we derive …</div>
+    <div class="paper-tags"><span class="tag">4D-GS</span><span class="tag">物理仿真</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12054v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 19 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12019v1" target="_blank">On Exotic Materials in 3D Linear Elasticity with High Symmetry Classes</a></div>
+    <div class="paper-meta">Nicolas Auffray · Guangjin Mou · Boris Desmorat</div>
+    <div class="paper-abstract">An anisotropic elastic material is referred to as exotic when, under specific loadings, its mechanical response exhibits a higher degree of symmetry than that prescribed by its intrinsic material symmetry. Such materials, which may be regarded as lying, conceptually and functionally, between two distinct symmetry classes, are of significant practical relevance. They enable the tailored design of m…</div>
+    <div class="paper-tags"><span class="tag">物理仿真</span><span class="tag">城市建模</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、COLMAP、GPS/IMU融合</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>城市数字孪生、无人驾驶、地图制作</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12019v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 20 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12016v1" target="_blank">Nyxus: A Next Generation Image Feature Extraction Library for the Big Data and AI Era</a></div>
+    <div class="paper-meta">Nicholas Schaub · Andriy Kharchenko · Hamdah Abbasi · Sameeul Samee · Hythem Sidky et al.</div>
+    <div class="paper-abstract">Modern imaging instruments can produce terabytes to petabytes of data for a single experiment. The biggest barrier to processing big image datasets has been computational, where image analysis algorithms often lack the efficiency needed to process such large datasets or make tradeoffs in robustness and accuracy. Deep learning algorithms have vastly improved the accuracy of the first step in an ana…</div>
+    <div class="paper-tags"><span class="tag">可编辑</span><span class="tag">医疗</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12016v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 21 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.12013v1" target="_blank">Pano360: Perspective to Panoramic Vision with Geometric Consistency</a></div>
+    <div class="paper-meta">Zhengdong Zhu · Weiyi Xue · Zuyuan Yang · Wenlve Zhou · Zhiheng Zhou</div>
+    <div class="paper-abstract">Prior panorama stitching approaches heavily rely on pairwise feature correspondences and are unable to leverage geometric consistency across multiple views. This leads to severe distortion and misalignment, especially in challenging scenes with weak textures, large parallax, and repetitive patterns. Given that multi-view geometric correspondences can be directly constructed in 3D space, making the…</div>
+    <div class="paper-tags"><span class="tag">城市建模</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.12013v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 22 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.11995v1" target="_blank">What is a minimum work transition in stochastic thermodynamics?</a></div>
+    <div class="paper-meta">Paolo Muratore-Ginanneschi · Julia Sanders</div>
+    <div class="paper-abstract">We reassess the concept of transition at minimum work in classical stochastic finite-time thermodynamics, when the system dynamics is modelled by a diffusion process. We show that a well-posed formulation of the optimal control problem corresponding to the minimization of the mean work done on the system during a finite-time transition necessarily requires taking into account speed limits on contr…</div>
+    <div class="paper-tags"><span class="tag">物理仿真</span><span class="tag">生成模型</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.11995v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 23 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.11984v1" target="_blank">Ada3Drift: Adaptive Training-Time Drifting for One-Step 3D Visuomotor Robotic Manipulation</a></div>
+    <div class="paper-meta">Chongyang Xu · Yixian Zou · Ziliang Feng · Fanman Meng · Shuaicheng Liu</div>
+    <div class="paper-abstract">Diffusion-based visuomotor policies effectively capture multimodal action distributions through iterative denoising, but their high inference latency limits real-time robotic control. Recent flow matching and consistency-based methods achieve single-step generation, yet sacrifice the ability to preserve distinct action modes, collapsing multimodal behaviors into averaged, often physically infeasib…</div>
+    <div class="paper-tags"><span class="tag">实时渲染</span><span class="tag">物理仿真</span><span class="tag">稀疏输入</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.11984v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 24 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.11976v1" target="_blank">Interference-Based 3D Optical Cold Damping of a Levitated Nanoparticle</a></div>
+    <div class="paper-meta">Youssef Ezzo · Seyed Khalil Alavi · Sungkun Hong</div>
+    <div class="paper-abstract">Achieving efficient three-dimensional feedback cooling of levitated nanoparticles is a key requirement for precision sensing and quantum control in levitated optomechanics. Here we demonstrate three-dimensional optical feedback cooling of a levitated nanoparticle using an interference-enhanced optical force generated within a single beam path. In this scheme, a weak auxiliary field co-propagates w…</div>
+    <div class="paper-tags"><span class="tag">3DGS</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.11976v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 25 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.11969v1" target="_blank">AstroSplat: Physics-Based Gaussian Splatting for Rendering and Reconstruction of Small Celestial Bodies</a></div>
+    <div class="paper-meta">Jennifer Nolan · Travis Driver · John Christian</div>
+    <div class="paper-abstract">Image-based surface reconstruction and characterization are crucial for missions to small celestial bodies (e.g., asteroids), as it informs mission planning, navigation, and scientific analysis. Recent advances in Gaussian splatting enable high-fidelity neural scene representations but typically rely on a spherical harmonic intensity parameterization that is strictly appearance-based and does not …</div>
+    <div class="paper-tags"><span class="tag">物理仿真</span><span class="tag">数字人</span><span class="tag">自动驾驶</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、OpenEXR、HDR10/HLG</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>影视后期、高端摄影、AR渲染</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.11969v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 26 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.11963v1" target="_blank">Energy Prediction on Sloping Ground for Quadruped Robots</a></div>
+    <div class="paper-meta">Mohamed Ounally · Cyrille Pierre · Johann Laconte</div>
+    <div class="paper-abstract">Energy management is a fundamental challenge for legged robots in outdoor environments. Endurance directly constrains mission success, while efficient resource use reduces ecological impact. This paper investigates how terrain slope and heading orientation influence the energetic cost of quadruped locomotion. We introduce a simple energy model that relies solely on standard onboard sensors, avoids…</div>
+    <div class="paper-tags"><span class="tag">压缩</span><span class="tag">可编辑</span><span class="tag">数字人</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、Metal / OpenGL ES</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>手游AR、XR眼镜、便携设备</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.11963v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 27 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.11960v1" target="_blank">Bayesian Model Calibration with Integrated Discrepancy: Addressing Inexact Dislocation Dynamics Models</a></div>
+    <div class="paper-meta">Liam Myhill · Enrique Martinez Saez · Sez Russcher</div>
+    <div class="paper-abstract">In this work, a novel approach to Bayesian model calibration routines is developed which reinterprets the traditional definition of model discrepancy as defined by Kennedy and O'Hagan (KOH). The novelty lies in the integration of $δ_θ(x_i)$ GPs within the simulator, which is approximated as a GP surrogate model to ensure computational tractability. This approach assumes that the utilized simulator…</div>
+    <div class="paper-tags"><span class="tag">物理仿真</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch3D、COLMAP、FFmpeg</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>VR/AR动态场景、影视特效、体育分析</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.11960v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 28 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.11932v1" target="_blank">Revealing 3D orientation and strain heterogeneity in calcite generated by bio-cementation</a></div>
+    <div class="paper-meta">Marilyn Sarkis · James A. D. Ball · Michela La Bella · Antoine Naillon · Christian Geindreau et al.</div>
+    <div class="paper-abstract">Bio-cementation uses bacterially induced calcite to bind sand grains, offering a low-carbon approach to soil stabilization. However, the 3D morphology, orientation texture, and internal strain states of individual calcite bonds remain insufficiently characterized. Here, we combine computed micro-tomography, 3D X-ray Diffraction (3DXRD), and Dark-Field X-ray Microscopy (DFXM) to nondestructively ch…</div>
+    <div class="paper-tags"><span class="tag">物理仿真</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>ROS2、Open3D、COLMAP、LiDAR SDK</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>自动驾驶、无人机导航、机器人建图</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.11932v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 29 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.11911v1" target="_blank">InSpatio-WorldFM: An Open-Source Real-Time Generative Frame Model</a></div>
+    <div class="paper-meta"> InSpatio Team · Xiaoyu Zhang · Weihong Pan · Zhichao Ye · Jialin Liu et al.</div>
+    <div class="paper-abstract">We present InSpatio-WorldFM, an open-source real-time frame model for spatial intelligence. Unlike video-based world models that rely on sequential frame generation and incur substantial latency due to window-level processing, InSpatio-WorldFM adopts a frame-based paradigm that generates each frame independently, enabling low-latency real-time spatial inference. By enforcing multi-view spatial con…</div>
+    <div class="paper-tags"><span class="tag">实时渲染</span><span class="tag">物理仿真</span><span class="tag">生成模型</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>Diffusers、ControlNet、PyTorch</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D内容生成、游戏资产制作、AIGC</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.11911v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="paper">
+    <div class="paper-num">Paper 30 · 2026-03-12</div>
+    <div class="paper-title"><a href="https://arxiv.org/abs/2603.11892v1" target="_blank">Multi-branch Shell Models of Two-Dimensional Turbulence exhibit Dual Energy-Enstrophy Cascades</a></div>
+    <div class="paper-meta">Flavio Tuteri · Sergio Chibbaro · Alexandros Alexakis</div>
+    <div class="paper-abstract">Classical shell models of turbulence do not display dual cascade - inverse of energy and direct of enstrophy - because they fail to reproduce the right thermal spectra. We propose here a multi-branch shell model, including a geometry hierarchically organized across scales, in order to overcome this limitation. For this model, we demonstrate numerically both the agreement of the thermal spectra wit…</div>
+    <div class="paper-tags"><span class="tag">3DGS</span></div>
+    <div class="expanded-box">
+      <div class="expanded-grid">
+        <div class="expanded-item"><strong>🧰 技术栈</strong>PyTorch、CUDA、COLMAP</div>
+        <div class="expanded-item"><strong>📂 开源状态</strong>最新论文，代码即将开源</div>
+        <div class="expanded-item"><strong>🔄 适用场景</strong>3D重建、虚拟现实、数字内容</div>
+      </div>
+    </div>
+    <div class="paper-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶&nbsp;扩展概要</button>
+      <a href="https://arxiv.org/abs/2603.11892v1" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+    </div>
+  </div>
+  <div class="footer">数据来源：ArXiv API · 查询词：3D Gaussian Splatting · Powered by OpenClaw</div>
+</div>
+<script>
+function toggle(btn) {
+  var box = btn.closest('.paper').querySelector('.expanded-box');
+  var open = box.classList.toggle('open');
+  btn.classList.toggle('active', open);
+  btn.innerHTML = open
+    ? '<span style="display:inline-block;transform:rotate(90deg)">▶</span>&nbsp;收起概要'
+    : '▶&nbsp;扩展概要';
+}
+</script>
+</body>
+</html>

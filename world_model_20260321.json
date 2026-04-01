@@ -1,0 +1,175 @@
+{
+  "topic": "world_model",
+  "label": "世界模型 / 空间智能",
+  "desc": "世界模型、空间智能、具身智能、4D场景理解、视觉基础模型",
+  "generated": "2026-03-21 04:20",
+  "papers": [],
+  "hot_topics": [
+    {
+      "title": "Genie 3: A new frontier for world models",
+      "url": "https://deepmind.google/discover/blog/genie-3-a-new-frontier-for-world-models/",
+      "hn_url": "https://news.ycombinator.com/item?id=44798166",
+      "points": 1510,
+      "comments": 490,
+      "author": "bradleyg223",
+      "date": "2025-08-05",
+      "hn_id": "44798166",
+      "comment": ""
+    },
+    {
+      "title": "The Waymo World Model",
+      "url": "https://waymo.com/blog/2026/02/the-waymo-world-model-a-new-frontier-for-autonomous-driving-simulation",
+      "hn_url": "https://news.ycombinator.com/item?id=46914785",
+      "points": 1160,
+      "comments": 663,
+      "author": "xnx",
+      "date": "2026-02-06",
+      "hn_id": "46914785",
+      "comment": ""
+    },
+    {
+      "title": "Yann LeCun to depart Meta and launch AI startup focused on 'world models'",
+      "url": "https://www.nasdaq.com/articles/metas-chief-ai-scientist-yann-lecun-depart-and-launch-ai-start-focused-world-models",
+      "hn_url": "https://news.ycombinator.com/item?id=45897271",
+      "points": 841,
+      "comments": 653,
+      "author": "MindBreaker2605",
+      "date": "2025-11-12",
+      "hn_id": "45897271",
+      "comment": ""
+    },
+    {
+      "title": "Genie 2: A large-scale foundation world model",
+      "url": "https://deepmind.google/discover/blog/genie-2-a-large-scale-foundation-world-model/",
+      "hn_url": "https://news.ycombinator.com/item?id=42317903",
+      "points": 1247,
+      "comments": 410,
+      "author": "meetpateltech",
+      "date": "2024-12-04",
+      "hn_id": "42317903",
+      "comment": ""
+    },
+    {
+      "title": "Diffusion for World Modeling",
+      "url": "https://diamond-wm.github.io/",
+      "hn_url": "https://news.ycombinator.com/item?id=41826402",
+      "points": 476,
+      "comments": 218,
+      "author": "francoisfleuret",
+      "date": "2024-10-13",
+      "hn_id": "41826402",
+      "comment": ""
+    },
+    {
+      "title": "LLMs aren't world models",
+      "url": "https://yosefk.com/blog/llms-arent-world-models.html",
+      "hn_url": "https://news.ycombinator.com/item?id=44854518",
+      "points": 371,
+      "comments": 236,
+      "author": "ingve",
+      "date": "2025-08-10",
+      "hn_id": "44854518",
+      "comment": ""
+    }
+  ],
+  "trending_repos": [
+    {
+      "name": "msitarzewski/agency-agents",
+      "url": "https://github.com/msitarzewski/agency-agents",
+      "desc": "A complete AI agency at your fingertips - From frontend wizards to Reddit community ninjas, from whimsy injectors to reality checkers. Each agent is a specialized expert with personality, processes, and proven deliverables.",
+      "stars": 56599,
+      "weekly_stars": 23185,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "obra/superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "desc": "An agentic skills framework &amp; software development methodology that works.",
+      "stars": 101302,
+      "weekly_stars": 19176,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "666ghj/MiroFish",
+      "url": "https://github.com/666ghj/MiroFish",
+      "desc": "A Simple and Universal Swarm Intelligence Engine, Predicting Anything. 简洁通用的群体智能引擎，预测万物",
+      "stars": 36977,
+      "weekly_stars": 17584,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "volcengine/OpenViking",
+      "url": "https://github.com/volcengine/OpenViking",
+      "desc": "OpenViking is an open-source context database designed specifically for AI Agents(such as openclaw). OpenViking unifies the management of context (memory, resources, and skills) that Agents need through a file system paradigm, enabling hierarchical context delivery and self-evolving.",
+      "stars": 16910,
+      "weekly_stars": 10158,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "lightpanda-io/browser",
+      "url": "https://github.com/lightpanda-io/browser",
+      "desc": "Lightpanda: the headless browser designed for AI and automation",
+      "stars": 22565,
+      "weekly_stars": 9984,
+      "date": "2026-03-21"
+    }
+  ],
+  "bili_videos": [
+    {
+      "title": "一文讲清楚世界模型",
+      "url": "https://www.bilibili.com/video/BV1GXfCYYEw6",
+      "author": "是花子呀_",
+      "play": 182088,
+      "danmaku": 142,
+      "date": 1738294200,
+      "desc": "参考资料\nhttps://worldmodels.github.io/ #Can agents learn inside of their own dreams?\nhttps://www.youtube.com/watch?v=tx3DgeqHO5s #Introducing General World Models\nhttps://www.youtube.com/watch?v=GI4Tpi48",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "全面解析“世界模型”：定义、路线、实践与AGI的更近一步【硅谷101】",
+      "url": "https://www.bilibili.com/video/BV11LPWzNEkm",
+      "author": "硅谷101",
+      "play": 160613,
+      "danmaku": 533,
+      "date": 1772765963,
+      "desc": "2026年，全球顶尖AI实验室和科技巨头们都在押注研发一个新算法路径：世界模型。随着大语言模型（LLM）的Scaling Law面临发展质疑，Yann LeCun、李飞飞等顶尖学者以及OpenAI、谷歌等科技巨头们都在追问：AI要想真正智能，能“预测世界”是否是必须项？由此，“世界模型”被视为是AI的下一个十年最重要的研究方向之一。\n\n这期视频我们将深入拆解世界模型的核心定义、三层研发结构，以及最",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "对谢赛宁的7小时马拉松访谈：世界模型、逃出硅谷、反OpenAI、AMI Labs、两次拒绝Ilya、杨立昆、李飞飞和42",
+      "url": "https://www.bilibili.com/video/BV1tew5zVEDf",
+      "author": "张小珺商业访谈录",
+      "play": 68373,
+      "danmaku": 372,
+      "date": 1773631800,
+      "desc": "2026年春节，在中国机器人登上春晚的喜乐时分，纽约刚下过一场暴雪——这是近几年以来纽约最凛冽的一个冬天。在布鲁克林一栋略显凌乱的楼房，我与谢赛宁开始了这场对话。\n\n2026年3月，他与图灵奖得主杨立昆（Yann LeCun）等，踏上了一条关于“世界模型”的创业旅程。他们创立的AMI Labs（Advanced Machine Intelligence Labs），目前仅25人、在没有任何产品的情",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "重磅！谷歌Genie3世界模型抽象实测！",
+      "url": "https://www.bilibili.com/video/BV1rR6qBrEPu",
+      "author": "Xz乔希",
+      "play": 54157,
+      "danmaku": 108,
+      "date": 1769768027,
+      "desc": "",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "端到端，VLA，世界模型都是什么意思？",
+      "url": "https://www.bilibili.com/video/BV1NCS4BkEt7",
+      "author": "Navis-慢点评测",
+      "play": 36524,
+      "danmaku": 148,
+      "date": 1764733500,
+      "desc": "端到端，VLA，世界模型都是什么意思？\n华为蔚小理还有小米最新的 HAD 增强版到底处在哪个阶段？",
+      "comment": "",
+      "source": "bilibili"
+    }
+  ],
+  "xhs_notes": []
+}

@@ -1,0 +1,40 @@
+📊 AI 与游戏周报生成成功通知
+
+生成时间：2026-03-28 05:00:00
+脚本执行：成功 ✅
+报告位置：/root/.openclaw/workspace/ai_games_20260328.json (61,149字节)
+Web访问链接：https://workspacej9jjy0b2zdgg0ebafo-8080.gz.cloudide.woa.com/report.html#ai_games_20260328
+
+报告统计：
+• 论文数量：30篇
+• HackerNews 条目：6条
+• GitHub 项目：5个
+• B站视频：5个
+• 小红书内容：0条
+
+目标企业微信群：aibY2r-rXTKG9AJ1bKpoPbL69AcynSnoUvy
+
+注意：由于企业微信客户端连接问题，消息发送失败。请检查 WSClient 连接状态，或手动通知群组成员。
+
+脚本输出日志：
+[ai_games] 开始抓取数据…
+  [arxiv] AI game NPC procedural content generation…
+  [arxiv] → 20 篇
+  [arxiv] reinforcement learning game playing agent…
+  [arxiv] → 20 篇
+  [arxiv] generative AI game design asset creation…
+  [arxiv] → 20 篇
+[ai_games] ArXiv 原始 31 篇
+[dedup] 无重复，全部 31 条均为新内容
+[ai_games] 抓取本周热点…
+  [github_new] → 7 条
+  [bilibili] → 5 条（过滤后）
+  [xiaohongshu] → 0 条
+[ai_games] 热点：HN 6，GitHub 5，B站 5，小红书 0
+[ai_games] 去重后论文 30 篇，热点共 16 条
+[build] 已生成 /root/.openclaw/workspace/ai_games_20260328.json（59 KB，论文 30 篇，HN 6，GH 5，B站 5，小红书 0）
+[pending] 写入 pending_comments.json（16 条待点评）
+[seen] ai_games_seen.json 已更新（累计 60 条已见 id）
+[done] AI 与游戏 报告：https://workspacej9jjy0b2zdgg0ebafo-8080.gz.cloudide.woa.com/report.html#ai_games_20260328
+[index] topics_index.json 已更新（7 个领域）
+[index] index.json 已更新（共 21 条历史记录）

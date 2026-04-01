@@ -1,0 +1,747 @@
+{
+  "topic": "ai_games",
+  "label": "AI 与游戏",
+  "desc": "AI NPC、程序化内容生成、游戏AI、强化学习与游戏、AI辅助游戏开发",
+  "generated": "2026-03-28 05:00",
+  "papers": [
+    {
+      "title": "ShotStream: Streaming Multi-Shot Video Generation for Interactive Storytelling",
+      "authors": [
+        "Yawen Luo",
+        "Xiaoyu Shi",
+        "Junhao Zhuang",
+        "Yutian Chen",
+        "Quande Liu",
+        "Xintao Wang",
+        "Pengfei Wan",
+        "Tianfan Xue"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Multi-shot video generation is crucial for long narrative storytelling, yet current bidirectional architectures suffer from limited interactivity and high latency. We propose ShotStream, a novel causal multi-shot architecture that enables interactive storytelling and efficient on-the-fly frame generation. By reformulating the task as next-shot generation conditioned on historical context, ShotStream allows users to dynamically instruct ongoing narratives via streaming prompts. We achieve this by first fine-tuning a text-to-video model into a bidirectional next-shot generator, which is then distilled into a causal student via Distribution Matching Distillation. To overcome the challenges of inter-shot consistency and error accumulation inherent in autoregressive generation, we introduce two key innovations. First, a dual-cache memory mechanism preserves visual coherence: a global context cache retains conditional frames for inter-shot consistency, while a local context cache holds generated frames within the current shot for intra-shot consistency. And a RoPE discontinuity indicator is employed to explicitly distinguish the two caches to eliminate ambiguity. Second, to mitigate error accumulation, we propose a two-stage distillation strategy. This begins with intra-shot self-forcing conditioned on ground-truth historical shots and progressively extends to inter-shot self-forcing using self-generated histories, effectively bridging the train-test gap. Extensive experiments demonstrate that ShotStream generates coherent multi-shot videos with sub-second latency, achieving 16 FPS on a single GPU. It matches or exceeds the quality of slower bidirectional models, paving the way for real-time interactive storytelling. Training and inference code, as well as the models, are available on our",
+      "url": "https://arxiv.org/abs/2603.25746v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染"
+      ]
+    },
+    {
+      "title": "MuRF: Unlocking the Multi-Scale Potential of Vision Foundation Models",
+      "authors": [
+        "Bocheng Zou",
+        "Mu Cai",
+        "Mark Stanley",
+        "Dingfu Lu",
+        "Yong Jae Lee"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Vision Foundation Models (VFMs) have become the cornerstone of modern computer vision, offering robust representations across a wide array of tasks. While recent advances allow these models to handle varying input sizes during training, inference typically remains restricted to a single, fixed scale. This prevalent single-scale paradigm overlooks a fundamental property of visual perception: varying resolutions offer complementary inductive biases, where low-resolution views excel at global semantic recognition and high-resolution views are essential for fine-grained refinement. In this work, we propose Multi-Resolution Fusion (MuRF), a simple yet universally effective strategy to harness this synergy at inference time. Instead of relying on a single view, MuRF constructs a unified representation by processing an image at multiple resolutions through a frozen VFM and fusing the resulting features. The universality of MuRF is its most compelling attribute. It is not tied to a specific architecture, serving instead as a fundamental, training-free enhancement to visual representation. We empirically validate this by applying MuRF to a broad spectrum of critical computer vision tasks across multiple distinct VFM families - primarily DINOv2, but also demonstrating successful generalization to contrastive models like SigLIP2.",
+      "url": "https://arxiv.org/abs/2603.25744v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "RefAlign: Representation Alignment for Reference-to-Video Generation",
+      "authors": [
+        "Lei Wang",
+        "YuXin Song",
+        "Ge Wu",
+        "Haocheng Feng",
+        "Hang Zhou",
+        "Jingdong Wang",
+        "Yaxing Wang",
+        "jian Yang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Reference-to-video (R2V) generation is a controllable video synthesis paradigm that constrains the generation process using both text prompts and reference images, enabling applications such as personalized advertising and virtual try-on. In practice, existing R2V methods typically introduce additional high-level semantic or cross-modal features alongside the VAE latent representation of the reference image and jointly feed them into the diffusion Transformer (DiT). These auxiliary representations provide semantic guidance and act as implicit alignment signals, which can partially alleviate pixel-level information leakage in the VAE latent space. However, they may still struggle to address copy--paste artifacts and multi-subject confusion caused by modality mismatch across heterogeneous encoder features. In this paper, we propose RefAlign, a representation alignment framework that explicitly aligns DiT reference-branch features to the semantic space of a visual foundation model (VFM). The core of RefAlign is a reference alignment loss that pulls the reference features and VFM features of the same subject closer to improve identity consistency, while pushing apart the corresponding features of different subjects to enhance semantic discriminability. This simple yet effective strategy is applied only during training, incurring no inference-time overhead, and achieves a better balance between text controllability and reference fidelity. Extensive experiments on the OpenS2V-Eval benchmark demonstrate that RefAlign outperforms current state-of-the-art methods in TotalScore, validating the effectiveness of explicit reference alignment for R2V tasks.",
+      "url": "https://arxiv.org/abs/2603.25743v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "Vega: Learning to Drive with Natural Language Instructions",
+      "authors": [
+        "Sicheng Zuo",
+        "Yuxuan Li",
+        "Wenzhao Zheng",
+        "Zheng Zhu",
+        "Jie Zhou",
+        "Jiwen Lu"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Vision-language-action models have reshaped autonomous driving to incorporate languages into the decision-making process. However, most existing pipelines only utilize the language modality for scene descriptions or reasoning and lack the flexibility to follow diverse user instructions for personalized driving. To address this, we first construct a large-scale driving dataset (InstructScene) containing around 100,000 scenes annotated with diverse driving instructions with the corresponding trajectories. We then propose a unified Vision-Language-World-Action model, Vega, for instruction-based generation and planning. We employ the autoregressive paradigm to process visual inputs (vision) and language instructions (language) and the diffusion paradigm to generate future predictions (world modeling) and trajectories (action). We perform joint attention to enable interactions between the modalities and use individual projection layers for different modalities for more capabilities. Extensive experiments demonstrate that our method not only achieves superior planning performance but also exhibits strong instruction-following abilities, paving the way for more intelligent and personalized driving systems.",
+      "url": "https://arxiv.org/abs/2603.25741v1",
+      "source": "arxiv",
+      "tags": [
+        "自动驾驶",
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Drive My Way: Preference Alignment of Vision-Language-Action Model for Personalized Driving",
+      "authors": [
+        "Zehao Wang",
+        "Huaide Jiang",
+        "Shuaiwu Dong",
+        "Yuping Wang",
+        "Hang Qiu",
+        "Jiachen Li"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Human driving behavior is inherently personal, which is shaped by long-term habits and influenced by short-term intentions. Individuals differ in how they accelerate, brake, merge, yield, and overtake across diverse situations. However, existing end-to-end autonomous driving systems either optimize for generic objectives or rely on fixed driving modes, lacking the ability to adapt to individual preferences or interpret natural language intent. To address this gap, we propose Drive My Way (DMW), a personalized Vision-Language-Action (VLA) driving framework that aligns with users' long-term driving habits and adapts to real-time user instructions. DMW learns a user embedding from our personalized driving dataset collected across multiple real drivers and conditions the policy on this embedding during planning, while natural language instructions provide additional short-term guidance. Closed-loop evaluation on the Bench2Drive benchmark demonstrates that DMW improves style instruction adaptation, and user studies show that its generated behaviors are recognizable as each driver's own style, highlighting personalization as a key capability for human-centered autonomous driving. Our data and code are available at https://dmw-cvpr.github.io/.",
+      "url": "https://arxiv.org/abs/2603.25740v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "PSDesigner: Automated Graphic Design with a Human-Like Creative Workflow",
+      "authors": [
+        "Xincheng Shuai",
+        "Song Tang",
+        "Yutong Huang",
+        "Henghui Ding",
+        "Dacheng Tao"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Graphic design is a creative and innovative process that plays a crucial role in applications such as e-commerce and advertising. However, developing an automated design system that can faithfully translate user intentions into editable design files remains an open challenge. Although recent studies have leveraged powerful text-to-image models and MLLMs to assist graphic design, they typically simplify professional workflows, resulting in limited flexibility and intuitiveness. To address these limitations, we propose PSDesigner, an automated graphic design system that emulates the creative workflow of human designers. Building upon multiple specialized components, PSDesigner collects theme-related assets based on user instructions, and autonomously infers and executes tool calls to manipulate design files, such as integrating new assets or refining inferior elements. To endow the system with strong tool-use capabilities, we construct a design dataset, CreativePSD, which contains a large amount of high-quality PSD design files annotated with operation traces across a wide range of design scenarios and artistic styles, enabling models to learn expert design procedures. Extensive experiments demonstrate that PSDesigner outperforms existing methods across diverse graphic design tasks, empowering non-specialists to conveniently create production-quality designs.",
+      "url": "https://arxiv.org/abs/2603.25738v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "MegaFlow: Zero-Shot Large Displacement Optical Flow",
+      "authors": [
+        "Dingxi Zhang",
+        "Fangjinhua Wang",
+        "Marc Pollefeys",
+        "Haofei Xu"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Accurate estimation of large displacement optical flow remains a critical challenge. Existing methods typically rely on iterative local search or/and domain-specific fine-tuning, which severely limits their performance in large displacement and zero-shot generalization scenarios. To overcome this, we introduce MegaFlow, a simple yet powerful model for zero-shot large displacement optical flow. Rather than relying on highly complex, task-specific architectural designs, MegaFlow adapts powerful pre-trained vision priors to produce temporally consistent motion fields. In particular, we formulate flow estimation as a global matching problem by leveraging pre-trained global Vision Transformer features, which naturally capture large displacements. This is followed by a few lightweight iterative refinements to further improve the sub-pixel accuracy. Extensive experiments demonstrate that MegaFlow achieves state-of-the-art zero-shot performance across multiple optical flow benchmarks. Moreover, our model also delivers highly competitive zero-shot performance on long-range point tracking benchmarks, demonstrating its robust transferability and suggesting a unified paradigm for generalizable motion estimation. Our project page is at: https://kristen-z.github.io/projects/megaflow.",
+      "url": "https://arxiv.org/abs/2603.25739v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "4D/动态"
+      ]
+    },
+    {
+      "title": "How good was my shot? Quantifying Player Skill Level in Table Tennis",
+      "authors": [
+        "Akihiro Kubota",
+        "Tomoya Hasegawa",
+        "Ryo Kawahara",
+        "Ko Nishino"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Gauging an individual's skill level is crucial, as it inherently shapes their behavior. Quantifying skill, however, is challenging because it is latent to the observed actions. To explore skill understanding in human behavior, we focus on dyadic sports -- specifically table tennis -- where skill manifests not just in complex movements, but in the subtle nuances of execution conditioned on game context. Our key idea is to learn a generative model of each player's tactical racket strokes and jointly embed them in a common latent space that encodes individual characteristics, including those pertaining to skill levels. By training these player models on a large-scale dataset of 3D-reconstructed professional matches and conditioning them on comprehensive game context -- including player positioning and opponent behaviors -- the models capture individual tactical identities within their latent space. We probe this learned player space and find that it reflects distinct play styles and attributes that collectively represent skill. By training a simple relative ranking network on these embeddings, we demonstrate that both relative and absolute skill predictions can be achieved. These results demonstrate that the learned player space effectively quantifies skill levels, providing a foundation for automated skill assessment in complex, interactive behaviors.",
+      "url": "https://arxiv.org/abs/2603.25736v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Training the Knowledge Base through Evidence Distillation and Write-Back Enrichment",
+      "authors": [
+        "Yuxing Lu",
+        "Xukai Zhao",
+        "Wei Wu",
+        "Jinzhuo Wang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "The knowledge base in a retrieval-augmented generation (RAG) system is typically assembled once and never revised, even though the facts a query requires are often fragmented across documents and buried in irrelevant content. We argue that the knowledge base should be treated as a trainable component and propose WriteBack-RAG, a framework that uses labeled examples to identify where retrieval succeeds, isolate the relevant documents, and distill them into compact knowledge units that are indexed alongside the original corpus. Because the method modifies only the corpus, it can be applied once as an offline preprocessing step and combined with any RAG pipeline. Across four RAG methods, six benchmarks, and two LLM backbones, WriteBack-RAG improves every evaluated setting, with gains averaging +2.14%. Cross-method transfer experiments further show that the distilled knowledge benefits RAG pipelines other than the one used to produce it, confirming that the improvement resides in the corpus itself.",
+      "url": "https://arxiv.org/abs/2603.25737v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩"
+      ]
+    },
+    {
+      "title": "Unleashing Guidance Without Classifiers for Human-Object Interaction Animation",
+      "authors": [
+        "Ziyin Wang",
+        "Sirui Xu",
+        "Chuan Guo",
+        "Bing Zhou",
+        "Jiangshan Gong",
+        "Jian Wang",
+        "Yu-Xiong Wang",
+        "Liang-Yan Gui"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Generating realistic human-object interaction (HOI) animations remains challenging because it requires jointly modeling dynamic human actions and diverse object geometries. Prior diffusion-based approaches often rely on hand-crafted contact priors or human-imposed kinematic constraints to improve contact quality. We propose LIGHT, a data-driven alternative in which guidance emerges from the denoising pace itself, reducing dependence on manually designed priors. Building on diffusion forcing, we factor the representation into modality-specific components and assign individualized noise levels with asynchronous denoising schedules. In this paradigm, cleaner components guide noisier ones through cross-attention, yielding guidance without auxiliary classifiers. We find that this data-driven guidance is inherently contact-aware, and can be enhanced when training is augmented with a broad spectrum of synthetic object geometries, encouraging invariance of contact semantics to geometric diversity. Extensive experiments show that pace-induced guidance more effectively mirrors the benefits of contact priors than conventional classifier-free guidance, while achieving higher contact fidelity, more realistic HOI generation, and stronger generalization to unseen objects and tasks.",
+      "url": "https://arxiv.org/abs/2603.25734v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型"
+      ]
+    },
+    {
+      "title": "SlotVTG: Object-Centric Adapter for Generalizable Video Temporal Grounding",
+      "authors": [
+        "Jiwook Han",
+        "Geo Ahn",
+        "Youngrae Kim",
+        "Jinwoo Choi"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Multimodal Large Language Models (MLLMs) have shown strong performance on Video Temporal Grounding (VTG). However, their coarse recognition capabilities are insufficient for fine-grained temporal understanding, making task-specific fine-tuning indispensable. This fine-tuning causes models to memorize dataset-specific shortcuts rather than faithfully grounding in the actual visual content, leading to poor Out-of-Domain (OOD) generalization. Object-centric learning offers a promising remedy by decomposing scenes into entity-level representations, but existing approaches require re-running the entire multi-stage training pipeline from scratch. We propose SlotVTG, a framework that steers MLLMs toward object-centric, input-grounded visual reasoning at minimal cost. SlotVTG introduces a lightweight slot adapter that decomposes visual tokens into abstract slots via slot attention and reconstructs the original sequence, where objectness priors from a self-supervised vision model encourage semantically coherent slot formation. Cross-domain evaluation on standard VTG benchmarks demonstrates that our approach significantly improves OOD robustness while maintaining competitive In-Domain (ID) performance with minimal overhead.",
+      "url": "https://arxiv.org/abs/2603.25733v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "4D/动态",
+        "可编辑"
+      ]
+    },
+    {
+      "title": "BizGenEval: A Systematic Benchmark for Commercial Visual Content Generation",
+      "authors": [
+        "Yan Li",
+        "Zezi Zeng",
+        "Ziwei Zhou",
+        "Xin Gao",
+        "Muzhao Tian",
+        "Yifan Yang",
+        "Mingxi Cheng",
+        "Qi Dai",
+        "Yuqing Yang",
+        "Lili Qiu",
+        "Zhendong Wang",
+        "Zhengyuan Yang",
+        "Xue Yang",
+        "Lijuan Wang",
+        "Ji Li",
+        "Chong Luo"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Recent advances in image generation models have expanded their applications beyond aesthetic imagery toward practical visual content creation. However, existing benchmarks mainly focus on natural image synthesis and fail to systematically evaluate models under the structured and multi-constraint requirements of real-world commercial design tasks. In this work, we introduce BizGenEval, a systematic benchmark for commercial visual content generation. The benchmark spans five representative document types: slides, charts, webpages, posters, and scientific figures, and evaluates four key capability dimensions: text rendering, layout control, attribute binding, and knowledge-based reasoning, forming 20 diverse evaluation tasks. BizGenEval contains 400 carefully curated prompts and 8000 human-verified checklist questions to rigorously assess whether generated images satisfy complex visual and semantic constraints. We conduct large-scale benchmarking on 26 popular image generation systems, including state-of-the-art commercial APIs and leading open-source models. The results reveal substantial capability gaps between current generative models and the requirements of professional visual content creation. We hope BizGenEval serves as a standardized benchmark for real-world commercial visual content generation.",
+      "url": "https://arxiv.org/abs/2603.25732v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模",
+        "开源"
+      ]
+    },
+    {
+      "title": "PackForcing: Short Video Training Suffices for Long Video Sampling and Long Context Inference",
+      "authors": [
+        "Xiaofeng Mao",
+        "Shaohao Rui",
+        "Kaining Ying",
+        "Bo Zheng",
+        "Chuanhao Li",
+        "Mingmin Chi",
+        "Kaipeng Zhang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Autoregressive video diffusion models have demonstrated remarkable progress, yet they remain bottlenecked by intractable linear KV-cache growth, temporal repetition, and compounding errors during long-video generation. To address these challenges, we present PackForcing, a unified framework that efficiently manages the generation history through a novel three-partition KV-cache strategy. Specifically, we categorize the historical context into three distinct types: (1) Sink tokens, which preserve early anchor frames at full resolution to maintain global semantics; (2) Mid tokens, which achieve a massive spatiotemporal compression (32x token reduction) via a dual-branch network fusing progressive 3D convolutions with low-resolution VAE re-encoding; and (3) Recent tokens, kept at full resolution to ensure local temporal coherence. To strictly bound the memory footprint without sacrificing quality, we introduce a dynamic top-$k$ context selection mechanism for the mid tokens, coupled with a continuous Temporal RoPE Adjustment that seamlessly re-aligns position gaps caused by dropped tokens with negligible overhead. Empowered by this principled hierarchical context compression, PackForcing can generate coherent 2-minute, 832x480 videos at 16 FPS on a single H200 GPU. It achieves a bounded KV cache of just 4 GB and enables a remarkable 24x temporal extrapolation (5s to 120s), operating effectively either zero-shot or trained on merely 5-second clips. Extensive results on VBench demonstrate state-of-the-art temporal consistency (26.07) and dynamic degree (56.25), proving that short-video supervision is sufficient for high-quality, long-video synthesis. https://github.com/ShandaAI/PackForcing",
+      "url": "https://arxiv.org/abs/2603.25730v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染",
+        "4D/动态",
+        "压缩"
+      ]
+    },
+    {
+      "title": "Back to Basics: Revisiting ASR in the Age of Voice Agents",
+      "authors": [
+        "Geeyang Tay",
+        "Wentao Ma",
+        "Jaewon Lee",
+        "Yuzhi Tang",
+        "Daniel Lee",
+        "Weisu Yin",
+        "Dongming Shen",
+        "Silin Meng",
+        "Yi Zhu",
+        "Mu Li",
+        "Alex Smola"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Automatic speech recognition (ASR) systems have achieved near-human accuracy on curated benchmarks, yet still fail in real-world voice agents under conditions that current evaluations do not systematically cover. Without diagnostic tools that isolate specific failure factors, practitioners cannot anticipate which conditions, in which languages, will cause what degree of degradation. We introduce WildASR, a multilingual (four-language) diagnostic benchmark sourced entirely from real human speech that factorizes ASR robustness along three axes: environmental degradation, demographic shift, and linguistic diversity. Evaluating seven widely used ASR systems, we find severe and uneven performance degradation, and model robustness does not transfer across languages or conditions. Critically, models often hallucinate plausible but unspoken content under partial or degraded inputs, creating concrete safety risks for downstream agent behavior. Our results demonstrate that targeted, factor-isolated evaluation is essential for understanding and improving ASR reliability in production systems. Besides the benchmark itself, we also present three analytical tools that practitioners can use to guide deployment decisions.",
+      "url": "https://arxiv.org/abs/2603.25727v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "AnyHand: A Large-Scale Synthetic Dataset for RGB(-D) Hand Pose Estimation",
+      "authors": [
+        "Chen Si",
+        "Yulin Liu",
+        "Bo Ai",
+        "Jianwen Xie",
+        "Rolandos Alexandros Potamias",
+        "Chuanxia Zheng",
+        "Hao Su"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We present AnyHand, a large-scale synthetic dataset designed to advance the state of the art in 3D hand pose estimation from both RGB-only and RGB-D inputs. While recent works with foundation approaches have shown that an increase in the quantity and diversity of training data can markedly improve performance and robustness in hand pose estimation, existing real-world-collected datasets on this task are limited in coverage, and prior synthetic datasets rarely provide occlusions, arm details, and aligned depth together at scale. To address this bottleneck, our AnyHand contains 2.5M single-hand and 4.1M hand-object interaction RGB-D images, with rich geometric annotations. In the RGB-only setting, we show that extending the original training sets of existing baselines with AnyHand yields significant gains on multiple benchmarks (FreiHAND and HO-3D), even when keeping the architecture and training scheme fixed. More impressively, the model trained with AnyHand shows stronger generalization to the out-of-domain HO-Cap dataset, without any fine-tuning. We also contribute a lightweight depth fusion module that can be easily integrated into existing RGB-based models. Trained with AnyHand, the resulting RGB-D model achieves superior performance on the HO-3D benchmark, showing the benefits of depth integration and the effectiveness of our synthetic data.",
+      "url": "https://arxiv.org/abs/2603.25726v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "SoftMimicGen: A Data Generation System for Scalable Robot Learning in Deformable Object Manipulation",
+      "authors": [
+        "Masoud Moghani",
+        "Mahdi Azizian",
+        "Animesh Garg",
+        "Yuke Zhu",
+        "Sean Huver",
+        "Ajay Mandlekar"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Large-scale robot datasets have facilitated the learning of a wide range of robot manipulation skills, but these datasets remain difficult to collect and scale further, owing to the intractable amount of human time, effort, and cost required. Simulation and synthetic data generation have proven to be an effective alternative to fuel this need for data, especially with the advent of recent work showing that such synthetic datasets can dramatically reduce real-world data requirements and facilitate generalization to novel scenarios unseen in real-world demonstrations. However, this paradigm has been limited to rigid-body tasks, which are easy to simulate. Deformable object manipulation encompasses a large portion of real-world manipulation and remains a crucial gap to address towards increasing adoption of the synthetic simulation data paradigm. In this paper, we introduce SoftMimicGen, an automated data generation pipeline for deformable object manipulation tasks. We introduce a suite of high-fidelity simulation environments that encompasses a wide range of deformable objects (stuffed animal, rope, tissue, towel) and manipulation behaviors (high-precision threading, dynamic whipping, folding, pick-and-place), across four robot embodiments: a single-arm manipulator, bimanual arms, a humanoid, and a surgical robot. We apply SoftMimicGen to generate datasets across the task suite, train high-performing policies from the data, and systematically analyze the data generation system. Project website: \\href{https://softmimicgen.github.io}{softmimicgen.github.io}.",
+      "url": "https://arxiv.org/abs/2603.25725v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "城市建模",
+        "医疗"
+      ]
+    },
+    {
+      "title": "Krylov-space anatomy and spread complexity of a disordered quantum spin chain",
+      "authors": [
+        "Bikram Pain",
+        "David E. Logan",
+        "Sthitadhi Roy"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We investigate the anatomy and complexity of quantum states in Krylov space, in the ergodic and many-body localised (MBL) phases of a disordered, interacting spin chain. The Krylov basis generated by the Hamiltonian from an initial state provides a representation in which the spread of the time-evolving state constitutes a basis-optimised measure of complexity. We show that the long-time Krylov spread complexity sharply distinguishes the two phases. In the ergodic phase, the infinite-time complexity scales linearly with the Fock-space dimension, indicating that the state spreads over a finite fraction of the Krylov chain. By contrast, it grows sublinearly in the MBL phase, implying that the long-time state occupies only a vanishing fraction of the chain. Further, the profile of the infinite-time state along the Krylov chain exhibits a stretched-exponential decay in the MBL phase. This behaviour reflects a broad distribution of decay lengthscales, associated with different eigenstates contributing to the long-time state. Consistently, a large-deviation analysis of the statistics of eigenstate spread complexities shows that while the ergodic phase receives contributions from almost all eigenstates, the complexity in the MBL phase is dominated by a vanishing fraction of eigenstates, which have anomalously large complexity relative to the typical ones.",
+      "url": "https://arxiv.org/abs/2603.25724v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "Bayesian analysis of $α$-Starobinsky model with Planck, ACT and DESI data",
+      "authors": [
+        "Karim Carrion",
+        "Francisco X. Linares Cedeño",
+        "Gabriel Germán",
+        "Juan Carlos Hidalgo"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We present a joint Bayesian analysis to impose constraints on the generalized $α$-Starobinsky inflationary model using the high-precision cosmological datasets: Planck, CMB lensing from ACT DR6, and Baryon Acoustic Oscillations (BAO) from DESI DR2. For the parameter inference, we introduce an alternative sampling approach. Rather than imposing priors on the cosmological parameters of the inflationary potential $(V_0, \\, α, \\, N_*)$, we place priors directly on the primordial physical observables $(A_s,\\, n_s,\\, r)$ through using analytical slow-roll consistency relations, our pipeline internally maps these sampled observables to the corresponding $α$-Starobinsky parameters. These values are then passed to a modified version of $\\tt{CLASS}$, which solves the exact inflationary dynamics fully numerically. This pipeline ensures that the final reported posteriors for the observables are computed exactly, completely free from the slow-roll approximation. Applying this methodology, we explore the viability of the $α$-Starobinsky model. We show that, when the full combined dataset is considered, the pure Starobinsky model (i.e., the canonical limit $α= 1$) faces an apparent discrepancy: it requires a large number of $e$-folds of inflation after horizon crossing ($N_* > 60$) due to the shift in the scalar spectral index, $n_s$. In contrast, allowing the deformation parameter $α$ as a free parameter yields a clear $1σ$ preference for $\\log_{10} α> 0$ present across all datasets. By favoring a broader inflationary plateau, the $α$-Starobinsky model elegantly reconciles theoretically sound expansion histories with empirical data. Notably, we also show that the addition of ACT DR6 lensing data introduces no significant impact on these primordial constraints, confirming that our robust posteriors are primarily driven by Planck and DESI measurements.",
+      "url": "https://arxiv.org/abs/2603.25721v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "数字人"
+      ]
+    },
+    {
+      "title": "No Hard Negatives Required: Concept Centric Learning Leads to Compositionality without Degrading Zero-shot Capabilities of Contrastive Models",
+      "authors": [
+        "Hai X. Pham",
+        "David T. Hoffmann",
+        "Ricardo Guerrero",
+        "Brais Martinez"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Contrastive vision-language (V&L) models remain a popular choice for various applications. However, several limitations have emerged, most notably the limited ability of V&L models to learn compositional representations. Prior methods often addressed this limitation by generating custom training data to obtain hard negative samples. Hard negatives have been shown to improve performance on compositionality tasks, but are often specific to a single benchmark, do not generalize, and can cause substantial degradation of basic V&L capabilities such as zero-shot or retrieval performance, rendering them impractical. In this work we follow a different approach. We identify two root causes that limit compositionality performance of V&Ls: 1) Long training captions do not require a compositional representation; and 2) The final global pooling in the text and image encoders lead to a complete loss of the necessary information to learn binding in the first place. As a remedy, we propose two simple solutions: 1) We obtain short concept centric caption parts using standard NLP software and align those with the image; and 2) We introduce a parameter-free cross-modal attention-pooling to obtain concept centric visual embeddings from the image encoder. With these two changes and simple auxiliary contrastive losses, we obtain SOTA performance on standard compositionality benchmarks, while maintaining or improving strong zero-shot and retrieval capabilities. This is achieved without increasing inference cost. We release the code for this work at https://github.com/SamsungLabs/concept_centric_clip.",
+      "url": "https://arxiv.org/abs/2603.25722v1",
+      "source": "arxiv",
+      "tags": [
+        "开源"
+      ]
+    },
+    {
+      "title": "Agent Factories for High Level Synthesis: How Far Can General-Purpose Coding Agents Go in Hardware Optimization?",
+      "authors": [
+        "Abhishek Bhandwaldar",
+        "Mihir Choudhury",
+        "Ruchir Puri",
+        "Akash Srivastava"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We present an empirical study of how far general-purpose coding agents -- without hardware-specific training -- can optimize hardware designs from high-level algorithmic specifications. We introduce an agent factory, a two-stage pipeline that constructs and coordinates multiple autonomous optimization agents.   In Stage~1, the pipeline decomposes a design into sub-kernels, independently optimizes each using pragma and code-level transformations, and formulates an Integer Linear Program (ILP) to assemble globally promising configurations under an area constraint. In Stage~2, it launches $N$ expert agents over the top ILP solutions, each exploring cross-function optimizations such as pragma recombination, loop fusion, and memory restructuring that are not captured by sub-kernel decomposition.   We evaluate the approach on 12 kernels from HLS-Eval and Rodinia-HLS using Claude Code (Opus~4.5/4.6) with AMD Vitis HLS. Scaling from 1 to 10 agents yields a mean $8.27\\times$ speedup over baseline, with larger gains on harder benchmarks: streamcluster exceeds $20\\times$ and kmeans reaches approximately $10\\times$. Across benchmarks, agents consistently rediscover known hardware optimization patterns without domain-specific training, and the best designs often do not originate from top-ranked ILP candidates, indicating that global optimization exposes improvements missed by sub-kernel search. These results establish agent scaling as a practical and effective axis for HLS optimization.",
+      "url": "https://arxiv.org/abs/2603.25719v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "Parameterizing Dark Energy at the density level: A two-parameter alternative to CPL",
+      "authors": [
+        "Gabriele Montefalcone",
+        "Richard Stiskalek"
+      ],
+      "date": "2026-03-26",
+      "abstract": "We introduce a minimal two-parameter formulation of the dark energy (DE) density evolution normalized to its present-day value, $f_{\\rm DE}(z) \\equiv ρ_{\\rm DE}(z)/ρ_{\\rm DE,0}$, in terms of $f_p\\equiv f_{\\rm DE}(z_p)$ and the DE equation of state $w_p\\equiv w(z_p)$, at a pivot redshift $z_p$. This provides an alternative framework for assessing the evidence for evolving DE, complementary to the established Chevallier-Polarski-Linder (CPL) parameterization. By parameterizing the DE density directly, the $(w_p,\\,f_p)$ formulation avoids the approximate degeneracies intrinsic to the $(w_0,\\,w_a)$ basis -- in particular the weak sensitivity of the expansion history to $w_a$ -- while reproducing the background evolution of representative quintessence models with equivalent accuracy. Confronting it with the latest baryon acoustic oscillation (BAO) measurements from DESI, a prior on early-universe parameters from Planck cosmic microwave background (CMB) observations, and Type Ia supernovae (SNe) data, we find that the $w_p$ and $f_p$ parameters are both tightly constrained and sensitive to distinct subsets of the data. Specifically, $w_p$ is measured to percent-level precision by BAO and CMB alone, while $f_p$ is pinned down by the independent matter density constraint that only SNe provide. Including the Pantheon+ SNe sample, we obtain $w_p = -1.04 \\pm 0.04$ and $f_p = 1.07 \\pm 0.04$, with similar results when using the DESY5 SNe sample. The preference for evolving DE over $Λ$CDM remains below $3σ$ across all dataset combinations, comparable to that obtained with CPL. Notably, the proximity of both $w_p$ and $f_p$ to their cosmological constant values of $(-1,1)$ -- precisely at the epoch where the data are most sensitive -- deepens the coincidence previously identified in the CPL framework, reinforcing the case for caution in interpreting the current evidence for dynamical DE.",
+      "url": "https://arxiv.org/abs/2603.25735v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "PixelSmile: Toward Fine-Grained Facial Expression Editing",
+      "authors": [
+        "Jiabin Hua",
+        "Hengyuan Xu",
+        "Aojie Li",
+        "Wei Cheng",
+        "Gang Yu",
+        "Xingjun Ma",
+        "Yu-Gang Jiang"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Fine-grained facial expression editing has long been limited by intrinsic semantic overlap. To address this, we construct the Flex Facial Expression (FFE) dataset with continuous affective annotations and establish FFE-Bench to evaluate structural confusion, editing accuracy, linear controllability, and the trade-off between expression editing and identity preservation. We propose PixelSmile, a diffusion framework that disentangles expression semantics via fully symmetric joint training. PixelSmile combines intensity supervision with contrastive learning to produce stronger and more distinguishable expressions, achieving precise and stable linear expression control through textual latent interpolation. Extensive experiments demonstrate that PixelSmile achieves superior disentanglement and robust identity preservation, confirming its effectiveness for continuous, controllable, and fine-grained expression editing, while naturally supporting smooth expression blending.",
+      "url": "https://arxiv.org/abs/2603.25728v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "Natural-Language Agent Harnesses",
+      "authors": [
+        "Linyue Pan",
+        "Lexiao Zou",
+        "Shuo Guo",
+        "Jingchen Ni",
+        "Hai-Tao Zheng"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Agent performance increasingly depends on \\emph{harness engineering}, yet harness design is usually buried in controller code and runtime-specific conventions, making it hard to transfer, compare, and study as a scientific object. We ask whether the high-level control logic of an agent harness can instead be externalized as a portable executable artifact. We introduce \\textbf{Natural-Language Agent Harnesses} (NLAHs), which express harness behavior in editable natural language, and \\textbf{Intelligent Harness Runtime} (IHR), a shared runtime that executes these harnesses through explicit contracts, durable artifacts, and lightweight adapters. Across coding and computer-use benchmarks, we conduct controlled evaluations of operational viability, module ablation, and code-to-text harness migration.",
+      "url": "https://arxiv.org/abs/2603.25723v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "可编辑"
+      ]
+    },
+    {
+      "title": "R-C2: Cycle-Consistent Reinforcement Learning Improves Multimodal Reasoning",
+      "authors": [
+        "Zirui Zhang",
+        "Haoyu Dong",
+        "Kexin Pei",
+        "Chengzhi Mao"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Robust perception and reasoning require consistency across sensory modalities. Yet current multimodal models often violate this principle, yielding contradictory predictions for visual and textual representations of the same concept. Rather than masking these failures with standard voting mechanisms, which can amplify systematic biases, we show that cross-modal inconsistency provides a rich and natural signal for learning. We introduce RC2, a reinforcement learning framework that resolves internal conflicts by enforcing cross-modal cycle consistency. By requiring a model to perform backward inference, switch modalities, and reliably reconstruct the answer through forward inference, we obtain a dense, label-free reward. This cyclic constraint encourages the model to align its internal representations autonomously. Optimizing for this structure mitigates modality-specific errors and improves reasoning accuracy by up to 7.6 points. Our results suggest that advanced reasoning emerges not only from scaling data, but also from enforcing a structurally consistent understanding of the world.",
+      "url": "https://arxiv.org/abs/2603.25720v1",
+      "source": "arxiv",
+      "tags": [
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "Compiling molecular ultrastructure into neural dynamics",
+      "authors": [
+        "Konrad P. Kording",
+        "Anton Arkhipov",
+        "Davy Deng",
+        "Sean Escola",
+        "Seth G. N. Grant",
+        "Gal Haspel",
+        "Michał Januszewski",
+        "Narayanan Kasthuri",
+        "Nina Khera",
+        "Richie E. Kohman",
+        "Grace Lindsay",
+        "Jeantine Lunshof",
+        "Adam Marblestone",
+        "David A. Markowitz",
+        "Jordan Matelsky",
+        "Brett Mensh",
+        "Patrick Mineault",
+        "Andrew Payne",
+        "Joanne Peng",
+        "Xaq Pitkow",
+        "Philip Shiu",
+        "Gregor Schuhknecht",
+        "Sven Truckenbrodt",
+        "Joshua T. Vogelstein",
+        "Edward S. Boyden"
+      ],
+      "date": "2026-03-26",
+      "abstract": "High-resolution brain imaging can now capture not just synapse locations but their molecular composition, with the cost of such mapping falling exponentially. Yet such ultrastructural data has so far told us little about local neuronal physiology - specifically, the parameters (e.g., synaptic efficacies, local conductances) that govern neural dynamics. We propose to translate molecularly annotated ultrastructure into physiology, introducing the concept of an ultrastructure-to-dynamics compiler: a learned mapping from molecularly annotated ultrastructure to simulator-ready, uncertainty-aware physiological parameters. The requirement is paired training data, with jointly acquired ultrastructure from imaging, and dynamical responses to perturbations from physiological experiments. With this data we can train models that predict local physiology directly from structure. Such a compiler would support biophysical simulations by turning anatomical maps into models of circuit dynamics, shifting structure-to-function from a descriptive program to a predictive one and opening routes to understanding neural computation and forecasting intervention effects.",
+      "url": "https://arxiv.org/abs/2603.25713v1",
+      "source": "arxiv",
+      "tags": [
+        "SLAM"
+      ]
+    },
+    {
+      "title": "Neural Network Conversion of Machine Learning Pipelines",
+      "authors": [
+        "Man-Ling Sung",
+        "Jan Silovsky",
+        "Man-Hung Siu",
+        "Herbert Gish",
+        "Chinnu Pittapally"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Transfer learning and knowledge distillation has recently gained a lot of attention in the deep learning community. One transfer approach, the student-teacher learning, has been shown to successfully create ``small'' student neural networks that mimic the performance of a much bigger and more complex ``teacher'' networks. In this paper, we investigate an extension to this approach and transfer from a non-neural-based machine learning pipeline as teacher to a neural network (NN) student, which would allow for joint optimization of the various pipeline components and a single unified inference engine for multiple ML tasks. In particular, we explore replacing the random forest classifier by transfer learning to a student NN. We experimented with various NN topologies on 100 OpenML tasks in which random forest has been one of the best solutions. Our results show that for the majority of the tasks, the student NN can indeed mimic the teacher if one can select the right NN hyper-parameters. We also investigated the use of random forest for selecting the right NN hyper-parameters.",
+      "url": "https://arxiv.org/abs/2603.25699v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "The Kitchen Loop: User-Spec-Driven Development for a Self-Evolving Codebase",
+      "authors": [
+        "Yannick Roy"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Code production is now a commodity; the bottleneck is knowing what to build and proving it works. We present the Kitchen Loop, a framework for autonomous, self-evolving software built on a unified trust model: (1) a specification surface enumerating what the product claims to support; (2) 'As a User x 1000', where an LLM agent exercises that surface as a synthetic power user at 1,000x human cadence; (3) Unbeatable Tests, ground-truth verification the code author cannot fake; and (4) Drift Control, continuous quality measurement with automated pause gates. We validate across two production systems over 285+ iterations, producing 1,094+ merged pull requests with zero regressions detected by the regression oracle (methodology in Section 6.1). We observe emergent properties at scale: multi-iteration self-correction chains, autonomous infrastructure healing, and monotonically improving quality gates. The primitives are not new; our contribution is their composition into a production-tested system with the operational discipline that makes long-running autonomous evolution safe.",
+      "url": "https://arxiv.org/abs/2603.25697v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "Input-Output Price Parity and Farm Profitability: A Strategic Perspective for Karnataka",
+      "authors": [
+        " Vaishnavi",
+        " Lokesha",
+        " H.",
+        " Vedamurthy",
+        "K. B.",
+        "Manojkumar Patil"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Agricultural pricing policies are crucial for farm profitability and food security in India. This study analysed how input and output prices significantly influence the profitability of cereals in Karnataka, with the strategic support prices playing a crucial role in maintaining the price parity. The average annual TFP growth was 1.041 per cent. Rising input costs, particularly for human labour, led to reduced profitability for Jowar (6.12 per cent) and Ragi (4.89 per cent). The net effect was adverse for Jowar (-1.50 per cent) and Ragi (-0.86 per cent) due to rising input costs outpacing output prices. The study recommended increasing the MSP for Jowar (60 per cent) and Ragi (46.24 per cent) above the existing levels. A strategic price adjusted for changing input costs can stabilise farm incomes and promote sustainable production, enabling efficient pricing policies.",
+      "url": "https://arxiv.org/abs/2603.25696v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "A Unified Memory Perspective for Probabilistic Trustworthy AI",
+      "authors": [
+        "Xueji Zhao",
+        "Likai Pei",
+        "Jianbo Liu",
+        "Kai Ni",
+        "Ningyuan Cao"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Trustworthy artificial intelligence increasingly relies on probabilistic computation to achieve robustness, interpretability, security and privacy. In practical systems, such workloads interleave deterministic data access with repeated stochastic sampling across models, data paths and system functions, shifting performance bottlenecks from arithmetic units to memory systems that must deliver both data and randomness. Here we present a unified data-access perspective in which deterministic access is treated as a limiting case of stochastic sampling, enabling both modes to be analyzed within a common framework. This view reveals that increasing stochastic demand reduces effective data-access efficiency and can drive systems into entropy-limited operation. Based on this insight, we define memory-level evaluation criteria, including unified operation, distribution programmability, efficiency, robustness to hardware non-idealities and parallel compatibility. Using these criteria, we analyze limitations of conventional architectures and examine emerging probabilistic compute-in-memory approaches that integrate sampling with memory access, outlining pathways toward scalable hardware for trustworthy AI.",
+      "url": "https://arxiv.org/abs/2603.25692v1",
+      "source": "arxiv",
+      "tags": [
+        "AI_GAMES"
+      ]
+    },
+    {
+      "title": "On Neural Scaling Laws for Weather Emulation through Continual Training",
+      "authors": [
+        "Shashank Subramanian",
+        "Alexander Kiefer",
+        "Arnur Nigmetov",
+        "Amir Gholami",
+        "Dmitriy Morozov",
+        "Michael W. Mahoney"
+      ],
+      "date": "2026-03-26",
+      "abstract": "Neural scaling laws, which in some domains can predict the performance of large neural networks as a function of model, data, and compute scale, are the cornerstone of building foundation models in Natural Language Processing and Computer Vision. We study neural scaling in Scientific Machine Learning, focusing on models for weather forecasting. To analyze scaling behavior in as simple a setting as possible, we adopt a minimal, scalable, general-purpose Swin Transformer architecture, and we use continual training with constant learning rates and periodic cooldowns as an efficient training strategy. We show that models trained in this minimalist way follow predictable scaling trends and even outperform standard cosine learning rate schedules. Cooldown phases can be re-purposed to improve downstream performance, e.g., enabling accurate multi-step rollouts over longer forecast horizons as well as sharper predictions through spectral loss adjustments. We also systematically explore a wide range of model and dataset sizes under various compute budgets to construct IsoFLOP curves, and we identify compute-optimal training regimes. Extrapolating these trends to larger scales highlights potential performance limits, demonstrating that neural scaling can serve as an important diagnostic for efficient resource allocation. We open-source our code for reproducibility.",
+      "url": "https://arxiv.org/abs/2603.25687v1",
+      "source": "arxiv",
+      "tags": [
+        "开源"
+      ]
+    }
+  ],
+  "hot_topics": [
+    {
+      "title": "Valve is not willing to publish games with AI generated content anymore?",
+      "url": "https://old.reddit.com/r/aigamedev/comments/142j3yt/valve_is_not_willing_to_publish_games_with_ai/",
+      "hn_url": "https://news.ycombinator.com/item?id=36522665",
+      "points": 622,
+      "comments": 395,
+      "author": "Wouter33",
+      "date": "2023-06-29",
+      "hn_id": "36522665",
+      "comment": ""
+    },
+    {
+      "title": "Building an AI game studio: what we've learned so far",
+      "url": "https://braindump.me/blog-posts/building-an-ai-game-studio",
+      "hn_url": "https://news.ycombinator.com/item?id=40426382",
+      "points": 287,
+      "comments": 297,
+      "author": "FredrikNoren",
+      "date": "2024-05-21",
+      "hn_id": "40426382",
+      "comment": ""
+    },
+    {
+      "title": "Death by AI – a free Jackbox style party game. AI judges your plans to survive",
+      "url": "https://deathbyai.gg",
+      "hn_url": "https://news.ycombinator.com/item?id=38318889",
+      "points": 476,
+      "comments": 179,
+      "author": "overactor",
+      "date": "2023-11-18",
+      "hn_id": "38318889",
+      "comment": ""
+    },
+    {
+      "title": "The Total Beginner's Guide to Game AI",
+      "url": "https://www.gamedev.net/articles/programming/artificial-intelligence/the-total-beginners-guide-to-game-ai-r4942/",
+      "hn_url": "https://news.ycombinator.com/item?id=17748749",
+      "points": 477,
+      "comments": 57,
+      "author": "stesch",
+      "date": "2018-08-13",
+      "hn_id": "17748749",
+      "comment": ""
+    },
+    {
+      "title": "Game AI Pro",
+      "url": "http://www.gameaipro.com/",
+      "hn_url": "https://news.ycombinator.com/item?id=22216472",
+      "points": 389,
+      "comments": 60,
+      "author": "SimplyUseless",
+      "date": "2020-02-02",
+      "hn_id": "22216472",
+      "comment": ""
+    },
+    {
+      "title": "Infinite Photorealistic Worlds Using Procedural Generation",
+      "url": "https://arxiv.org/abs/2306.09310",
+      "hn_url": "https://news.ycombinator.com/item?id=36376071",
+      "points": 306,
+      "comments": 76,
+      "author": "cpeterso",
+      "date": "2023-06-18",
+      "hn_id": "36376071",
+      "comment": ""
+    }
+  ],
+  "trending_repos": [
+    {
+      "name": "affaan-m/everything-claude-code",
+      "url": "https://github.com/affaan-m/everything-claude-code",
+      "desc": "The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.",
+      "stars": 112116,
+      "weekly_stars": 22821,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "bytedance/deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "desc": "An open-source long-horizon SuperAgent harness that researches, codes, and creates. With the help of sandboxes, memories, tools, skill, subagents and message gateway, it handles different levels of tasks that could take minutes to hours.",
+      "stars": 50042,
+      "weekly_stars": 16126,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "Crosstalk-Solutions/project-nomad",
+      "url": "https://github.com/Crosstalk-Solutions/project-nomad",
+      "desc": "Project N.O.M.A.D, is a self-contained, offline survival computer packed with critical tools, knowledge, and AI to keep you informed and empowered—anytime, anywhere.",
+      "stars": 18205,
+      "weekly_stars": 14631,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "FujiwaraChoki/MoneyPrinterV2",
+      "url": "https://github.com/FujiwaraChoki/MoneyPrinterV2",
+      "desc": "Automate the process of making money online.",
+      "stars": 26672,
+      "weekly_stars": 10352,
+      "date": "2026-03-28"
+    },
+    {
+      "name": "TauricResearch/TradingAgents",
+      "url": "https://github.com/TauricResearch/TradingAgents",
+      "desc": "TradingAgents: Multi-Agents LLM Financial Trading Framework",
+      "stars": 42821,
+      "weekly_stars": 9209,
+      "date": "2026-03-28"
+    }
+  ],
+  "bili_videos": [
+    {
+      "title": "如何不写代码却能制作你人生中的第一个游戏",
+      "url": "https://www.bilibili.com/video/BV1sk4y1T761",
+      "author": "从零开始MrZero",
+      "play": 12304598,
+      "danmaku": 1140,
+      "date": 1688116217,
+      "desc": "这期视频用到的人工智能工具：\n\n代码：ChatGPT\n绘画：Leonardo.ai\n音效：jsfxr\n\n发布游戏网址：\nitch.io ： https://itch.io/games\n体验我的游戏：\nhttps://nostest.itch.io/\n\n游戏里所有文件下载（包括所有代码以及图片）：\n链接: https://pan.baidu.com/s/1svpOJydlCZpd88-bgoIxVw",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "独立游戏的春天？AI强爆了！",
+      "url": "https://www.bilibili.com/video/BV1RQm7BtE89",
+      "author": "林亦LYi",
+      "play": 558892,
+      "danmaku": 327,
+      "date": 1765540800,
+      "desc": "一天时间、0 行代码、3 款网页游戏上线。这个曾经代表着高技术门槛、需要团队爆肝的“游戏开发”，为什么在AI时代变得如此触手可及？从被 AI 写的“无敌外挂”虐杀，到目睹“数字生命宇宙”的崩坏与重生，我用亚马逊的Kiro Agentic IDE 8小时速通了游戏创作。今天我们就来聊聊，在智能体接管代码的时代，为什么你的“审美”和“判断力”，才是未来真正的硬通货！",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "不用AI，一行代码没写也能做游戏？怎么做到的！",
+      "url": "https://www.bilibili.com/video/BV1C86PBSEyb",
+      "author": "大狸子切切里",
+      "play": 352823,
+      "danmaku": 948,
+      "date": 1769742000,
+      "desc": "来玩一下：https://gd.games/qieli/qielisurvivor",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "AI开发游戏，真的靠谱吗？",
+      "url": "https://www.bilibili.com/video/BV1Y3rHBSE1n",
+      "author": "秦无邪OvO",
+      "play": 155907,
+      "danmaku": 210,
+      "date": 1768363202,
+      "desc": "AI到底是如何彻底改变了写代码这件事？作为游戏开发者，我从手写代码到用AI生成项目，亲身体验了这场变革。当工具越来越聪明，什么才是我们真正该关注的事？这期视频聊聊我自己的思考！",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "当三国游戏NPC有AI意识，我们能否统一三国？？？【合集版】",
+      "url": "https://www.bilibili.com/video/BV11cPKzDEA8",
+      "author": "藏心鱼圆",
+      "play": 78002,
+      "danmaku": 200,
+      "date": 1772702880,
+      "desc": "整合版~~",
+      "comment": "",
+      "source": "bilibili"
+    }
+  ],
+  "xhs_notes": []
+}

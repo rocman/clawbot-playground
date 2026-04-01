@@ -1,0 +1,715 @@
+{
+  "topic": "3dgs",
+  "label": "3D Gaussian Splatting",
+  "desc": "3DGS 核心技术、压缩、编辑、SLAM、动态场景等方向",
+  "generated": "2026-03-21 04:00",
+  "papers": [
+    {
+      "title": "Generation Models Know Space: Unleashing Implicit 3D Priors for Scene Understanding",
+      "authors": [
+        "Xianjin Wu",
+        "Dingkang Liang",
+        "Tianrui Feng",
+        "Kui Xia",
+        "Yumeng Zhang",
+        "Xiaofan Li",
+        "Xiao Tan",
+        "Xiang Bai"
+      ],
+      "date": "2026-03-19",
+      "abstract": "While Multimodal Large Language Models demonstrate impressive semantic capabilities, they often suffer from spatial blindness, struggling with fine-grained geometric reasoning and physical dynamics. Existing solutions typically rely on explicit 3D modalities or complex geometric scaffolding, which are limited by data scarcity and generalization challenges. In this work, we propose a paradigm shift by leveraging the implicit spatial prior within large-scale video generation models. We posit that to synthesize temporally coherent videos, these models inherently learn robust 3D structural priors and physical laws. We introduce VEGA-3D (Video Extracted Generative Awareness), a plug-and-play framework that repurposes a pre-trained video diffusion model as a Latent World Simulator. By extracting spatiotemporal features from intermediate noise levels and integrating them with semantic representations via a token-level adaptive gated fusion mechanism, we enrich MLLMs with dense geometric cues without explicit 3D supervision. Extensive experiments across 3D scene understanding, spatial reasoning, and embodied manipulation benchmarks demonstrate that our method outperforms state-of-the-art baselines, validating that generative priors provide a scalable foundation for physical-world understanding. Code is publicly available at https://github.com/H-EmbodVis/VEGA-3D.",
+      "url": "https://arxiv.org/abs/2603.19235v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Matryoshka Gaussian Splatting",
+      "authors": [
+        "Zhilin Guo",
+        "Boqiao Zhang",
+        "Hakan Aktas",
+        "Kyle Fogarty",
+        "Jeffrey Hu",
+        "Nursena Koprucu Aslan",
+        "Wenzhao Li",
+        "Canberk Baykal",
+        "Albert Miao",
+        "Josef Bengtson",
+        "Chenliang Zhou",
+        "Weihao Xia",
+        "Cristina Nader Vasconcelos. Cengiz Oztireli"
+      ],
+      "date": "2026-03-19",
+      "abstract": "The ability to render scenes at adjustable fidelity from a single model, known as level of detail (LoD), is crucial for practical deployment of 3D Gaussian Splatting (3DGS). Existing discrete LoD methods expose only a limited set of operating points, while concurrent continuous LoD approaches enable smoother scaling but often suffer noticeable quality degradation at full capacity, making LoD a costly design decision. We introduce Matryoshka Gaussian Splatting (MGS), a training framework that enables continuous LoD for standard 3DGS pipelines without sacrificing full-capacity rendering quality. MGS learns a single ordered set of Gaussians such that rendering any prefix, the first k splats, produces a coherent reconstruction whose fidelity improves smoothly with increasing budget. Our key idea is stochastic budget training: each iteration samples a random splat budget and optimises both the corresponding prefix and the full set. This strategy requires only two forward passes and introduces no architectural modifications. Experiments across four benchmarks and six baselines show that MGS matches the full-capacity performance of its backbone while enabling a continuous speed-quality trade-off from a single model. Extensive ablations on ordering strategies, training objectives, and model capacity further validate the designs.",
+      "url": "https://arxiv.org/abs/2603.19234v1",
+      "source": "arxiv",
+      "tags": [
+        "城市建模"
+      ]
+    },
+    {
+      "title": "MonoArt: Progressive Structural Reasoning for Monocular Articulated 3D Reconstruction",
+      "authors": [
+        "Haitian Li",
+        "Haozhe Xie",
+        "Junxiang Xu",
+        "Beichen Wen",
+        "Fangzhou Hong",
+        "Ziwei Liu"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Reconstructing articulated 3D objects from a single image requires jointly inferring object geometry, part structure, and motion parameters from limited visual evidence. A key difficulty lies in the entanglement between motion cues and object structure, which makes direct articulation regression unstable. Existing methods address this challenge through multi-view supervision, retrieval-based assembly, or auxiliary video generation, often sacrificing scalability or efficiency. We present MonoArt, a unified framework grounded in progressive structural reasoning. Rather than predicting articulation directly from image features, MonoArt progressively transforms visual observations into canonical geometry, structured part representations, and motion-aware embeddings within a single architecture. This structured reasoning process enables stable and interpretable articulation inference without external motion templates or multi-stage pipelines. Extensive experiments on PartNet-Mobility demonstrate that OM achieves state-of-the-art performance in both reconstruction accuracy and inference speed. The framework further generalizes to robotic manipulation and articulated scene reconstruction.",
+      "url": "https://arxiv.org/abs/2603.19231v1",
+      "source": "arxiv",
+      "tags": [
+        "具身智能"
+      ]
+    },
+    {
+      "title": "DriveTok: 3D Driving Scene Tokenization for Unified Multi-View Reconstruction and Understanding",
+      "authors": [
+        "Dong Zhuo",
+        "Wenzhao Zheng",
+        "Sicheng Zuo",
+        "Siming Yan",
+        "Lu Hou",
+        "Jie Zhou",
+        "Jiwen Lu"
+      ],
+      "date": "2026-03-19",
+      "abstract": "With the growing adoption of vision-language-action models and world models in autonomous driving systems, scalable image tokenization becomes crucial as the interface for the visual modality. However, most existing tokenizers are designed for monocular and 2D scenes, leading to inefficiency and inter-view inconsistency when applied to high-resolution multi-view driving scenes. To address this, we propose DriveTok, an efficient 3D driving scene tokenizer for unified multi-view reconstruction and understanding. DriveTok first obtains semantically rich visual features from vision foundation models and then transforms them into the scene tokens with 3D deformable cross-attention. For decoding, we employ a multi-view transformer to reconstruct multi-view features from the scene tokens and use multiple heads to obtain RGB, depth, and semantic reconstructions. We also add a 3D head directly on the scene tokens for 3D semantic occupancy prediction for better spatial awareness. With the multiple training objectives, DriveTok learns unified scene tokens that integrate semantic, geometric, and textural information for efficient multi-view tokenization. Extensive experiments on the widely used nuScenes dataset demonstrate that the scene tokens from DriveTok perform well on image reconstruction, semantic segmentation, depth prediction, and 3D occupancy prediction tasks.",
+      "url": "https://arxiv.org/abs/2603.19219v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "可编辑",
+        "数字人"
+      ]
+    },
+    {
+      "title": "DreamPartGen: Semantically Grounded Part-Level 3D Generation via Collaborative Latent Denoising",
+      "authors": [
+        "Tianjiao Yu",
+        "Xinzhuo Li",
+        "Muntasir Wahed",
+        "Jerry Xiong",
+        "Yifan Shen",
+        "Ying Shen",
+        "Ismini Lourentzou"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Understanding and generating 3D objects as compositions of meaningful parts is fundamental to human perception and reasoning. However, most text-to-3D methods overlook the semantic and functional structure of parts. While recent part-aware approaches introduce decomposition, they remain largely geometry-focused, lacking semantic grounding and failing to model how parts align with textual descriptions or their inter-part relations. We propose DreamPartGen, a framework for semantically grounded, part-aware text-to-3D generation. DreamPartGen introduces Duplex Part Latents (DPLs) that jointly model each part's geometry and appearance, and Relational Semantic Latents (RSLs) that capture inter-part dependencies derived from language. A synchronized co-denoising process enforces mutual geometric and semantic consistency, enabling coherent, interpretable, and text-aligned 3D synthesis. Across multiple benchmarks, DreamPartGen delivers state-of-the-art performance in geometric fidelity and text-shape alignment.",
+      "url": "https://arxiv.org/abs/2603.19216v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "The commutant of fermionic Gaussian unitaries",
+      "authors": [
+        "Paolo Braccia",
+        "N. L. Diaz",
+        "Martin Larocca",
+        "M. Cerezo",
+        "Diego García-Martín"
+      ],
+      "date": "2026-03-19",
+      "abstract": "In this work, we characterize the $t$-th order commutants of fermionic Gaussian unitaries and of their particle-preserving subgroup acting on $n$ fermionic modes. These commutants govern Haar averages over the corresponding groups and therefore play a central role in fermionic randomized protocols, invariant theory, and resource quantification. Using Howe dualities, we show that the particle-preserving commutant is generated by generalized copy-hopping operators, while that for general Gaussian commutant is generated by generalized quadratic Majorana bilinears together with parity. We then derive closed formulas for the dimensions of both commutants as functions of $t$ and $n$, and develop constructive Gelfand--Tsetlin procedures to obtain explicit orthonormal bases, with detailed low-$t$ examples. Our framework also clarifies the structure of replicated fermionic states and connects naturally to measures of fermionic correlations, generalized Plücker-type constraints, and the stabilizer entropy of fermionic Gaussian states. These results provide a unified algebraic description of higher-order invariants for fermionic Gaussian dynamics.",
+      "url": "https://arxiv.org/abs/2603.19210v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "Reconstruction Matters: Learning Geometry-Aligned BEV Representation through 3D Gaussian Splatting",
+      "authors": [
+        "Yiren Lu",
+        "Xin Ye",
+        "Burhaneddin Yaman",
+        "Jingru Luo",
+        "Zhexiao Xiong",
+        "Liu Ren",
+        "Yu Yin"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Bird's-Eye-View (BEV) perception serves as a cornerstone for autonomous driving, offering a unified spatial representation that fuses surrounding-view images to enable reasoning for various downstream tasks, such as semantic segmentation, 3D object detection, and motion prediction. However, most existing BEV perception frameworks adopt an end-to-end training paradigm, where image features are directly transformed into the BEV space and optimized solely through downstream task supervision. This formulation treats the entire perception process as a black box, often lacking explicit 3D geometric understanding and interpretability, leading to suboptimal performance. In this paper, we claim that an explicit 3D representation matters for accurate BEV perception, and we propose Splat2BEV, a Gaussian Splatting-assisted framework for BEV tasks. Splat2BEV aims to learn BEV feature representations that are both semantically rich and geometrically precise. We first pre-train a Gaussian generator that explicitly reconstructs 3D scenes from multi-view inputs, enabling the generation of geometry-aligned feature representations. These representations are then projected into the BEV space to serve as inputs for downstream tasks. Extensive experiments on nuScenes and argoverse dataset demonstrate that Splat2BEV achieves state-of-the-art performance and validate the effectiveness of incorporating explicit 3D reconstruction into BEV perception.",
+      "url": "https://arxiv.org/abs/2603.19193v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "Meanings and Measurements: Multi-Agent Probabilistic Grounding for Vision-Language Navigation",
+      "authors": [
+        "Swagat Padhan",
+        "Lakshya Jain",
+        "Bhavya Minesh Shah",
+        "Omkar Patil",
+        "Thao Nguyen",
+        "Nakul Gopalan"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Robots collaborating with humans must convert natural language goals into actionable, physically grounded decisions. For example, executing a command such as \"go two meters to the right of the fridge\" requires grounding semantic references, spatial relations, and metric constraints within a 3D scene. While recent vision language models (VLMs) demonstrate strong semantic grounding capabilities, they are not explicitly designed to reason about metric constraints in physically defined spaces. In this work, we empirically demonstrate that state-of-the-art VLM-based grounding approaches struggle with complex metric-semantic language queries. To address this limitation, we propose MAPG (Multi-Agent Probabilistic Grounding), an agentic framework that decomposes language queries into structured subcomponents and queries a VLM to ground each component. MAPG then probabilistically composes these grounded outputs to produce metrically consistent, actionable decisions in 3D space. We evaluate MAPG on the HM-EQA benchmark and show consistent performance improvements over strong baselines. Furthermore, we introduce a new benchmark, MAPG-Bench, specifically designed to evaluate metric-semantic goal grounding, addressing a gap in existing language grounding evaluations. We also present a real-world robot demonstration showing that MAPG transfers beyond simulation when a structured scene representation is available.",
+      "url": "https://arxiv.org/abs/2603.19166v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "具身智能"
+      ]
+    },
+    {
+      "title": "$S^3$ partition functions and Equivariant CY$_4 $/ CY$_3$ correspondence from Quantum curves",
+      "authors": [
+        "Kiril Hristov",
+        "Naotaka Kubo",
+        "Yi Pang"
+      ],
+      "date": "2026-03-19",
+      "abstract": "We study the perturbative large-$N$ expansion of the round three-sphere partition function in a class of M2-brane theories, including flavored SYM and ABJM theories as well as more general 3d theories admitting dual $(p,q)$ 5-brane web descriptions. Using the Fermi gas formalism and quantum curve techniques, we derive the Airy-function representation of the partition function and find exact agreement with predictions based on equivariant constant maps in topological string theory proposed in [1]. In particular, we provide affirmative tests of this proposal for the toric geometries $\\mathbb{C} \\times \\mathcal{C}$ (the conifold), the cone over the Sasakian space $Q^{1,1,1}$, and $\\mathbb{C} \\times \\mathrm{SPP}$ (the suspended pinch point). Motivated by a recent conjecture in [2], we further propose a novel equivariant correspondence between distinct toric Calabi-Yau manifolds of the form $\\mathrm{CY}_4 \\leftrightarrow \\mathbb{C} \\times\\mathrm{CY}_3$, arising from relations between the corresponding quantum curves under specific constraints. This correspondence suggests an equivariant extension and points toward a geometric origin of the topological string/spectral theory (TS/ST) correspondence, while offering new insight into the structure of the holography duality.",
+      "url": "https://arxiv.org/abs/2603.19159v1",
+      "source": "arxiv",
+      "tags": [
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Channel Estimation via Tensor Decomposition for Dynamic Metasurface Antennas with Known Mutual Coupling: Algorithms and Experiments",
+      "authors": [
+        "Jean Tapie",
+        "Bruno Sokal",
+        "André L. F. de Almeida",
+        "Philipp del Hougne"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Dynamic metasurface antennas (DMAs) are an emerging hybrid-MIMO technology distinguished by an ultrathin form factor, low cost, and low power consumption. In real-world DMA prototypes, mutual coupling (MC) between meta-elements is generally non-negligible; some architectures even deliberately exploit strong MC to enhance wave-domain flexibility. In this paper, we address channel estimation (CE) for DMAs with known MC by formulating it as a tensor-decomposition problem. We develop a generalized block Tucker alternating least squares (BTALS) algorithm, together with specialized variants for cases with known direct and/or feed channel. We also develop a reciprocity-aware bilinear factorization method for the case with known direct channel. We experimentally validate our algorithms using an 18 GHz DMA prototype whose 7 feeds and 96 meta-elements are strongly coupled via a chaotic cavity. Our general BTALS algorithm reaches an accuracy of 43.1 dB, only 0.3 dB below the upper bound imposed by experimental noise. All proposed algorithms generally outperform the prior-art reference scheme thanks to the superior noise rejection enabled by the tensor-based framework. We further study the minimum number of required measurements as a function of the number of feeds and demonstrate the importance of MC awareness by comparison with an MC-unaware benchmark. Finally, we apply BTALS to a second setup enabling the prediction of the DMA's full dual-polarization 3D radiation diagram. We also measure the latter for DMA configurations optimized for channel-gain enhancement based on the estimated channels. Altogether, our work establishes the practical relevance of MC-aware tensor methods; beyond DMAs, it applies to all wireless systems with wave-domain programmability enabled by tunable lumped elements.",
+      "url": "https://arxiv.org/abs/2603.19155v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "数字人",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "GSMem: 3D Gaussian Splatting as Persistent Spatial Memory for Zero-Shot Embodied Exploration and Reasoning",
+      "authors": [
+        "Yiren Lu",
+        "Yi Du",
+        "Disheng Liu",
+        "Yunlai Zhou",
+        "Chen Wang",
+        "Yu Yin"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Effective embodied exploration requires agents to accumulate and retain spatial knowledge over time. However, existing scene representations, such as discrete scene graphs or static view-based snapshots, lack \\textit{post-hoc re-observability}. If an initial observation misses a target, the resulting memory omission is often irrecoverable. To bridge this gap, we propose \\textbf{GSMem}, a zero-shot embodied exploration and reasoning framework built upon 3D Gaussian Splatting (3DGS). By explicitly parameterizing continuous geometry and dense appearance, 3DGS serves as a persistent spatial memory that endows the agent with \\textit{Spatial Recollection}: the ability to render photorealistic novel views from optimal, previously unoccupied viewpoints. To operationalize this, GSMem employs a retrieval mechanism that simultaneously leverages parallel object-level scene graphs and semantic-level language fields. This complementary design robustly localizes target regions, enabling the agent to ``hallucinate'' optimal views for high-fidelity Vision-Language Model (VLM) reasoning. Furthermore, we introduce a hybrid exploration strategy that combines VLM-driven semantic scoring with a 3DGS-based coverage objective, balancing task-aware exploration with geometric coverage. Extensive experiments on embodied question answering and lifelong navigation demonstrate the robustness and effectiveness of our framework",
+      "url": "https://arxiv.org/abs/2603.19137v1",
+      "source": "arxiv",
+      "tags": [
+        "具身智能",
+        "新视角合成"
+      ]
+    },
+    {
+      "title": "Tendon-Actuated Robots with a Tapered, Flexible Polymer Backbone: Design, Fabrication, and Modeling",
+      "authors": [
+        "Harald Minde Hansen",
+        "Nandita Gallacher",
+        "Nicholas B. Andrews",
+        "Kristin Y. Pettersen",
+        "Jan Tommy Gravdahl",
+        "Mario di Castro"
+      ],
+      "date": "2026-03-19",
+      "abstract": "This paper presents the design, modeling, and fabrication of 3D-printed, tendon-actuated continuum robots featuring a flexible, tapered backbone constructed from thermoplastic polyurethane (TPU). Our scalable design incorporates an integrated electronics base housing that enables direct tendon tension control and sensing via actuators and compression load cells. Unlike many continuum robots that are single-purpose and costly, the proposed design prioritizes customizability, rapid assembly, and low cost while enabling high curvature and enhanced distal compliance through geometric tapering, thereby supporting a broad range of compliant robotic inspection and manipulation tasks. We develop a generalized forward kinetostatic model of the tapered backbone based on Cosserat rod theory using a Newtonian approach, extending existing tendon-actuated Cosserat rod formulations to explicitly account for spatially varying backbone cross-sectional geometry. The model captures the graded stiffness profile induced by the tapering and enables systematic exploration of the configuration space as a function of the geometric design parameters. Specifically, we analyze how the backbone taper angle influences the robot's configuration space and manipulability. The model is validated against motion capture data, achieving centimeter-level shape prediction accuracy after calibrating Young's modulus via a line search that minimizes modeling error. We further demonstrate teleoperated grasping using an endoscopic gripper routed along the continuum robot, mounted on a 6-DoF robotic arm. Parameterized iLogic/CAD scripts are provided for rapid geometry generation and scaling. The presented framework establishes a simple, rapid, and reproducible pathway from parametric design to controlled tendon actuation for tapered, tendon-driven continuum robots manufactured using fused deposition modeling 3D printers.",
+      "url": "https://arxiv.org/abs/2603.19124v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "医疗",
+        "具身智能"
+      ]
+    },
+    {
+      "title": "CustomTex: High-fidelity Indoor Scene Texturing via Multi-Reference Customization",
+      "authors": [
+        "Weilin Chen",
+        "Jiahao Rao",
+        "Wenhao Wang",
+        "Xinyang Li",
+        "Xuan Cheng",
+        "Liujuan Cao"
+      ],
+      "date": "2026-03-19",
+      "abstract": "The creation of high-fidelity, customizable 3D indoor scene textures remains a significant challenge. While text-driven methods offer flexibility, they lack the precision for fine-grained, instance-level control, and often produce textures with insufficient quality, artifacts, and baked-in shading. To overcome these limitations, we introduce CustomTex, a novel framework for instance-level, high-fidelity scene texturing driven by reference images. CustomTex takes an untextured 3D scene and a set of reference images specifying the desired appearance for each object instance, and generates a unified, high-resolution texture map. The core of our method is a dual-distillation approach that separates semantic control from pixel-level enhancement. We employ semantic-level distillation, equipped with an instance cross-attention, to ensure semantic plausibility and ``reference-instance'' alignment, and pixel-level distillation to enforce high visual fidelity. Both are unified within a Variational Score Distillation (VSD) optimization framework. Experiments demonstrate that CustomTex achieves precise instance-level consistency with reference images and produces textures with superior sharpness, reduced artifacts, and minimal baked-in shading compared to state-of-the-art methods. Our work establishes a more direct and user-friendly path to high-quality, customizable 3D scene appearance editing.",
+      "url": "https://arxiv.org/abs/2603.19121v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "The smeared $R$-ratio in isoQCD from first-principles lattice simulations",
+      "authors": [
+        "Francesca Margari",
+        "Simone Bacchio",
+        "Alessandro De Santis",
+        "Antonio Evangelista",
+        "Roberto Frezzotti",
+        "Giuseppe Gagliardi",
+        "Marco Garofalo",
+        "Francesco Sanfilippo",
+        "Nazario Tantalo"
+      ],
+      "date": "2026-03-19",
+      "abstract": "The $R$-ratio is a phenomenological observable of great relevance, both in itself and in applications such as the dispersive approach to the muon anomalous magnetic moment. It can be investigated from first-principles with controlled statistical and systematic errors in lattice QCD by introducing an arbitrary smearing kernel and employing spectral reconstruction techniques, such as the well-known Hansen-Lupo-Tantalo method. Improving upon a first study published in 2023, we show preliminary results using the correlation functions produced by ETMC in $N_f = 2+1+1$ lattice simulations at four lattice spacings, different volumes and with higher statistics w.r.t. our previous study. The new correlators, thanks to the implementation of the Low Mode Average technique, allow the determination of the $R$-ratio smeared with Gaussian kernels of widths down to $σ\\sim 200$ with phenomenologically relevant precision.",
+      "url": "https://arxiv.org/abs/2603.19070v1",
+      "source": "arxiv",
+      "tags": [
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Adaptive Nonlinear Data Assimilation through P-Spline Triangular Measure Transport",
+      "authors": [
+        "Berent Å. S. Lunde",
+        "Maximilian Ramgraber"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Non-Gaussian statistics are a challenge for data assimilation. Linear methods oversimplify the problem, yet fully nonlinear methods are often too expensive to use in practice. The best solution usually lies between these extremes. Triangular measure transport offers a flexible framework for nonlinear data assimilation. Its success, however, depends on how the map is parametrized. Too much flexibility leads to overfitting; too little misses important structure. To address this balance, we develop an adaptation algorithm that selects a parsimonious parametrization automatically. Our method uses P-spline basis functions and an information criterion as a continuous measure of model complexity. This formulation enables gradient descent and allows efficient, fine-scale adaptation in high-dimensional settings. The resulting algorithm requires no hyperparameter tuning. It adjusts the transport map to the appropriate level of complexity based on the system statistics and ensemble size. We demonstrate its performance in nonlinear, non-Gaussian problems, including a high-dimensional distributed groundwater model.",
+      "url": "https://arxiv.org/abs/2603.19058v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "Solving Maxwell's Equations with Mimetic Methods",
+      "authors": [
+        "Johnny Corbino"
+      ],
+      "date": "2026-03-19",
+      "abstract": "We present a mimetic finite-difference approach for solving Maxwell's equations in one and two spatial dimensions. After introducing the governing equations and the classical Finite-Difference Time-Domain (FDTD) method, we describe mimetic operators that satisfy a discrete analogue of the extended Gauss divergence theorem and show how they lead to a compact, physically consistent formulation for computational electromagnetics. Two numerical examples are presented: a one-dimensional sinusoidal wave interacting with a lossy dielectric slab, and a two-dimensional Gaussian pulse with Uniaxial Perfectly Matched Layer (UPML) absorbing boundary conditions. All implementations use the Mimetic Operators Library Enhanced (MOLE).",
+      "url": "https://arxiv.org/abs/2603.19056v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩"
+      ]
+    },
+    {
+      "title": "SwiftTailor: Efficient 3D Garment Generation with Geometry Image Representation",
+      "authors": [
+        "Phuc Pham",
+        "Uy Dieu Tran",
+        "Binh-Son Hua",
+        "Phong Nguyen"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Realistic and efficient 3D garment generation remains a longstanding challenge in computer vision and digital fashion. Existing methods typically rely on large vision- language models to produce serialized representations of 2D sewing patterns, which are then transformed into simulation-ready 3D meshes using garment modeling framework such as GarmentCode. Although these approaches yield high-quality results, they often suffer from slow inference times, ranging from 30 seconds to a minute. In this work, we introduce SwiftTailor, a novel two-stage framework that unifies sewing-pattern reasoning and geometry-based mesh synthesis through a compact geometry image representation. SwiftTailor comprises two lightweight modules: PatternMaker, an efficient vision-language model that predicts sewing patterns from diverse input modalities, and GarmentSewer, an efficient dense prediction transformer that converts these patterns into a novel Garment Geometry Image, encoding the 3D surface of all garment panels in a unified UV space. The final 3D mesh is reconstructed through an efficient inverse mapping process that incorporates remeshing and dynamic stitching algorithms to directly assemble the garment, thereby amortizing the cost of physical simulation. Extensive experiments on the Multimodal GarmentCodeData demonstrate that SwiftTailor achieves state-of-the-art accuracy and visual fidelity while significantly reducing inference time. This work offers a scalable, interpretable, and high-performance solution for next-generation 3D garment generation.",
+      "url": "https://arxiv.org/abs/2603.19053v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "SLAM",
+        "压缩"
+      ]
+    },
+    {
+      "title": "Measuring 3D Spatial Geometric Consistency in Dynamic Generated Videos",
+      "authors": [
+        "Weijia Dou",
+        "Wenzhao Zheng",
+        "Weiliang Chen",
+        "Yu Zheng",
+        "Jie Zhou",
+        "Jiwen Lu"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Recent generative models can produce high-fidelity videos, yet they often exhibit 3D spatial geometric inconsistencies. Existing evaluation methods fail to accurately characterize these inconsistencies: fidelity-centric metrics like FVD are insensitive to geometric distortions, while consistency-focused benchmarks often penalize valid foreground dynamics. To address this gap, we introduce SGC, a metric for evaluating 3D \\textbf{S}patial \\textbf{G}eometric \\textbf{C}onsistency in dynamically generated videos. We quantify geometric consistency by measuring the divergence among multiple camera poses estimated from distinct local regions. Our approach first separates static from dynamic regions, then partitions the static background into spatially coherent sub-regions. We predict depth for each pixel, estimate a local camera pose for each subregion, and compute the divergence among these poses to quantify geometric consistency. Experiments on real and generative videos demonstrate that SGC robustly quantifies geometric inconsistencies, effectively identifying critical failures missed by existing metrics.",
+      "url": "https://arxiv.org/abs/2603.19048v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型"
+      ]
+    },
+    {
+      "title": "D$_4$CNN$\\times$AnaCal: Physics-Informed Machine Learning for Accurate and Precise Weak Lensing Shear Estimation",
+      "authors": [
+        "Shurui Lin",
+        "Xiangchong Li",
+        "Ji Li",
+        "Shengcao Cao",
+        "Xin Liu",
+        "Yu-Xiong Wang"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Traditional weak gravitational lensing shear estimators are carefully calibrated but struggle to fully capture realistic galaxy morphologies, point-spread-function (PSF) effects, blending, and noise in deep surveys, while blindly trained machine learning (ML) models can introduce significant calibration biases. Here we construct a fully D$_4$-equivariant deep neural network for galaxy shape measurement whose architecture enforces symmetry under 90$^{\\circ}$ rotations and mirror transformations, and adopt the Analytical Calibration framework (AnaCal) to calibrate the model using its backpropagated gradients. For isolated galaxies in LSST-like single-band simulations, we demonstrate that our approach achieves $\\sim$10% lower shape noise than the traditional moment-based Fourier Power Function Shapelets estimator in the high-noise regime, equivalent to a $\\sim$20% gain in effective galaxy number density, while simultaneously achieving multiplicative biases consistent with zero across a wide range of noise levels, PSF sizes and ellipticities, and magnitude selection cuts, with all measurements satisfying $|m| {<} 10^{-3}$ (i.e., within the 0.2% LSST requirement) and most at the ${\\sim}10^{-4}$ level. We demonstrate this framework on isolated single-band galaxy images with Gaussian noise and known PSF, establishing a rigorous, physics-informed foundation for future extensions of ML-based shear estimation to blended sources and multi-band observations in Stage-IV surveys. All codes and data products will be made publicly available upon acceptance.",
+      "url": "https://arxiv.org/abs/2603.19046v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "Exact Law of Quantum Reversibility under Gaussian Pure Loss",
+      "authors": [
+        "Ammar Fayad"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Classical reverse diffusion is generated by changing the drift at fixed noise. We show that the quantum version of this principle obeys an exact law with a sharp phase boundary. For Gaussian pure-loss dynamics -- the canonical model of continuous-variable decoherence in optical attenuation channels, squeezed-light interferometric sensing, and superconducting bosonic architectures -- complete positivity, the requirement that the dynamics remain physical even for systems entangled with an ancilla, creates an exact phase boundary at which the minimum reverse cost vanishes, fixes the reverse-noise budget on both sides, and makes pure nonclassical targets dynamically singular. The minimum reverse cost vanishes exactly at a critical squeezing-to-thermal ratio and is strictly positive away from it, with a sharp asymmetry: below the boundary, standard reverse prescriptions such as the fixed-diffusion Bayes reverse remain feasible at mild cost; above it, these prescriptions become infeasible, the covariance-aligned generator remains CP-feasible and uniquely optimal, and the cost can be severe. The optimal reverse noise is locked to the state's own fluctuation geometry and simultaneously minimizes the geometric, metrological, and thermodynamic price of reversal. For multimode trajectories, the exact cost is additive in a canonical set of mode-resolved data, and a globally continuous protocol attains this optimum on every mixed-state interval. If a pure nonclassical endpoint is included, the same pointwise law holds for every $t>0$, but the optimum diverges as $2/t$: exact reversal of a pure quantum state is dynamically unattainable. These results establish an exact law of quantum reversibility in the canonical pure-loss setting and provide a sharp benchmark for broader theories of quantum reverse diffusion.",
+      "url": "https://arxiv.org/abs/2603.19024v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型"
+      ]
+    },
+    {
+      "title": "Generalized Hand-Object Pose Estimation with Occlusion Awareness",
+      "authors": [
+        "Hui Yang",
+        "Wei Sun",
+        "Jian Liu",
+        "Jian Xiao Tao Xie",
+        "Hossein Rahmani",
+        "Ajmal Saeed mian",
+        "Nicu Sebe",
+        "Gim Hee Lee"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Generalized 3D hand-object pose estimation from a single RGB image remains challenging due to the large variations in object appearances and interaction patterns, especially under heavy occlusion. We propose GenHOI, a framework for generalized hand-object pose estimation with occlusion awareness. GenHOI integrates hierarchical semantic knowledge with hand priors to enhance model generalization under challenging occlusion conditions. Specifically, we introduce a hierarchical semantic prompt that encodes object states, hand configurations, and interaction patterns via textual descriptions. This enables the model to learn abstract high-level representations of hand-object interactions for generalization to unseen objects and novel interactions while compensating for missing or ambiguous visual cues. To enable robust occlusion reasoning, we adopt a multi-modal masked modeling strategy over RGB images, predicted point clouds, and textual descriptions. Moreover, we leverage hand priors as stable spatial references to extract implicit interaction constraints. This allows reliable pose inference even under significant variations in object shapes and interaction patterns. Extensive experiments on the challenging DexYCB and HO3Dv2 benchmarks demonstrate that our method achieves state-of-the-art performance in hand-object pose estimation.",
+      "url": "https://arxiv.org/abs/2603.19013v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "Radar Detection through Rectified Flow Matching",
+      "authors": [
+        "P. Meena",
+        "Y. A. Rouzoumka",
+        "J. Pinsolle",
+        "C. Ren",
+        "M. N. El Korso",
+        "J. -P. Ovarlez"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Radar target detection in the presence of a mixture of non-Gaussian clutter and white thermal noise is a challenging problem. This paper proposes a Rectified Flow Matching-based method for radar detection, termed D-RFM. Unlike existing detectors, D-RFM learns a mapping from a standard Gaussian distribution to radar observations by capturing the underlying velocity field. Detection is then performed by inverse mapping test samples into the latent Gaussian space using the learned velocity field, with targets identified as deviations from the learned distribution. Experimental results demonstrate the efficacy of the proposed method under both Gaussian and non-Gaussian clutter plus additive white Gaussian noise, highlighting its accuracy, robustness, and computational efficiency.",
+      "url": "https://arxiv.org/abs/2603.18995v1",
+      "source": "arxiv",
+      "tags": [
+        "SLAM",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "VGGT-360: Geometry-Consistent Zero-Shot Panoramic Depth Estimation",
+      "authors": [
+        "Jiayi Yuan",
+        "Haobo Jiang",
+        "De Wen Soh",
+        "Na Zhao"
+      ],
+      "date": "2026-03-19",
+      "abstract": "This paper presents VGGT-360, a novel training-free framework for zero-shot, geometry-consistent panoramic depth estimation. Unlike prior view-independent training-free approaches, VGGT-360 reformulates the task as panoramic reprojection over multi-view reconstructed 3D models by leveraging the intrinsic 3D consistency of VGGT-like foundation models, thereby unifying fragmented per-view reasoning into a coherent panoramic understanding. To achieve robust and accurate estimation, VGGT-360 integrates three plug-and-play modules that form a unified panorama-to-3D-to-depth framework: (i) Uncertainty-guided adaptive projection slices panoramas into perspective views to bridge the domain gap between panoramic inputs and VGGT's perspective prior. It estimates gradient-based uncertainty to allocate denser views to geometry-poor regions, yielding geometry-informative inputs for VGGT. (ii) Structure-saliency enhanced attention strengthens VGGT's robustness during 3D reconstruction by injecting structure-aware confidence into its attention layers, guiding focus toward geometrically reliable regions and enhancing cross-view coherence. (iii) Correlation-weighted 3D model correction refines the reconstructed 3D model by reweighting overlapping points using attention-inferred correlation scores, providing a consistent geometric basis for accurate panoramic reprojection. Extensive experiments show that VGGT-360 outperforms both trained and training-free state-of-the-art methods across multiple resolutions and diverse indoor and outdoor datasets.",
+      "url": "https://arxiv.org/abs/2603.18943v1",
+      "source": "arxiv",
+      "tags": [
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Gaussian Volume Functional, Integral Scalar Curvature, and Minimal Super-Ricci Flows",
+      "authors": [
+        "Marco Flaim",
+        "Erik Hupp",
+        "Karl-Theodor Sturm"
+      ],
+      "date": "2026-03-19",
+      "abstract": "We present a synthetic notion of scalar curvature (and its integral) for Riemannian manifolds and metric measure spaces, defined in terms of the initial slope of a Gaussian (double) integral. We explicitly calculate the integral scalar curvature for Lipschitz gluings of smooth Riemannian manifolds and for cones. In dimension 2, the former coincides with the formula derived by Gauss-Bonnet, whereas the latter differs. The extension to the time-dependent case allows us to characterize Ricci flows as super Ricci flows with minimal integral curvature functional.",
+      "url": "https://arxiv.org/abs/2603.18942v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "Improving moment tensor solutions under Earth structure uncertainty with simulation-based inference",
+      "authors": [
+        "A. A. Saoulis",
+        "T. -S. Pham",
+        "A. M. G. Ferreira"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Bayesian inference represents a principled way to incorporate Earth structure uncertainty in full-waveform moment tensor inversions, but traditional approaches generally require significant approximations that risk biasing the resulting solutions. We introduce a robust method for handling theory errors using simulation-based inference (SBI), a machine learning approach that empirically models their impact on the observations. This framework retains the rigour of Bayesian inference while avoiding restrictive assumptions about the functional form of the uncertainties. We begin by demonstrating that the common Gaussian parametrisation of theory errors breaks down under minor ($1-3 \\%$) 1-D Earth model uncertainty. To address this issue, we develop two formalisms for utilising SBI to improve the quality of the moment tensor solutions: one using physics-based insights into the theory errors, and another utilising an end-to-end deep learning algorithm. We then compare the results of moment tensor inversion with the standard Gaussian approach and SBI, and demonstrate that Gaussian assumptions induce bias and significantly under-report moment tensor uncertainties. We also show that these effects are particularly problematic when inverting short period data and for shallow, isotropic events. On the other hand, SBI produces more reliable, better calibrated posteriors of the earthquake source mechanism. Finally, we successfully apply our methodology to two well studied moderate magnitude earthquakes: one from the 1997 Long Valley Caldera volcanic earthquake sequence, and the 2020 Zagreb earthquake.",
+      "url": "https://arxiv.org/abs/2603.18925v1",
+      "source": "arxiv",
+      "tags": [
+        "3DGS"
+      ]
+    },
+    {
+      "title": "Unsupervised Contrastive Learning for Efficient and Robust Spectral Shape Matching",
+      "authors": [
+        "Feifan Luo",
+        "Hongyang Chen"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Estimating correspondences between pairs of non-rigid deformable 3D shapes remains a significant challenge in computer vision and graphics. While deep functional map methods have become the go-to solution for addressing this problem, they primarily focus on optimizing pointwise and functional maps either individually or jointly, rather than directly enhancing feature representations in the embedding space, which often results in inadequate feature quality and suboptimal matching performance. Furthermore, these approaches heavily rely on traditional functional map techniques, such as time-consuming functional map solvers, which incur substantial computational costs. In this work, we introduce, for the first time, a novel unsupervised contrastive learning-based approach for efficient and robust 3D shape matching. We begin by presenting an unsupervised contrastive learning framework that promotes feature learning by maximizing consistency within positive similarity pairs and minimizing it within negative similarity pairs, thereby improving both the consistency and discriminability of the learned features.We then design a significantly simplified functional map learning architecture that eliminates the need for computationally expensive functional map solvers and multiple auxiliary functional map losses, greatly enhancing computational efficiency. By integrating these two components into a unified two-branch pipeline, our method achieves state-of-the-art performance in both accuracy and efficiency. Extensive experiments demonstrate that our approach is not only computationally efficient but also outperforms current state-of-the-art methods across various challenging benchmarks, including near-isometric, non-isometric, and topologically inconsistent scenarios, even surpassing supervised techniques.",
+      "url": "https://arxiv.org/abs/2603.18924v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "GHOST: Fast Category-agnostic Hand-Object Interaction Reconstruction from RGB Videos using Gaussian Splatting",
+      "authors": [
+        "Ahmed Tawfik Aboukhadra",
+        "Marcel Rogge",
+        "Nadia Robertini",
+        "Abdalla Arafa",
+        "Jameel Malik",
+        "Ahmed Elhayek",
+        "Didier Stricker"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Understanding realistic hand-object interactions from monocular RGB videos is essential for AR/VR, robotics, and embodied AI. Existing methods rely on category-specific templates or heavy computation, yet still produce physically inconsistent hand-object alignment in 3D. We introduce GHOST (Gaussian Hand-Object Splatting), a fast, category-agnostic framework for reconstructing dynamic hand-object interactions using 2D Gaussian Splatting. GHOST represents both hands and objects as dense, view-consistent Gaussian discs and introduces three key innovations: (1) a geometric-prior retrieval and consistency loss that completes occluded object regions, (2) a grasp-aware alignment that refines hand translations and object scale to ensure realistic contact, and (3) a hand-aware background loss that prevents penalizing hand-occluded object regions. GHOST achieves complete, physically consistent, and animatable reconstructions from a single RGB video while running an order of magnitude faster than prior category-agnostic methods. Extensive experiments on ARCTIC, HO3D, and in-the-wild datasets demonstrate state-of-the-art accuracy in 3D reconstruction and 2D rendering quality, establishing GHOST as an efficient and robust solution for realistic hand-object interaction modeling. Code is available at https://github.com/ATAboukhadra/GHOST.",
+      "url": "https://arxiv.org/abs/2603.18912v1",
+      "source": "arxiv",
+      "tags": [
+        "具身智能",
+        "开源"
+      ]
+    },
+    {
+      "title": "Translating MRI to PET through Conditional Diffusion Models with Enhanced Pathology Awareness",
+      "authors": [
+        "Yitong Li",
+        "Igor Yakushev",
+        "Dennis M. Hedderich",
+        "Christian Wachinger"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Positron emission tomography (PET) is a widely recognized technique for diagnosing neurodegenerative diseases, offering critical functional insights. However, its high costs and radiation exposure hinder its widespread use. In contrast, magnetic resonance imaging (MRI) does not involve such limitations. While MRI also detects neurodegenerative changes, it is less sensitive for diagnosis compared to PET. To overcome such limitations, one approach is to generate synthetic PET from MRI. Recent advances in generative models have paved the way for cross-modality medical image translation; however, existing methods largely emphasize structural preservation while neglecting the critical need for pathology awareness. To address this gap, we propose PASTA, a novel image translation framework built on conditional diffusion models with enhanced pathology awareness. PASTA surpasses state-of-the-art methods by preserving both structural and pathological details through its highly interactive dual-arm architecture and multi-modal condition integration. Additionally, we introduce a novel cycle exchange consistency and volumetric generation strategy that significantly enhances PASTA's ability to produce high-quality 3D PET images. Our qualitative and quantitative results demonstrate the high quality and pathology awareness of the synthesized PET scans. For Alzheimer's diagnosis, the performance of these synthesized scans improves over MRI by 4%, almost reaching the performance of actual PET. Our code is available at https://github.com/ai-med/PASTA.",
+      "url": "https://arxiv.org/abs/2603.18896v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "医疗",
+        "开源"
+      ]
+    },
+    {
+      "title": "Optimal and improved gate decompositions for accelerated classical simulation of near-Gaussian fermionic circuits",
+      "authors": [
+        "Beatriz Dias",
+        "Jan Lukas Bosse",
+        "James R. Seddon"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Fermionic Gaussian circuits can be simulated efficiently on a classical computer, but become universal when supplemented with non-Gaussian operations. Similar to stabilizer circuits augmented with non-stabilizer resources, these non-Gaussian circuits can be simulated classically using rank- or extent-based methods. These methods decompose non-Gaussian states or operations into Gaussian ones, with runtimes that scale polynomially with measures of non-Gaussianity such as the rank and the extent -- quantities that typically grow exponentially with the number of non-Gaussian resources. Current fermionic rank- and extent-based simulators are limited to Gaussian circuits with magic-state injection. Extending them to mixed states and non-unitary channels has been hindered by the lack of known extent-optimized decompositions for physically relevant gates and noisy channels. In this work, we address this gap. First, we derive analytic decompositions for key non-Gaussian gates and channels, including decompositions for arbitrary two-qubit fermionic gates which are provably optimal for diagonal gates or those acting on Jordan-Wigner-adjacent qubit pairs. Second, we show that stochastic Pauli noise can reduce the effective extent of non-Gaussian rotation gates, but that fermionic magic is substantially more robust to such noise than stabilizer magic. Finally, we demonstrate how these decompositions can accelerate classical sampling from the output distribution of a quantum circuit. This involves a generalization of existing sparsification methods, previously limited to convex-unitary channels, to circuits involving intermediate measurements and feed-forward. Our decompositions also yield speedups for emulating noisy Pauli rotations with quasiprobability simulators in the large-angle/arbitrary-strength-noise and small-angle/low-noise parameter regimes.",
+      "url": "https://arxiv.org/abs/2603.18869v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑"
+      ]
+    },
+    {
+      "title": "Model Order Reduction of Cerebrovascular Hemodynamics Using POD_Galerkin and Reservoir Computing_based Approach",
+      "authors": [
+        "Rahul Halder",
+        "Arash Hajisharifi",
+        "Kabir Bakhshaei",
+        "Gianluigi Rozza"
+      ],
+      "date": "2026-03-19",
+      "abstract": "We investigate model order reduction (MOR) strategies for simulating unsteady hemodynamics within cerebrovascular systems, contrasting a physics-based intrusive approach with a data-driven non-intrusive framework. High-fidelity 3D Computational Fluid Dynamics (CFD) snapshots of an idealised basilar artery bifurcation are first compressed into a low-dimensional latent space using Proper Orthogonal Decomposition (POD). We evaluate the performance of a POD-Galerkin (POD-G) model, which projects the Navier-Stokes equations onto the reduced basis, against a POD-Reservoir Computing (POD-RC) model that learns the temporal evolution of coefficients through a recurrent architecture. A multi-harmonic and multi-amplitude training signal is introduced to improve training efficiency. Both methodologies achieve computational speed-ups on the order of 10^2 to 10^3 compared to full-order simulations, demonstrating their potential as efficient and accurate surrogates for predicting flow quantities such as wall shear stress.",
+      "url": "https://arxiv.org/abs/2603.18837v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "压缩",
+        "可编辑"
+      ]
+    }
+  ],
+  "hot_topics": [
+    {
+      "title": "Gaussian Splatting – A$AP Rocky \"Helicopter\" music video",
+      "url": "https://radiancefields.com/a-ap-rocky-releases-helicopter-music-video-featuring-gaussian-splatting",
+      "hn_url": "https://news.ycombinator.com/item?id=46670024",
+      "points": 772,
+      "comments": 260,
+      "author": "ChrisArchitect",
+      "date": "2026-01-18",
+      "hn_id": "46670024",
+      "comment": ""
+    },
+    {
+      "title": "SMERF: Streamable Memory Efficient Radiance Fields",
+      "url": "https://smerf-3d.github.io/",
+      "hn_url": "https://news.ycombinator.com/item?id=38632492",
+      "points": 630,
+      "comments": 143,
+      "author": "duckworthd",
+      "date": "2023-12-13",
+      "hn_id": "38632492",
+      "comment": ""
+    },
+    {
+      "title": "\"Nvidia is so far ahead that all the 4090s are nerfed to half speed\"",
+      "url": "https://twitter.com/realGeorgeHotz/status/1868356459542770087",
+      "hn_url": "https://news.ycombinator.com/item?id=42430184",
+      "points": 207,
+      "comments": 176,
+      "author": "BIackSwan",
+      "date": "2024-12-16",
+      "hn_id": "42430184",
+      "comment": ""
+    },
+    {
+      "title": "Show HN: Spark, An advanced 3D Gaussian Splatting renderer for Three.js",
+      "url": "https://sparkjs.dev/",
+      "hn_url": "https://news.ycombinator.com/item?id=44249565",
+      "points": 377,
+      "comments": 86,
+      "author": "dmarcos",
+      "date": "2025-06-11",
+      "hn_id": "44249565",
+      "comment": ""
+    },
+    {
+      "title": "Google is nerfing all Home Minis because mine spied on everything I said",
+      "url": "http://www.androidpolice.com/2017/10/10/google-nerfing-home-minis-mine-spied-everything-said-247/",
+      "hn_url": "https://news.ycombinator.com/item?id=15446206",
+      "points": 257,
+      "comments": 145,
+      "author": "watbe",
+      "date": "2017-10-10",
+      "hn_id": "15446206",
+      "comment": ""
+    },
+    {
+      "title": "Gaussian splatting is pretty cool",
+      "url": "https://aras-p.info/blog/2023/09/05/Gaussian-Splatting-is-pretty-cool/",
+      "hn_url": "https://news.ycombinator.com/item?id=37415478",
+      "points": 324,
+      "comments": 94,
+      "author": "signa11",
+      "date": "2023-09-07",
+      "hn_id": "37415478",
+      "comment": ""
+    }
+  ],
+  "trending_repos": [
+    {
+      "name": "msitarzewski/agency-agents",
+      "url": "https://github.com/msitarzewski/agency-agents",
+      "desc": "A complete AI agency at your fingertips - From frontend wizards to Reddit community ninjas, from whimsy injectors to reality checkers. Each agent is a specialized expert with personality, processes, and proven deliverables.",
+      "stars": 56580,
+      "weekly_stars": 23185,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "obra/superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "desc": "An agentic skills framework &amp; software development methodology that works.",
+      "stars": 101283,
+      "weekly_stars": 19176,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "666ghj/MiroFish",
+      "url": "https://github.com/666ghj/MiroFish",
+      "desc": "A Simple and Universal Swarm Intelligence Engine, Predicting Anything. 简洁通用的群体智能引擎，预测万物",
+      "stars": 36961,
+      "weekly_stars": 17584,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "volcengine/OpenViking",
+      "url": "https://github.com/volcengine/OpenViking",
+      "desc": "OpenViking is an open-source context database designed specifically for AI Agents(such as openclaw). OpenViking unifies the management of context (memory, resources, and skills) that Agents need through a file system paradigm, enabling hierarchical context delivery and self-evolving.",
+      "stars": 16904,
+      "weekly_stars": 10158,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "lightpanda-io/browser",
+      "url": "https://github.com/lightpanda-io/browser",
+      "desc": "Lightpanda: the headless browser designed for AI and automation",
+      "stars": 22559,
+      "weekly_stars": 9984,
+      "date": "2026-03-21"
+    }
+  ],
+  "bili_videos": [
+    {
+      "title": "把影视飓风变成模型，会怎样？",
+      "url": "https://www.bilibili.com/video/BV1k85NzMEv4",
+      "author": "影视飓风",
+      "play": 3185158,
+      "danmaku": 7690,
+      "date": 1746694800,
+      "desc": "有没有一种方案，能够留住现实世界的时间和空间，让我们获得像游戏一样自由探索的体验？能够让这样的体验成真的技术，叫做4D高斯，这一次我们把这个技术带到了云冈石窟，想和你一起沉浸式地走进这千年古迹，感受高斯泼溅的独特魅力！如果你喜欢这期视频，请多多支持我们，并把视频分享给你的朋友们一起看看！",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "【较真系列】讲人话-3d gaussian splatting全解(原理+代码+公式)【1】 捏雪球",
+      "url": "https://www.bilibili.com/video/BV1zi421v7Dr",
+      "author": "SY_007",
+      "play": 124343,
+      "danmaku": 378,
+      "date": 1717843527,
+      "desc": "我们希望应用比较人性化的方式，把3dgs讲解清楚。\n其中，我们使用python，将3dgs的cuda部分进行重写。方便大家对这一部分的理解和阅读。\n代码地址：https://github.com/SY-007-Research/3dgs_render_python",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "3DGS_01本地训练环境搭建-高斯泼溅GaussianSplatting保姆教程",
+      "url": "https://www.bilibili.com/video/BV1Gu3uztECe",
+      "author": "XR_1605",
+      "play": 93321,
+      "danmaku": 43,
+      "date": 1751551200,
+      "desc": "本系列教程主要分享高斯泼溅（Gaussian-splatting）模型文件的制作全流程\n本期为第1节：本地训练环境搭建\n本期包含以下子章节：\n00.00废话\n02.55安装vs2019\n05.03安装cuda\n05.42从git获取项目\n08.24配置colmap\n09.58安装conda\n10.57配置运行环境（方法一）\n14.30配置运行环境（方法二）\n21.18预处理和训练数据\n23.09使",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "Remy正式上线，这可能是3D高斯泼溅的终极形态",
+      "url": "https://www.bilibili.com/video/BV1JFstzWE1P",
+      "author": "Remy-3D记录App",
+      "play": 82350,
+      "danmaku": 159,
+      "date": 1761114891,
+      "desc": "今天Remy正式登录鸿蒙应用商城，并对升级到鸿蒙6操作系统的用户开放下载。\n也欢迎大家加入Remy官方QQ交流群，获取Remy最新的消息和动态｜QQ群号：521183043",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "十分钟带你快速入门NeRF原理",
+      "url": "https://www.bilibili.com/video/BV1o34y1P7Md",
+      "author": "中恩实验室",
+      "play": 58073,
+      "danmaku": 48,
+      "date": 1695281713,
+      "desc": "现有的NeRF教程太多专业术语，让小白较难理解~\n主要是复杂在融合计算机图形学和深度学习的内容。\n而我们希望通过这个系列视频，十分钟带你快速入门NeRF原理！\n如有不足希望大家多多包涵，欢迎在评论区讨论补充~\n\nNeRF——Neural Radiance Fields（神经辐射场）的缩写，是来自2020年3月的一篇论文\nTitle：NeRF: Representing Scenes as Neur",
+      "comment": "",
+      "source": "bilibili"
+    }
+  ],
+  "xhs_notes": []
+}

@@ -1,0 +1,129 @@
+{
+  "overview": {
+    "background": "AI 正在从根本上重塑游戏行业的每个环节：内容生成（3D 资产、关卡、对话）、NPC 智能（行为树→LLM 驱动）、玩家体验（自适应难度、个性化叙事）和开发工具（代码生成、测试自动化）。NVIDIA ACE、Inworld AI 等平台让智能 NPC 进入商业游戏；程序化内容生成（PCG）结合 AI 开始产出真正无限多样的游戏世界；强化学习 Agent（AlphaGo、OpenAI Five 的继承者）持续突破复杂游戏的人类水平上限。本周报告覆盖 AI NPC、PCG、游戏 AI 研究、AI 辅助开发工具等方向的最新动态。",
+    "stats": [
+      { "value": "NPC",  "label": "LLM 驱动 NPC 进入商业游戏" },
+      { "value": "PCG",  "label": "AI 程序化内容生成爆发" },
+      { "value": "RL",   "label": "强化学习游戏 Agent 持续突破" },
+      { "value": "3D",   "label": "AI 3D 资产生成重塑开发流程" }
+    ]
+  },
+  "tech": [
+    {
+      "icon": "🧑‍💬",
+      "title": "LLM 驱动智能 NPC",
+      "desc": "以 LLM 为核心的 NPC 系统（Inworld AI、NVIDIA ACE、Convai）支持动态对话生成、情感状态建模和记忆管理，使 NPC 摆脱预设脚本，实现真正的开放对话。Stanford 小镇实验（Generative Agents）展示了 NPC 自主社会行为的可能性。",
+      "tags": ["AI NPC", "LLM对话", "生成式角色"]
+    },
+    {
+      "icon": "🗺️",
+      "title": "程序化内容生成（PCG）",
+      "desc": "结合深度学习的 PCG 技术可生成高质量关卡（Wave Function Collapse + 神经网络）、地形（GAN/扩散模型）、任务叙事（LLM）和音效（AudioGen/MusicGen）。Minecraft、No Man's Sky 式的无限世界概念正在被 AI 赋予新的可能。",
+      "tags": ["PCG", "关卡生成", "叙事生成"]
+    },
+    {
+      "icon": "🏆",
+      "title": "强化学习游戏 Agent",
+      "desc": "从 AlphaGo 到 OpenAI Five 再到 AlphaStar，强化学习 Agent 在棋盘游戏、RTS、FPS 中持续突破人类顶尖水平。最新研究聚焦于样本效率提升（Model-Based RL）、迁移学习和开放世界探索（DREAMER、DreamerV3）。",
+      "tags": ["强化学习", "游戏AI", "多智能体"]
+    },
+    {
+      "icon": "🎨",
+      "title": "AI 辅助游戏资产生成",
+      "desc": "Text→3D（Meshy、Tripo3D）、Text→Texture（Stable Diffusion）、Text→Animation（Motion Diffusion Model）等技术正在压缩游戏美术制作周期。AI 资产生成与传统 3A 工作流的融合成为各大游戏公司探索的优先课题。",
+      "tags": ["资产生成", "AI美术", "3D生成"]
+    }
+  ],
+  "apps": [
+    {
+      "icon": "🎮",
+      "title": "3A 游戏 AI 集成",
+      "desc": "育碧、EA、Activision 等主流游戏公司均已公开 AI 辅助内容生成和 NPC 智能化的研究成果。育碧 NEO NPC 系统、EA 的 SEED 研究部门持续输出落地案例，AI 正从研究工具变为生产力工具。",
+      "tags": ["3A游戏", "育碧NEO", "EA SEED"]
+    },
+    {
+      "icon": "🛠️",
+      "title": "独立游戏 AI 开发工具",
+      "desc": "独立游戏开发者是 AI 工具的最大受益群体：Cursor/Claude Code 写游戏逻辑、Meshy 生成 3D 资产、Suno 制作配乐、ChatGPT 设计关卡和剧情，一人团队的创作上限大幅提升。",
+      "tags": ["独立游戏", "AI辅助开发", "低成本制作"]
+    },
+    {
+      "icon": "🌐",
+      "title": "AI 游戏平台与服务",
+      "desc": "Roblox AI（文本→游戏代码）、Unity Muse（AI 资产生成）、Unreal Engine MetaHuman Animator（AI 面部动画）正在将 AI 工具内嵌到主流游戏引擎，降低使用门槛。",
+      "tags": ["游戏引擎AI", "Roblox AI", "Unity Muse"]
+    }
+  ],
+  "tools": [
+    {
+      "name": "🏆 Inworld AI",
+      "lang": "SDK（Unity/Unreal）",
+      "desc": "专为游戏 NPC 设计的 AI 角色平台，支持动态对话、情感、记忆和目标驱动行为，已有多款商业游戏接入。",
+      "url": "https://inworld.ai"
+    },
+    {
+      "name": "⚡ NVIDIA ACE",
+      "lang": "SDK",
+      "desc": "NVIDIA 面向游戏 NPC 的 AI 解决方案，集成语音识别、NLP 和面部动画（Audio2Face），与 RTX 硬件深度优化。",
+      "url": "https://developer.nvidia.com/ace"
+    },
+    {
+      "name": "🗺️ Wave Function Collapse",
+      "lang": "C#/Python（多语言实现）",
+      "desc": "基于约束传播的程序化关卡/地图生成算法，简单高效，广泛用于 Roguelike 和开放世界游戏的关卡生成。",
+      "url": "https://github.com/mxgmn/WaveFunctionCollapse"
+    },
+    {
+      "name": "🤖 Stable Retarget",
+      "lang": "Python",
+      "desc": "AI 动作重定向工具，从视频中提取人物动作并迁移到游戏角色，大幅降低动画制作成本，适合独立开发者。",
+      "url": "https://github.com/zju3dv/4D-Humans"
+    },
+    {
+      "name": "🎵 Suno AI",
+      "lang": "Web",
+      "desc": "文本→音乐生成平台，可快速为游戏生成主题曲、环境音效和战斗配乐，风格覆盖广泛，免费额度可用。",
+      "url": "https://suno.com"
+    }
+  ],
+  "industry": [
+    {
+      "title": "🏢 主流游戏厂商加速 AI 布局",
+      "desc": "游戏行业 AI 应用从探索期进入落地期，各大厂商在 NPC 智能、内容生成和开发效率三个方向同步推进。",
+      "bullets": [
+        "▶ 育碧 NEO NPC：Ghostwriter AI 生成 NPC 对话草稿，节省 80% 编剧时间",
+        "▶ EA：内部 AI 工具辅助关卡设计和 QA 自动化测试",
+        "▶ Take-Two（GTA 母公司）：AI 生成游戏内容专利申请大幅增加"
+      ]
+    },
+    {
+      "title": "🚀 AI 游戏创业浪潮",
+      "desc": "专注 AI+游戏赛道的创业公司快速涌现，从 AI NPC 中间件到 AI 原生游戏平台，融资活跃度持续攀升。",
+      "bullets": [
+        "▶ Inworld AI 累计融资超 1.2 亿美元，成为 AI NPC 赛道领头羊",
+        "▶ Latitude（AI Dungeon 母公司）推出面向开发者的叙事 AI API",
+        "▶ Scenario AI 专注游戏风格化资产生成，已有 1 万+ 独立开发者使用"
+      ]
+    }
+  ],
+  "future": [
+    {
+      "icon": "🌍",
+      "title": "AI 生成的无限游戏世界",
+      "desc": "结合世界模型与生成式 AI，未来的开放世界游戏将实现真正「无限」的地图、剧情和角色——NPC 有自主意识，世界因玩家行为持续演化，每次游戏体验独一无二。",
+      "tags": ["无限世界", "生成式游戏", "动态叙事"]
+    },
+    {
+      "icon": "🤝",
+      "title": "玩家与 AI 的协作创作",
+      "desc": "玩家将不仅仅是游戏的消费者，而是借助 AI 工具成为游戏内容的共同创作者。Roblox、Dreams 等 UGC 平台正在将 AI 内容生成能力开放给普通玩家。",
+      "tags": ["UGC", "AI共创", "玩家创作"]
+    },
+    {
+      "icon": "🧬",
+      "title": "自适应个性化游戏体验",
+      "desc": "AI 实时分析玩家行为、情绪和技能水平，动态调整难度、剧情走向和美术风格，实现真正因人而异的游戏体验，是「千人千面」在游戏领域的终极形态。",
+      "tags": ["自适应游戏", "个性化", "动态难度"]
+    }
+  ]
+}

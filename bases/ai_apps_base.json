@@ -1,0 +1,129 @@
+{
+  "overview": {
+    "background": "2024-2025 年是 AI 应用爆发的两年：从 ChatGPT 引爆消费级市场，到 Claude/Gemini/Grok 竞相迭代，再到以 Cursor、Perplexity、NotebookLM 为代表的垂直 AI 工具改变了具体行业的工作方式。多模态能力（文字+图像+音频+视频）已成标配，AI 助理正在从「问答工具」进化为「行动代理」。本周报告汇聚产品动态、技术评测、开发者工具与行业应用的最新资讯，帮助你跟上 AI 应用层的快速变化。",
+    "stats": [
+      { "value": "GPT-4o", "label": "多模态实时交互成标配" },
+      { "value": "Cursor", "label": "AI编程工具月活破百万" },
+      { "value": "RAG",    "label": "企业知识库AI集成主流方案" },
+      { "value": "Agent",  "label": "AI从对话走向自主行动" }
+    ]
+  },
+  "tech": [
+    {
+      "icon": "🧠",
+      "title": "前沿模型能力进展",
+      "desc": "GPT-4o、Claude 3.7 Sonnet、Gemini 2.0 Flash、DeepSeek-V3 等模型在推理、代码、多模态理解上持续突破。o1/o3 系列「慢思考」模式在数学、科学推理上逼近人类专家水平，推理模型与通用模型的能力边界正在重新划定。",
+      "tags": ["GPT-4o", "Claude", "推理模型"]
+    },
+    {
+      "icon": "📚",
+      "title": "RAG 与知识库增强",
+      "desc": "检索增强生成（RAG）已成为企业 AI 落地的标配方案。GraphRAG（微软）将知识图谱引入检索；Hybrid Search（向量+关键词）提升召回质量；长上下文模型（128k+）开始与 RAG 形成竞争与互补关系。",
+      "tags": ["RAG", "知识库", "GraphRAG"]
+    },
+    {
+      "icon": "🎨",
+      "title": "多模态生成应用",
+      "desc": "文生图（FLUX、Stable Diffusion 3.5）、文生视频（Sora、Kling、Runway Gen-3）、文生音乐（Suno、Udio）全面进入商业可用阶段。实时语音交互（GPT-4o Voice、Gemini Live）重新定义人机交互体验。",
+      "tags": ["文生图", "文生视频", "多模态"]
+    },
+    {
+      "icon": "⚙️",
+      "title": "Prompt 工程与评测",
+      "desc": "System Prompt 设计、Few-shot 学习、结构化输出（JSON Mode）成为 AI 应用开发的核心技能。LLM-as-Judge、MMLU、HumanEval、LMSYS Chatbot Arena 等评测方式推动模型能力透明化。",
+      "tags": ["Prompt工程", "评测基准", "结构化输出"]
+    }
+  ],
+  "apps": [
+    {
+      "icon": "💻",
+      "title": "AI 编程与开发工具",
+      "desc": "Cursor、GitHub Copilot、Windsurf、Replit AI 等工具将 AI 能力深度嵌入编程工作流。Claude Code、Devin 等 Agent 级产品开始完成完整功能的开发与部署，「AI 结对编程」成为主流。",
+      "tags": ["AI编程", "Cursor", "GitHub Copilot"]
+    },
+    {
+      "icon": "🏢",
+      "title": "企业知识管理与协作",
+      "desc": "Microsoft 365 Copilot、Notion AI、Confluence AI 将 LLM 集成到知识管理平台，实现文档摘要、会议记录、跨文档问答。企业私有化部署方案（Ollama + 本地模型）需求持续增长。",
+      "tags": ["企业AI", "知识管理", "私有化部署"]
+    },
+    {
+      "icon": "🎓",
+      "title": "教育与个人效率",
+      "desc": "NotebookLM（Google）、Perplexity、Khanmigo 等工具重新定义了学习和信息获取方式。AI 写作助手（Jasper、Copy.ai）、AI 演示工具（Gamma、Beautiful.ai）在内容创作领域快速普及。",
+      "tags": ["AI教育", "个人效率", "内容创作"]
+    }
+  ],
+  "tools": [
+    {
+      "name": "🏆 Cursor",
+      "lang": "Electron/TypeScript",
+      "desc": "AI 原生代码编辑器，深度集成 Claude/GPT，支持 Composer（多文件编辑）、Agent 模式（自主修复 bug）和 Tab 智能补全，月活超百万开发者。",
+      "url": "https://cursor.com"
+    },
+    {
+      "name": "📚 LangChain",
+      "lang": "Python/JavaScript",
+      "desc": "LLM 应用开发最流行的框架，提供 RAG、Chain、Agent、工具调用等模块，生态最完整，入门首选。",
+      "url": "https://github.com/langchain-ai/langchain"
+    },
+    {
+      "name": "🔍 Perplexity AI",
+      "lang": "Web/App",
+      "desc": "基于实时搜索的 AI 问答引擎，每次回答均附带引用来源，是 Google 搜索的有力挑战者，Pro 版月活快速增长。",
+      "url": "https://perplexity.ai"
+    },
+    {
+      "name": "📝 NotebookLM (Google)",
+      "lang": "Web",
+      "desc": "上传文档/PDF/视频后与之对话，可生成播客、思维导图、学习指南，是知识消化和深度学习的利器。",
+      "url": "https://notebooklm.google.com"
+    },
+    {
+      "name": "🦙 Ollama",
+      "lang": "Go",
+      "desc": "本地运行开源大模型的最简方案，一行命令启动 Llama 3、Mistral、Qwen 等模型，支持 macOS/Linux/Windows。",
+      "url": "https://github.com/ollama/ollama"
+    }
+  ],
+  "industry": [
+    {
+      "title": "🚀 AI 应用层竞争全面加剧",
+      "desc": "2025 年 AI 应用层进入「百 App 大战」阶段，垂直场景（法律、医疗、教育、金融）的专业 AI 工具快速涌现，通用 AI 助手与专业工具之间的边界日益模糊。",
+      "bullets": [
+        "▶ OpenAI 推出 GPT Store，数千个专业 GPT 应用上线",
+        "▶ Anthropic Claude API 调用量同比增长 10 倍",
+        "▶ 国内大模型（文心、通义、混元）加速 B 端落地"
+      ]
+    },
+    {
+      "title": "💰 AI 工具商业化成熟",
+      "desc": "订阅制 AI 工具市场规模快速扩张，Cursor ($20/月)、Perplexity Pro ($20/月)、ChatGPT Plus ($20/月) 已形成稳定付费用户群体，AI 工具的 ROI 被越来越多的个人和企业认可。",
+      "bullets": [
+        "▶ GitHub Copilot 企业版用户数突破 150 万",
+        "▶ Notion AI 月活付费用户超过 400 万",
+        "▶ AI 编程工具市场规模预计 2026 年超过 50 亿美元"
+      ]
+    }
+  ],
+  "future": [
+    {
+      "icon": "🤝",
+      "title": "AI 原生应用范式",
+      "desc": "未来的软件产品将以 AI 为核心重新设计，而非在传统 UI 上叠加 AI 功能。自然语言将成为主要交互入口，AI 理解用户意图后自动调用底层功能完成任务。",
+      "tags": ["AI原生", "自然语言UI", "意图驱动"]
+    },
+    {
+      "icon": "🌍",
+      "title": "个性化 AI 伴侣",
+      "desc": "长期记忆、个性化偏好学习、情感计算将使 AI 助理从「无状态工具」进化为「有记忆的伴侣」，在医疗、教育、心理健康等领域创造全新价值。",
+      "tags": ["长期记忆", "个性化", "AI伴侣"]
+    },
+    {
+      "icon": "⚡",
+      "title": "端侧 AI 普及",
+      "desc": "Apple Intelligence、高通 NPU、三星 Galaxy AI 正将强大的 AI 能力下沉到设备端，实现隐私保护与低延迟的统一，端云协同成为 AI 应用的主流部署架构。",
+      "tags": ["端侧AI", "Apple Intelligence", "隐私保护"]
+    }
+  ]
+}

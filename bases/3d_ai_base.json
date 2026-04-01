@@ -1,0 +1,129 @@
+{
+  "overview": {
+    "background": "3D AIGC（AI Generated Content）正从「能生成」迈向「可用、可控、可交互」。以 DreamFusion/Score Distillation Sampling 为起点，Text→3D 方向在两年内经历了从单物体重建到多视角一致性生成的跃迁；4D 动态生成（视频→三维时序场景）和数字人/虚拟形象是当前落地最活跃的两个子赛道。本周报告汇聚了来自 ArXiv、社区讨论与开源项目的最新动态，覆盖 Text/Image→3D 生成、4D 动态重建、3D 编辑与风格化、数字人生成等方向。",
+    "stats": [
+      { "value": "2023→", "label": "DreamFusion 开启 Text→3D 浪潮" },
+      { "value": "< 1min", "label": "最新方案单物体生成时间" },
+      { "value": "4D", "label": "视频→动态三维最新突破" },
+      { "value": "100+", "label": "本方向活跃开源项目" }
+    ]
+  },
+  "tech": [
+    {
+      "icon": "✍️",
+      "title": "Text / Image → 3D 生成",
+      "desc": "基于 Score Distillation Sampling（SDS）的方法持续演进，从 DreamFusion 的逐步优化到 One-2-3-45++、Zero123XL 的多视角一致性生成，再到 InstantMesh、CRM 等实现秒级推理。当前核心挑战是多视角一致性与细节保真度的平衡。",
+      "tags": ["Text→3D", "多视角一致性", "快速推理"]
+    },
+    {
+      "icon": "⏱️",
+      "title": "4D 动态三维生成",
+      "desc": "从单目视频或文本描述重建时序动态三维场景。4DGS、DreamGaussian4D 将高斯表示扩展到时间维度；Animate3D、STAG4D 等方案专注于给静态三维物体注入物理合理的运动。当前限制在于长时运动一致性与物理合理性。",
+      "tags": ["4D-GS", "动态场景", "时序建模"]
+    },
+    {
+      "icon": "🎭",
+      "title": "3D 编辑与风格化",
+      "desc": "给已有三维场景/物体做语义编辑、风格迁移或局部替换。Gaussian Editor、InstructNeRF2NeRF 通过文本指令驱动编辑；GaussianDreamer 等将生成先验注入已有场景。关键挑战是保持几何一致性同时实现精细语义控制。",
+      "tags": ["可编辑", "风格化", "语义控制"]
+    },
+    {
+      "icon": "🧑",
+      "title": "数字人 / 虚拟形象",
+      "desc": "人体三维重建与动态生成是 3D AIGC 落地最快的子方向。GaussianAvatar、SplattingAvatar 将高斯表示与人体参数模型（SMPL/SMPL-X）结合，实现从单目视频驱动的实时高质量渲染。面部与全身动画进入商业可用阶段。",
+      "tags": ["数字人", "人体重建", "实时驱动"]
+    }
+  ],
+  "apps": [
+    {
+      "icon": "🎮",
+      "title": "游戏与 XR 资产生产",
+      "desc": "Text→3D 流水线正在重塑游戏资产制作：从概念图到可游玩的 3D 模型从数周压缩到数小时。Epic、Unity 均在 AI 辅助资产生成上投入，Meshy、Tripo3D 等商业平台月活快速增长。",
+      "tags": ["游戏资产", "XR", "商业化"]
+    },
+    {
+      "icon": "🎬",
+      "title": "影视特效与数字替身",
+      "desc": "数字人技术使演员数字替身制作成本大幅下降。动态场景重建（4DGS）已用于体育赛事回放与广告制作。Luma AI、Runway 等将三维生成集成进创意工作流。",
+      "tags": ["影视特效", "数字替身", "创意工作流"]
+    },
+    {
+      "icon": "🛍️",
+      "title": "电商与产品可视化",
+      "desc": "单图→3D 产品模型的技术成熟度已满足电商场景要求。主要电商平台正在测试 AI 生成商品三维展示，用户可 360° 查看虚拟试穿/试摆效果。",
+      "tags": ["电商", "产品可视化", "AR购物"]
+    }
+  ],
+  "tools": [
+    {
+      "name": "🏆 One-2-3-45++",
+      "lang": "Python/PyTorch",
+      "desc": "多视角一致性 Text/Image→3D 生成，约 1 分钟生成高质量网格，是当前学术界最常引用的基线之一。",
+      "url": "https://github.com/SUDO-AI-3D/One2345plus"
+    },
+    {
+      "name": "⚡ InstantMesh",
+      "lang": "Python/PyTorch",
+      "desc": "基于多视角扩散 + 大规模 Transformer，单图→3D 网格推理时间约 10 秒，质量与速度兼顾。",
+      "url": "https://github.com/TencentARC/InstantMesh"
+    },
+    {
+      "name": "🎭 GaussianEditor",
+      "lang": "Python/PyTorch",
+      "desc": "文本指令驱动的 3DGS 场景编辑，支持添加/删除/替换物体，保持场景几何一致性。",
+      "url": "https://github.com/buaacyw/GaussianEditor"
+    },
+    {
+      "name": "🧑 GaussianAvatar",
+      "lang": "Python/PyTorch",
+      "desc": "从单目视频重建可实时驱动的人体高斯表示，结合 SMPL-X 参数模型，支持任意姿态渲染。",
+      "url": "https://github.com/aipixel/GaussianAvatar"
+    },
+    {
+      "name": "🌊 DreamGaussian",
+      "lang": "Python/PyTorch",
+      "desc": "Text/Image→3DGS 快速生成方案，2 分钟内完成，是连接 2D 生成先验与 3DGS 表示的代表性工作。",
+      "url": "https://github.com/dreamgaussian/dreamgaussian"
+    }
+  ],
+  "industry": [
+    {
+      "title": "🏢 商业平台加速落地",
+      "desc": "Meshy、Tripo3D、Spline AI 等 3D AIGC 平台月活用户快速增长，Text→3D 服务已进入订阅制商业化阶段。Roblox、Epic Games 均公开了 AI 辅助三维内容生成的路线图。",
+      "bullets": [
+        "▶ Meshy v4 支持文本/图像→3D 网格生成，纹理质量接近手工制作",
+        "▶ Tripo3D 推出企业版 API，面向游戏、电商场景",
+        "▶ Epic MetaHuman Animator 支持从视频驱动高精度数字人面部动画"
+      ]
+    },
+    {
+      "title": "📱 端侧部署趋势",
+      "desc": "轻量化 3D 生成模型开始在移动端和 XR 设备上探索部署，苹果 Vision Pro、Meta Quest 3 的普及为端侧 3D AIGC 创造了需求场景。",
+      "bullets": [
+        "▶ 模型蒸馏与量化将 Text→3D 推理时间压缩至秒级",
+        "▶ Apple 在 Core ML 路线图中纳入 3D 生成能力",
+        "▶ Meta 开源 Segment Anything 3D 相关研究，推动端侧三维理解"
+      ]
+    }
+  ],
+  "future": [
+    {
+      "icon": "🔬",
+      "title": "物理感知生成",
+      "desc": "下一代 3D 生成模型将内嵌物理约束，生成结果不仅外观逼真，还满足材质、重力、碰撞等物理属性，直接可用于仿真与游戏引擎。",
+      "tags": ["物理仿真", "材质生成", "游戏引擎"]
+    },
+    {
+      "icon": "🌐",
+      "title": "世界级场景生成",
+      "desc": "从单物体/小场景扩展到城市级、室内全屋级的三维世界生成，需要解决全局一致性、无限延伸和多尺度细节的综合挑战。",
+      "tags": ["大场景", "城市建模", "世界生成"]
+    },
+    {
+      "icon": "🤝",
+      "title": "多模态交互编辑",
+      "desc": "未来的 3D 编辑工具将支持自然语言、草图、手势等多模态输入，实现非专业用户也能驾驭的三维内容创作流程。",
+      "tags": ["多模态", "自然语言编辑", "低门槛创作"]
+    }
+  ]
+}

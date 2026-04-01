@@ -1,0 +1,749 @@
+{
+  "topic": "openclaw",
+  "label": "OpenClaw / AI Agent",
+  "desc": "AI Agent 框架、LLM工具调用、Agentic工作流、开源 Agent 生态动态",
+  "generated": "2026-03-21 04:40",
+  "papers": [
+    {
+      "title": "The structure and evolution of the Galactic high-$α$ disc I. Chemical and age orbital cartography",
+      "authors": [
+        "Furkan Akbaba",
+        "Danny Horta",
+        "Olcay Plevne"
+      ],
+      "date": "2026-03-19",
+      "abstract": "We present a comprehensive chemical and age orbital cartography of the Galactic high-$α$ disc using subgiant stars with precise ages, element abundances, and full phase-space information from the \\textsl{LAMOST--Gaia} data set. Specifically, we map how average [Fe/H], [$α$/Fe], and age vary across present-day kinematic and orbital coordinates. We analyse the data in full and across mono-abundance populations to measure element abundance-orbital and age-orbital gradients across orbital actions and angular-momenta. Our results show that the high-$α$ disc exhibits clear and coherent gradients in [Fe/H], [$α$/Fe], and age with orbits; these gradients are much stronger and sharper in orbital space than in present-day kinematics, showing that orbital diagnostics recover the intrinsic disc structure of old disc populations more effectively than instantaneous kinematic coordinates. We find that older high-$α$ populations display qualitatively similar element abundance--orbital and age--orbital trends to stars in the low-$α$ disc, although the high-$α$ gradients are generally shallower. The presence of these ordered correlations indicates that the old high-$α$ disc is structured, and preserved a strong fossil record of its early assembly despite the Milky Way's subsequent accretion history. This result implies that later mergers did not fully erase the chemical-orbital and age-orbital structure imprinted during the high-$α$ disc's earliest formation epoch. All together, these findings indicate that the Galactic high-$α$ disc formed mainly through inside-out and upside-down growth.",
+      "url": "https://arxiv.org/abs/2603.19230v1",
+      "source": "arxiv",
+      "tags": [
+        "OPENCLAW"
+      ]
+    },
+    {
+      "title": "NavTrust: Benchmarking Trustworthiness for Embodied Navigation",
+      "authors": [
+        "Huaide Jiang",
+        "Yash Chaudhary",
+        "Yuping Wang",
+        "Zehao Wang",
+        "Raghav Sharma",
+        "Manan Mehta",
+        "Yang Zhou",
+        "Lichao Sun",
+        "Zhiwen Fan",
+        "Zhengzhong Tu",
+        "Jiachen Li"
+      ],
+      "date": "2026-03-19",
+      "abstract": "There are two major categories of embodied navigation: Vision-Language Navigation (VLN), where agents navigate by following natural language instructions; and Object-Goal Navigation (OGN), where agents navigate to a specified target object. However, existing work primarily evaluates model performance under nominal conditions, overlooking the potential corruptions that arise in real-world settings. To address this gap, we present NavTrust, a unified benchmark that systematically corrupts input modalities, including RGB, depth, and instructions, in realistic scenarios and evaluates their impact on navigation performance. To our best knowledge, NavTrust is the first benchmark that exposes embodied navigation agents to diverse RGB-Depth corruptions and instruction variations in a unified framework. Our extensive evaluation of seven state-of-the-art approaches reveals substantial performance degradation under realistic corruptions, which highlights critical robustness gaps and provides a roadmap toward more trustworthy embodied navigation systems. Furthermore, we systematically evaluate four distinct mitigation strategies to enhance robustness against RGB-Depth and instructions corruptions. Our base models include Uni-NaVid and ETPNav. We deployed them on a real mobile robot and observed improved robustness to corruptions. The project website is: https://navtrust.github.io.",
+      "url": "https://arxiv.org/abs/2603.19229v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "具身智能"
+      ]
+    },
+    {
+      "title": "Bridging Semantic and Kinematic Conditions with Diffusion-based Discrete Motion Tokenizer",
+      "authors": [
+        "Chenyang Gu",
+        "Mingyuan Zhang",
+        "Haozhe Xie",
+        "Zhongang Cai",
+        "Lei Yang",
+        "Ziwei Liu"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Prior motion generation largely follows two paradigms: continuous diffusion models that excel at kinematic control, and discrete token-based generators that are effective for semantic conditioning. To combine their strengths, we propose a three-stage framework comprising condition feature extraction (Perception), discrete token generation (Planning), and diffusion-based motion synthesis (Control). Central to this framework is MoTok, a diffusion-based discrete motion tokenizer that decouples semantic abstraction from fine-grained reconstruction by delegating motion recovery to a diffusion decoder, enabling compact single-layer tokens while preserving motion fidelity. For kinematic conditions, coarse constraints guide token generation during planning, while fine-grained constraints are enforced during control through diffusion-based optimization. This design prevents kinematic details from disrupting semantic token planning. On HumanML3D, our method significantly improves controllability and fidelity over MaskControl while using only one-sixth of the tokens, reducing trajectory error from 0.72 cm to 0.08 cm and FID from 0.083 to 0.029. Unlike prior methods that degrade under stronger kinematic constraints, ours improves fidelity, reducing FID from 0.033 to 0.014.",
+      "url": "https://arxiv.org/abs/2603.19227v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "FinTradeBench: A Financial Reasoning Benchmark for LLMs",
+      "authors": [
+        "Yogesh Agrawal",
+        "Aniruddha Dutta",
+        "Md Mahadi Hasan",
+        "Santu Karmaker",
+        "Aritra Dutta"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Real-world financial decision-making is a challenging problem that requires reasoning over heterogeneous signals, including company fundamentals derived from regulatory filings and trading signals computed from price dynamics. Recently, with the advancement of Large Language Models (LLMs), financial analysts have begun to use them for financial decision-making tasks. However, existing financial question answering benchmarks for testing these models primarily focus on company balance sheet data and rarely evaluate reasoning over how company stocks trade in the market or their interactions with fundamentals. To take advantage of the strengths of both approaches, we introduce FinTradeBench, a benchmark for evaluating financial reasoning that integrates company fundamentals and trading signals. FinTradeBench contains 1,400 questions grounded in NASDAQ-100 companies over a ten-year historical window. The benchmark is organized into three reasoning categories: fundamentals-focused, trading-signal-focused, and hybrid questions requiring cross-signal reasoning. To ensure reliability at scale, we adopt a calibration-then-scaling framework that combines expert seed questions, multi-model response generation, intra-model self-filtering, numerical auditing, and human-LLM judge alignment. We evaluate 14 LLMs under zero-shot prompting and retrieval-augmented settings and witness a clear performance gap. Retrieval substantially improves reasoning over textual fundamentals, but provides limited benefit for trading-signal reasoning. These findings highlight fundamental challenges in the numerical and time-series reasoning for current LLMs and motivate future research in financial intelligence.",
+      "url": "https://arxiv.org/abs/2603.19225v1",
+      "source": "arxiv",
+      "tags": [
+        "OPENCLAW"
+      ]
+    },
+    {
+      "title": "F2LLM-v2: Inclusive, Performant, and Efficient Embeddings for a Multilingual World",
+      "authors": [
+        "Ziyin Zhang",
+        "Zihan Liao",
+        "Hang Yu",
+        "Peng Di",
+        "Rui Wang"
+      ],
+      "date": "2026-03-19",
+      "abstract": "We present F2LLM-v2, a new family of general-purpose, multilingual embedding models in 8 distinct sizes ranging from 80M to 14B. Trained on a newly curated composite of 60 million publicly available high-quality data samples, F2LLM-v2 supports more than 200 languages, with a particular emphasis on previously underserved mid- and low-resource languages. By integrating a two-stage LLM-based embedding training pipeline with matryoshka learning, model pruning, and knowledge distillation techniques, we present models that are far more efficient than previous LLM-based embedding models while retaining competitive performances. Extensive evaluations confirm that F2LLM-v2-14B ranks first on 11 MTEB benchmarks, while the smaller models in the family also set a new state of the art for resource-constrained applications. To facilitate open-source embedding model research, we release all models, data, code, and intermediate checkpoints.",
+      "url": "https://arxiv.org/abs/2603.19223v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "开源",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Spectrally-Guided Diffusion Noise Schedules",
+      "authors": [
+        "Carlos Esteves",
+        "Ameesh Makadia"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Denoising diffusion models are widely used for high-quality image and video generation. Their performance depends on noise schedules, which define the distribution of noise levels applied during training and the sequence of noise levels traversed during sampling. Noise schedules are typically handcrafted and require manual tuning across different resolutions. In this work, we propose a principled way to design per-instance noise schedules for pixel diffusion, based on the image's spectral properties. By deriving theoretical bounds on the efficacy of minimum and maximum noise levels, we design ``tight'' noise schedules that eliminate redundant steps. During inference, we propose to conditionally sample such noise schedules. Experiments show that our noise schedules improve generative quality of single-stage pixel diffusion models, particularly in the low-step regime.",
+      "url": "https://arxiv.org/abs/2603.19222v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型"
+      ]
+    },
+    {
+      "title": "Online Learning and Equilibrium Computation with Ranking Feedback",
+      "authors": [
+        "Mingyang Liu",
+        "Yongshan Chen",
+        "Zhiyuan Fan",
+        "Gabriele Farina",
+        "Asuman Ozdaglar",
+        "Kaiqing Zhang"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Online learning in arbitrary, and possibly adversarial, environments has been extensively studied in sequential decision-making, and it is closely connected to equilibrium computation in game theory. Most existing online learning algorithms rely on \\emph{numeric} utility feedback from the environment, which may be unavailable in human-in-the-loop applications and/or may be restricted by privacy concerns. In this paper, we study an online learning model in which the learner only observes a \\emph{ranking} over a set of proposed actions at each timestep. We consider two ranking mechanisms: rankings induced by the \\emph{instantaneous} utility at the current timestep, and rankings induced by the \\emph{time-average} utility up to the current timestep, under both \\emph{full-information} and \\emph{bandit} feedback settings. Using the standard external-regret metric, we show that sublinear regret is impossible with instantaneous-utility ranking feedback in general. Moreover, when the ranking model is relatively deterministic, \\emph{i.e.}, under the Plackett-Luce model with a temperature that is sufficiently small, sublinear regret is also impossible with time-average utility ranking feedback. We then develop new algorithms that achieve sublinear regret under the additional assumption that the utility sequence has sublinear total variation. Notably, for full-information time-average utility ranking feedback, this additional assumption can be removed. As a consequence, when all players in a normal-form game follow our algorithms, repeated play yields an approximate coarse correlated equilibrium. We also demonstrate the effectiveness of our algorithms in an online large-language-model routing task.",
+      "url": "https://arxiv.org/abs/2603.19221v1",
+      "source": "arxiv",
+      "tags": [
+        "OPENCLAW"
+      ]
+    },
+    {
+      "title": "Nemotron-Cascade 2: Post-Training LLMs with Cascade RL and Multi-Domain On-Policy Distillation",
+      "authors": [
+        "Zhuolin Yang",
+        "Zihan Liu",
+        "Yang Chen",
+        "Wenliang Dai",
+        "Boxin Wang",
+        "Sheng-Chieh Lin",
+        "Chankyu Lee",
+        "Yangyi Chen",
+        "Dongfu Jiang",
+        "Jiafan He",
+        "Renjie Pi",
+        "Grace Lam",
+        "Nayeon Lee",
+        "Alexander Bukharin",
+        "Mohammad Shoeybi",
+        "Bryan Catanzaro",
+        "Wei Ping"
+      ],
+      "date": "2026-03-19",
+      "abstract": "We introduce Nemotron-Cascade 2, an open 30B MoE model with 3B activated parameters that delivers best-in-class reasoning and strong agentic capabilities. Despite its compact size, its mathematical and coding reasoning performance approaches that of frontier open models. It is the second open-weight LLM, after DeepSeekV3.2-Speciale-671B-A37B, to achieve Gold Medal-level performance in the 2025 International Mathematical Olympiad (IMO), the International Olympiad in Informatics (IOI), and the ICPC World Finals, demonstrating remarkably high intelligence density with 20x fewer parameters. In contrast to Nemotron-Cascade 1, the key technical advancements are as follows. After SFT on a meticulously curated dataset, we substantially expand Cascade RL to cover a much broader spectrum of reasoning and agentic domains. Furthermore, we introduce multi-domain on-policy distillation from the strongest intermediate teacher models for each domain throughout the Cascade RL process, allowing us to efficiently recover benchmark regressions and sustain strong performance gains along the way. We release the collection of model checkpoint and training data.",
+      "url": "https://arxiv.org/abs/2603.19220v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "DriveTok: 3D Driving Scene Tokenization for Unified Multi-View Reconstruction and Understanding",
+      "authors": [
+        "Dong Zhuo",
+        "Wenzhao Zheng",
+        "Sicheng Zuo",
+        "Siming Yan",
+        "Lu Hou",
+        "Jie Zhou",
+        "Jiwen Lu"
+      ],
+      "date": "2026-03-19",
+      "abstract": "With the growing adoption of vision-language-action models and world models in autonomous driving systems, scalable image tokenization becomes crucial as the interface for the visual modality. However, most existing tokenizers are designed for monocular and 2D scenes, leading to inefficiency and inter-view inconsistency when applied to high-resolution multi-view driving scenes. To address this, we propose DriveTok, an efficient 3D driving scene tokenizer for unified multi-view reconstruction and understanding. DriveTok first obtains semantically rich visual features from vision foundation models and then transforms them into the scene tokens with 3D deformable cross-attention. For decoding, we employ a multi-view transformer to reconstruct multi-view features from the scene tokens and use multiple heads to obtain RGB, depth, and semantic reconstructions. We also add a 3D head directly on the scene tokens for 3D semantic occupancy prediction for better spatial awareness. With the multiple training objectives, DriveTok learns unified scene tokens that integrate semantic, geometric, and textural information for efficient multi-view tokenization. Extensive experiments on the widely used nuScenes dataset demonstrate that the scene tokens from DriveTok perform well on image reconstruction, semantic segmentation, depth prediction, and 3D occupancy prediction tasks.",
+      "url": "https://arxiv.org/abs/2603.19219v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "可编辑",
+        "数字人"
+      ]
+    },
+    {
+      "title": "Rethinking Vector Field Learning for Generative Segmentation",
+      "authors": [
+        "Chaoyang Wang",
+        "Yaobo Liang",
+        "Boci Peng",
+        "Fan Duan",
+        "Jingdong Wang",
+        "Yunhai Tong"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Taming diffusion models for generative segmentation has attracted increasing attention. While existing approaches primarily focus on architectural tweaks or training heuristics, there remains a limited understanding of the intrinsic mismatch between continuous flow matching objectives and discrete perception tasks. In this work, we revisit diffusion segmentation from the perspective of vector field learning. We identify two key limitations of the commonly used flow matching objective: gradient vanishing and trajectory traversing, which result in slow convergence and poor class separation. To tackle these issues, we propose a principled vector field reshaping strategy that augments the learned velocity field with a detached distance-aware correction term. This correction introduces both attractive and repulsive interactions, enhancing gradient magnitudes near centroids while preserving the original diffusion training framework. Furthermore, we design a computationally efficient, quasi-random category encoding scheme inspired by Kronecker sequences, which integrates seamlessly with an end-to-end pixel neural field framework for pixel-level semantic alignment. Extensive experiments consistently demonstrate significant improvements over vanilla flow matching approaches, substantially narrowing the performance gap between generative segmentation and strong discriminative specialists.",
+      "url": "https://arxiv.org/abs/2603.19218v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "LVOmniBench: Pioneering Long Audio-Video Understanding Evaluation for Omnimodal LLMs",
+      "authors": [
+        "Keda Tao",
+        "Yuhua Zheng",
+        "Jia Xu",
+        "Wenjie Du",
+        "Kele Shao",
+        "Hesong Wang",
+        "Xueyi Chen",
+        "Xin Jin",
+        "Junhan Zhu",
+        "Bohan Yu",
+        "Weiqiang Wang",
+        "Jian Liu",
+        "Can Qin",
+        "Yulun Zhang",
+        "Ming-Hsuan Yang",
+        "Huan Wang"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Recent advancements in omnimodal large language models (OmniLLMs) have significantly improved the comprehension of audio and video inputs. However, current evaluations primarily focus on short audio and video clips ranging from 10 seconds to 5 minutes, failing to reflect the demands of real-world applications, where videos typically run for tens of minutes. To address this critical gap, we introduce LVOmniBench, a new benchmark designed specifically for the cross-modal comprehension of long-form audio and video. This dataset comprises high-quality videos sourced from open platforms that feature rich audio-visual dynamics. Through rigorous manual selection and annotation, LVOmniBench comprises 275 videos, ranging in duration from 10 to 90 minutes, and 1,014 question-answer (QA) pairs. LVOmniBench aims to rigorously evaluate the capabilities of OmniLLMs across domains, including long-term memory, temporal localization, fine-grained understanding, and multimodal perception. Our extensive evaluation reveals that current OmniLLMs encounter significant challenges when processing extended audio-visual inputs. Open-source models generally achieve accuracies below 35%, whereas the Gemini 3 Pro reaches a peak accuracy of approximately 65%. We anticipate that this dataset, along with our empirical findings, will stimulate further research and the development of advanced models capable of resolving complex cross-modal understanding problems within long-form audio-visual contexts.",
+      "url": "https://arxiv.org/abs/2603.19217v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "SLAM",
+        "开源"
+      ]
+    },
+    {
+      "title": "$R$-equivalence on Cubic Surfaces I: Existing Cases with Non-Trivial Universal Equivalence",
+      "authors": [
+        "Dimitri Kanevsky",
+        "Julian Salazar",
+        "Matt Harvey"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Let $V$ be a smooth cubic surface over a $p$-adic field $k$ with good reduction. Swinnerton-Dyer (1981) proved that $R$-equivalence is trivial on $V(k)$ except perhaps if $V$ is one of three special types--those whose $R$-equivalence he could not bound by proving the universal (admissible) equivalence is trivial. We consider all surfaces $V$ currently known to have non-trivial universal equivalence. Beyond being intractable to Swinnerton-Dyer's approach, we observe that if these surfaces also had non-trivial $R$-equivalence, they would contradict Colliot-Thélène and Sansuc's conjecture regarding the $k$-rationality of universal torsors for geometrically rational surfaces.   By devising new methods to study $R$-equivalence, we prove that for 2-adic surfaces with all-Eckardt reductions (the third special type, which contains every existing case of non-trivial universal equivalence), $R$-equivalence is trivial or of exponent 2. For the explicit cases, we confirm triviality: the diagonal cubic $X^3+Y^3+Z^3+ζ_3 T^3=0$ over $\\mathbb{Q}_2(ζ_3)$--answering a long-standing question of Manin's (Cubic Forms, 1972)--and the cubic with universal equivalence of exponent 2 (Kanevsky, 1982).   This is the first in a series of works derived from a year of interactions with generative AI models such as AlphaEvolve and Gemini 3 Deep Think, with the latter proving many of our lemmas. We disclose the timeline and nature of their use towards this paper, and describe our broader AI-assisted research program in a companion report (in preparation).",
+      "url": "https://arxiv.org/abs/2603.19215v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "Synthetic Control Misconceptions: Recommendations for Practice",
+      "authors": [
+        "Robert Pickett",
+        "Jennifer Hill",
+        "Sarah Cowan"
+      ],
+      "date": "2026-03-19",
+      "abstract": "To estimate the causal effect of an intervention, researchers need to identify a control group that represents what might have happened to the treatment group in the absence of that intervention. This is challenging without a randomized experiment and further complicated when few units (possibly only one) are treated. Nevertheless, when data are available on units over time, synthetic control (SC) methods provide an opportunity to construct a valid comparison by differentially weighting control units that did not receive the treatment so that their resulting pre-treatment trajectory is similar to that of the treated unit. The hope is that this weighted ``pseudo-counterfactual\" can serve as a valid counterfactual in the post-treatment time period. Since its origin twenty years ago, SC has been used over 5,000 times in the literature (Web of Science, December 2025), leading to a proliferation of descriptions of the method and guidance on proper usage that is not always accurate and does not always align with what the original developers appear to have intended. As such, a number of accepted pieces of wisdom have arisen: (1) SC is robust to various implementations; (2) covariates are unnecessary, and (3) pre-treatment prediction error should guide model selection. We describe each in detail and conduct simulations that suggest, both for standard and alternative implementations of SC, that these purported truths are not supported by empirical evidence and thus actually represent misconceptions about best practice. Instead of relying on these misconceptions, we offer practical advice for more cautious implementation and interpretation of results.",
+      "url": "https://arxiv.org/abs/2603.19211v1",
+      "source": "arxiv",
+      "tags": [
+        "OPENCLAW"
+      ]
+    },
+    {
+      "title": "The commutant of fermionic Gaussian unitaries",
+      "authors": [
+        "Paolo Braccia",
+        "N. L. Diaz",
+        "Martin Larocca",
+        "M. Cerezo",
+        "Diego García-Martín"
+      ],
+      "date": "2026-03-19",
+      "abstract": "In this work, we characterize the $t$-th order commutants of fermionic Gaussian unitaries and of their particle-preserving subgroup acting on $n$ fermionic modes. These commutants govern Haar averages over the corresponding groups and therefore play a central role in fermionic randomized protocols, invariant theory, and resource quantification. Using Howe dualities, we show that the particle-preserving commutant is generated by generalized copy-hopping operators, while that for general Gaussian commutant is generated by generalized quadratic Majorana bilinears together with parity. We then derive closed formulas for the dimensions of both commutants as functions of $t$ and $n$, and develop constructive Gelfand--Tsetlin procedures to obtain explicit orthonormal bases, with detailed low-$t$ examples. Our framework also clarifies the structure of replicated fermionic states and connects naturally to measures of fermionic correlations, generalized Plücker-type constraints, and the stabilizer entropy of fermionic Gaussian states. These results provide a unified algebraic description of higher-order invariants for fermionic Gaussian dynamics.",
+      "url": "https://arxiv.org/abs/2603.19210v1",
+      "source": "arxiv",
+      "tags": [
+        "OPENCLAW"
+      ]
+    },
+    {
+      "title": "Do VLMs Need Vision Transformers? Evaluating State Space Models as Vision Encoders",
+      "authors": [
+        "Shang-Jui Ray Kuo",
+        "Paola Cascante-Bonilla"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Large vision--language models (VLMs) often use a frozen vision backbone, whose image features are mapped into a large language model through a lightweight connector. While transformer-based encoders are the standard visual backbone, we ask whether state space model (SSM) vision backbones can be a strong alternative. We systematically evaluate SSM vision backbones for VLMs in a controlled setting. Under matched ImageNet-1K initialization, the SSM backbone achieves the strongest overall performance across both VQA and grounding/localization. We further adapt both SSM and ViT-family backbones with detection or segmentation training and find that dense-task tuning generally improves performance across families; after this adaptation, the SSM backbone remains competitive while operating at a substantially smaller model scale. We further observe that (i) higher ImageNet accuracy or larger backbones do not reliably translate into better VLM performance, and (ii) some visual backbones are unstable in localization. Based on these findings, we propose stabilization strategies that improve robustness for both backbone families and highlight SSM backbones as a strong alternative to transformer-based vision encoders in VLMs.",
+      "url": "https://arxiv.org/abs/2603.19209v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "SLAM",
+        "可编辑"
+      ]
+    },
+    {
+      "title": "Rotation-triggered Kelvin-Helmholtz and counter-superflow instabilities in a three-component Bose-Einstein condensate",
+      "authors": [
+        "Susovan Giri",
+        "Arpana Saboo",
+        "Hari Sadhan Ghosh",
+        " Vipin",
+        "Sonjoy Majumder"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Interfacial hydrodynamic instabilities in multicomponent superfluids provide a versatile platform to explore nonequilibrium quantum dynamics beyond classical fluid analogues. We study dynamical interfacial instabilities in a quasi-two-dimensional three-component Bose-Einstein condensate confined in a harmonic trap, where rotation is applied selectively to the intermediate component to generate controlled relative motion at two interfaces. This selective rotation protocol enables the independent tuning of shear and counterflow across the inner and outer boundaries, allowing direct control over the nature and strength of the resulting instability mechanisms. Three regimes are examined: Kelvin-Helmholtz instability in the strongly immiscible limit, counter-superflow instability in the partially miscible regime, and a parameter window where both unstable mechanisms are present. The onset condition for the Kelvin-Helmholtz instability is derived using a hydrodynamic pressure-balance approach, and the subsequent nonlinear evolution is obtained from time-dependent Gross-Pitaevskii simulations. A Bogoliubov-de Gennes analysis is performed to identify the dominant unstable modes excited during the dynamical evolution of the system. The conniving features of the collective excitations and their spatial structures have been consistent with the density modulations observed during the dynamics. The results demonstrate that the presence of two interfaces and tunable intercomponent interactions in a three-component condensate modifies the instability mechanisms relative to binary mixtures and provides a controlled parameter regime to study multicomponent quantum hydrodynamics.",
+      "url": "https://arxiv.org/abs/2603.19207v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人"
+      ]
+    },
+    {
+      "title": "On the asymptotic behavior of finite hyperfields",
+      "authors": [
+        "Tuong Le",
+        "Chayim Lowen"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Hobby has recently shown that almost all finite hyperfields of even order fail to be the quotient of a field. Using a probabilistic argument, we extend this result to all orders: a finite hyperfield is almost always non-quotient. This confirms a conjecture of Baker--Jin. We show that in almost every finite hyperfield the sum of any four or more nonzero elements contains 0. We also give a precise asymptotic for the number of finite hyperfields on a given finite abelian group.",
+      "url": "https://arxiv.org/abs/2603.19205v1",
+      "source": "arxiv",
+      "tags": [
+        "OPENCLAW"
+      ]
+    },
+    {
+      "title": "Tinted Frames: Question Framing Blinds Vision-Language Models",
+      "authors": [
+        "Wan-Cyuan Fan",
+        "Jiayun Luo",
+        "Declan Kutscher",
+        "Leonid Sigal",
+        "Ritwik Gupta"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Vision-Language Models (VLMs) have been shown to be blind, often underutilizing their visual inputs even on tasks that require visual reasoning. In this work, we demonstrate that VLMs are selectively blind. They modulate the amount of attention applied to visual inputs based on linguistic framing even when alternative framings demand identical visual reasoning. Using visual attention as a probe, we quantify how framing alters both the amount and distribution of attention over the image. Constrained framings, such as multiple choice and yes/no, induce substantially lower attention to image context compared to open-ended, reduce focus on task-relevant regions, and shift attention towards uninformative tokens. We further demonstrate that this attention misallocation is the principal cause of degraded accuracy and cross-framing inconsistency. Building on this mechanistic insight, we introduce a lightweight prompt-tuning method using learnable tokens that encourages the robust, visually grounded attention patterns observed in open-ended settings, improving visual grounding and improving performance across framings.",
+      "url": "https://arxiv.org/abs/2603.19203v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端"
+      ]
+    },
+    {
+      "title": "Gamma positivity, PL homeomorphism types, and orthogonal polynomials",
+      "authors": [
+        "Soohyun Park"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Using preservations of PL homeomorphism types under edge contractions (the link condition) as a topological proxy for flagness, we give a quantitative description of the effect flagness on on gamma positivity of simplicial spheres. In particular, we show that the link condition has a trivial effect on the $g$-vectors (and thus gamma vectors) of high-dimensional simplicial spheres with nonnegative gamma vectors in many cases. Note that this reflects a dichotomy between quantitative behavior arising from $g_1$ components that are linear in $d$ and those that are superlinear in $d$. When the link condition is nontrivial, we show that it gives a lower bound for growth rates of $g$-vector components. This lower bound increases with the number of edges and the distance of the $M$-vector condition on $g$-vectors of simplicial spheres from equality. These lower bounds translate to ones on top gamma vector components and give lower bounds on gamma vector growth rates when the gamma vector components are dominant terms in the $g$-vector components with the same index (e.g. $g$-vectors with components increasing quickly compared to $d$). Finally, we show that the same results apply to positivity properties generalizing gamma positivity arising from connections between orthogonal polynomials and lattice paths. In the course of doing this, we describe gamma vector components in terms of monomer/dimer covers and point out connections between repeated (stellar) edge subdivisions (Tchebyshev subdivisions) and dimer covers.",
+      "url": "https://arxiv.org/abs/2603.19202v1",
+      "source": "arxiv",
+      "tags": [
+        "OPENCLAW"
+      ]
+    },
+    {
+      "title": "OmniVTA: Visuo-Tactile World Modeling for Contact-Rich Robotic Manipulation",
+      "authors": [
+        "Yuhang Zheng",
+        "Songen Gu",
+        "Weize Li",
+        "Yupeng Zheng",
+        "Yujie Zang",
+        "Shuai Tian",
+        "Xiang Li",
+        "Ruihai Wu",
+        "Ce Hao",
+        "Chen Gao",
+        "Si Liu",
+        "Haoran Li",
+        "Yilun Chen",
+        "Shuicheng Yan",
+        "Wenchao Ding"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Contact-rich manipulation tasks, such as wiping and assembly, require accurate perception of contact forces, friction changes, and state transitions that cannot be reliably inferred from vision alone. Despite growing interest in visuo-tactile manipulation, progress is constrained by two persistent limitations: existing datasets are small in scale and narrow in task coverage, and current methods treat tactile signals as passive observations rather than using them to model contact dynamics or enable closed-loop control explicitly. In this paper, we present \\textbf{OmniViTac}, a large-scale visuo-tactile-action dataset comprising $21{,}000+$ trajectories across $86$ tasks and $100+$ objects, organized into six physics-grounded interaction patterns. Building on this dataset, we propose \\textbf{OmniVTA}, a world-model-based visuo-tactile manipulation framework that integrates four tightly coupled modules: a self-supervised tactile encoder, a two-stream visuo-tactile world model for predicting short-horizon contact evolution, a contact-aware fusion policy for action generation, and a 60Hz reflexive controller that corrects deviations between predicted and observed tactile signals in a closed loop. Real-robot experiments across all six interaction categories show that OmniVTA outperforms existing methods and generalizes well to unseen objects and geometric configurations, confirming the value of combining predictive contact modeling with high-frequency tactile feedback for contact-rich manipulation. All data, models, and code will be made publicly available on the project website at https://mrsecant.github.io/OmniVTA.",
+      "url": "https://arxiv.org/abs/2603.19201v1",
+      "source": "arxiv",
+      "tags": [
+        "城市建模",
+        "具身智能",
+        "世界模型"
+      ]
+    },
+    {
+      "title": "The Exponentially Weighted Signature",
+      "authors": [
+        "Alexandre Bloch",
+        "Samuel N. Cohen",
+        "Terry Lyons",
+        "Joël Mouterde",
+        "Benjamin Walker"
+      ],
+      "date": "2026-03-19",
+      "abstract": "The signature is a canonical representation of a multidimensional path over an interval. However, it treats all historical information uniformly, offering no intrinsic mechanism for contextualising the relevance of the past. To address this, we introduce the Exponentially Weighted Signature (EWS), generalising the Exponentially Fading Memory (EFM) signature from diagonal to general bounded linear operators. These operators enable cross-channel coupling at the level of temporal weighting together with richer memory dynamics including oscillatory, growth, and regime-dependent behaviour, while preserving the algebraic strengths of the classical signature. We show that the EWS is the unique solution to a linear controlled differential equation on the tensor algebra, and that it generalises both state-space models and the Laplace and Fourier transforms of the path. The group-like structure of the EWS enables efficient computation and makes the framework amenable to gradient-based learning, with the full semigroup action parametrised by and learned through its generator. We use this framework to empirically demonstrate the expressivity gap between the EWS and both the signature and EFM on two SDE-based regression tasks.",
+      "url": "https://arxiv.org/abs/2603.19198v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态"
+      ]
+    },
+    {
+      "title": "Investigation of Differential Diffusion and Strain Coupling in Large Eddy Simulations of Hydrogen-Air Flames",
+      "authors": [
+        "Antonio Masucci",
+        "Gioele Ferrante",
+        "Tiziano Ghisu",
+        "Andrea Giusti",
+        "Ivan Langella"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Large Eddy Simulations with flamelet-based thermochemistry are used to investigate the behaviour of a premixed hydrogen-air flame stabilised by a bluff-body. Validation against experimental data is carried out first to demonstrate the model's ability to predict both velocity field and flame structure. The capability of the model in predicting differential diffusion effects is then assessed, in particular regarding the coupling between differential diffusion, tangential strain and curvature, and their effect on mixture fraction redistribution and reaction rate variation. Results indicate that unstretched flamelet thermochemistry is capable of capturing the increase in mixture fraction caused by positive resolved strain, as well as negative variations of mixture fraction due to negative curvature. Furthermore, the model is observed to mimic the effects of negative Markstein length to a certain extent, so that positive tangential strain causes reaction rate increase. The interplay between resolved stretch and preferential diffusion is also shown to lead to a shorter flame length which is in better agreement with experimental observations as compared to simulations under unity Lewis number assumption. These findings highlight that the macroscopic effects of differential diffusion and stretch on the premixed hydrogen flame, characterised by significant strain levels, can be predicted using a flamelet-based approach and without recurring to strained flamelets database, which implies important simplifications in the combustion modelling of turbulent hydrogen-premixed flames and offers valuable insights for the design of novel combustors.",
+      "url": "https://arxiv.org/abs/2603.19197v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Exploring the Role of Interaction Data to Empower End-User Decision-Making In UI Personalization",
+      "authors": [
+        "Sérgio Alves",
+        "Carlos Duarte",
+        "Kyle Montague",
+        "Tiago Guerreiro"
+      ],
+      "date": "2026-03-19",
+      "abstract": "User interface personalization enhances digital efficiency, usability, and accessibility. However, in user-driven setups, limited support for identifying and evaluating worthwhile opportunities often leads to underuse. We explore a reflexive personalization approach where individuals engage with their digital interaction data to identify meaningful personalization opportunities and benefits. We interviewed 12 participants, using experimental vignettes as design probes to support reflection on different forms of using interaction data to empower decision-making in personalization and the preferred level of system support. We found that people can independently identify personalization opportunities but prefer system support through visual personalization suggestions. Interaction data can shape how users perceive and approach personalization by reinforcing the perceived value of change and data collection, helping them weigh benefits against effort, and increasing the transparency of system suggestions. We discuss opportunities for designing personalization software that raises end-users' agency over interfaces through reflective engagement with their interaction data.",
+      "url": "https://arxiv.org/abs/2603.19196v1",
+      "source": "arxiv",
+      "tags": [
+        "数字人"
+      ]
+    },
+    {
+      "title": "How Auditory Knowledge in LLM Backbones Shapes Audio Language Models: A Holistic Evaluation",
+      "authors": [
+        "Ke-Han Lu",
+        "Szu-Wei Fu",
+        "Chao-Han Huck Yang",
+        "Zhehuai Chen",
+        "Sung-Feng Huang",
+        "Chih-Kai Yang",
+        "Yi-Cheng Lin",
+        "Chi-Yuan Hsiao",
+        "Wenze Ren",
+        "En-Pei Hu",
+        "Yu-Han Huang",
+        "An-Yu Cheng",
+        "Cheng-Han Chiang",
+        "Yu Tsao",
+        "Yu-Chiang Frank Wang",
+        "Hung-yi Lee"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Large language models (LLMs) have been widely used as knowledge backbones of Large Audio Language Models (LALMs), yet how much auditory knowledge they encode through text-only pre-training and how this affects downstream performance remains unclear. We study this gap by comparing different LLMs under two text-only and one audio-grounded setting: (1) direct probing on AKB-2000, a curated benchmark testing the breadth and depth of auditory knowledge; (2) cascade evaluation, where LLMs reason over text descriptions from an audio captioner; and (3) audio-grounded evaluation, where each LLM is fine-tuned into a Large Audio Language Model (LALM) with an audio encoder. Our findings reveal that auditory knowledge varies substantially across families, and text-only results are strongly correlated with audio performance. Our work provides empirical grounding for a comprehensive understanding of LLMs in audio research.",
+      "url": "https://arxiv.org/abs/2603.19195v1",
+      "source": "arxiv",
+      "tags": [
+        "OPENCLAW"
+      ]
+    },
+    {
+      "title": "Reconstruction Matters: Learning Geometry-Aligned BEV Representation through 3D Gaussian Splatting",
+      "authors": [
+        "Yiren Lu",
+        "Xin Ye",
+        "Burhaneddin Yaman",
+        "Jingru Luo",
+        "Zhexiao Xiong",
+        "Liu Ren",
+        "Yu Yin"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Bird's-Eye-View (BEV) perception serves as a cornerstone for autonomous driving, offering a unified spatial representation that fuses surrounding-view images to enable reasoning for various downstream tasks, such as semantic segmentation, 3D object detection, and motion prediction. However, most existing BEV perception frameworks adopt an end-to-end training paradigm, where image features are directly transformed into the BEV space and optimized solely through downstream task supervision. This formulation treats the entire perception process as a black box, often lacking explicit 3D geometric understanding and interpretability, leading to suboptimal performance. In this paper, we claim that an explicit 3D representation matters for accurate BEV perception, and we propose Splat2BEV, a Gaussian Splatting-assisted framework for BEV tasks. Splat2BEV aims to learn BEV feature representations that are both semantically rich and geometrically precise. We first pre-train a Gaussian generator that explicitly reconstructs 3D scenes from multi-view inputs, enabling the generation of geometry-aligned feature representations. These representations are then projected into the BEV space to serve as inputs for downstream tasks. Extensive experiments on nuScenes and argoverse dataset demonstrate that Splat2BEV achieves state-of-the-art performance and validate the effectiveness of incorporating explicit 3D reconstruction into BEV perception.",
+      "url": "https://arxiv.org/abs/2603.19193v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑",
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "Investigating the role of tetraquark operators in lattice QCD studies of the $a_0(980)$ and $κ$ resonances",
+      "authors": [
+        "Andrew D. Hanlon",
+        "Daniel Darvish",
+        "Sarah Skinner",
+        "John Meneghini",
+        "Ruairí Brett",
+        "John Bulava",
+        "Jacob Fallica",
+        "Colin Morningstar",
+        "Fernando Romero-López",
+        "André Walker-Loud"
+      ],
+      "date": "2026-03-19",
+      "abstract": "The role of tetraquark operators in studying the isodoublet strange $κ$ and isovector nonstrange $a_0(980)$ scalar mesons in lattice QCD is examined using an ensemble with $m_π\\approx230$ MeV and spatial extent $L$ such that $m_πL\\approx4.4$. Hermitian correlation matrices using both single-meson, meson-meson, and tetraquark interpolating operators are used to extract the spectrum of finite-volume stationary states in the appropriate symmetry channels. Hundreds of local and extended tetraquark operators are explored. Determinations of the spectrum in each channel are found to be unreliable without the inclusion of at least one tetraquark operator. For example, the inclusion of tetraquark operators with isospin 1/2 and strangeness 1 quantum numbers reveals the existence of an additional energy level in the $Kη$ sub-system below the $Kη$ threshold. The implications of this on parametrizing the scattering $K$-matrix through a well-known quantization condition to extract properties of the $κ$ and $a_0(980)$ scalar meson resonances are discussed.",
+      "url": "https://arxiv.org/abs/2603.19192v1",
+      "source": "arxiv",
+      "tags": [
+        "压缩"
+      ]
+    },
+    {
+      "title": "OS-Themis: A Scalable Critic Framework for Generalist GUI Rewards",
+      "authors": [
+        "Zehao Li",
+        "Zhenyu Wu",
+        "Yibo Zhao",
+        "Bowen Yang",
+        "Jingjing Xie",
+        "Zhaoyang Liu",
+        "Zhoumianze Liu",
+        "Kaiming Jin",
+        "Jianze Liang",
+        "Zonglin Li",
+        "Feng Wu",
+        "Bowen Zhou",
+        "Zun Wang",
+        "Zichen Ding"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Reinforcement Learning (RL) has the potential to improve the robustness of GUI agents in stochastic environments, yet training is highly sensitive to the quality of the reward function. Existing reward approaches struggle to achieve both scalability and performance. To address this, we propose OS-Themis, a scalable and accurate multi-agent critic framework. Unlike a single judge, OS-Themis decomposes trajectories into verifiable milestones to isolate critical evidence for decision making and employs a review mechanism to strictly audit the evidence chain before making the final verdict. To facilitate evaluation, we further introduce OmniGUIRewardBench (OGRBench), a holistic cross-platform benchmark for GUI outcome rewards, where all evaluated models achieve their best performance under OS-Themis. Extensive experiments on AndroidWorld show that OS-Themis yields a 10.3% improvement when used to support online RL training, and a 6.9% gain when used for trajectory validation and filtering in the self-training loop, highlighting its potential to drive agent evolution.",
+      "url": "https://arxiv.org/abs/2603.19191v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "可编辑"
+      ]
+    },
+    {
+      "title": "Matrix Product States for Modulated Symmetries: SPT, LSM, and Beyond",
+      "authors": [
+        "Amogh Anakru",
+        "Sarvesh Srinivasan",
+        "Linhao Li",
+        "Zhen Bi"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Matrix product states (MPS) provide a powerful framework for characterizing one-dimensional symmetry-protected topological (SPT) phases of matter and for formulating Lieb-Schultz-Mattis (LSM)-type constraints. Here we generalize the MPS formalism to translationally invariant systems with general modulated symmetries. We show that the standard symmetry \"push-through\" condition for conventional global symmetry must be revised to account for symmetry modulation, and we derive the appropriate generalized condition. Using this generalized push-through structure, we classify one-dimensional SPT phases with modulated symmetries and formulate LSM-type constraints within the same MPS-based framework.",
+      "url": "https://arxiv.org/abs/2603.19189v1",
+      "source": "arxiv",
+      "tags": [
+        "OPENCLAW"
+      ]
+    },
+    {
+      "title": "Markov Potential Game and Multi-Agent Reinforcement Learning for Autonomous Driving",
+      "authors": [
+        "Huiwen Yan",
+        "Mushuang Liu"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Autonomous driving (AD) requires safe and reliable decision-making among interacting agents, e.g., vehicles, bicycles, and pedestrians. Multi-agent reinforcement learning (MARL) modeled by Markov games (MGs) provides a suitable framework to characterize such agents' interactions during decision-making. Nash equilibria (NEs) are often the desired solution in an MG. However, it is typically challenging to compute an NE in general-sum games, unless the game is a Markov potential game (MPG), which ensures the NE attainability under a few learning algorithms such as gradient play. However, it has been an open question how to construct an MPG and whether these construction rules are suitable for AD applications. In this paper, we provide sufficient conditions under which an MG is an MPG and show that these conditions can accommodate general driving objectives for autonomous vehicles (AVs) using highway forced merge scenarios as illustrative examples. A parameter-sharing neural network (NN) structure is designed to enable decentralized policy execution. The trained driving policy from MPGs is evaluated in both simulated and naturalistic traffic datasets. Comparative studies with single-agent RL and with human drivers whose behaviors are recorded in the traffic datasets are reported, respectively.",
+      "url": "https://arxiv.org/abs/2603.19188v1",
+      "source": "arxiv",
+      "tags": [
+        "自动驾驶"
+      ]
+    },
+    {
+      "title": "Improving RCT-Based Treatment Effect Estimation Under Covariate Mismatch via Calibrated Alignment",
+      "authors": [
+        "Amir Asiaee",
+        "Samhita Pal"
+      ],
+      "date": "2026-03-19",
+      "abstract": "Randomized controlled trials (RCTs) are the gold standard for estimating heterogeneous treatment effects, yet they are often underpowered for detecting effect heterogeneity. Large observational studies (OS) can supplement RCTs for conditional average treatment effect (CATE) estimation, but a key barrier is covariate mismatch: the two sources measure different, only partially overlapping, covariates. We propose CALM (Calibrated ALignment under covariate Mismatch), which bypasses imputation by learning embeddings that map each source's features into a common representation space. OS outcome models are transferred to the RCT embedding space and calibrated using trial data, preserving causal identification from randomization. Finite-sample risk bounds decompose into alignment error, outcome-model complexity, and calibration complexity terms, identifying when embedding alignment outperforms imputation. Under the calibration-based linear variant, the framework provides protection against negative transfer; the neural variant can be vulnerable under severe distributional shift. Under sparse linear models, the embedding approach strictly generalizes imputation. Simulations across 51 settings confirm that (i) calibration-based methods are equivalent for linear CATEs, and (ii) the neural embedding variant wins all 22 nonlinear-regime settings with large margins.",
+      "url": "https://arxiv.org/abs/2603.19186v1",
+      "source": "arxiv",
+      "tags": [
+        "可编辑"
+      ]
+    }
+  ],
+  "hot_topics": [
+    {
+      "title": "An AI agent published a hit piece on me",
+      "url": "https://theshamblog.com/an-ai-agent-published-a-hit-piece-on-me/",
+      "hn_url": "https://news.ycombinator.com/item?id=46990729",
+      "points": 2346,
+      "comments": 951,
+      "author": "scottshambaugh",
+      "date": "2026-02-12",
+      "hn_id": "46990729",
+      "comment": ""
+    },
+    {
+      "title": "Opus 4.5 is not the normal AI agent experience that I have had thus far",
+      "url": "https://burkeholland.github.io/posts/opus-4-5-change-everything/",
+      "hn_url": "https://news.ycombinator.com/item?id=46515696",
+      "points": 879,
+      "comments": 1353,
+      "author": "tbassetto",
+      "date": "2026-01-06",
+      "hn_id": "46515696",
+      "comment": ""
+    },
+    {
+      "title": "AI agent opens a PR write a blogpost to shames the maintainer who closes it",
+      "url": "https://github.com/matplotlib/matplotlib/pull/31132",
+      "hn_url": "https://news.ycombinator.com/item?id=46987559",
+      "points": 953,
+      "comments": 750,
+      "author": "wrxd",
+      "date": "2026-02-12",
+      "hn_id": "46987559",
+      "comment": ""
+    },
+    {
+      "title": "Claws are now a new layer on top of LLM agents",
+      "url": "https://twitter.com/karpathy/status/2024987174077432126",
+      "hn_url": "https://news.ycombinator.com/item?id=47096253",
+      "points": 412,
+      "comments": 941,
+      "author": "Cyphase",
+      "date": "2026-02-21",
+      "hn_id": "47096253",
+      "comment": ""
+    },
+    {
+      "title": "An AI agent published a hit piece on me – more things have happened",
+      "url": "https://theshamblog.com/an-ai-agent-published-a-hit-piece-on-me-part-2/",
+      "hn_url": "https://news.ycombinator.com/item?id=47009949",
+      "points": 768,
+      "comments": 624,
+      "author": "scottshambaugh",
+      "date": "2026-02-14",
+      "hn_id": "47009949",
+      "comment": ""
+    },
+    {
+      "title": "Gemini 2.0: our new AI model for the agentic era",
+      "url": "https://blog.google/technology/google-deepmind/google-gemini-ai-update-december-2024/",
+      "hn_url": "https://news.ycombinator.com/item?id=42388783",
+      "points": 1015,
+      "comments": 490,
+      "author": "meetpateltech",
+      "date": "2024-12-11",
+      "hn_id": "42388783",
+      "comment": ""
+    }
+  ],
+  "trending_repos": [
+    {
+      "name": "msitarzewski/agency-agents",
+      "url": "https://github.com/msitarzewski/agency-agents",
+      "desc": "A complete AI agency at your fingertips - From frontend wizards to Reddit community ninjas, from whimsy injectors to reality checkers. Each agent is a specialized expert with personality, processes, and proven deliverables.",
+      "stars": 56615,
+      "weekly_stars": 23185,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "obra/superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "desc": "An agentic skills framework &amp; software development methodology that works.",
+      "stars": 101319,
+      "weekly_stars": 19176,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "666ghj/MiroFish",
+      "url": "https://github.com/666ghj/MiroFish",
+      "desc": "A Simple and Universal Swarm Intelligence Engine, Predicting Anything. 简洁通用的群体智能引擎，预测万物",
+      "stars": 36997,
+      "weekly_stars": 17584,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "volcengine/OpenViking",
+      "url": "https://github.com/volcengine/OpenViking",
+      "desc": "OpenViking is an open-source context database designed specifically for AI Agents(such as openclaw). OpenViking unifies the management of context (memory, resources, and skills) that Agents need through a file system paradigm, enabling hierarchical context delivery and self-evolving.",
+      "stars": 16917,
+      "weekly_stars": 10158,
+      "date": "2026-03-21"
+    },
+    {
+      "name": "lightpanda-io/browser",
+      "url": "https://github.com/lightpanda-io/browser",
+      "desc": "Lightpanda: the headless browser designed for AI and automation",
+      "stars": 22571,
+      "weekly_stars": 9984,
+      "date": "2026-03-21"
+    }
+  ],
+  "bili_videos": [
+    {
+      "title": "一个视频搞懂OpenClaw！",
+      "url": "https://www.bilibili.com/video/BV1jEAaz3E6K",
+      "author": "林亦LYi",
+      "play": 4222517,
+      "danmaku": 4715,
+      "date": 1772282360,
+      "desc": "诞生仅仅 60 天，GitHub 热度碾压十几年老资历 Linux！这个能一键控制电脑的AI智能体 OpenClaw，究竟是何方神圣？一个视频带你搞清楚！",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "黑马程序员大模型RAG与Agent智能体项目实战教程，基于主流的LangChain技术从大模型提示词到实战项目",
+      "url": "https://www.bilibili.com/video/BV1yjz5BLEoY",
+      "author": "黑马程序员",
+      "play": 1010765,
+      "danmaku": 3397,
+      "date": 1768975562,
+      "desc": "本套视频教程所有配套资料领取方式如下：\n关注黑马程序员公 粽 号，回复关键词：260121\n【AI大模型学习路线图】展开查看更多内容\nhttps://www.bilibili.com/opus/1129722427782201345\n如何下载资料\nhttps://www.bilibili.com/opus/443715248901563958\n\n人工智能开发热门教程：\nAI大模型开发：BV1h1V",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "10分钟讲清楚 Prompt, Agent, MCP 是什么",
+      "url": "https://www.bilibili.com/video/BV1aeLqzUE6L",
+      "author": "隔壁的程序员老王",
+      "play": 753504,
+      "danmaku": 668,
+      "date": 1746090000,
+      "desc": "up的科学星球：https://t.zsxq.com/ubYr8",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "【吴恩达】2026年公认最好的【Agent智能体】教程！大模型入门到进阶，一套全解决！Agentic AI—附带课件代码",
+      "url": "https://www.bilibili.com/video/BV1DfrdByE2H",
+      "author": "吴恩达Agent",
+      "play": 712401,
+      "danmaku": 2073,
+      "date": 1768449372,
+      "desc": "视频来源：DeepLearning.AI\n课件代码：评论区自取\n本课程我们将学习到：\n1. 构建智能体设计模式：反射、工具使用、规划与多智能体工作流；\n2. 将人工智能与外部工具集成：数据库、API、网络搜索与代码执行；\n3. 评估并优化人工智能系统：性能指标、错误分析与生产部署",
+      "comment": "",
+      "source": "bilibili"
+    },
+    {
+      "title": "翻遍整个B站，这绝对是2026讲的最好的AI Agent智能体教程，手把手教你从0基础开始搭建企业级Agent智能体！全程干货无废话，让你少走99%弯路！！",
+      "url": "https://www.bilibili.com/video/BV1zuHizBE8B",
+      "author": "AI学习课堂",
+      "play": 634008,
+      "danmaku": 12659,
+      "date": 1757594937,
+      "desc": "【视频配套籽料+问题解答请看”平论区置顶”自取哦】\n视频制作不易，如果视频对你有用的话请一键三连【长按点赞】支持一下up哦，拜托，这对我真的很重要！",
+      "comment": "",
+      "source": "bilibili"
+    }
+  ],
+  "xhs_notes": []
+}

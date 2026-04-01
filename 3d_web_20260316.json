@@ -1,0 +1,436 @@
+{
+  "topic": "3d_web",
+  "label": "3D + Web",
+  "desc": "WebGPU、WebGL、浏览器实时渲染、Three.js生态、Web端神经渲染",
+  "generated": "2026-03-16 11:27",
+  "overview": {
+    "background": "WebGPU 的正式落地（Chrome 113，2023）标志着浏览器三维渲染进入新纪元：计算着色器、直接 GPU 访问、无 WebGL 限制，使得原本只能在原生应用运行的神经渲染、实时光追、大规模粒子仿真开始在浏览器中成为可能。同时，Three.js r160+、Babylon.js 6.x、WebGPU-based Wgpu/Bevy 等生态持续成熟，Web 端三维创作与体验工具正在打破原生应用的垄断。本周报告覆盖 WebGPU 技术前沿、神经渲染 Web 化、三维 Web 框架动态、浏览器实时渲染工具等方向。",
+    "stats": [
+      {
+        "value": "WebGPU",
+        "label": "2023 正式落地 Chrome/Firefox/Safari"
+      },
+      {
+        "value": "Three.js",
+        "label": "r170+ 持续迭代，生态最大"
+      },
+      {
+        "value": "3DGS",
+        "label": "浏览器端高斯溅射渲染已成熟"
+      },
+      {
+        "value": "WASM",
+        "label": "WebAssembly 打通原生渲染管线"
+      }
+    ]
+  },
+  "tech": [
+    {
+      "icon": "⚡",
+      "title": "WebGPU 计算管线",
+      "desc": "WebGPU 的 Compute Shader 让浏览器首次拥有通用 GPU 计算能力。粒子仿真、光线追踪、神经网络推理均可在 GPU 端并行完成，性能接近原生 Vulkan/Metal，是高性能 Web 三维体验的基础设施革命。",
+      "tags": [
+        "WebGPU",
+        "Compute Shader",
+        "GPU并行"
+      ]
+    },
+    {
+      "icon": "🌐",
+      "title": "浏览器端神经渲染",
+      "desc": "3DGS、NeRF 的 Web 化已有成熟方案：SuperSplat（PlayCanvas）、Gaussian-Splats-3D、three-gaussian-splats 等库支持在浏览器中实时渲染高斯场景，无需安装任何软件，扫描即可分享三维现实。",
+      "tags": [
+        "神经渲染",
+        "3DGS-Web",
+        "WebGL/WebGPU"
+      ]
+    },
+    {
+      "icon": "🏗️",
+      "title": "Web 三维框架演进",
+      "desc": "Three.js（r170+）持续扩展 WebGPU 后端支持；Babylon.js 6.x 集成 Havok 物理引擎与 WebGPU 渲染；React Three Fiber 使声明式三维开发成为主流；PlayCanvas、A-Frame、Troika-3D 各有细分生态。",
+      "tags": [
+        "Three.js",
+        "Babylon.js",
+        "React Three Fiber"
+      ]
+    },
+    {
+      "icon": "🔧",
+      "title": "WebAssembly + 原生渲染桥接",
+      "desc": "通过 WASM 将 C++/Rust 编写的渲染引擎（Filament、WGPU/Bevy、Godot Web Export）编译到浏览器，在保留原生性能的同时实现免安装分发，是游戏和专业三维工具 Web 化的主流路径。",
+      "tags": [
+        "WebAssembly",
+        "Rust/WGPU",
+        "原生性能"
+      ]
+    }
+  ],
+  "apps": [
+    {
+      "icon": "🛍️",
+      "title": "电商与产品三维展示",
+      "desc": "Three.js/Babylon.js 驱动的产品 360° 展示、AR 试穿/试摆在电商场景全面铺开。Apple AR Quick Look、Google Scene Viewer 让消费者无需 App 即可在浏览器中预览真实尺寸的商品。",
+      "tags": [
+        "电商AR",
+        "产品可视化",
+        "Web XR"
+      ]
+    },
+    {
+      "icon": "🏛️",
+      "title": "数字孪生与空间计算",
+      "desc": "CesiumJS、Deck.gl、Three.js + GIS 数据构建了城市级 Web 三维平台。工业数字孪生、BIM 可视化、城市规划仿真开始在浏览器内完成，无需专用客户端。",
+      "tags": [
+        "数字孪生",
+        "GIS",
+        "城市可视化"
+      ]
+    },
+    {
+      "icon": "🎮",
+      "title": "Web 游戏与元宇宙入口",
+      "desc": "WebGPU 将 Web 游戏的画质上限大幅提升；Roblox、Fortnite 等主要平台均已或计划支持 Web 端访问；WebXR 为 VR/AR 体验提供标准浏览器入口，无需应用商店分发。",
+      "tags": [
+        "Web游戏",
+        "WebXR",
+        "元宇宙"
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "🏆 Three.js",
+      "lang": "JavaScript/TypeScript",
+      "desc": "Web 三维生态最大框架，r170+ 全面接入 WebGPU 后端，React Three Fiber 生态使其进入主流前端开发工作流。GitHub Stars 100k+。",
+      "url": "https://github.com/mrdoob/three.js"
+    },
+    {
+      "name": "⚡ SuperSplat (PlayCanvas)",
+      "lang": "JavaScript/WebGPU",
+      "desc": "浏览器端 3DGS 查看与编辑器，支持导入 .ply/.splat 文件实时渲染，无需安装，是展示高斯溅射场景的最便捷 Web 工具。",
+      "url": "https://playcanvas.com/supersplat"
+    },
+    {
+      "name": "🌐 Babylon.js",
+      "lang": "TypeScript",
+      "desc": "微软维护的企业级 Web 三维引擎，集成 Havok 物理、WebGPU 渲染、WebXR 支持，适合游戏和工业级应用。",
+      "url": "https://github.com/BabylonJS/Babylon.js"
+    },
+    {
+      "name": "🗺️ CesiumJS",
+      "lang": "JavaScript",
+      "desc": "面向地理空间的 Web 三维平台，支持 3D Tiles、glTF、地形渲染，城市级数字孪生和 GIS 可视化的标准选择。",
+      "url": "https://github.com/CesiumGS/cesium"
+    },
+    {
+      "name": "🔧 wgpu (Rust)",
+      "lang": "Rust/WebAssembly",
+      "desc": "跨平台 WebGPU 实现，同时支持原生（Vulkan/Metal/DX12）和 Web（WebAssembly），Bevy 游戏引擎的渲染后端，是 Rust Web 三维生态的核心。",
+      "url": "https://github.com/gfx-rs/wgpu"
+    }
+  ],
+  "industry": [
+    {
+      "title": "🌐 主流浏览器全面支持 WebGPU",
+      "desc": "Chrome 113（2023-05）、Firefox Nightly、Safari TP 相继落地 WebGPU，结束了 WebGL 十余年的垄断局面。W3C WebGPU 规范持续迭代，bindless texture、ray tracing extension 提案已进入草案阶段。",
+      "bullets": [
+        "▶ Chrome 113 正式发布 WebGPU，支持 Windows/macOS/ChromeOS",
+        "▶ Safari 18 (iOS 17.4+) 全面开放 WebGPU，覆盖 iPhone/iPad",
+        "▶ Firefox 124 开启 WebGPU 默认支持"
+      ]
+    },
+    {
+      "title": "🏗️ Web 三维工具商业化加速",
+      "desc": "Web 端三维创作与分享工具正从开发者玩具走向商业产品，Spline、Vectary、Sketchfab 均获得显著用户增长。",
+      "bullets": [
+        "▶ Spline 月活超过 100 万，Web 端三维设计进入非专业用户群体",
+        "▶ Sketchfab 被 Epic 收购后与 Fab（资产市场）深度整合",
+        "▶ PlayCanvas 云端协作三维开发平台用户量持续增长"
+      ]
+    }
+  ],
+  "future": [
+    {
+      "icon": "🚀",
+      "title": "WebGPU 光追与高级特效",
+      "desc": "W3C 正在起草 WebGPU Ray Tracing Extension，浏览器实时光追将在未来 1-2 年内成为现实，届时 Web 端渲染质量将无限接近原生游戏引擎。",
+      "tags": [
+        "WebGPU光追",
+        "实时渲染",
+        "W3C标准"
+      ]
+    },
+    {
+      "icon": "🥽",
+      "title": "WebXR 与空间计算融合",
+      "desc": "随着 Apple Vision Pro、Meta Quest 3 的普及，WebXR 成为 XR 内容分发的免安装标准入口。三维 Web 体验将无缝过渡到沉浸式空间计算环境。",
+      "tags": [
+        "WebXR",
+        "空间计算",
+        "Vision Pro"
+      ]
+    },
+    {
+      "icon": "🤖",
+      "title": "AI 驱动的 Web 三维生成",
+      "desc": "Text→3D 模型与 Web 渲染框架的结合将使「用自然语言创建交互式三维网页」成为可能，Spline AI 等早期探索已展示了这一方向的潜力。",
+      "tags": [
+        "AI生成",
+        "Text→3D",
+        "Web创作"
+      ]
+    }
+  ],
+  "papers": [
+    {
+      "title": "Magnetotransport in the presence of real and momentum space topology",
+      "authors": [
+        "Azaz Ahmad",
+        "Takami Tohyama"
+      ],
+      "date": "2026-03-13",
+      "abstract": "We investigate magnetotransport in a time-reversal symmetry-broken, untilted Weyl semimetal in the simultaneous presence of momentum-space Berry curvature and real-space topology arising from a skyrmion-induced emergent magnetic field $\\mathbf{B}_{\\mathrm{emer}}$. Using a semiclassical Boltzmann approach incorporating Berry-curvature corrections and intervalley scattering, we analyze the longitudinal magnetoconductivity and planar Hall conductivity in this mixed-topology regime. In the absence of $B_{\\mathrm{emer}}$, increasing intervalley scattering drives a strong sign reversal of the longitudinal magnetoconductivity. A finite $\\mathbf{B}_{\\mathrm{emer}}$ introduces an additional shift of the parabolic magnetic-field dependence, leading to a weak sign-reversal regime without altering the curvature. The coexistence of these effects naturally produces a strong-and-weak sign-reversal regime, demonstrating that intervalley scattering and real-space topology control distinct geometric features of the response. The emergent field further induces asymmetry in the angular dependence of both longitudinal and planar Hall conductivities. We show that a finite planar Hall response can arise solely from $\\mathbf{B}_{\\mathrm{emer}}$ when its direction is varied, providing a transport signature of real-space topology. Our results establish that the skyrmion-induced emergent field acts as an independent topological tuning parameter, revealing measurable consequences of the interplay between real- and momentum-space Berry curvature in Weyl systems.",
+      "url": "https://arxiv.org/abs/2603.13229v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-Web"
+      ]
+    },
+    {
+      "title": "Visual-ERM: Reward Modeling for Visual Equivalence",
+      "authors": [
+        "Ziyu Liu",
+        "Shengyuan Ding",
+        "Xinyu Fang",
+        "Xuanlang Dai",
+        "Penghui Yang",
+        "Jianze Liang",
+        "Jiaqi Wang",
+        "Kai Chen",
+        "Dahua Lin",
+        "Yuhang Zang"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Vision-to-code tasks require models to reconstruct structured visual inputs, such as charts, tables, and SVGs, into executable or structured representations with high visual fidelity. While recent Large Vision Language Models (LVLMs) achieve strong results via supervised fine-tuning, reinforcement learning remains challenging due to misaligned reward signals. Existing rewards either rely on textual rules or coarse visual embedding similarity, both of which fail to capture fine-grained visual discrepancies and are vulnerable to reward hacking. We propose Visual Equivalence Reward Model (Visual-ERM), a multimodal generative reward model that provides fine-grained, interpretable, and task-agnostic feedback to evaluate vision-to-code quality directly in the rendered visual space. Integrated into RL, Visual-ERM improves Qwen3-VL-8B-Instruct by +8.4 on chart-to-code and yields consistent gains on table and SVG parsing (+2.7, +4.1 on average), and further strengthens test-time scaling via reflection and revision. We also introduce VisualCritic-RewardBench (VC-RewardBench), a benchmark for judging fine-grained image-to-image discrepancies on structured visual data, where Visual-ERM at 8B decisively outperforms Qwen3-VL-235B-Instruct and approaches leading closed-source models. Our results suggest that fine-grained visual reward supervision is both necessary and sufficient for vision-to-code RL, regardless of task specificity.",
+      "url": "https://arxiv.org/abs/2603.13224v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "A Generative Model of Conspicuous Consumption and Status Signaling",
+      "authors": [
+        "Logan Cross",
+        "Jordi Grau-Moya",
+        "William A. Cunningham",
+        "Alexander Sasha Vezhnevets",
+        "Joel Z. Leibo"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Status signaling drives human behavior and the allocation of scarce resources such as mating opportunities, yet the generative mechanisms governing how specific goods, signals, or behaviors acquire prestige remain a puzzle. Classical frameworks, such as Costly Signaling Theory, treat preferences as fixed and struggle to explain how semiotic meaning changes based on context or drifts dynamically over time, occasionally reaching tipping points. In this work, we propose a computational theory of status grounded in the theory of appropriateness, positing that status symbols emerge endogenously through a feedback loop of social observation and predictive pattern completion. We validate this theory using simulations of groups of Large Language Model (LLM)-based agents in the Concordia framework. By experimentally manipulating social visibility within naturalistic agent daily routines, we demonstrate that social interactions transform functional demand into status-seeking behavior. We observe the emergence of price run-ups and positive price elasticity (Veblen effects) for both real-world luxury items and procedurally generated synthetic goods, ruling out pretraining bias as the sole driver. Furthermore, we demonstrate that \"influencer\" agents can drive the endogenous formation of distinct subcultures through targeted sanctioning, and find that similar social influence effects generalize to non-monetary signaling behaviors. This work provides a generative bridge between micro-level cognition and macro-level economic and sociological phenomena, offering a new methodology for forecasting how cultural conventions emerge from interaction.",
+      "url": "https://arxiv.org/abs/2603.13220v1",
+      "source": "arxiv",
+      "tags": [
+        "生成模型",
+        "城市建模"
+      ]
+    },
+    {
+      "title": "Robust symmetry breaking in gapless quantum magnets",
+      "authors": [
+        "Chao Yin",
+        "Andrew Lucas"
+      ],
+      "date": "2026-03-13",
+      "abstract": "We prove the existence of spontaneous symmetry breaking in suitably low-energy eigenstates of certain gapless and frustrated many-body quantum systems, namely symmetric quantum perturbations to classical models which exhibit spontaneous symmetry breaking of a finite group at some positive temperature. Additionally, the classical model need not be local in space, as long as it satisfies a quantum analogue of the Peierls condition. As an example of our technique, we establish robust ferromagnetism in random-bond Ising models in $d= 2$ dimensions with sufficiently biased random couplings, with weak transverse field. Our mathematical technique is based on establishing quantum bottlenecks, similar to a \"many-body WKB\" method for evaluating tunneling rates. Using these same methods, we provide new proofs of metastability and the slow decay of the false vacuum, applicable to gapless metastable states. Our work represents a first step towards a rigorous classification of stable gapless quantum phases.",
+      "url": "https://arxiv.org/abs/2603.13212v1",
+      "source": "arxiv",
+      "tags": [
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Navig-AI-tion: Navigation by Contextual AI and Spatial Audio",
+      "authors": [
+        "Mathias N. Lystbæk",
+        "Haley Adams",
+        "Ranjith Kagathi Ananda",
+        "Eric J Gonzalez",
+        "Luca Ballan",
+        "Qiuxuan Wu",
+        "Andrea Colaço",
+        "Peter Tan",
+        "Mar Gonzalez-Franco"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Audio-only walking navigation can leave users disoriented, relying on vague cardinal directions and lacking real-time environmental context, leading to frequent errors. To address this, we present a novel system that integrates a Vision Language Model (VLM) with a spatial audio cue. Our system extracts environmental landmarks to anchor navigation instructions and, crucially, provides a directional spatial audio signal when the user faces the wrong direction, indicating the precise turn direction. In a user study (n=12), the spatial audio cue with VLM reduced route deviations compared to both VLM-only and Google Maps (audio-only) baseline systems. Users reported that the spatial audio cue effectively supported orientation and that landmark-anchored instructions provided a better navigation experience over audio-only Google Maps. This work serves as an initial look at the utility of future audio-only navigation systems for incorporating directional cues, especially real-time corrective spatial audio.",
+      "url": "https://arxiv.org/abs/2603.13200v1",
+      "source": "arxiv",
+      "tags": [
+        "实时渲染",
+        "数字人",
+        "具身智能"
+      ]
+    },
+    {
+      "title": "Learnability and Privacy Vulnerability are Entangled in a Few Critical Weights",
+      "authors": [
+        "Xingli Fang",
+        "Jung-Eun Kim"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Prior approaches for membership privacy preservation usually update or retrain all weights in neural networks, which is costly and can lead to unnecessary utility loss or even more serious misalignment in predictions between training data and non-training data. In this work, we observed three insights: i) privacy vulnerability exists in a very small fraction of weights; ii) however, most of those weights also critically impact utility performance; iii) the importance of weights stems from their locations rather than their values. According to these insights, to preserve privacy, we score critical weights, and instead of discarding those neurons, we rewind only the weights for fine-tuning. We show that, through extensive experiments, this mechanism exhibits outperforming resilience in most cases against Membership Inference Attacks while maintaining utility.",
+      "url": "https://arxiv.org/abs/2603.13186v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-Web"
+      ]
+    },
+    {
+      "title": "Diffusion-Based Feature Denoising and Using NNMF for Robust Brain Tumor Classification",
+      "authors": [
+        "Hiba Adil Al-kharsan",
+        "Róbert Rajkó"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Brain tumor classification from magnetic resonance imaging, which is also known as MRI, plays a sensitive role in computer-assisted diagnosis systems. In recent years, deep learning models have achieved high classification accuracy. However, their sensitivity to adversarial perturbations has become an important reliability concern in medical applications. This study suggests a robust brain tumor classification framework that combines Non-Negative Matrix Factorization (NNMF or NMF), lightweight convolutional neural networks (CNNs), and diffusion-based feature purification. Initially, MRI images are preprocessed and converted into a non-negative data matrix, from which compact and interpretable NNMF feature representations are extracted. Statistical metrics, including AUC, Cohen's d, and p-values, are used to rank and choose the most discriminative components. Then, a lightweight CNN classifier is trained directly on the selected feature groups. To improve adversarial robustness, a diffusion-based feature-space purification module is introduced. A forward noise method followed by a learned denoiser network is used before classification. System performance is estimated using both clean accuracy and robust accuracy under powerful adversarial attacks created by AutoAttack. The experimental results show that the proposed framework achieves competitive classification performance while significantly enhancing robustness against adversarial perturbations.The findings presuppose that combining interpretable NNMF-based representations with a lightweight deep approach and diffusion-based defense technique supplies an effective and reliable solution for medical image classification under adversarial conditions.",
+      "url": "https://arxiv.org/abs/2603.13182v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "压缩",
+        "生成模型"
+      ]
+    },
+    {
+      "title": "MXNorm: Reusing MXFP block scales for efficient tensor normalisation",
+      "authors": [
+        "Callum McLean",
+        "Luke Y. Prince",
+        "Alexandre Payot",
+        "Paul Balança",
+        "Carlo Luschi"
+      ],
+      "date": "2026-03-13",
+      "abstract": "Matrix multiplication performance has long been the major bottleneck to scaling deep learning workloads, which has stimulated the design of new accelerators that use increasingly low-precision number formats. However, improvements in matrix multiplication performance have far outstripped improvements in performance on reductions and elementwise computations, which are still being performed in higher precision. In this work, we propose MXNorm, a drop-in replacement for RMSNorm that estimates the RMS using only the block scales calculated as part of the MXFP8 cast and enables a 32x decrease in the size of reduction needed for normalization. We validate our approximation method on pre-training of Llama 3 models of 125M, 1B and 8B parameters, finding minimal loss of training accuracy compared to a baseline using RMSNorm with MXFP8 matmuls. We also show practical kernel speedups using only torch.compile of up to 2.4x for MXNorm over RMSNorm, corresponding to a 1.3% speedup in Llama 3 8B transformer layers in MXFP8 and a 2.6% speedup in NVFP4.",
+      "url": "https://arxiv.org/abs/2603.13180v1",
+      "source": "arxiv",
+      "tags": [
+        "3D-Web"
+      ]
+    },
+    {
+      "title": "Clustering Astronomical Orbital Synthetic Data Using Advanced Feature Extraction and Dimensionality Reduction Techniques",
+      "authors": [
+        "Eraldo Pereira Marinho",
+        "Nelson Callegari Junior",
+        "Fabricio Aparecido Breve",
+        "Caetano Mazzoni Ranieri"
+      ],
+      "date": "2026-03-13",
+      "abstract": "The dynamics of Saturn's satellite system offer a rich framework for studying orbital stability and resonance interactions. Traditional methods for analysing such systems, including Fourier analysis and stability metrics, struggle with the scale and complexity of modern datasets. This study introduces a machine learning-based pipeline for clustering approximately 22,300 simulated satellite orbits, addressing these challenges with advanced feature extraction and dimensionality reduction techniques. The key to this approach is using MiniRocket, which efficiently transforms 400 timesteps into a 9,996-dimensional feature space, capturing intricate temporal patterns. Additional automated feature extraction and dimensionality reduction techniques refine the data, enabling robust clustering analysis. This pipeline reveals stability regions, resonance structures, and other key behaviours in Saturn's satellite system, providing new insights into their long-term dynamical evolution. By integrating computational tools with traditional celestial mechanics techniques, this study offers a scalable and interpretable methodology for analysing large-scale orbital datasets and advancing the exploration of planetary dynamics.",
+      "url": "https://arxiv.org/abs/2603.13177v1",
+      "source": "arxiv",
+      "tags": [
+        "4D/动态",
+        "城市建模",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Perceive What Matters: Relevance-Driven Scheduling for Multimodal Streaming Perception",
+      "authors": [
+        "Dingcheng Huang",
+        "Xiaotong Zhang",
+        "Kamal Youcef-Toumi"
+      ],
+      "date": "2026-03-13",
+      "abstract": "In modern human-robot collaboration (HRC) applications, multiple perception modules jointly extract visual, auditory, and contextual cues to achieve comprehensive scene understanding, enabling the robot to provide appropriate assistance to human agents intelligently. While executing multiple perception modules on a frame-by-frame basis enhances perception quality in offline settings, it inevitably accumulates latency, leading to a substantial decline in system performance in streaming perception scenarios. Recent work in scene understanding, termed Relevance, has established a solid foundation for developing efficient methodologies in HRC. However, modern perception pipelines still face challenges related to information redundancy and suboptimal allocation of computational resources. Drawing inspiration from the Relevance concept and the information sparsity in HRC events, we propose a novel lightweight perception scheduling framework that efficiently leverages output from previous frames to estimate and schedule necessary perception modules in real-time based on scene context. The experimental results demonstrate that the proposed perception scheduling framework effectively reduces computational latency by up to 27.52% compared to conventional parallel perception pipelines, while also achieving a 72.73% improvement in MMPose activation recall. Additionally, the framework demonstrates high keyframe accuracy, achieving rates of up to 98%. The results validate the framework's capability to enhance real-time perception efficiency without significantly compromising accuracy. The framework shows potential as a scalable and systematic solution for multimodal streaming perception systems in HRC.",
+      "url": "https://arxiv.org/abs/2603.13176v1",
+      "source": "arxiv",
+      "tags": [
+        "移动端",
+        "实时渲染",
+        "数字人"
+      ]
+    },
+    {
+      "title": "A WebGL game where you deliver messages on a tiny planet",
+      "authors": [
+        "thecupisblue"
+      ],
+      "date": "2025-09-27",
+      "abstract": "HackerNews 讨论 · 2131 点赞 · 338 评论。https://messenger.abeto.co/",
+      "url": "https://messenger.abeto.co/",
+      "source": "hackernews",
+      "hn_points": 2131,
+      "tags": [
+        "WebGPU",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Sandspiel – A falling sand game built in Rust and WebGL",
+      "authors": [
+        "15DCFA8F"
+      ],
+      "date": "2018-12-17",
+      "abstract": "HackerNews 讨论 · 1323 点赞 · 185 评论。https://sandspiel.club/",
+      "url": "https://sandspiel.club/",
+      "source": "hackernews",
+      "hn_points": 1323,
+      "tags": [
+        "WebGPU",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Chrome ships WebGPU",
+      "authors": [
+        "itsuka"
+      ],
+      "date": "2023-04-06",
+      "abstract": "HackerNews 讨论 · 936 点赞 · 398 评论。https://developer.chrome.com/blog/webgpu-release/",
+      "url": "https://developer.chrome.com/blog/webgpu-release/",
+      "source": "hackernews",
+      "hn_points": 936,
+      "tags": [
+        "WebGPU",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Summer Afternoon – A WebGL Experiment",
+      "authors": [
+        "jaden"
+      ],
+      "date": "2023-01-20",
+      "abstract": "HackerNews 讨论 · 930 点赞 · 194 评论。https://summer-afternoon.vlucendo.com/",
+      "url": "https://summer-afternoon.vlucendo.com/",
+      "source": "hackernews",
+      "hn_points": 930,
+      "tags": [
+        "WebGPU",
+        "HN热议"
+      ]
+    },
+    {
+      "title": "Persepolis of ancient Persia rendered in WebGL",
+      "authors": [
+        "avestura"
+      ],
+      "date": "2022-04-09",
+      "abstract": "HackerNews 讨论 · 879 点赞 · 200 评论。https://persepolis.getty.edu",
+      "url": "https://persepolis.getty.edu",
+      "source": "hackernews",
+      "hn_points": 879,
+      "tags": [
+        "WebGPU",
+        "HN热议"
+      ]
+    }
+  ]
+}

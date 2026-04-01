@@ -1,0 +1,65 @@
+[
+  {
+    "topic": "3dgs",
+    "label": "3D Gaussian Splatting",
+    "emoji": "🌐",
+    "desc": "3DGS 核心技术、压缩、编辑、SLAM、动态场景等方向",
+    "file": "3dgs_20260328.json",
+    "date": "20260328",
+    "count": 30
+  },
+  {
+    "topic": "3d_ai",
+    "label": "3D + AI 生成",
+    "emoji": "🎨",
+    "desc": "Text/Image → 3D、4D动态生成、3D编辑与风格化、数字人",
+    "file": "3d_ai_20260328.json",
+    "date": "20260328",
+    "count": 24
+  },
+  {
+    "topic": "world_model",
+    "label": "世界模型 / 空间智能",
+    "emoji": "🌍",
+    "desc": "世界模型、空间智能、具身智能、4D场景理解、视觉基础模型",
+    "file": "world_model_20260328.json",
+    "date": "20260328",
+    "count": 0
+  },
+  {
+    "topic": "3d_web",
+    "label": "3D + Web",
+    "emoji": "🕸️",
+    "desc": "WebGPU、WebGL、浏览器实时渲染、Three.js生态、Web端神经渲染",
+    "file": "3d_web_20260328.json",
+    "date": "20260328",
+    "count": 30
+  },
+  {
+    "topic": "openclaw",
+    "label": "OpenClaw / AI Agent",
+    "emoji": "🦞",
+    "desc": "AI Agent 框架、LLM工具调用、Agentic工作流、开源 Agent 生态动态",
+    "file": "openclaw_20260328.json",
+    "date": "20260328",
+    "count": 0
+  },
+  {
+    "topic": "ai_apps",
+    "label": "AI 应用",
+    "emoji": "📱",
+    "desc": "AI 产品动态、Prompt工程、多模态应用、AI工具链与开发者生态",
+    "file": "ai_apps_20260328.json",
+    "date": "20260328",
+    "count": 30
+  },
+  {
+    "topic": "ai_games",
+    "label": "AI 与游戏",
+    "emoji": "🎮",
+    "desc": "AI NPC、程序化内容生成、游戏AI、强化学习与游戏、AI辅助游戏开发",
+    "file": "ai_games_20260328.json",
+    "date": "20260328",
+    "count": 30
+  }
+]
