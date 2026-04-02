@@ -1,20 +1,22 @@
-#!/usr/bin/env node
-const fs   = require('fs');
-const path = require('path');
+import fs   from 'fs';
+import path from 'path';
 
 // ── 配置 ──────────────────────────────────────────────────────────────────────
 
-const ROOT_HTML_LABELS = {
+interface RootHtmlMeta { emoji: string; label: string }
+interface ReportDir    { name: string; files: string[] }
+
+const ROOT_HTML_LABELS: Record<string, RootHtmlMeta> = {
   'manifesto.html': { emoji: '📄', label: 'Web Wide World 宣言' },
   'report.html':    { emoji: '📊', label: '领域资讯跟进报告' },
 };
 
-const LABEL_MAP = {
+const LABEL_MAP: Record<string, string> = {
   '3dgs': '3DGS', consumer: '消费应用', ai: 'AI',
   apps: '应用', games: '游戏', world: '世界模型', openclaw: 'OpenClaw',
 };
 
-const EMOJI_MAP = [
+const EMOJI_RULES: [RegExp, string][] = [
   [/3dgs/i,     '🛍️'],
   [/game/i,     '🎮'],
   [/app/i,      '📱'],
@@ -24,41 +26,38 @@ const EMOJI_MAP = [
 
 // ── 辅助函数 ──────────────────────────────────────────────────────────────────
 
-function inferLabel(dirName) {
+function inferLabel(dirName: string): string {
   return dirName
     .split(/[-_]/)
-    .map(p => /^\d{4}$/.test(p) ? `(${p})` : (LABEL_MAP[p.toLowerCase()] || p[0].toUpperCase() + p.slice(1)))
+    .map(p => /^\d{4}$/.test(p) ? `(${p})` : (LABEL_MAP[p.toLowerCase()] ?? p[0].toUpperCase() + p.slice(1)))
     .join(' ');
 }
 
-function inferEmoji(dirName) {
-  for (const [re, emoji] of EMOJI_MAP) if (re.test(dirName)) return emoji;
+function inferEmoji(dirName: string): string {
+  for (const [re, emoji] of EMOJI_RULES) if (re.test(dirName)) return emoji;
   return '📊';
 }
 
-function isDir(p)  { try { return fs.statSync(p).isDirectory(); } catch { return false; } }
-function isFile(p) { try { return fs.statSync(p).isFile();      } catch { return false; } }
+function isDir(p: string):  boolean { try { return fs.statSync(p).isDirectory(); } catch { return false; } }
+function isFile(p: string): boolean { try { return fs.statSync(p).isFile();      } catch { return false; } }
 
 // ── 扫描目录 ──────────────────────────────────────────────────────────────────
 
-// 根目录 html（排除 index.html 自身）
-const rootHtmls = fs.readdirSync('.')
+const rootHtmls: string[] = fs.readdirSync('.')
   .filter(f => f.endsWith('.html') && f !== 'index.html' && isFile(f))
   .sort();
 
-// reports/ 子目录（按名称倒序，最新在前）
-const reportDirs = isDir('reports')
+const reportDirs: ReportDir[] = isDir('reports')
   ? fs.readdirSync('reports')
       .filter(d => isDir(path.join('reports', d)))
-      .sort()
-      .reverse()
+      .sort().reverse()
       .map(name => ({ name, files: fs.readdirSync(path.join('reports', name)) }))
   : [];
 
 // ── 生成 HTML 片段 ─────────────────────────────────────────────────────────────
 
 const quickLinksHtml = rootHtmls.map(f => {
-  const { emoji, label } = ROOT_HTML_LABELS[f] || { emoji: '🔗', label: f.replace('.html', '') };
+  const { emoji, label } = ROOT_HTML_LABELS[f] ?? { emoji: '🔗', label: f.replace('.html', '') };
   return `      <a class="quick-link" href="${f}">${emoji} ${label} →</a>`;
 }).join('\n');
 
@@ -68,9 +67,9 @@ const cardsHtml = reportDirs.map(({ name, files }) => {
   const hasSum  = files.includes('executive-summary.md');
   const href    = hasHtml ? `reports/${name}/report.html` : `reports/${name}/report.md`;
   const tags    = [
-    hasHtml ? '<span class="file-tag html">report.html</span>'           : '',
-    hasMd   ? '<span class="file-tag md">report.md</span>'               : '',
-    hasSum  ? '<span class="file-tag md">executive-summary.md</span>'    : '',
+    hasHtml ? '<span class="file-tag html">report.html</span>'        : '',
+    hasMd   ? '<span class="file-tag md">report.md</span>'            : '',
+    hasSum  ? '<span class="file-tag md">executive-summary.md</span>' : '',
   ].filter(Boolean).join('');
 
   return `
