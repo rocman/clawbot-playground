@@ -6,123 +6,29 @@
 <title>Clawbot 研究报告</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Segoe UI', system-ui, 'PingFang SC', sans-serif;
-  background: #0f172a;
-  color: #e2e8f0;
-  line-height: 1.6;
-  min-height: 100vh;
-}
+body { font-family: "Segoe UI", system-ui, "PingFang SC", sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; min-height: 100vh; }
 .container { max-width: 860px; margin: 0 auto; padding: 60px 20px; }
-
-/* Header */
 .header { margin-bottom: 48px; }
-.header h1 {
-  font-size: 28px;
-  font-weight: 800;
-  color: #06d6d6;
-  margin-bottom: 8px;
-  letter-spacing: -0.5px;
-}
+.header h1 { font-size: 28px; font-weight: 800; color: #06d6d6; margin-bottom: 8px; letter-spacing: -0.5px; }
 .header p { color: #64748b; font-size: 15px; }
-
-/* Quick links (root htmls) */
-.quick-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
-}
-.quick-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  color: #94a3b8;
-  text-decoration: none;
-  font-size: 13px;
-  transition: all 0.2s;
-}
+.quick-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.quick-link { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #94a3b8; text-decoration: none; font-size: 13px; transition: all 0.2s; }
 .quick-link:hover { border-color: #06d6d6; color: #06d6d6; }
-
-/* Section */
-.section-title {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #475569;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #1e293b;
-}
-
-/* Report cards */
+.section-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #475569; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }
 .reports-grid { display: grid; gap: 14px; }
-.report-card {
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 12px;
-  padding: 24px 28px;
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  transition: all 0.2s;
-  position: relative;
-  overflow: hidden;
-}
-.report-card::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: #06d6d6;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
+.report-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px 28px; text-decoration: none; color: inherit; display: block; transition: all 0.2s; position: relative; overflow: hidden; }
+.report-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #06d6d6; opacity: 0; transition: opacity 0.2s; }
 .report-card:hover { border-color: #06d6d6; background: #243247; }
 .report-card:hover::before { opacity: 1; }
-.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.card-emoji { font-size: 28px; line-height: 1; }
-.card-meta { font-size: 12px; color: #475569; text-align: right; white-space: nowrap; }
-.card-name { font-size: 17px; font-weight: 700; color: #f1f5f9; margin: 10px 0 6px; }
+.card-emoji { font-size: 28px; line-height: 1; margin-bottom: 10px; }
+.card-name { font-size: 17px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
 .card-desc { font-size: 13px; color: #64748b; }
 .card-files { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-.file-tag {
-  font-size: 11px; padding: 3px 9px; border-radius: 5px;
-  background: #0f172a; color: #475569; border: 1px solid #1e3a5f;
-}
+.file-tag { font-size: 11px; padding: 3px 9px; border-radius: 5px; background: #0f172a; color: #475569; border: 1px solid #1e3a5f; }
 .file-tag.html { color: #38bdf8; border-color: #1e3a5f; }
-.file-tag.md   { color: #a78bfa; border-color: #312e81; }
-
-/* States */
-.loading { text-align: center; padding: 60px 0; color: #475569; }
-.loading-spinner {
-  width: 32px; height: 32px;
-  border: 3px solid #1e293b;
-  border-top-color: #06d6d6;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 16px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+.file-tag.md { color: #a78bfa; border-color: #312e81; }
 .empty { text-align: center; padding: 60px 0; color: #475569; }
-.error {
-  background: #1e293b; border: 1px solid #7f1d1d;
-  border-radius: 10px; padding: 20px 24px;
-  color: #fca5a5; font-size: 14px;
-}
-
-/* Footer */
-.footer {
-  margin-top: 60px; padding-top: 24px;
-  border-top: 1px solid #1e293b;
-  font-size: 12px; color: #334155;
-  display: flex; justify-content: space-between; align-items: center;
-}
+.footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid #1e293b; font-size: 12px; color: #334155; display: flex; justify-content: space-between; align-items: center; }
 .footer a { color: #475569; text-decoration: none; }
 .footer a:hover { color: #06d6d6; }
 </style>
@@ -132,128 +38,24 @@ body {
   <div class="header">
     <h1>🦀 Clawbot 研究报告</h1>
     <p>AI、3DGS 及相关领域的持续跟踪研究</p>
-    <div id="quick-links-container" class="quick-links"></div>
-  </div>
-
-  <div class="section-title">报告目录</div>
-  <div id="reports-container">
-    <div class="loading">
-      <div class="loading-spinner"></div>
-      <div>正在从仓库读取报告列表…</div>
+    <div class="quick-links">
+      <a class="quick-link" href="manifesto.html">📄 Web Wide World 宣言 →</a>
+      <a class="quick-link" href="report.html">📊 领域资讯跟进报告 →</a>
     </div>
   </div>
-
+  <div class="section-title">报告目录</div>
+  <div class="reports-grid">
+    <a class="report-card" href="reports/3dgs-consumer-2026/report.html">
+      <div class="card-emoji">🛍️</div>
+      <div class="card-name">3DGS 消费应用 (2026)</div>
+      <div class="card-desc">3dgs-consumer-2026</div>
+      <div class="card-files"><span class="file-tag html">report.html</span><span class="file-tag md">report.md</span><span class="file-tag md">executive-summary.md</span></div>
+    </a>
+  </div>
   <div class="footer">
-    <span>数据来源：GitHub API · rocman/clawbot-playground</span>
+    <span>rocman/clawbot-playground · pages 分支</span>
     <a href="https://github.com/rocman/clawbot-playground/tree/pages" target="_blank">查看源码 →</a>
   </div>
 </div>
-
-<script>
-const REPO   = 'rocman/clawbot-playground';
-const BRANCH = 'pages';
-const API    = `https://api.github.com/repos/${REPO}/contents`;
-
-// 根目录 html 文件的展示名映射
-const ROOT_HTML_LABELS = {
-  'manifesto.html': { label: 'Web Wide World 宣言', emoji: '📄' },
-  'report.html':    { label: '领域资讯跟进报告',     emoji: '📊' },
-};
-
-function inferLabel(dirName) {
-  const map = {
-    '3dgs': '3DGS', 'consumer': '消费应用', 'ai': 'AI',
-    'apps': '应用', 'games': '游戏', 'world': '世界模型', 'openclaw': 'OpenClaw',
-  };
-  return dirName
-    .replace(/[-_]/g, ' ')
-    .replace(/\d{4}/g, y => ` (${y})`)
-    .replace(/\b(\w+)\b/g, w => map[w.toLowerCase()] || w.charAt(0).toUpperCase() + w.slice(1))
-    .trim();
-}
-
-function inferEmoji(dirName) {
-  if (/3dgs/i.test(dirName))    return '🛍️';
-  if (/game/i.test(dirName))    return '🎮';
-  if (/app/i.test(dirName))     return '📱';
-  if (/world/i.test(dirName))   return '🌐';
-  if (/openclaw/i.test(dirName)) return '🦀';
-  return '📊';
-}
-
-async function fetchJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
-  return res.json();
-}
-
-async function loadAll() {
-  const quickContainer   = document.getElementById('quick-links-container');
-  const reportsContainer = document.getElementById('reports-container');
-
-  try {
-    // 同时拉取根目录 + reports 目录
-    const [rootEntries, reportEntries] = await Promise.all([
-      fetchJSON(`${API}?ref=${BRANCH}`),
-      fetchJSON(`${API}/reports?ref=${BRANCH}`),
-    ]);
-
-    // ── 根目录 html → 快捷入口 ──
-    const rootHtmls = rootEntries.filter(e => e.type === 'file' && e.name.endsWith('.html') && e.name !== 'index.html');
-    if (rootHtmls.length > 0) {
-      quickContainer.innerHTML = rootHtmls.map(f => {
-        const info = ROOT_HTML_LABELS[f.name] || { label: f.name.replace('.html', ''), emoji: '🔗' };
-        return `<a class="quick-link" href="${f.name}">${info.emoji} ${info.label} →</a>`;
-      }).join('');
-    }
-
-    // ── reports/ 子目录 → 报告卡片 ──
-    const dirs = reportEntries.filter(e => e.type === 'dir');
-    if (dirs.length === 0) {
-      reportsContainer.innerHTML = '<div class="empty">暂无报告</div>';
-      return;
-    }
-
-    const dirDetails = await Promise.all(
-      dirs.map(async dir => {
-        const files = await fetchJSON(`${API}/reports/${dir.name}?ref=${BRANCH}`);
-        return { dir, files };
-      })
-    );
-
-    reportsContainer.innerHTML = '<div class="reports-grid">' + dirDetails.map(({ dir, files }) => {
-      const fileNames  = files.map(f => f.name);
-      const hasHtml    = fileNames.includes('report.html');
-      const hasMd      = fileNames.includes('report.md');
-      const hasSummary = fileNames.includes('executive-summary.md');
-      const href       = hasHtml ? `reports/${dir.name}/report.html` : `reports/${dir.name}/report.md`;
-      const fileTags   = [
-        hasHtml    ? '<span class="file-tag html">report.html</span>' : '',
-        hasMd      ? '<span class="file-tag md">report.md</span>'     : '',
-        hasSummary ? '<span class="file-tag md">executive-summary.md</span>' : '',
-      ].filter(Boolean).join('');
-
-      return `
-        <a class="report-card" href="${href}">
-          <div class="card-top">
-            <span class="card-emoji">${inferEmoji(dir.name)}</span>
-          </div>
-          <div class="card-name">${inferLabel(dir.name)}</div>
-          <div class="card-desc">${dir.name}</div>
-          ${fileTags ? `<div class="card-files">${fileTags}</div>` : ''}
-        </a>`;
-    }).join('') + '</div>';
-
-  } catch (err) {
-    reportsContainer.innerHTML = `
-      <div class="error">
-        <strong>加载失败</strong><br>${err.message}<br><br>
-        <small>可能是 GitHub API 限速，稍后刷新试试。</small>
-      </div>`;
-  }
-}
-
-loadAll();
-</script>
 </body>
 </html>
