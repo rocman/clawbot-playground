@@ -1,0 +1,172 @@
+name: Build pages index
+
+on:
+  push:
+    branches:
+      - pages
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: pages
+
+      - name: Generate index.html
+        run: |
+          python3 << 'PYEOF'
+          import os, json, re
+
+          LABEL_MAP = {
+            '3dgs': '3DGS', 'consumer': '消费应用', 'ai': 'AI',
+            'apps': '应用', 'games': '游戏', 'world': '世界模型', 'openclaw': 'OpenClaw',
+          }
+          ROOT_HTML_LABELS = {
+            'manifesto.html': ('📄', 'Web Wide World 宣言'),
+            'report.html':    ('📊', '领域资讯跟进报告'),
+          }
+
+          def infer_label(name):
+            parts = re.split(r'[-_]', name)
+            out = []
+            for p in parts:
+              if re.fullmatch(r'\d{4}', p):
+                out.append(f'({p})')
+              else:
+                out.append(LABEL_MAP.get(p.lower(), p.capitalize()))
+            return ' '.join(out)
+
+          def infer_emoji(name):
+            n = name.lower()
+            if '3dgs' in n:    return '🛍️'
+            if 'game' in n:    return '🎮'
+            if 'app' in n:     return '📱'
+            if 'world' in n:   return '🌐'
+            if 'openclaw' in n: return '🦀'
+            return '📊'
+
+          # 根目录 html（排除 index.html 自身）
+          root_htmls = sorted([
+            f for f in os.listdir('.')
+            if f.endswith('.html') and f != 'index.html' and os.path.isfile(f)
+          ])
+
+          # reports/ 子目录
+          reports_dir = 'reports'
+          report_dirs = []
+          if os.path.isdir(reports_dir):
+            for d in sorted(os.listdir(reports_dir), reverse=True):
+              path = os.path.join(reports_dir, d)
+              if os.path.isdir(path):
+                files = os.listdir(path)
+                report_dirs.append({'name': d, 'files': files, 'path': path})
+
+          # 生成快捷入口 HTML
+          quick_links_html = ''
+          for f in root_htmls:
+            emoji, label = ROOT_HTML_LABELS.get(f, ('🔗', f.replace('.html', '')))
+            quick_links_html += f'<a class="quick-link" href="{f}">{emoji} {label} →</a>\n'
+
+          # 生成报告卡片 HTML
+          cards_html = ''
+          for r in report_dirs:
+            name     = r['name']
+            files    = r['files']
+            has_html = 'report.html' in files
+            has_md   = 'report.md' in files
+            has_sum  = 'executive-summary.md' in files
+            href     = f"reports/{name}/report.html" if has_html else f"reports/{name}/report.md"
+            label    = infer_label(name)
+            emoji    = infer_emoji(name)
+            tags     = ''
+            if has_html: tags += '<span class="file-tag html">report.html</span>'
+            if has_md:   tags += '<span class="file-tag md">report.md</span>'
+            if has_sum:  tags += '<span class="file-tag md">executive-summary.md</span>'
+            cards_html += f'''
+              <a class="report-card" href="{href}">
+                <div class="card-top"><span class="card-emoji">{emoji}</span></div>
+                <div class="card-name">{label}</div>
+                <div class="card-desc">{name}</div>
+                {"<div class='card-files'>" + tags + "</div>" if tags else ""}
+              </a>'''
+
+          if not cards_html:
+            cards_html = '<div class="empty">暂无报告</div>'
+          else:
+            cards_html = f'<div class="reports-grid">{cards_html}</div>'
+
+          html = f'''<!DOCTYPE html>
+          <html lang="zh-CN">
+          <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Clawbot 研究报告</title>
+          <style>
+          * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+          body {{ font-family: "Segoe UI", system-ui, "PingFang SC", sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; min-height: 100vh; }}
+          .container {{ max-width: 860px; margin: 0 auto; padding: 60px 20px; }}
+          .header {{ margin-bottom: 48px; }}
+          .header h1 {{ font-size: 28px; font-weight: 800; color: #06d6d6; margin-bottom: 8px; letter-spacing: -0.5px; }}
+          .header p {{ color: #64748b; font-size: 15px; }}
+          .quick-links {{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }}
+          .quick-link {{ display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #94a3b8; text-decoration: none; font-size: 13px; transition: all 0.2s; }}
+          .quick-link:hover {{ border-color: #06d6d6; color: #06d6d6; }}
+          .section-title {{ font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #475569; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }}
+          .reports-grid {{ display: grid; gap: 14px; }}
+          .report-card {{ background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px 28px; text-decoration: none; color: inherit; display: block; transition: all 0.2s; position: relative; overflow: hidden; }}
+          .report-card::before {{ content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #06d6d6; opacity: 0; transition: opacity 0.2s; }}
+          .report-card:hover {{ border-color: #06d6d6; background: #243247; }}
+          .report-card:hover::before {{ opacity: 1; }}
+          .card-emoji {{ font-size: 28px; line-height: 1; }}
+          .card-name {{ font-size: 17px; font-weight: 700; color: #f1f5f9; margin: 10px 0 6px; }}
+          .card-desc {{ font-size: 13px; color: #64748b; }}
+          .card-files {{ margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }}
+          .file-tag {{ font-size: 11px; padding: 3px 9px; border-radius: 5px; background: #0f172a; color: #475569; border: 1px solid #1e3a5f; }}
+          .file-tag.html {{ color: #38bdf8; border-color: #1e3a5f; }}
+          .file-tag.md {{ color: #a78bfa; border-color: #312e81; }}
+          .empty {{ text-align: center; padding: 60px 0; color: #475569; }}
+          .footer {{ margin-top: 60px; padding-top: 24px; border-top: 1px solid #1e293b; font-size: 12px; color: #334155; display: flex; justify-content: space-between; align-items: center; }}
+          .footer a {{ color: #475569; text-decoration: none; }}
+          .footer a:hover {{ color: #06d6d6; }}
+          </style>
+          </head>
+          <body>
+          <div class="container">
+            <div class="header">
+              <h1>🦀 Clawbot 研究报告</h1>
+              <p>AI、3DGS 及相关领域的持续跟踪研究</p>
+              <div class="quick-links">
+                {quick_links_html}
+              </div>
+            </div>
+            <div class="section-title">报告目录</div>
+            {cards_html}
+            <div class="footer">
+              <span>rocman/clawbot-playground · pages 分支</span>
+              <a href="https://github.com/rocman/clawbot-playground/tree/pages" target="_blank">查看源码 →</a>
+            </div>
+          </div>
+          </body>
+          </html>'''
+
+          # 去除多余缩进
+          lines = html.split('\n')
+          cleaned = '\n'.join(l[10:] if l.startswith('          ') else l for l in lines)
+          with open('index.html', 'w') as f:
+            f.write(cleaned)
+          print("index.html generated")
+          PYEOF
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && echo "No changes" || \
+            git commit -m "chore(pages): 自动更新目录 index.html [skip ci]" && git push
