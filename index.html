@@ -26,13 +26,18 @@ body {
 }
 .header p { color: #64748b; font-size: 15px; }
 
-/* Manifesto link */
-.manifesto-link {
+/* Quick links (root htmls) */
+.quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.quick-link {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-  padding: 8px 16px;
+  gap: 6px;
+  padding: 7px 14px;
   background: #1e293b;
   border: 1px solid #334155;
   border-radius: 8px;
@@ -41,7 +46,7 @@ body {
   font-size: 13px;
   transition: all 0.2s;
 }
-.manifesto-link:hover { border-color: #06d6d6; color: #06d6d6; }
+.quick-link:hover { border-color: #06d6d6; color: #06d6d6; }
 
 /* Section */
 .section-title {
@@ -56,10 +61,7 @@ body {
 }
 
 /* Report cards */
-.reports-grid {
-  display: grid;
-  gap: 14px;
-}
+.reports-grid { display: grid; gap: 14px; }
 .report-card {
   background: #1e293b;
   border: 1px solid #334155;
@@ -83,33 +85,18 @@ body {
 }
 .report-card:hover { border-color: #06d6d6; background: #243247; }
 .report-card:hover::before { opacity: 1; }
-
 .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .card-emoji { font-size: 28px; line-height: 1; }
 .card-meta { font-size: 12px; color: #475569; text-align: right; white-space: nowrap; }
-.card-name {
-  font-size: 17px;
-  font-weight: 700;
-  color: #f1f5f9;
-  margin: 10px 0 6px;
-}
+.card-name { font-size: 17px; font-weight: 700; color: #f1f5f9; margin: 10px 0 6px; }
 .card-desc { font-size: 13px; color: #64748b; }
-.card-files {
-  margin-top: 14px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
+.card-files { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
 .file-tag {
-  font-size: 11px;
-  padding: 3px 9px;
-  border-radius: 5px;
-  background: #0f172a;
-  color: #475569;
-  border: 1px solid #1e3a5f;
+  font-size: 11px; padding: 3px 9px; border-radius: 5px;
+  background: #0f172a; color: #475569; border: 1px solid #1e3a5f;
 }
 .file-tag.html { color: #38bdf8; border-color: #1e3a5f; }
-.file-tag.md { color: #a78bfa; border-color: #312e81; }
+.file-tag.md   { color: #a78bfa; border-color: #312e81; }
 
 /* States */
 .loading { text-align: center; padding: 60px 0; color: #475569; }
@@ -122,27 +109,19 @@ body {
   margin: 0 auto 16px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
 .empty { text-align: center; padding: 60px 0; color: #475569; }
 .error {
-  background: #1e293b;
-  border: 1px solid #7f1d1d;
-  border-radius: 10px;
-  padding: 20px 24px;
-  color: #fca5a5;
-  font-size: 14px;
+  background: #1e293b; border: 1px solid #7f1d1d;
+  border-radius: 10px; padding: 20px 24px;
+  color: #fca5a5; font-size: 14px;
 }
 
 /* Footer */
 .footer {
-  margin-top: 60px;
-  padding-top: 24px;
+  margin-top: 60px; padding-top: 24px;
   border-top: 1px solid #1e293b;
-  font-size: 12px;
-  color: #334155;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  font-size: 12px; color: #334155;
+  display: flex; justify-content: space-between; align-items: center;
 }
 .footer a { color: #475569; text-decoration: none; }
 .footer a:hover { color: #06d6d6; }
@@ -153,7 +132,7 @@ body {
   <div class="header">
     <h1>🦀 Clawbot 研究报告</h1>
     <p>AI、3DGS 及相关领域的持续跟踪研究</p>
-    <a class="manifesto-link" href="manifesto.html">📄 Web Wide World 宣言 →</a>
+    <div id="quick-links-container" class="quick-links"></div>
   </div>
 
   <div class="section-title">报告目录</div>
@@ -171,20 +150,20 @@ body {
 </div>
 
 <script>
-const REPO = 'rocman/clawbot-playground';
+const REPO   = 'rocman/clawbot-playground';
 const BRANCH = 'pages';
-const API = `https://api.github.com/repos/${REPO}/contents`;
+const API    = `https://api.github.com/repos/${REPO}/contents`;
 
-// 从目录名推断展示名称
+// 根目录 html 文件的展示名映射
+const ROOT_HTML_LABELS = {
+  'manifesto.html': { label: 'Web Wide World 宣言', emoji: '📄' },
+  'report.html':    { label: '领域资讯跟进报告',     emoji: '📊' },
+};
+
 function inferLabel(dirName) {
   const map = {
-    '3dgs': '3DGS',
-    'consumer': '消费应用',
-    'ai': 'AI',
-    'apps': '应用',
-    'games': '游戏',
-    'world': '世界模型',
-    'openclaw': 'OpenClaw',
+    '3dgs': '3DGS', 'consumer': '消费应用', 'ai': 'AI',
+    'apps': '应用', 'games': '游戏', 'world': '世界模型', 'openclaw': 'OpenClaw',
   };
   return dirName
     .replace(/[-_]/g, ' ')
@@ -194,10 +173,10 @@ function inferLabel(dirName) {
 }
 
 function inferEmoji(dirName) {
-  if (/3dgs/i.test(dirName)) return '🛍️';
-  if (/game/i.test(dirName)) return '🎮';
-  if (/app/i.test(dirName)) return '📱';
-  if (/world/i.test(dirName)) return '🌐';
+  if (/3dgs/i.test(dirName))    return '🛍️';
+  if (/game/i.test(dirName))    return '🎮';
+  if (/app/i.test(dirName))     return '📱';
+  if (/world/i.test(dirName))   return '🌐';
   if (/openclaw/i.test(dirName)) return '🦀';
   return '📊';
 }
@@ -208,19 +187,33 @@ async function fetchJSON(url) {
   return res.json();
 }
 
-async function loadReports() {
-  const container = document.getElementById('reports-container');
-  try {
-    // 1. 列出 reports/ 下的子目录
-    const entries = await fetchJSON(`${API}/reports?ref=${BRANCH}`);
-    const dirs = entries.filter(e => e.type === 'dir');
+async function loadAll() {
+  const quickContainer   = document.getElementById('quick-links-container');
+  const reportsContainer = document.getElementById('reports-container');
 
+  try {
+    // 同时拉取根目录 + reports 目录
+    const [rootEntries, reportEntries] = await Promise.all([
+      fetchJSON(`${API}?ref=${BRANCH}`),
+      fetchJSON(`${API}/reports?ref=${BRANCH}`),
+    ]);
+
+    // ── 根目录 html → 快捷入口 ──
+    const rootHtmls = rootEntries.filter(e => e.type === 'file' && e.name.endsWith('.html') && e.name !== 'index.html');
+    if (rootHtmls.length > 0) {
+      quickContainer.innerHTML = rootHtmls.map(f => {
+        const info = ROOT_HTML_LABELS[f.name] || { label: f.name.replace('.html', ''), emoji: '🔗' };
+        return `<a class="quick-link" href="${f.name}">${info.emoji} ${info.label} →</a>`;
+      }).join('');
+    }
+
+    // ── reports/ 子目录 → 报告卡片 ──
+    const dirs = reportEntries.filter(e => e.type === 'dir');
     if (dirs.length === 0) {
-      container.innerHTML = '<div class="empty">暂无报告</div>';
+      reportsContainer.innerHTML = '<div class="empty">暂无报告</div>';
       return;
     }
 
-    // 2. 并发拉取每个子目录的文件列表
     const dirDetails = await Promise.all(
       dirs.map(async dir => {
         const files = await fetchJSON(`${API}/reports/${dir.name}?ref=${BRANCH}`);
@@ -228,52 +221,39 @@ async function loadReports() {
       })
     );
 
-    // 3. 渲染卡片
-    const html = dirDetails.map(({ dir, files }) => {
-      const fileNames = files.map(f => f.name);
-      const hasHtml = fileNames.includes('report.html');
-      const hasMd   = fileNames.includes('report.md');
+    reportsContainer.innerHTML = '<div class="reports-grid">' + dirDetails.map(({ dir, files }) => {
+      const fileNames  = files.map(f => f.name);
+      const hasHtml    = fileNames.includes('report.html');
+      const hasMd      = fileNames.includes('report.md');
       const hasSummary = fileNames.includes('executive-summary.md');
-
-      const label = inferLabel(dir.name);
-      const emoji = inferEmoji(dir.name);
-      const href  = hasHtml ? `reports/${dir.name}/report.html` : `reports/${dir.name}/report.md`;
-
-      // 从目录名提取日期
-      const dateMatch = dir.name.match(/(\d{4})$/);
-      const year = dateMatch ? dateMatch[1] : '';
-
-      const fileTags = [
+      const href       = hasHtml ? `reports/${dir.name}/report.html` : `reports/${dir.name}/report.md`;
+      const fileTags   = [
         hasHtml    ? '<span class="file-tag html">report.html</span>' : '',
-        hasMd      ? '<span class="file-tag md">report.md</span>' : '',
+        hasMd      ? '<span class="file-tag md">report.md</span>'     : '',
         hasSummary ? '<span class="file-tag md">executive-summary.md</span>' : '',
       ].filter(Boolean).join('');
 
       return `
         <a class="report-card" href="${href}">
           <div class="card-top">
-            <span class="card-emoji">${emoji}</span>
-            <span class="card-meta">${dir.name}${year ? '' : ''}</span>
+            <span class="card-emoji">${inferEmoji(dir.name)}</span>
           </div>
-          <div class="card-name">${label}</div>
+          <div class="card-name">${inferLabel(dir.name)}</div>
           <div class="card-desc">${dir.name}</div>
           ${fileTags ? `<div class="card-files">${fileTags}</div>` : ''}
         </a>`;
-    }).join('');
-
-    container.innerHTML = `<div class="reports-grid">${html}</div>`;
+    }).join('') + '</div>';
 
   } catch (err) {
-    container.innerHTML = `
+    reportsContainer.innerHTML = `
       <div class="error">
-        <strong>加载失败</strong><br>
-        ${err.message}<br><br>
+        <strong>加载失败</strong><br>${err.message}<br><br>
         <small>可能是 GitHub API 限速，稍后刷新试试。</small>
       </div>`;
   }
 }
 
-loadReports();
+loadAll();
 </script>
 </body>
 </html>
