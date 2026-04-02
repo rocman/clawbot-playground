@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Wide World 宣言</title>
+<meta name="description" content="我们相信数字世界应该是开放的、互联的、属于所有人的。Web Wide World 是为 3D 数字世界构建的开放协议。">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0e1a;--bg2:#16142a;
+  --text:#e8e6f4;--text2:#8e8cb0;--text3:#c4c2de;
+  --primary:#7c6fe8;--border:rgba(255,255,255,0.07);
+  --max:660px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.9;font-size:17px;
+  -webkit-font-smoothing:antialiased}
+
+#progress{position:fixed;top:0;left:0;height:2px;background:var(--primary);width:0%;z-index:100}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:99;padding:0 24px;height:52px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(15,14,26,0.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border)}
+.nav-brand{font-size:13px;font-weight:700;color:var(--primary);letter-spacing:.5px}
+.nav-link{font-size:12px;color:var(--text2);text-decoration:none;
+  border:1px solid var(--border);padding:5px 14px;border-radius:20px;transition:all .2s}
+.nav-link:hover{color:var(--text);border-color:rgba(124,111,232,.4)}
+
+main{max-width:var(--max);margin:0 auto;padding:120px 24px 100px}
+
+/* 顶部标识 */
+.manifesto-label{font-size:11px;font-weight:700;letter-spacing:.5px;
+  color:var(--primary);margin-bottom:32px;
+  display:block;border-bottom:1px solid rgba(124,111,232,.25);padding-bottom:10px}
+
+/* 宣言标题 */
+h1{font-size:clamp(30px,6vw,46px);font-weight:900;line-height:1.15;
+  color:#fff;margin-bottom:48px;letter-spacing:0}
+
+/* 信条列表 */
+.beliefs{list-style:none;margin:0 0 56px;padding:0;border-top:1px solid var(--border)}
+.beliefs li{padding:22px 0 22px 40px;border-bottom:1px solid var(--border);
+  position:relative;font-size:18px;font-weight:600;color:#fff;line-height:1.5}
+.beliefs li::before{content:attr(data-n);position:absolute;left:0;top:24px;
+  font-size:11px;font-weight:700;color:var(--primary)}
+.beliefs li span{color:var(--text3);font-size:15px;font-weight:400;
+  display:block;margin-top:6px;line-height:1.7;
+  width:100%;word-break:normal;overflow-wrap:break-word}
+
+/* 正文段落 */
+.body-text{margin-bottom:56px}
+.body-text p{margin-bottom:1.5em;color:var(--text3);font-size:16px}
+.body-text strong{color:var(--text);font-weight:600}
+
+h2{font-size:18px;font-weight:700;letter-spacing:.5px;
+  color:var(--primary);margin:3em 0 1.2em;
+  display:flex;align-items:center;gap:10px}
+h2::after{content:'';flex:1;height:1px;background:var(--border)}
+
+hr{border:none;border-top:1px solid var(--border);margin:2.4em 0}
+
+.callout{background:rgba(124,111,232,.06);border-left:3px solid var(--primary);
+  padding:18px 22px;margin:1.8em 0;border-radius:0 10px 10px 0}
+.callout p{margin:0;color:var(--text);font-size:16px;line-height:1.8;font-style:italic}
+
+.body-text ul{list-style:none;padding:0;margin:1em 0 1.6em}
+.body-text ul li{padding:9px 0 9px 18px;position:relative;
+  color:var(--text3);font-size:15px;border-bottom:1px solid var(--border)}
+.body-text ul li:last-child{border-bottom:none}
+.body-text ul li::before{content:'';position:absolute;left:0;top:19px;
+  width:5px;height:5px;border-radius:50%;background:var(--primary);opacity:.7}
+
+.cta{margin-top:48px;padding:32px;
+  border:1px solid rgba(124,111,232,.2);border-radius:16px;text-align:center;
+  background:rgba(124,111,232,.04)}
+.cta p{font-size:14px;color:var(--text2);margin-bottom:16px}
+.cta a.btn{display:inline-block;background:var(--primary);color:#fff;
+  font-size:14px;font-weight:700;padding:11px 30px;border-radius:24px;
+  text-decoration:none;letter-spacing:.3px;transition:opacity .2s}
+/* 演示场景列表 */
+.demo-list{margin:20px 0 28px;display:flex;flex-direction:column;gap:16px}
+.demo-item{background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:14px;padding:20px 22px}
+.demo-name{font-size:15px;font-weight:700;color:#fff;margin-bottom:12px}
+.demo-perspectives{display:flex;flex-direction:column;gap:8px}
+.demo-row{display:flex;gap:10px;align-items:baseline}
+.demo-role{font-size:11px;font-weight:700;color:var(--primary);
+  opacity:.8;min-width:44px;flex-shrink:0;padding-top:1px}
+.demo-desc{font-size:13px;color:var(--text2);line-height:1.75}
+
+.cta a.btn:hover{opacity:.85}
+.cta .sub{font-size:12px;color:var(--text2);margin-top:12px;margin-bottom:0;line-height:1.8}
+
+/* 创作者卡片 */
+.creator-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:24px 0 28px}
+.creator-card{background:rgba(124,111,232,.06);border:1px solid rgba(124,111,232,.18);
+  border-radius:14px;padding:22px 20px;position:relative;overflow:hidden;
+  transition:border-color .2s,background .2s}
+.creator-card:hover{background:rgba(124,111,232,.1);border-color:rgba(124,111,232,.35)}
+.creator-icon{font-size:22px;color:var(--primary);margin-bottom:10px;opacity:.6}
+.creator-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:8px;line-height:1.4}
+.creator-body{font-size:13px;color:var(--text2);line-height:1.75}
+@media(max-width:520px){.creator-grid{grid-template-columns:1fr}}
+
+.sign{margin-top:56px;padding-top:28px;border-top:1px solid var(--border);
+  font-size:13px;color:var(--text2);line-height:2}
+
+a{color:var(--primary);text-decoration:none}
+a:hover{text-decoration:underline}
+
+@media(max-width:600px){main{padding:96px 18px 80px}.beliefs li{font-size:16px}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<nav>
+  <span class="nav-brand">Web Wide World</span>
+  <a class="nav-link" href="https://github.com/nobody-and-everybody/web-wide-world" target="_blank" rel="noopener">GitHub →</a>
+</nav>
+
+<main>
+
+  <span class="manifesto-label">「创造一个数字世界，让所有人的努力可以连接，而不是相互竞争」</span>
+
+  <h1>数字世界应该<br>属于所有人</h1>
+
+  <!-- 信条 -->
+  <ul class="beliefs">
+    <li data-n="01">数字世界不应该是孤岛
+      <span>今天的数字世界——游戏、元宇宙、数字孪生——彼此隔绝，用户无法跨越，资产无法流通，体验无法连贯。这不是技术的限制，是选择的结果。我们选择不同的路。</span>
+    </li>
+    <li data-n="02">没有任何一家公司应该拥有这个世界
+      <span>一个真正宏大的数字世界，无法由任何单一企业独立建造和维持。它需要无数参与者各自投入、共同生长——就像今天的互联网，没有人拥有它，但所有人都在建造它。</span>
+    </li>
+    <li data-n="03">开放协议是唯一可行的基础
+      <span>1989 年，Tim Berners-Lee 用 HTTP、HTML 和 URL 打破了信息孤岛。今天，数字世界面临同样的困境，需要同样的答案：一套开放的协议，让任何人都可以建造场所，让任何场所都可以互相连接。</span>
+    </li>
+    <li data-n="04">时机已经到来
+      <span>三件事同时成熟了：3DGS 让任何人都能用手机生成高保真三维场景；AIGC 让内容创作的规模和速度不再是瓶颈；AI 让场景里的角色和环境真正「活」起来。构建这个世界的技术已经就位，缺的只是让所有努力连接起来的胶水。</span>
+    </li>
+  </ul>
+
+  <!-- 我们在做什么 -->
+  <div class="body-text">
+    <h2>我们在做什么</h2>
+
+    <p>我们说的数字世界，不是与现实隔绝的幻象——它映射现实，联动现实，并将成为现实的一部分。</p>
+
+    <p>Web Wide World 是一个开放协议项目，目标是为 3D 数字世界定义一套共享的标准——让独立建造的场所可以互联，让用户的身份和资产可以自由穿行，让任何规模的参与者都能成为这个世界的一部分。</p>
+
+    <p>协议的核心思想只有一句话：<strong>任何人都可以建造一个「场所」，任何场所都可以和其他场所连接，用户可以自由穿行于不同场所之间。</strong></p>
+
+    <p>就像今天的网页——任何人都可以建站，任何网站都可以互相链接，用户带着同一个浏览器走遍整个互联网。Web Wide World 要做的，是把这件事延伸到三维的、可交互的、有人居住的数字空间里。</p>
+
+    <div class="callout"><p>「nobody and everybody」——没有人拥有这个协议，所有人都可以参与建造。</p></div>
+
+    <h2>它是什么样的</h2>
+
+    <p>想象这样的场景：</p>
+
+    <ul>
+      <li>你在游戏里接了一个任务，在地图上完成打卡，在电商平台领取奖励——三个场所属于不同的公司，但任务是同一个。</li>
+      <li>你在品牌的数字展厅里试穿一件外套，直接点击下单——展厅、支付、物流各属一方，但体验是连贯的。</li>
+      <li>你在一座数字城市里认识了一个人，下次在另一个场所里，你们还是朋友。</li>
+    </ul>
+
+    <p>这不是科幻。这是协议设计的问题。</p>
+
+    <h2>面向人均创作者的时代</h2>
+
+    <p>在 AI 的加持下，创作一个数字场所的门槛正在接近零。我们相信，创作者不应该只是这个世界的少数参与者——在未来，每一个人都可以成为建造者。</p>
+
+    <p>Web Wide World 将探索方案并落地以下在现有任何平台尚不提供的四件事：</p>
+
+    <div class="creator-grid">
+      <div class="creator-card">
+        <div class="creator-icon">⬡</div>
+        <div class="creator-title">真正的所有权</div>
+        <div class="creator-body">你建造的场所和资产归你，不归平台。协议保障创作者对自己内容的控制权，平台无法单方面剥夺或迁移。</div>
+      </div>
+      <div class="creator-card">
+        <div class="creator-icon">⬡</div>
+        <div class="creator-title">内容自由流通</div>
+        <div class="creator-body">你的场所接入协议网络，其他场所可以引用你的资产，你的内容不被围墙锁住——就像任何网页都可以被链接一样。</div>
+      </div>
+      <div class="creator-card">
+        <div class="creator-icon">⬡</div>
+        <div class="creator-title">AI 让创作触手可及</div>
+        <div class="creator-body">3DGS 加 AIGC，让「拍几张照片生成一个三维场所」成为现实。AI 驱动角色和环境，让场所真正活起来——不需要专业团队，一个人就能做到。</div>
+      </div>
+      <div class="creator-card">
+        <div class="creator-icon">⬡</div>
+        <div class="creator-title">跨场所经济</div>
+        <div class="creator-body">你的场所加入协议网络的那一刻，就天然获得了与其他所有场所互通的能力。用户从其他场所带着身份和资产走进来，你不需要从零开始积累流量。</div>
+      </div>
+      <div class="creator-card">
+        <div class="creator-icon">⬡</div>
+        <div class="creator-title">AI 编排，让场所有灵魂</div>
+        <div class="creator-body">创作者不再需要预判每一个用户行为、写死每一条交互脚本。只需定义角色的性格、目标和世界的规则，AI 在运行时负责所有决策。创作的重心从「设计所有可能」转移到「定义世界的灵魂」——这是导演和编剧的工作，不是程序员的工作。</div>
+      </div>
+    </div>
+
+    <p>这五件事拼在一起，意味着：<strong>任何人，都可以在这个数字世界里建造属于自己的一角，并让它成为整个世界的一部分。</strong></p>
+
+    <h2>面向经营者的新商业形态</h2>
+
+    <p>数字世界不只是一个更好的展示窗口——它是一种新的商业组织形式。WWW 协议让经营者之间的关系从「竞争平台流量」变成「共同构建空间」。</p>
+
+    <div class="creator-grid">
+      <div class="creator-card">
+        <div class="creator-icon">⬡</div>
+        <div class="creator-title">场景嵌套</div>
+        <div class="creator-body">一个商圈可以由数十家独立店铺组成，每家独立开发、独立经营、独立接入——但对用户而言是一个连贯的空间。现实里需要几年才能招商落地的商业综合体，在数字世界里可以从第一家开始，逐步生长。</div>
+      </div>
+      <div class="creator-card">
+        <div class="creator-icon">⬡</div>
+        <div class="creator-title">业务组合</div>
+        <div class="creator-body">任何服务都可以以任意形式驻场：品牌 IP 的 NPC、限时快闪、演唱会、联名活动、游戏玩法……经营者不需要重新建造场所，只需把自己的业务接入已有的空间。场所是基础设施，业务是插件。</div>
+      </div>
+    </div>
+
+    <div class="callout"><p>这不是平台招商，而是协议组合。参与者越多，每个场所的价值越高——这是网络效应，不是零和竞争。</p></div>
+
+    <h2>我们已经在哪里</h2>
+
+    <p>v2 已经上线，包含七个各有侧重的演示场景：<a href="https://web-wide-world.space/v2" target="_blank" rel="noopener">web-wide-world.space/v2</a></p>
+
+    <div class="demo-list">
+      <div class="demo-item">
+        <div class="demo-name">二次元街区</div>
+        <div class="demo-perspectives">
+          <div class="demo-row"><span class="demo-role">创作者</span><span class="demo-desc">建一个数字场所，就等于开了一家店——商业逻辑可以直接集成在空间里，不依附任何电商平台。</span></div>
+          <div class="demo-row"><span class="demo-role">经营者</span><span class="demo-desc">优惠券、预定、购买在沉浸式场景中自然发生，转化路径比任何 app 都短，用户在体验中完成消费决策。</span></div>
+          <div class="demo-row"><span class="demo-role">使用者</span><span class="demo-desc">逛街和购物融为一体，不是在列表里选商品，而是在空间里发现它。</span></div>
+        </div>
+      </div>
+      <div class="demo-item">
+        <div class="demo-name">欧洲古堡</div>
+        <div class="demo-perspectives">
+          <div class="demo-row"><span class="demo-role">创作者</span><span class="demo-desc">高氛围场景可以成为独立的体验产品——文旅、游戏 IP、文化机构，不再需要依附大平台发行。</span></div>
+          <div class="demo-row"><span class="demo-role">经营者</span><span class="demo-desc">数字场所作为独立产品售卖体验，不依赖线下到访，也不依赖平台分发流量。</span></div>
+          <div class="demo-row"><span class="demo-role">使用者</span><span class="demo-desc">无需下载游戏，无需购买设备，浏览器里就能获得游戏级的沉浸体验。</span></div>
+        </div>
+      </div>
+      <div class="demo-item">
+        <div class="demo-name">奥利奥</div>
+        <div class="demo-perspectives">
+          <div class="demo-row"><span class="demo-role">创作者</span><span class="demo-desc">现有 3D 游戏资产可以直接转录为数字场所，不需要重新制作——IP 进入数字世界的成本极低。</span></div>
+          <div class="demo-row"><span class="demo-role">经营者</span><span class="demo-desc">品牌用极低成本把已有资产转化为可交互空间，品牌曝光从「被动看」变成「主动走进去」。</span></div>
+          <div class="demo-row"><span class="demo-role">使用者</span><span class="demo-desc">品牌不再只是 banner 广告，而是一个能走进去、能玩的地方。</span></div>
+        </div>
+      </div>
+      <div class="demo-item">
+        <div class="demo-name">乡村土路</div>
+        <div class="demo-perspectives">
+          <div class="demo-row"><span class="demo-role">创作者</span><span class="demo-desc">大场景不再需要原生 App——浏览器可以承载 3A 级品质，触达用户的门槛大幅降低。</span></div>
+          <div class="demo-row"><span class="demo-role">经营者</span><span class="demo-desc">无需要求用户安装 App，任何链接都是入口，获客摩擦降到最低。</span></div>
+          <div class="demo-row"><span class="demo-role">使用者</span><span class="demo-desc">点开即进，质量不打折。</span></div>
+        </div>
+      </div>
+      <div class="demo-item">
+        <div class="demo-name">罗马</div>
+        <div class="demo-perspectives">
+          <div class="demo-row"><span class="demo-role">创作者</span><span class="demo-desc">9 万平方米的场景尺度，对标商场、商圈、校区、园区、社区——中型尺度的现实空间第一次有了完整数字化的可能，每个空间单元都可以是独立的创作与经营主体。</span></div>
+          <div class="demo-row"><span class="demo-role">经营者</span><span class="demo-desc">一个数字商圈里的每家店铺可以独立接入、独立经营，共享同一个空间流量，不用各自从零积累。</span></div>
+          <div class="demo-row"><span class="demo-role">使用者</span><span class="demo-desc">你熟悉的现实场所，可以有一个数字映射，在里面提前探索、完成服务，甚至在现实到访之前就已经「去过」。</span></div>
+        </div>
+      </div>
+      <div class="demo-item">
+        <div class="demo-name">欧洲古堡 2</div>
+        <div class="demo-perspectives">
+          <div class="demo-row"><span class="demo-role">创作者</span><span class="demo-desc">场景技术在持续迭代——今天建造的内容随着协议升级自动受益，不会被淘汰，投入有长期价值。</span></div>
+          <div class="demo-row"><span class="demo-role">经营者</span><span class="demo-desc">平台的技术进步直接转化为场所体验的提升，无需重新开发。</span></div>
+          <div class="demo-row"><span class="demo-role">使用者</span><span class="demo-desc">体验上限随技术持续提高，同一个场所，每次进入都可以更好。</span></div>
+        </div>
+      </div>
+      <div class="demo-item">
+        <div class="demo-name">中式庭院</div>
+        <div class="demo-perspectives">
+          <div class="demo-row"><span class="demo-role">创作者</span><span class="demo-desc">内容去中心化分发——场所不依赖任何单一平台存活，协议保障内容的可访问性与自主权。同时，这里也是我们探索 AI 编排创作模式的先导：创作者定义角色的性格与规则，AI 在运行时决策每一次互动，场所因此真正「活」起来。</span></div>
+          <div class="demo-row"><span class="demo-role">经营者</span><span class="demo-desc">数据和资产的所有权在自己手里，平台无法单方面封禁或迁移，经营稳定性有底层保障。</span></div>
+          <div class="demo-row"><span class="demo-role">使用者</span><span class="demo-desc">不同场所之间无缝切换，身份和上下文跟着你走，不因换了一个空间而重新开始。</span></div>
+        </div>
+      </div>
+    </div>
+
+    <p>这些不是产品，是协议验证。每一个场景都在回答一个具体的问题——而答案，都是可以。</p>
+    <p>协议设计仍在进行中，现在是参与的最好时机。</p>
+
+    <div class="cta">
+      <p>协议开放，欢迎参与</p>
+      <a class="btn" href="https://github.com/nobody-and-everybody/web-wide-world" target="_blank" rel="noopener">前往 GitHub 参与讨论</a>
+      <p class="sub">
+        开发者 · 设计师 · 内容创作者 · 研究者<br>
+        任何愿意相信这件事值得做的人
+      </p>
+    </div>
+  </div>
+
+  <div class="sign">
+    Web Wide World<br>
+    2026 年 4 月
+  </div>
+
+</main>
+
+<script>
+window.addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  document.getElementById('progress').style.width=
+    (h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';
+});
+</script>
+</body>
+</html>

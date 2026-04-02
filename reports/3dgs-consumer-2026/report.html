@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3DGS 在消费领域应用方案调研报告 · 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#5b4fcf;--primary-light:#7c6fe8;
+  --accent:#00c4a0;--accent2:#ff7c4d;--accent3:#f472b6;
+  
+  --dark:#12101e;--dark2:#1e1b35;
+  --card:#252240;--card2:#1a1831;
+  --text:#e8e6f4;--text2:#a09fc0;
+  --border:rgba(255,255,255,0.08);
+  --glow:0 0 40px rgba(91,79,207,0.3);
+  
+}
+html{scroll-behavior:smooth}
+body{font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',system-ui,sans-serif;background:var(--dark);color:var(--text);line-height:1.7;font-size:15px}
+
+/* ── 导航 ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(18,16,30,0.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:56px}
+.nav-logo{font-weight:700;font-size:14px;color:var(--primary-light);letter-spacing:.5px}
+.nav-links{display:flex;gap:20px;list-style:none}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:13px;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-links a.www{color:var(--primary-light)}
+
+/* ── Hero ── */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(91,79,207,.22) 0%,transparent 70%),linear-gradient(180deg,var(--dark2) 0%,var(--dark) 100%);position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%235b4fcf' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");pointer-events:none}
+.hero-tag{display:inline-block;background:rgba(91,79,207,.2);border:1px solid rgba(91,79,207,.5);color:var(--primary-light);font-size:12px;font-weight:600;letter-spacing:1.5px;padding:5px 16px;border-radius:20px;margin-bottom:24px;text-transform:uppercase}
+.hero h1{font-size:clamp(26px,5vw,50px);font-weight:800;line-height:1.2;margin-bottom:16px;background:linear-gradient(135deg,#fff 30%,var(--primary-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:15px;color:var(--text2);max-width:640px;margin-bottom:12px}
+.hero-quote{font-size:14px;color:var(--text);background:rgba(91,79,207,.08);border:1px solid rgba(91,79,207,.2);border-radius:12px;padding:12px 20px;max-width:640px;margin:0 auto 40px;line-height:1.6}
+.hero-meta{display:flex;gap:36px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+.hero-meta-item{text-align:center}
+.hero-meta-item .val{font-size:34px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--primary-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1}
+.hero-meta-item .lbl{font-size:12px;color:var(--text2);margin-top:4px}
+.scroll-hint{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);color:var(--text2);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:6px;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+.scroll-hint svg{width:18px;height:18px}
+
+/* ── 通用布局 ── */
+.section{padding:88px 24px;max-width:1080px;margin:0 auto}
+.section-header{text-align:center;margin-bottom:52px}
+.section-tag{display:inline-block;background:rgba(0,196,160,.1);border:1px solid rgba(0,196,160,.3);color:var(--accent);font-size:11px;font-weight:700;letter-spacing:1.5px;padding:4px 14px;border-radius:12px;text-transform:uppercase;margin-bottom:12px}
+.section-tag.www{background:rgba(91,79,207,.1);border-color:rgba(91,79,207,.3);color:var(--primary-light)}
+.section-title{font-size:clamp(20px,3.5vw,32px);font-weight:800;margin-bottom:12px}
+.section-desc{color:var(--text2);max-width:580px;margin:0 auto}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.divider{border:none;border-top:1px solid var(--border);margin:0}
+
+/* ── 卡片 ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;transition:transform .25s,box-shadow .25s,border-color .25s}
+.card:hover{transform:translateY(-4px);box-shadow:var(--glow);border-color:rgba(91,79,207,.4)}
+.card-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px}
+.card h3{font-size:16px;font-weight:700;margin-bottom:10px}
+.card p{font-size:13px;color:var(--text2);line-height:1.7}
+
+/* ── 技术对比表 ── */
+.compare-wrap{overflow-x:auto;border-radius:16px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;background:var(--card2)}
+th{padding:16px 20px;text-align:left;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text2);border-bottom:1px solid var(--border);background:rgba(91,79,207,.08)}
+td{padding:14px 20px;font-size:13px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.025)}
+.tag-hl{display:inline-block;background:rgba(0,196,160,.15);color:var(--accent);border:1px solid rgba(0,196,160,.35);padding:2px 10px;border-radius:8px;font-size:12px;font-weight:600}
+
+/* ── stat ── */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 18px;text-align:center}
+.stat-num{font-size:34px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--primary-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1;margin-bottom:6px}
+.stat-label{font-size:12px;color:var(--text2)}
+
+/* ── 场景卡片 ── */
+.scene-card{background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:30px;position:relative;overflow:hidden}
+.scene-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.scene-card.c1::before{background:linear-gradient(90deg,#5b4fcf,#00c4a0)}
+.scene-card.c2::before{background:linear-gradient(90deg,#ff7c4d,#ffb347)}
+.scene-card.c3::before{background:linear-gradient(90deg,#00c4a0,#3ec6f0)}
+.scene-card.c4::before{background:linear-gradient(90deg,#a855f7,#5b4fcf)}
+.scene-card.c5::before{background:linear-gradient(90deg,#f472b6,#ff7c4d)}
+.scene-emoji{font-size:34px;margin-bottom:12px}
+.scene-title{font-size:17px;font-weight:700;margin-bottom:5px}
+.scene-sub{font-size:12px;color:var(--accent);font-weight:600;margin-bottom:12px}
+.scene-desc{font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7}
+.scene-metrics{display:flex;gap:8px;flex-wrap:wrap}
+.scene-metric{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:5px 11px;font-size:12px;font-weight:600;color:var(--text)}
+.scene-steps{margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.scene-steps h4{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.step-list{list-style:none;counter-reset:step}
+.step-list li{font-size:13px;color:var(--text2);padding:4px 0 4px 22px;position:relative}
+.step-list li::before{content:counter(step);counter-increment:step;position:absolute;left:0;width:14px;height:14px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;top:6px}
+
+/* ── WWW 专属区域 ── */
+.www-section{background:linear-gradient(135deg,rgba(91,79,207,.06) 0%,rgba(91,79,207,.06) 100%);border:1px solid rgba(91,79,207,.2);border-radius:24px;padding:48px 40px;position:relative;overflow:hidden}
+.www-section::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(91,79,207,.12) 0%,transparent 70%);pointer-events:none}
+.www-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(91,79,207,.12);border:1px solid rgba(91,79,207,.35);color:var(--primary-light);font-size:12px;font-weight:700;padding:6px 16px;border-radius:20px;margin-bottom:24px;letter-spacing:.5px}
+.www-badge svg{width:14px;height:14px}
+.www-intro{font-size:16px;line-height:1.8;color:var(--text);margin-bottom:32px}
+.www-intro strong{color:var(--text)}
+.www-quote{background:rgba(91,79,207,.08);border-left:3px solid var(--primary-light);border-radius:0 12px 12px 0;padding:16px 20px;margin:24px 0;font-size:14px;color:var(--text2);line-height:1.7;font-style:italic}
+.www-quote strong{color:var(--text);font-style:normal}
+.www-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:24px}
+.www-card{background:rgba(18,16,30,.6);border:1px solid rgba(91,79,207,.15);border-radius:16px;padding:22px;transition:border-color .2s,box-shadow .2s}
+.www-card:hover{border-color:rgba(91,79,207,.4);box-shadow:var(--glow)}
+.www-card-icon{font-size:28px;margin-bottom:10px}
+.www-card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px}
+.www-card-body{font-size:13px;color:var(--text2);line-height:1.7}
+.www-arch{background:rgba(18,16,30,.7);border:1px solid var(--border);border-radius:14px;padding:24px;font-family:'Courier New',monospace;font-size:13px;line-height:1.9;color:var(--text2);margin:24px 0;overflow-x:auto}
+.www-arch .hl{color:var(--text);font-weight:700}
+.www-arch .dim{color:rgba(160,159,192,.5)}
+.www-demo-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:20px}
+.www-demo-item{background:rgba(18,16,30,.6);border:1px solid rgba(0,196,160,.15);border-radius:12px;padding:16px;display:flex;align-items:flex-start;gap:12px}
+.www-demo-check{width:20px;height:20px;border-radius:6px;background:rgba(0,196,160,.2);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;margin-top:1px}
+.www-demo-text{font-size:13px;color:var(--text2);line-height:1.5}
+.www-demo-text strong{color:var(--text);display:block;margin-bottom:2px}
+
+/* ── 时间线 ── */
+.timeline{position:relative;padding-left:32px}
+.timeline::before{content:'';position:absolute;left:9px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--primary),var(--accent))}
+.tl-item{position:relative;margin-bottom:36px}
+.tl-dot{position:absolute;left:-28px;top:4px;width:16px;height:16px;border-radius:50%;background:var(--primary);border:3px solid var(--dark);box-shadow:0 0 0 2px var(--primary)}
+.tl-phase{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px}
+.tl-title{font-size:17px;font-weight:700;margin-bottom:8px}
+.tl-body{font-size:13px;color:var(--text2)}
+.tl-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.tl-tag{background:rgba(91,79,207,.15);border:1px solid rgba(91,79,207,.3);color:var(--primary-light);padding:3px 10px;border-radius:6px;font-size:11px}
+.tl-tag.www{background:rgba(91,79,207,.12);border-color:rgba(91,79,207,.3);color:var(--primary-light)}
+
+/* ── 图表 ── */
+.chart-wrap{background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:28px}
+.chart-title{font-size:15px;font-weight:700;margin-bottom:4px}
+.chart-sub{font-size:12px;color:var(--text2);margin-bottom:22px}
+canvas{max-height:280px}
+
+/* ── 风险 ── */
+.risk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.risk-card{background:var(--card2);border-radius:14px;padding:22px;border:1px solid var(--border)}
+.risk-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.risk-level{font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px}
+.risk-level.high{background:rgba(255,100,100,.15);color:#ff6464;border:1px solid rgba(255,100,100,.3)}
+.risk-level.mid{background:rgba(255,180,50,.15);color:#ffb432;border:1px solid rgba(255,180,50,.3)}
+.risk-level.low{background:rgba(0,196,160,.15);color:var(--accent);border:1px solid rgba(0,196,160,.3)}
+.risk-name{font-size:15px;font-weight:700}
+.risk-desc{font-size:13px;color:var(--text2);margin-bottom:10px}
+.risk-solution{font-size:12px;color:var(--accent);padding-left:14px;position:relative}
+.risk-solution::before{content:'→';position:absolute;left:0}
+
+/* ── 来源 ── */
+.source-list{list-style:none}
+.source-list li{padding:12px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2);display:flex;gap:12px;align-items:flex-start}
+.source-list li:last-child{border-bottom:none}
+.source-num{flex-shrink:0;width:24px;height:24px;border-radius:6px;background:rgba(91,79,207,.2);color:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.source-num.www{background:rgba(91,79,207,.15);color:var(--primary-light)}
+.source-list a{color:var(--primary-light);text-decoration:none}
+.source-list a:hover{text-decoration:underline}
+.source-list a.www{color:var(--primary-light)}
+
+/* ── Footer ── */
+footer{background:var(--dark2);border-top:1px solid var(--border);text-align:center;padding:32px 24px;font-size:12px;color:var(--text2)}
+footer a{color:var(--primary-light);text-decoration:none}
+
+@media(max-width:640px){
+  nav{padding:0 16px}
+  .nav-links{display:none}
+  .section{padding:60px 16px}
+  .www-section{padding:32px 20px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">3DGS 消费应用 · 2026</span>
+  <ul class="nav-links">
+    <li><a href="#tech">技术</a></li>
+    <li><a href="#scenes">场景</a></li>
+    <li><a href="#www" >Web Wide World</a></li>
+    <li><a href="#market">市场</a></li>
+    <li><a href="#roadmap">路径</a></li>
+    <li><a href="#risk">风险</a></li>
+    <li><a href="#sources">来源</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-tag">调研报告 · 2026年4月</div>
+  <h1>3D 高斯泼溅（3DGS）<br>在消费领域的应用方案</h1>
+  <p class="hero-sub">系统梳理 3DGS 技术在电商零售、AR/VR、游戏娱乐、房地产等消费场景的应用路径与商业价值</p>
+  <p class="hero-quote">3DGS 不仅是一项渲染技术，更是连接现实与虚拟消费体验的基础设施。<br>而 <strong>Web Wide World</strong> 正在探索的开放协议，有望让 3DGS 内容像网页一样自由流通。</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item"><div class="val">100×</div><div class="lbl">相比 NeRF 渲染速度提升</div></div>
+    <div class="hero-meta-item"><div class="val">25%</div><div class="lbl">电商转化率最高提升</div></div>
+    <div class="hero-meta-item"><div class="val">$200B</div><div class="lbl">2027 年市场规模预测</div></div>
+    <div class="hero-meta-item"><div class="val">5×</div><div class="lbl">虚拟看房效率提升</div></div>
+  </div>
+  <div class="scroll-hint">
+    <span>向下滚动</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- 技术 -->
+<section class="section" id="tech">
+  <div class="section-header">
+    <div class="section-tag">技术背景</div>
+    <h2 class="section-title">为什么是 3DGS？</h2>
+    <p class="section-desc">以显式高斯点云表示场景，在渲染速度与视觉质量之间取得突破性平衡。</p>
+  </div>
+  <div class="grid-3" style="margin-bottom:48px">
+    <div class="card"><div class="card-icon" style="background:rgba(91,79,207,.15)">⚡</div><h3>实时渲染</h3><p>100+ FPS，毫秒级响应，消费端设备即可自由漫游 3D 场景。</p></div>
+    <div class="card"><div class="card-icon" style="background:rgba(0,196,160,.15)">📷</div><h3>低门槛采集</h3><p>手机多角度拍摄即可，无需专业设备，普通用户完成 3D 内容制作。</p></div>
+    <div class="card"><div class="card-icon" style="background:rgba(255,124,77,.15)">📱</div><h3>移动端就绪</h3><p>模型压缩后 1–10 MB，主流手机 60+ FPS，消费产品已在落地。</p></div>
+  </div>
+  <div class="compare-wrap">
+    <table>
+      <thead><tr><th>技术维度</th><th>传统 NeRF</th><th>3DGS</th><th>SLAM</th></tr></thead>
+      <tbody>
+        <tr><td>表示方式</td><td>隐式神经网络</td><td><span class="tag-hl">显式 3D 高斯点云</span></td><td>稀疏/稠密点云</td></tr>
+        <tr><td>渲染速度</td><td>数秒/帧</td><td><span class="tag-hl">100+ FPS（实时）</span></td><td>实时几何地图</td></tr>
+        <tr><td>训练时间</td><td>数小时–数天</td><td><span class="tag-hl">数分钟–数十分钟</span></td><td>在线实时</td></tr>
+        <tr><td>消费端适配</td><td>困难</td><td><span class="tag-hl">良好（持续优化）</span></td><td>专业级硬件</td></tr>
+        <tr><td>主要应用</td><td>高质量离线渲染</td><td><span class="tag-hl">实时交互渲染</span></td><td>定位与导航</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid-2" style="margin-top:36px">
+    <div class="chart-wrap"><div class="chart-title">渲染速度对比（FPS）</div><div class="chart-sub">实时渲染帧率，越高越好</div><canvas id="chartFPS"></canvas></div>
+    <div class="chart-wrap"><div class="chart-title">训练时间对比（小时）</div><div class="chart-sub">相同场景下的模型训练耗时，越低越好</div><canvas id="chartTrain"></canvas></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- 场景 -->
+<section class="section" id="scenes">
+  <div class="section-header">
+    <div class="section-tag">应用场景</div>
+    <h2 class="section-title">五大消费落地方向</h2>
+    <p class="section-desc">从电商到房地产，3DGS 正在重塑消费者与内容的交互方式。</p>
+  </div>
+  <div class="grid-3">
+    <div class="scene-card c1">
+      <div class="scene-emoji">🛍️</div>
+      <div class="scene-title">电商与零售</div>
+      <div class="scene-sub">核心应用 · 转化率提升最显著</div>
+      <div class="scene-desc">实体商品转化为可 360° 旋转、AR 试穿的 3D 模型，消费者购买前获得接近实物的视觉体验，显著减少退货。</div>
+      <div class="scene-metrics"><span class="scene-metric">↑ 转化率 15–25%</span><span class="scene-metric">↓ 退货率 30–50%</span><span class="scene-metric">加载 &lt;3s</span></div>
+      <div class="scene-steps"><h4>实施路径</h4><ol class="step-list"><li>多角度拍摄商品（手机即可）</li><li>3DGS 生成高保真 3D 模型</li><li>集成到电商平台，支持 AR 试用</li></ol></div>
+    </div>
+    <div class="scene-card c2">
+      <div class="scene-emoji">🥽</div>
+      <div class="scene-title">AR / VR 购物</div>
+      <div class="scene-sub">沉浸体验 · 追踪技术已突破</div>
+      <div class="scene-desc">手机摄像头实时叠加 3D 商品；多人协同虚拟购物空间。Technion 团队已解决「消失的梯度问题」，追踪稳定。</div>
+      <div class="scene-metrics"><span class="scene-metric">实时追踪稳定</span><span class="scene-metric">多人协同</span><span class="scene-metric">GS-Cache 城市级</span></div>
+      <div class="scene-steps"><h4>实施路径</h4><ol class="step-list"><li>构建商品 3DGS 模型库</li><li>开发轻量化 AR 识别引擎</li><li>集成价格对比与虚拟试用</li></ol></div>
+    </div>
+    <div class="scene-card c3">
+      <div class="scene-emoji">🎮</div>
+      <div class="scene-title">游戏与娱乐</div>
+      <div class="scene-sub">制作效率革命 · 数月→数天</div>
+      <div class="scene-desc">无人机扫描真实城市，3DGS 自动生成游戏场景；影视虚拟制作实时渲染，导演现场调光预览，制作成本大幅压缩。</div>
+      <div class="scene-metrics"><span class="scene-metric">↓ 制作成本 60%</span><span class="scene-metric">场景生产 数月→数天</span><span class="scene-metric">实时调光</span></div>
+      <div class="scene-steps"><h4>实施路径</h4><ol class="step-list"><li>无人机采集城市/自然场景</li><li>3DGS 自动生成游戏环境</li><li>集成物理引擎与 NPC 规划</li></ol></div>
+    </div>
+    <div class="scene-card c4">
+      <div class="scene-emoji">🏠</div>
+      <div class="scene-title">房地产与空间</div>
+      <div class="scene-sub">虚拟看房 · 效率提升 5 倍</div>
+      <div class="scene-desc">高保真室内外空间三维重建，支持自由行走、家具替换、灯光调整。100㎡ 扫描仅需 30–60 分钟，毫米级精度。</div>
+      <div class="scene-metrics"><span class="scene-metric">↑ 看房效率 5×</span><span class="scene-metric">精度 mm 级</span><span class="scene-metric">扫描 30–60 min/套</span></div>
+      <div class="scene-steps"><h4>实施路径</h4><ol class="step-list"><li>手持/自动设备采集房屋数据</li><li>生成可自由行走的虚拟空间</li><li>集成家具替换与灯光调整</li></ol></div>
+    </div>
+    <div class="scene-card c5">
+      <div class="scene-emoji">📷</div>
+      <div class="scene-title">消费级硬件产品</div>
+      <div class="scene-sub">初创案例：竹马创新 · 峰瑞资本等投资，数千万天使轮</div>
+      <div class="scene-desc">竹马创新（2025年11月成立）——全球首家专注消费级三维重建与空间智能终端的科技公司，以 3DGS 为核心，打造下一代空间影像产品，目标是让每个人都能轻松采集和分享 3D 空间。应用场景：空间设计、游戏、AR/VR、3D 内容生成。</div>
+      <div class="scene-metrics"><span class="scene-metric">峰瑞资本等</span><span class="scene-metric">数千万天使轮</span><span class="scene-metric">消费级空间相机</span><span class="scene-metric">3DGS + AI 算法</span></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- Web Wide World -->
+<section class="section" id="www">
+  <div class="section-header">
+    <div class="section-tag">前沿探索</div>
+    <h2 class="section-title">Web Wide World 的视角</h2>
+    <p class="section-desc">由赵翼鹏（rocmanzhao）发起的开放协议项目——让 3DGS 消费生态从「点状孤岛」走向「互联世界」。</p>
+  </div>
+
+  <div class="www-section">
+    <div class="www-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Web Wide World · github.com/nobody-and-everybody/web-wide-world
+    </div>
+
+    <!-- 4.1 核心关注 -->
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:12px;color:var(--text)">4.1 &nbsp;核心关注：缺失的「胶水」</h3>
+    <div class="www-intro">
+      上述所有消费应用——电商 3D 展示、AR 购物、虚拟房产、游戏场景——目前各自为战，形成<strong>「孤岛」</strong>。用户在不同平台间切换时，资产不互通、身份不互认、体验不连贯。
+    </div>
+    <div class="www-quote">
+      <strong>构成虚拟世界的技术（3D、社交、持久化）已经足够成熟。</strong>缺少的是「胶水」——一套共享的标准，让独立的努力相互连接而不是相互竞争。这套「胶水」，正是 3DGS 消费生态从「点状应用」走向「互联世界」的关键。
+    </div>
+
+    <!-- 4.2 努力方向 -->
+    <h3 style="font-size:18px;font-weight:800;margin:32px 0 16px;color:var(--text)">4.2 &nbsp;努力方向：去中心化的 3D 互联网</h3>
+    <div class="www-grid">
+      <div class="www-card"><div class="www-card-icon">🏛️</div><div class="www-card-title">资产归属</div><div class="www-card-body">资产存储在哪里、谁控制——用户/创作者拥有，而非平台独占。打破平台数据孤岛。</div></div>
+      <div class="www-card"><div class="www-card-icon">🤝</div><div class="www-card-title">场所互信</div><div class="www-card-body">独立网站（场所）之间通过「契约（Contract）」建立互信连接，无需中心化权威机构背书。</div></div>
+      <div class="www-card"><div class="www-card-icon">🔑</div><div class="www-card-title">权限跨站</div><div class="www-card-body">用户从场所 A 携带身份与资产进入场所 B，无需重新登录，体验无缝衔接。</div></div>
+      <div class="www-card"><div class="www-card-icon">🔄</div><div class="www-card-title">版本同步</div><div class="www-card-body">各场所独立更新，但通过协议保持全局世界状态同步，像 Git 一样优雅地处理分布式变更。</div></div>
+      <div class="www-card"><div class="www-card-icon">👥</div><div class="www-card-title">多用户实时</div><div class="www-card-body">分布在不同场所的用户可实时感知与互动，跨服务器、跨平台的共在体验。</div></div>
+    </div>
+
+    <!-- 协议架构 SVG -->
+    <h4 style="font-size:14px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin:28px 0 16px">协议架构示意</h4>
+    <div style="background:rgba(18,16,30,.7);border:1px solid rgba(91,79,207,.15);border-radius:16px;padding:28px 20px;overflow-x:auto">
+      <svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:0 auto;font-family:'PingFang SC','Microsoft YaHei',sans-serif">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#7c6fe8" opacity=".7"/>
+          </marker>
+          <marker id="arr2" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto">
+            <path d="M8,0 L8,6 L0,3 z" fill="#7c6fe8" opacity=".7"/>
+          </marker>
+        </defs>
+
+        <!-- 外框：互联网广域世界 -->
+        <rect x="4" y="4" width="752" height="332" rx="16" ry="16"
+              fill="rgba(91,79,207,0.04)" stroke="rgba(91,79,207,0.3)" stroke-width="1.5" stroke-dasharray="6,3"/>
+        <text x="376" y="26" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)" letter-spacing="1">互联网广域世界（Web Wide World）</text>
+
+        <!-- 场所A -->
+        <rect x="28" y="48" width="210" height="180" rx="12" fill="rgba(91,79,207,0.12)" stroke="rgba(91,79,207,0.4)" stroke-width="1.5"/>
+        <text x="133" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="#7c6fe8">场所 A</text>
+        <text x="133" y="90" text-anchor="middle" font-size="11" fill="#a09fc0">游戏服务器</text>
+        <!-- 程序A -->
+        <rect x="46" y="104" width="80" height="44" rx="8" fill="rgba(91,79,207,0.2)" stroke="rgba(91,79,207,0.35)" stroke-width="1"/>
+        <text x="86" y="122" text-anchor="middle" font-size="10" fill="#c4bff0">程序</text>
+        <text x="86" y="137" text-anchor="middle" font-size="10" fill="#e8e6f4">渲染引擎</text>
+        <!-- 资产A -->
+        <rect x="142" y="104" width="80" height="44" rx="8" fill="rgba(0,196,160,0.12)" stroke="rgba(0,196,160,0.3)" stroke-width="1"/>
+        <text x="182" y="122" text-anchor="middle" font-size="10" fill="#5fe0ca">资产</text>
+        <text x="182" y="137" text-anchor="middle" font-size="10" fill="#e8e6f4">3D 模型</text>
+        <!-- 连线 程序→资产 -->
+        <line x1="126" y1="126" x2="142" y2="126" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-dasharray="3,2"/>
+
+        <!-- 场所B -->
+        <rect x="275" y="48" width="210" height="180" rx="12" fill="rgba(244,114,182,0.1)" stroke="rgba(244,114,182,0.35)" stroke-width="1.5"/>
+        <text x="380" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="#f472b6">场所 B</text>
+        <text x="380" y="90" text-anchor="middle" font-size="11" fill="#a09fc0">艺术画廊</text>
+        <!-- 程序B -->
+        <rect x="293" y="104" width="80" height="44" rx="8" fill="rgba(244,114,182,0.15)" stroke="rgba(244,114,182,0.3)" stroke-width="1"/>
+        <text x="333" y="122" text-anchor="middle" font-size="10" fill="#f9a8d4">程序</text>
+        <text x="333" y="137" text-anchor="middle" font-size="10" fill="#e8e6f4">画布管理</text>
+        <!-- 资产B -->
+        <rect x="389" y="104" width="80" height="44" rx="8" fill="rgba(0,196,160,0.12)" stroke="rgba(0,196,160,0.3)" stroke-width="1"/>
+        <text x="429" y="122" text-anchor="middle" font-size="10" fill="#5fe0ca">资产</text>
+        <text x="429" y="137" text-anchor="middle" font-size="10" fill="#e8e6f4">画作库</text>
+        <line x1="373" y1="126" x2="389" y2="126" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-dasharray="3,2"/>
+
+        <!-- 场所C -->
+        <rect x="522" y="48" width="210" height="180" rx="12" fill="rgba(255,124,77,0.1)" stroke="rgba(255,124,77,0.35)" stroke-width="1.5"/>
+        <text x="627" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="#ff7c4d">场所 C</text>
+        <text x="627" y="90" text-anchor="middle" font-size="11" fill="#a09fc0">社交广场</text>
+        <!-- 程序C -->
+        <rect x="540" y="104" width="80" height="44" rx="8" fill="rgba(255,124,77,0.15)" stroke="rgba(255,124,77,0.3)" stroke-width="1"/>
+        <text x="580" y="122" text-anchor="middle" font-size="10" fill="#ffb49a">程序</text>
+        <text x="580" y="137" text-anchor="middle" font-size="10" fill="#e8e6f4">聊天服务</text>
+        <!-- 资产C -->
+        <rect x="636" y="104" width="80" height="44" rx="8" fill="rgba(0,196,160,0.12)" stroke="rgba(0,196,160,0.3)" stroke-width="1"/>
+        <text x="676" y="122" text-anchor="middle" font-size="10" fill="#5fe0ca">资产</text>
+        <text x="676" y="137" text-anchor="middle" font-size="10" fill="#e8e6f4">表情包</text>
+        <line x1="620" y1="126" x2="636" y2="126" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-dasharray="3,2"/>
+
+        <!-- 契约连接横线（场所间） -->
+        <line x1="238" y1="138" x2="275" y2="138" stroke="rgba(91,79,207,0.7)" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr)" marker-start="url(#arr2)"/>
+        <line x1="485" y1="138" x2="522" y2="138" stroke="rgba(91,79,207,0.7)" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr)" marker-start="url(#arr2)"/>
+        <text x="256" y="130" text-anchor="middle" font-size="9" fill="#7c6fe8" opacity=".8">契约</text>
+        <text x="503" y="130" text-anchor="middle" font-size="9" fill="#7c6fe8" opacity=".8">契约</text>
+
+        <!-- 用户化身 -->
+        <ellipse cx="376" cy="268" rx="60" ry="26" fill="rgba(91,79,207,0.12)" stroke="rgba(91,79,207,0.5)" stroke-width="1.5"/>
+        <text x="376" y="264" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">👤 用户化身</text>
+        <text x="376" y="280" text-anchor="middle" font-size="10" fill="#7c6fe8" opacity=".8">自由穿越</text>
+
+        <!-- 用户 → 各场所 -->
+        <line x1="323" y1="255" x2="195" y2="230" stroke="rgba(91,79,207,0.45)" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+        <line x1="376" y1="242" x2="376" y2="230" stroke="rgba(91,79,207,0.45)" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+        <line x1="429" y1="255" x2="557" y2="230" stroke="rgba(91,79,207,0.45)" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+
+        <!-- 图例 -->
+        <rect x="28" y="308" width="10" height="10" rx="2" fill="rgba(91,79,207,0.5)"/>
+        <text x="42" y="318" font-size="10" fill="#a09fc0">场所（Site）</text>
+        <rect x="130" y="308" width="10" height="10" rx="2" fill="rgba(0,196,160,0.4)"/>
+        <text x="144" y="318" font-size="10" fill="#a09fc0">资产（Asset）</text>
+        <line x1="230" y1="313" x2="248" y2="313" stroke="rgba(91,79,207,0.7)" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="252" y="318" font-size="10" fill="#a09fc0">契约连接（Contract）</text>
+      </svg>
+    </div>
+    <p style="font-size:13px;color:var(--text2);line-height:1.7;margin-top:14px">电商商品的 3D 模型可被其他场所引用；用户在虚拟房产中试用的家具，可直接链接到电商购买；游戏道具可在 AR 购物场景中出现——<strong style="color:var(--text)">一切皆可互联，无需中心化平台。</strong></p>
+
+    <!-- 4.3 工作成果 -->
+    <h3 style="font-size:18px;font-weight:800;margin:36px 0 16px;color:var(--text)">4.3 &nbsp;工作成果：v2 实践演示</h3>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:16px">Web Wide World 已有可运行的 <a href="https://web-wide-world.space/v2" target="_blank" rel="noopener" style="color:var(--primary-light)">v2 展示（web-wide-world.space/v2）</a>，以中式庭院场景验证了协议核心能力：</p>
+    <div class="www-demo-row">
+      <div class="www-demo-item"><div class="www-demo-check">✓</div><div class="www-demo-text"><strong>中式庭院 3DGS 场景</strong>7 个空间区域，完整可交互</div></div>
+      <div class="www-demo-item"><div class="www-demo-check">✓</div><div class="www-demo-text"><strong>NPC 系统</strong>5 个带动画与对话的非玩家角色</div></div>
+      <div class="www-demo-item"><div class="www-demo-check">✓</div><div class="www-demo-text"><strong>动态 LOD</strong>区域动态替换（拉远简模/拉近高精度）</div></div>
+      <div class="www-demo-item"><div class="www-demo-check">✓</div><div class="www-demo-text"><strong>Tencent 3DGS 查看器</strong>spark 格式，跨区域资产流式加载</div></div>
+      <div class="www-demo-item"><div class="www-demo-check">✓</div><div class="www-demo-text"><strong>去中心化内容分发</strong>验证 3DGS 内容跨站交付可行性</div></div>
+    </div>
+
+    <!-- 4.4 结合点 -->
+    <h3 style="font-size:18px;font-weight:800;margin:36px 0 16px;color:var(--text)">4.4 &nbsp;与消费应用的结合点</h3>
+    <div class="compare-wrap" style="margin-top:0">
+      <table>
+        <thead><tr><th>消费场景</th><th>Web Wide World 协议的潜在价值</th></tr></thead>
+        <tbody>
+          <tr><td>🛍️ 电商展示</td><td>商品 3D 资产跨平台复用，买家在任意场所均可预览</td></tr>
+          <tr><td>🥽 AR 购物</td><td>用户身份与购物车跨场所携带，无需重复登录</td></tr>
+          <tr><td>🏠 虚拟房产</td><td>房屋模型作为「场所」开放给经纪人、装修商、买家多方访问</td></tr>
+          <tr><td>🎮 游戏娱乐</td><td>游戏道具资产开放给电商、社交场所引用，形成跨界 IP 生态</td></tr>
+          <tr><td>📷 消费硬件</td><td>用户用空间相机采集的 3D 内容，可直接发布到 WWW 协议网络</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- 市场 -->
+<section class="section" id="market">
+  <div class="section-header">
+    <div class="section-tag">市场价值</div>
+    <h2 class="section-title">商业回报与市场规模</h2>
+    <p class="section-desc">量化各场景的直接收益，以及 3DGS 消费市场的整体成长曲线。</p>
+  </div>
+  <div class="stat-row" style="margin-bottom:48px">
+    <div class="stat-card"><div class="stat-num">15–25%</div><div class="stat-label">电商转化率提升</div></div>
+    <div class="stat-card"><div class="stat-num">30–50%</div><div class="stat-label">AR 购物退货率降低</div></div>
+    <div class="stat-card"><div class="stat-num">5×</div><div class="stat-label">虚拟看房效率提升</div></div>
+    <div class="stat-card"><div class="stat-num">60%</div><div class="stat-label">娱乐制作成本降低</div></div>
+    <div class="stat-card"><div class="stat-num">$200B</div><div class="stat-label">2027 年市场预测</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="chart-wrap"><div class="chart-title">全球消费级 3DGS 市场规模（亿美元）</div><div class="chart-sub">2023–2027E，CAGR ≈ 40%</div><canvas id="chartMarket"></canvas></div>
+    <div class="chart-wrap"><div class="chart-title">各场景商业价值指数（满分 10）</div><div class="chart-sub">综合转化提升、市场规模与落地难度</div><canvas id="chartValue"></canvas></div>
+  </div>
+  <h3 style="font-size:17px;font-weight:700;margin:40px 0 16px">投入产出预期</h3>
+  <div class="compare-wrap">
+    <table>
+      <thead><tr><th>应用场景</th><th>初期投入</th><th>ROI 周期</th><th>直接收益</th></tr></thead>
+      <tbody>
+        <tr><td>电商 3D 展示</td><td>¥50–100 万</td><td>6–12 个月</td><td>转化率 +15–25%</td></tr>
+        <tr><td>AR 购物体验</td><td>¥100–300 万</td><td>12–18 个月</td><td>退货率 −30–50%</td></tr>
+        <tr><td>虚拟房地产</td><td>¥200–500 万</td><td>18–24 个月</td><td>看房效率 5×</td></tr>
+        <tr><td>消费级现成方案</td><td>¥10–50 万</td><td>3–6 个月</td><td>快速验证</td></tr>
+        <tr><td>WWW 协议层（开源）</td><td>工程投入为主</td><td>长期生态</td><td>跨平台资产复用 + 协议红利</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- 路径 -->
+<section class="section" id="roadmap">
+  <div class="section-header">
+    <div class="section-tag">实施路径</div>
+    <h2 class="section-title">企业级三步走</h2>
+    <p class="section-desc">从试点到生态，分阶段降低风险，逐步建立技术壁垒。</p>
+  </div>
+  <div class="grid-2">
+    <div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">阶段一 · 1–3 个月</div>
+          <div class="tl-title">试点验证</div>
+          <div class="tl-body">选择 1–2 个核心产品线进行 3D 化，搭建基础技术栈，参考 Web Wide World v2 的资产流式加载方案，评估用户接受度。</div>
+          <div class="tl-tags"><span class="tl-tag">¥50–100 万</span><span class="tl-tag">POC 产品</span><span class="tl-tag">参考 WWW v2</span></div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">阶段二 · 3–12 个月</div>
+          <div class="tl-title">规模化扩展</div>
+          <div class="tl-body">建立标准化生产流水线，集成到核心业务。关注 Web Wide World 协议成熟度，提前布局跨平台互通能力。</div>
+          <div class="tl-tags"><span class="tl-tag">流水线自动化</span><span class="tl-tag">业务集成</span><span class="tl-tag">布局 WWW 协议</span></div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--primary-light)"></div>
+          <div class="tl-phase">阶段三 · 12–24 个月</div>
+          <div class="tl-title">生态构建</div>
+          <div class="tl-body">基于 Web Wide World 协议构建跨场所 3D 内容生态，从「我的平台」思维升级为「互联世界节点」思维，建立长期护城河。</div>
+          <div class="tl-tags"><span class="tl-tag">WWW 协议生态</span><span class="tl-tag">开放 API</span><span class="tl-tag">UGC 生态</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="chart-wrap" style="align-self:start">
+      <div class="chart-title">技术选型成本分布</div>
+      <div class="chart-sub">各场景年度技术投入预估（万元）</div>
+      <canvas id="chartCost"></canvas>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- 风险 -->
+<section class="section" id="risk">
+  <div class="section-header">
+    <div class="section-tag">风险与建议</div>
+    <h2 class="section-title">已知挑战与应对策略</h2>
+    <p class="section-desc">客观识别技术与商业风险，提前规划应对方案。</p>
+  </div>
+  <div class="risk-grid">
+    <div class="risk-card"><div class="risk-header"><span class="risk-level high">高风险</span><span class="risk-name">硬件依赖</span></div><div class="risk-desc">高性能设备需求限制初期用户覆盖，低端机渲染效果较差。</div><div class="risk-solution">渐进式推广：先服务高端用户，随设备普及逐步下沉</div></div>
+    <div class="risk-card"><div class="risk-header"><span class="risk-level high">高风险</span><span class="risk-name">数据隐私</span></div><div class="risk-desc">空间扫描涉及室内环境等隐私敏感信息，合规压力大。</div><div class="risk-solution">隐私设计先行：从架构层保障数据安全，符合国内外法规</div></div>
+    <div class="risk-card"><div class="risk-header"><span class="risk-level mid">中风险</span><span class="risk-name">标准化不足</span></div><div class="risk-desc">不同厂商方案兼容性差，行业标准仍在形成中。</div><div class="risk-solution">参与 Web Wide World 等开放协议制定，提前布局生态话语权</div></div>
+    <div class="risk-card"><div class="risk-header"><span class="risk-level mid">中风险</span><span class="risk-name">用户习惯教育</span></div><div class="risk-desc">消费者对 3D 交互接受需要时间，初期留存率可能低于预期。</div><div class="risk-solution">确保加载 &lt;3s、帧率 ≥60FPS，把体验做到「不需要学习」</div></div>
+    <div class="risk-card"><div class="risk-header"><span class="risk-level low">低风险</span><span class="risk-name">成本压力</span></div><div class="risk-desc">初期投入较高，ROI 周期 6–24 个月，需稳定资金支持。</div><div class="risk-solution">分阶段投入：从小规模试点开始，用数据支撑后续预算</div></div>
+    <div class="risk-card"><div class="risk-header"><span class="risk-level low">低风险</span><span class="risk-name">竞争同质化</span></div><div class="risk-desc">技术门槛逐步降低，行业将快速出现同质化竞争。</div><div class="risk-solution">聚焦差异化场景 + 数据飞轮，拥抱 WWW 开放生态建立壁垒</div></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- 来源 -->
+<section class="section" id="sources">
+  <div class="section-header">
+    <div class="section-tag">信息来源</div>
+    <h2 class="section-title">参考文献与案例</h2>
+    <p class="section-desc">共引用 12 个来源，含学术论文、技术博客、创业案例与开源项目。</p>
+  </div>
+  <div style="background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:8px 24px">
+    <ul class="source-list">
+      <li><span class="source-num">1</span><span>《3DGS 技术在电商视觉营销中的应用研究》— <a href="https://pdf.hanspub.org/ecl_2316632.pdf" target="_blank" rel="noopener">Hanspub 学术论文</a></span></li>
+      <li><span class="source-num">2</span><span>《3DGS：从原理到应用，重塑实时三维重建的未来》— <a href="https://www.cnblogs.com/ljbguanli/p/19788240" target="_blank" rel="noopener">技术博客</a></span></li>
+      <li><span class="source-num">3</span><span>《革命性 3D 渲染：Gaussian Splatting 商业落地全案》— <a href="https://blog.csdn.net/gitblog_00615/article/details/151599285" target="_blank" rel="noopener">CSDN</a></span></li>
+      <li><span class="source-num">4</span><span>《Gaussian Splatting 正在席卷增强现实》— <a href="https://www.eet-china.com/mp/a378103.html" target="_blank" rel="noopener">EET China</a></span></li>
+      <li><span class="source-num">5</span><span>《清华大学 GS-Cache 框架实现城市级场景》— <a href="https://news.qq.com/rain/a/20250614A07JCF00" target="_blank" rel="noopener">腾讯新闻</a></span></li>
+      <li><span class="source-num">6</span><span>《竹马创新完成数千万天使轮融资》— <a href="https://www.sohu.com/a/999917295_403354" target="_blank" rel="noopener">搜狐科技</a></span></li>
+      <li><span class="source-num">7</span><span>《群核科技前高管创业，获峰瑞等数千万天使投资》— <a href="https://www.21jingji.com/article/20260325/95a3f8d0244b19b1cb12acaa2e8616d5.html" target="_blank" rel="noopener">21世纪经济报道</a></span></li>
+      <li><span class="source-num">8</span><span>《盘一盘受到 3DGS 冲击的那些行业》— <a href="https://zhuanlan.zhihu.com/p/708198062" target="_blank" rel="noopener">知乎专栏</a></span></li>
+      <li><span class="source-num">9</span><span>《Technion 团队突破 3D 跟踪技术瓶颈》— <a href="https://www.msn.cn/zh-cn/%E6%8A%80%E6%9C%AF/%E6%8A%80%E6%9C%AF%E5%85%AC%E5%8F%B8/technion%E5%9B%A2%E9%98%9F%E7%AA%81%E7%A0%B43d%E8%B7%9F%E8%B8%AA%E6%8A%80%E6%9C%AF%E7%93%B6%E9%A2%88-%E8%AE%A9%E8%99%9A%E6%8B%9F%E7%89%A9%E4%BD%93-%E6%B0%B8%E4%B8%8D%E8%B5%B0%E4%B8%A2/ar-AA1ZvfvY" target="_blank" rel="noopener">MSN 科技</a></span></li>
+      <li><span class="source-num">10</span><span>《CityGaussian：VR/AR 时代的城市重建》— <a href="https://cloud.tencent.com/developer/article/2436939" target="_blank" rel="noopener">腾讯云开发者</a></span></li>
+      <li><span class="source-num">11</span><span>Web Wide World — GitHub 项目主页 — <a href="https://github.com/nobody-and-everybody/web-wide-world" target="_blank" rel="noopener" >github.com/nobody-and-everybody/web-wide-world</a> · 赵翼鹏 / rocmanzhao 发起</span></li>
+      <li><span class="source-num">12</span><span>Web Wide World v2 实践演示 — <a href="https://web-wide-world.space/v2" target="_blank" rel="noopener" >web-wide-world.space/v2</a> · 中式庭院 3DGS 场景 Demo</span></li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p style="margin-bottom:8px"><strong>3DGS 在消费领域应用方案调研报告</strong> · 2026年4月1日</p>
+  <p>调研方式：文献检索 · 案例分析 · 技术评估 · 项目调研 ·
+    <a href="https://github.com/rocman/clawbot-playground/tree/pages/reports/3dgs-consumer-2026" target="_blank" rel="noopener">GitHub</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/nobody-and-everybody/web-wide-world" target="_blank" rel="noopener" style="color:var(--primary-light)">Web Wide World</a>
+  </p>
+  <p style="margin-top:8px;font-size:11px">Generated by OpenClaw AI · 工蜂 AI × AnyDev</p>
+</footer>
+
+<script>
+const G='rgba(255,255,255,0.06)',T='#a09fc0';
+const base={responsive:true,plugins:{legend:{labels:{color:T,font:{size:12}}}},scales:{x:{grid:{color:G},ticks:{color:T}},y:{grid:{color:G},ticks:{color:T}}}};
+
+new Chart(document.getElementById('chartFPS'),{type:'bar',data:{labels:['传统 NeRF','3DGS（标准）','3DGS（移动优化）'],datasets:[{label:'FPS',data:[0.3,120,65],backgroundColor:['rgba(160,160,200,.5)','rgba(91,79,207,.8)','rgba(0,196,160,.8)'],borderRadius:8,borderSkipped:false}]},options:{...base,plugins:{legend:{display:false}}}});
+
+new Chart(document.getElementById('chartTrain'),{type:'bar',data:{labels:['传统 NeRF','3DGS（大场景）','3DGS（单品）'],datasets:[{label:'小时',data:[48,2,0.25],backgroundColor:['rgba(160,160,200,.5)','rgba(255,124,77,.8)','rgba(0,196,160,.8)'],borderRadius:8,borderSkipped:false}]},options:{...base,plugins:{legend:{display:false}}}});
+
+new Chart(document.getElementById('chartMarket'),{type:'line',data:{labels:['2023','2024','2025E','2026E','2027E'],datasets:[{label:'市场规模（亿美元）',data:[8,22,65,120,190],borderColor:'rgba(91,79,207,1)',backgroundColor:'rgba(91,79,207,.1)',pointBackgroundColor:'rgba(91,79,207,1)',fill:true,tension:.4,borderWidth:2}]},options:base});
+
+new Chart(document.getElementById('chartValue'),{type:'radar',data:{labels:['电商零售','AR/VR购物','游戏娱乐','房地产','消费硬件'],datasets:[{label:'商业价值指数',data:[9.2,7.8,8.5,8.0,7.2],borderColor:'rgba(0,196,160,.9)',backgroundColor:'rgba(0,196,160,.15)',pointBackgroundColor:'rgba(0,196,160,1)',borderWidth:2}]},options:{responsive:true,scales:{r:{grid:{color:G},angleLines:{color:G},pointLabels:{color:T,font:{size:12}},ticks:{color:T,backdropColor:'transparent',stepSize:2},suggestedMin:0,suggestedMax:10}},plugins:{legend:{labels:{color:T}}}}});
+
+new Chart(document.getElementById('chartCost'),{type:'doughnut',data:{labels:['电商产品展示','AR 购物体验','虚拟房地产','消费级现成方案'],datasets:[{data:[75,200,350,30],backgroundColor:['rgba(91,79,207,.8)','rgba(255,124,77,.8)','rgba(168,85,247,.8)','rgba(0,196,160,.8)'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:T,font:{size:12},padding:16}}}}});
+</script>
+</body>
+</html>

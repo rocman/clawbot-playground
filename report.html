@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>领域资讯跟进报告</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, 'PingFang SC', sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+.container { max-width: 1060px; margin: 0 auto; padding: 40px 20px; }
+
+/* Header */
+h1 { color: #06d6d6; font-size: 26px; border-bottom: 1px solid #334155; padding-bottom: 12px; margin-bottom: 8px; }
+.subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 32px; }
+.badge { display: inline-block; background: #1e293b; border: 1px solid #334155; color: #64748b; font-size: 12px; padding: 3px 10px; border-radius: 12px; margin-left: 8px; }
+
+/* Section title */
+.sec-title { font-size: 19px; font-weight: 700; color: #fff; margin: 40px 0 16px; display: flex; align-items: center; gap: 10px; border-left: 4px solid #06d6d6; padding-left: 12px; }
+.sec-title span { color: #94a3b8; font-size: 14px; font-weight: 400; }
+
+/* Overview */
+.overview-bg { background: #1e293b; border-radius: 10px; padding: 22px 24px; margin-bottom: 24px; font-size: 15px; color: #cbd5e1; }
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 32px; }
+.stat-card { background: #1e293b; border-radius: 10px; padding: 18px 16px; text-align: center; }
+.stat-value { font-size: 28px; font-weight: 800; color: #06d6d6; }
+.stat-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+/* Grid cards */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.card-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px; }
+@media (max-width: 680px) { .card-grid-2 { grid-template-columns: 1fr; } }
+.card { background: #1e293b; border-radius: 10px; padding: 18px 20px; }
+.card-icon { font-size: 22px; margin-bottom: 8px; }
+.card h3 { font-size: 15px; font-weight: 700; color: #fff; margin: 0; }
+.card p { font-size: 13px; color: #94a3b8; margin: 8px 0; }
+.industry-card h3 { font-size: 16px; font-weight: 700; color: #fff; margin: 0; }
+.industry-card p { font-size: 14px; color: #94a3b8; margin: 8px 0; }
+.card-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 8px; margin-left: 6px; font-weight: 600; }
+.badge-green { background: #14532d; color: #86efac; }
+.badge-yellow { background: #713f12; color: #fde68a; }
+.badge-blue { background: #1e3a5f; color: #93c5fd; }
+.badge-cyan { background: #164e63; color: #67e8f9; }
+
+/* Tools */
+.tool-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 32px; }
+@media (max-width: 600px) { .tool-grid { grid-template-columns: 1fr; } }
+.tool-card { background: #1e293b; border-radius: 8px; padding: 16px 18px; }
+.tool-name { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.tool-lang { font-size: 11px; color: #64748b; background: #334155; padding: 2px 8px; border-radius: 6px; margin-left: 6px; }
+.tool-desc { font-size: 13px; color: #94a3b8; margin: 6px 0; }
+
+/* Industry */
+.industry-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
+.industry-card { background: #1e293b; border-radius: 10px; padding: 20px 22px; }
+.industry-card ul { padding-left: 0; list-style: none; }
+.industry-card li { font-size: 13px; color: #94a3b8; padding: 3px 0 3px 16px; position: relative; }
+.industry-card li::before { content: '▶'; position: absolute; left: 0; color: #06d6d6; font-size: 10px; top: 5px; }
+
+/* Papers */
+.paper { background: #1e293b; border-left: 4px solid #06d6d6; margin: 18px 0; padding: 20px 22px; border-radius: 0 8px 8px 0; }
+.paper-num { color: #475569; font-size: 11px; font-weight: 600; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+.paper-title { font-size: 16px; font-weight: 700; margin-bottom: 5px; }
+.paper-title a { color: #fff; text-decoration: none; }
+.paper-title a:hover { color: #06d6d6; text-decoration: underline; }
+.paper-meta { color: #64748b; font-size: 13px; margin: 8px 0 12px; }
+.paper-abstract { font-size: 14px; color: #cbd5e1; padding: 11px 13px; background: #253047; border-radius: 6px; margin: 12px 0; }
+.paper-tags { margin: 12px 0; }
+.tag { display: inline-block; background: #334155; color: #94a3b8; font-size: 12px; padding: 3px 9px; border-radius: 10px; margin-right: 6px; margin-bottom: 4px; }
+/* Index */
+.index-card { background: #1e293b; border-radius: 8px; padding: 20px 24px; margin: 14px 0; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: background 0.2s; border: 1px solid #334155; cursor: pointer; }
+.index-card:hover { background: #253047; border-color: #475569; }
+.index-date { color: #06d6d6; font-size: 20px; font-weight: 700; min-width: 110px; }
+.index-meta { flex: 1; }
+.index-title { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 5px; }
+.index-preview { font-size: 12px; color: #64748b; line-height: 1.6; }
+.index-count { background: #334155; color: #94a3b8; font-size: 13px; padding: 4px 12px; border-radius: 16px; white-space: nowrap; }
+.index-arrow { color: #475569; font-size: 22px; }
+.topic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 12px; }
+.topic-card { background: #1e293b; border-radius: 10px; padding: 20px 22px; display: flex; align-items: center; gap: 16px; cursor: pointer; border: 1px solid #334155; transition: background 0.2s, border-color 0.2s; }
+.topic-card:hover { background: #253047; border-color: #06d6d6; }
+.topic-card-empty { cursor: default; opacity: .55; }
+.topic-card-empty:hover { background: #1e293b; border-color: #334155; }
+.topic-emoji { font-size: 30px; line-height: 1; min-width: 38px; text-align: center; }
+.topic-info { flex: 1; }
+.topic-label { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.topic-desc { font-size: 12px; color: #64748b; line-height: 1.5; }
+.topic-meta { text-align: right; min-width: 60px; }
+.topic-count { font-size: 18px; font-weight: 700; color: #06d6d6; }
+.topic-date { font-size: 11px; color: #475569; margin-top: 2px; }
+
+/* 推荐度外显 */
+.digest-rating { display: flex; align-items: center; gap: 10px; margin-top: 10px; margin-bottom: 10px; }
+.digest-stars { font-size: 16px; letter-spacing: 1px; }
+.digest-stars.s5 { color: #f59e0b; }
+.digest-stars.s4 { color: #fb923c; }
+.digest-stars.s3 { color: #94a3b8; }
+.digest-stars.s2 { color: #64748b; }
+.digest-stars.s1 { color: #475569; }
+.digest-rec { font-size: 12px; color: #64748b; }
+
+/* Card expand/link footer — shared by ALL card types */
+.btn-expand { background: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 6px 13px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+.btn-expand:hover { background: #475569; }
+.btn-expand.active { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
+.btn-link { background: #1e3a5f; color: #93c5fd; border: 1px solid #2d5494; padding: 6px 13px; border-radius: 6px; font-size: 12px; text-decoration: none; }
+.btn-link:hover { background: #2d5494; }
+.btn-github { background: #1f2d1f; color: #86efac; border: 1px solid #166534; padding: 6px 13px; border-radius: 6px; font-size: 12px; text-decoration: none; }
+.btn-github:hover { background: #166534; }
+.btn-arxiv { background: #b91c1c; color: #fff; border: none; padding: 6px 13px; border-radius: 6px; font-size: 12px; text-decoration: none; }
+.btn-arxiv:hover { background: #dc2626; }
+.btn-yuanbao { background: #1a56db; color: #fff; border: none; padding: 6px 13px; border-radius: 6px; font-size: 12px; cursor: pointer; text-decoration: none; }
+.btn-yuanbao:hover { background: #1e40af; }
+.btn-yuanbao:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+.card-expanded { overflow: hidden; max-height: 0; opacity: 0; margin: 0; transition: max-height 0.35s ease, opacity 0.35s ease, margin 0.35s ease; }
+.card-expanded.open { max-height: 1200px; opacity: 1; margin: 12px 0; }
+.card-footer { display: flex; gap: 8px; flex-wrap: wrap; margin: 0; }
+.card .card-footer, .tool-card .card-footer, .industry-card .card-footer { margin: 0; }
+.card-expanded-inner { background: #1a2744; border-radius: 8px; padding: 14px 16px; border: 1px solid #334155; font-size: 13px; color: #cbd5e1; }
+.card-expanded-inner strong { color: #06d6d6; display: block; margin-bottom: 4px; font-size: 12px; }
+.card-exp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.card-exp-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.card-exp-tag { background: #334155; color: #94a3b8; font-size: 11px; padding: 2px 8px; border-radius: 8px; }
+.expanded-core-label { color: #06d6d6; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; display: block; margin-bottom: 4px; }
+.expanded-core { font-size: 13px; color: #cbd5e1; line-height: 1.8; margin-bottom: 10px; white-space: pre-wrap; }
+.expanded-rec { font-size: 13px; color: #cbd5e1; line-height: 1.7; border-top: 1px solid #1e3a5f; padding-top: 8px; margin-top: 4px; }
+.irrelevant-fold { margin-bottom: 32px; }
+.irrelevant-fold-header { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 12px 16px; background: #1a2133; border-radius: 8px; border: 1px solid #2d3f5a; user-select: none; }
+.irrelevant-fold-header:hover { background: #1e2a40; }
+.irrelevant-fold-title { font-size: 14px; color: #64748b; flex: 1; }
+.irrelevant-fold-arrow { font-size: 12px; color: #475569; transition: transform 0.25s; }
+.irrelevant-fold-arrow.open { transform: rotate(180deg); }
+.irrelevant-fold-body { overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.4s ease, opacity 0.3s ease; }
+.irrelevant-fold-body.open { max-height: 9999px; opacity: 1; }
+
+/* 中英对照 */
+.paper-title-zh { font-size: 14px; color: #94a3b8; font-weight: 400; margin-top: 4px; margin-bottom: 6px; }
+.paper-title-zh.loading { color: #475569; font-style: italic; }
+.abstract-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; align-items: stretch; }
+@media (max-width: 680px) { .abstract-wrap { grid-template-columns: 1fr; } }
+.abstract-col { display: flex; flex-direction: column; }
+.abstract-en, .abstract-zh {
+  font-size: 13px; padding: 11px 13px; border-radius: 6px; line-height: 1.7;
+  flex: 1;
+}
+.abstract-en { background: #253047; color: #cbd5e1; }
+.abstract-zh { background: #1a2233; color: #94a3b8; border-left: 3px solid #334155; }
+.abstract-zh.loading { color: #475569; font-style: italic; }
+.abstract-label { font-size: 11px; color: #475569; margin-bottom: 5px; letter-spacing: 0.5px; text-transform: uppercase; }
+.back-link { display: inline-block; margin-bottom: 20px; color: #64748b; font-size: 14px; text-decoration: none; cursor: pointer; }
+.back-link:hover { color: #06d6d6; }
+.loading { text-align: center; padding: 80px 0; color: #64748b; font-size: 16px; }
+.error { background: #2d1b1b; border-left: 4px solid #ef4444; padding: 20px 24px; border-radius: 0 8px 8px 0; color: #fca5a5; margin: 20px 0; }
+.footer { text-align: center; color: #475569; font-size: 13px; padding: 40px 0 20px; border-top: 1px solid #1e293b; margin-top: 40px; }
+
+/* ── 本周热点：HN 热帖 ── */
+.hot-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 32px; }
+.hot-item { display: flex; flex-direction: column; gap: 5px;
+  background: #1e293b; border: 1px solid #334155; border-radius: 8px;
+  padding: 12px 16px; text-decoration: none; transition: background 0.2s; }
+.hot-item:hover { background: #253047; border-color: #06d6d6; }
+.hot-title { font-size: 14px; color: #e2e8f0; line-height: 1.5; font-weight: 500; }
+.hot-meta { display: flex; gap: 10px; align-items: center; font-size: 12px; color: #64748b; flex-wrap: wrap; }
+.hot-comment { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+.hot-pts { color: #f97316; font-weight: 600; }
+.hot-cmts { color: #94a3b8; }
+.hot-date { color: #475569; }
+
+/* ── 本周热点：GitHub 趋势 ── */
+.trend-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.trend-item { background: #1e293b; border: 1px solid #334155; border-radius: 8px;
+  padding: 14px 16px; text-decoration: none; transition: background 0.2s; display: flex; flex-direction: column; gap: 6px; }
+.trend-item:hover { background: #253047; border-color: #06d6d6; }
+.trend-name { font-size: 14px; font-weight: 600; color: #06d6d6; }
+.trend-desc { font-size: 13px; color: #94a3b8; line-height: 1.4; flex: 1; }
+.trend-comment { font-size: 13px; color: #cbd5e1; line-height: 1.5; flex: 1; }
+.trend-stars { font-size: 12px; color: #f59e0b; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 id="heading">领域资讯跟进报告 <span id="count-badge" class="badge">…</span></h1>
+  <p class="subtitle" id="subtitle"></p>
+  <div id="main-content"><div class="loading">⏳ 加载中…</div></div>
+  <div class="footer" id="footer"></div>
+</div>
+
+<script>
+function qs(s) { return document.querySelector(s); }
+
+// ── 推断标签 ──
+function inferTags(text) {
+  text = (text||'').toLowerCase();
+  const map = [
+    ['移动端',['mobile','edge device']],['实时渲染',['real-time','real time','fps']],
+    ['4D-GS',['4d gaussian','4dgs','temporal','dynamic scene']],['HDR',['hdr','high dynamic range']],
+    ['SLAM',['slam','localization','mapping','odometry']],['压缩',['compress','compact','lightweight','pruning']],
+    ['可编辑',['edit','styliz','decompos','segment']],['数字人',['avatar','human body','face','portrait']],
+    ['自动驾驶',['autonomous','driving','lidar','street','traffic']],['稀疏输入',['sparse','few-shot','single image']],
+    ['生成模型',['diffusion','generative','text-to-3d']],['城市建模',['urban','city','aerial','outdoor','large-scale']],
+    ['医疗',['medical','endoscop','surgical','tissue']],['新视角合成',['novel view','view synthesis','nerf']],
+  ];
+  const r=[];
+  for(const [tag,kws] of map){ if(kws.some(k=>text.includes(k))) r.push(tag); if(r.length>=3) break; }
+  return r.length?r:['3DGS'];
+}
+
+function inferExt(p) {
+  const t=(p.title+' '+(p.abstract||'')).toLowerCase();
+  let tech,scene;
+  if(['mobile','lite','compact','tiny','compress','edge'].some(k=>t.includes(k)))
+    {tech='PyTorch、CUDA、Metal/OpenGL ES';scene='手游AR、XR眼镜、便携设备';}
+  else if(['slam','lidar','mapping','localiz','odometry'].some(k=>t.includes(k)))
+    {tech='ROS2、Open3D、COLMAP、LiDAR SDK';scene='自动驾驶、无人机导航、机器人建图';}
+  else if(['4d','dynamic','deform','flow','motion','temporal'].some(k=>t.includes(k)))
+    {tech='PyTorch3D、COLMAP、FFmpeg';scene='VR/AR动态场景、影视特效、体育分析';}
+  else if(['hdr','religh','illumin'].some(k=>t.includes(k)))
+    {tech='PyTorch、OpenEXR、HDR10/HLG';scene='影视后期、高端摄影、AR渲染';}
+  else if(['edit','styliz','segm','decomp'].some(k=>t.includes(k)))
+    {tech='PyTorch、SAM、CLIP';scene='内容创作、3D编辑、VR资产';}
+  else if(['human','avatar','body','face','head','portrait'].some(k=>t.includes(k)))
+    {tech='PyTorch、SMPL-X、MediaPipe';scene='数字人、虚拟主播、元宇宙头像';}
+  else if(['street','urban','city','outdoor','aerial'].some(k=>t.includes(k)))
+    {tech='PyTorch、COLMAP、GPS/IMU融合';scene='城市数字孪生、无人驾驶、地图制作';}
+  else if(['medical','endoscop','surgical','tissue'].some(k=>t.includes(k)))
+    {tech='PyTorch、MONAI、3D Slicer';scene='外科手术规划、医学影像';}
+  else if(['diffus','generat','text-to','score distill'].some(k=>t.includes(k)))
+    {tech='Diffusers、ControlNet、PyTorch';scene='3D内容生成、游戏资产、AIGC';}
+  else{tech='PyTorch、CUDA、COLMAP';scene='3D重建、虚拟现实、数字内容';}
+  const today=new Date().toISOString().slice(0,7);
+  const github=(p.date||'').slice(0,7)>=today?'最新论文，代码即将开源':'预计随论文发表后开源';
+  return {tech,github,scene};
+}
+
+// ── 渲染各章节 ──
+function renderOverview(ov) {
+  const stats = (ov.stats||[]).map(s=>`
+    <div class="stat-card"><div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div></div>`).join('');
+  return `
+    <div class="overview-bg">${ov.background||''}</div>
+    <div class="stats-row">${stats}</div>`;
+}
+
+function renderTech(items) {
+  if(!items||!items.length) return '';
+  const cards = items.map(it=>`
+    <div class="card">
+      <div class="card-icon">${it.icon||'⚡'}</div>
+      <h3>${it.title}</h3>
+      <p>${it.desc}</p>
+    </div>`).join('');
+  return `<div class="sec-title">⚡ 技术进展 <span>${items.length} 大方向</span></div><div class="card-grid-2">${cards}</div>`;
+}
+
+function renderApps(items) {
+  if(!items||!items.length) return '';
+  const BADGE={高热度:'badge-green',新兴:'badge-yellow',活跃:'badge-green',成熟:'badge-blue',前沿:'badge-yellow',增长:'badge-cyan',实用:'badge-green'};
+  const cards = items.map(it=>{
+    const bc=BADGE[it.badge]||'badge-blue';
+    return `<div class="card">
+      <h3>${it.title}${it.badge?`<span class="card-badge ${bc}">${it.badge}</span>`:''}</h3>
+      <p>${it.desc}</p></div>`;
+  }).join('');
+  return `<div class="sec-title">🚀 应用场景 <span>${items.length} 大领域</span></div><div class="card-grid">${cards}</div>`;
+}
+
+function renderPaper(p,i) {
+  const tags=(p.tags||inferTags((p.title||'')+(p.abstract||''))).map(t=>`<span class="tag">${t}</span>`).join('');
+  const authors=Array.isArray(p.authors)?p.authors.slice(0,5).join(' · ')+(p.authors.length>5?' et al.':''):(p.authors||'');
+  const abstract=(p.abstract||'').slice(0,400)+((p.abstract||'').length>400?'…':'');
+
+  // 标题：JSON 已有中文直接用，否则留占位等批量翻译填入
+  const esc = s => s.replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  const titleZh = p.title_zh
+    ? `<span>${p.title_zh}</span>`
+    : `<span class="loading" data-translate="${esc(p.title)}">翻译中…</span>`;
+
+  // 摘要：JSON 已有中文直接用，否则留占位等批量翻译填入
+  const abstractZh = p.abstract_zh
+    ? p.abstract_zh.slice(0,400)+(p.abstract_zh.length>400?'…':'')
+    : `<span class="loading" data-translate="${esc(abstract)}">翻译中…</span>`;
+
+  // 展开区：有 AI 评语用评语，否则退回推断字段
+  let expandedHtml;
+  if (p.digest) {
+    const lines = p.digest.split('\n').filter(l => l.trim());
+    const stars = lines[0]?.startsWith('★') ? lines[0] : '';
+    const rest  = (stars ? lines.slice(1) : lines);
+    // 「核心思想：」单独一行高亮，其余正常展示
+    const coreIdx = rest.findIndex(l => l.startsWith('核心思想'));
+    const coreLine = coreIdx >= 0 ? rest[coreIdx] : '';
+    const recLines = rest.filter((_, i) => i !== coreIdx).join('\n');
+    expandedHtml = `<div class="card-expanded-inner">
+      ${coreLine ? `<div><span class="expanded-core-label">核心思想</span><div class="expanded-core">${coreLine.replace(/^核心思想[：:]\s*/,'')}</div></div>` : ''}
+      ${recLines ? `<div class="expanded-rec">${recLines}</div>` : ''}
+    </div>`;
+  } else {
+    const ext = inferExt(p);
+    expandedHtml = `<div class="card-expanded-inner"><div class="card-exp-grid">
+      <div><strong>🧰 技术栈</strong>${ext.tech}</div>
+      <div><strong>📂 开源状态</strong>${ext.github}</div>
+      <div><strong>🔄 适用场景</strong>${ext.scene}</div>
+    </div></div>`;
+  }
+
+  // ── 推荐度外显 ──
+  let ratingHtml = '';
+  if (p.digest) {
+    const firstLine = p.digest.split('\n')[0].trim();
+    const starCount = (firstLine.match(/★/g)||[]).length;
+    const cls = `s${starCount}`;
+    const recMap = {5:'强烈推荐', 4:'值得关注', 3:'可选读', 2:'一般', 1:'可跳过'};
+    ratingHtml = `<div class="digest-rating">
+      <span class="digest-stars ${cls}">${firstLine}</span>
+      <span class="digest-rec">${recMap[starCount]||''}</span>
+    </div>`;
+  }
+
+  return `<div class="paper" data-card>
+    <div class="paper-num">Paper ${String(i).padStart(2,'0')} · ${p.date||''}</div>
+    <div class="paper-title"><a href="${p.url||'#'}" target="_blank">${p.title}</a></div>
+    <div class="paper-title-zh">${titleZh}</div>
+    <div class="paper-meta">${authors}</div>
+    <div class="abstract-wrap">
+      <div class="abstract-col"><div class="abstract-label">EN</div><div class="abstract-en">${abstract}</div></div>
+      <div class="abstract-col"><div class="abstract-label">中文</div><div class="abstract-zh">${abstractZh}</div></div>
+    </div>
+    <div class="paper-tags">${tags}</div>
+    ${ratingHtml}
+    <div class="card-expanded">${expandedHtml}</div>
+    <div class="card-footer">
+      <button class="btn-expand" onclick="toggle(this)">▶ 显示精华速览</button>
+      <a href="${p.url||'#'}" target="_blank" class="btn-arxiv">📄 arXiv 原文</a>
+      <button class="btn-yuanbao" data-url="${p.url||''}" onclick="sendToYuanbao(this)">💬 发给元宝</button>
+    </div>
+  </div>`;
+}
+
+function renderTools(items) {
+  if(!items||!items.length) return '';
+  const cards = items.map(it=>`
+    <div class="tool-card">
+      <div class="tool-name">${it.name}${it.lang?`<span class="tool-lang">${it.lang}</span>`:''}</div>
+      <div class="tool-desc">${it.desc}</div>
+    </div>`).join('');
+  return `<div class="sec-title">🛠️ 开源工具 <span>${items.length} 个项目</span></div><div class="tool-grid">${cards}</div>`;
+}
+
+function renderIndustry(items) {
+  if(!items||!items.length) return '';
+  const cards = items.map(it=>`
+    <div class="industry-card">
+      <h3>${it.title}</h3>
+      <p>${it.desc}</p>
+      <ul>${(it.bullets||[]).map(b=>`<li>${b}</li>`).join('')}</ul>
+    </div>`).join('');
+  return `<div class="sec-title">💼 行业动态 <span>${items.length} 大趋势</span></div><div class="industry-list">${cards}</div>`;
+}
+
+function renderFuture(items) {
+  if(!items||!items.length) return '';
+  const cards = items.map(it=>`
+    <div class="card">
+      <div class="card-icon">${it.icon||'🔮'}</div>
+      <h3>${it.title}</h3>
+      <p>${it.desc}</p>
+    </div>`).join('');
+  return `<div class="sec-title">🔮 未来趋势 <span>${items.length} 个方向</span></div><div class="card-grid">${cards}</div>`;
+}
+
+// ── 翻译工具（Google Translate 免费接口）──
+const _cache = {};
+async function translate(text) {
+  if (!text) return '';
+  const key = text.slice(0, 120);
+  if (_cache[key]) return _cache[key];
+  try {
+    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q='
+      + encodeURIComponent(text);
+    const r = await fetch(url);
+    const j = await r.json();
+    const result = j[0].map(s => s[0]).join('');
+    _cache[key] = result;
+    return result;
+  } catch { return '（翻译暂不可用）'; }
+}
+
+// 批量翻译页面上所有待翻译元素（标题 + 摘要），每批5个并发
+async function translateAll() {
+  const els = document.querySelectorAll('[data-translate]');
+  for (let i = 0; i < els.length; i += 5) {
+    await Promise.all(Array.from(els).slice(i, i+5).map(async el => {
+      const zh = await translate(el.dataset.translate);
+      el.textContent = zh;
+      el.classList.remove('loading');
+    }));
+  }
+}
+function toggle(btn) {
+  const box = btn.closest('[data-card]').querySelector('.card-expanded');
+  const open = box.classList.toggle('open');
+  btn.classList.toggle('active', open);
+  // 论文卡片用"速览"文案，其他卡片用通用文案
+  const isPaper = !!btn.closest('.paper');
+  btn.textContent = open
+    ? (isPaper ? '▼ 收起速览' : '▼ 收起')
+    : (isPaper ? '▶ 显示精华速览' : '▶ 展开概要');
+}
+
+function sendToYuanbao(btn) {
+  const card = btn.closest('[data-card]');
+  const title   = card.querySelector('h3')?.innerText?.trim() || '';
+  const abEn    = card.querySelector('.abstract-en')?.innerText?.trim() || '';
+  const abZh    = card.querySelector('.abstract-zh')?.innerText?.trim() || '';
+  const core    = card.querySelector('.expanded-core')?.innerText?.trim() || '';
+  const url     = btn.dataset.url || '';
+  const htmlUrl = url ? url.replace('arxiv.org/abs/', 'arxiv.org/html/') : '';
+
+  const text = `${htmlUrl || url}\n请通读该文档，然后待命响应我的提问`;
+  navigator.clipboard.writeText(text).then(() => {
+    const go = confirm('论文信息已复制，即将跳转到元宝，请 Ctrl + V 粘贴到输入框');
+    if (go) window.open('https://yuanbao.tencent.com/', '_blank');
+  }).catch(() => {
+    prompt('复制以下内容后粘贴到元宝：', text);
+    window.open('https://yuanbao.tencent.com/', '_blank');
+  });
+}
+
+// ── 技术进展 ──
+function renderTech(items) {
+  if (!items||!items.length) return '';
+  const cards = items.map(it => {
+    const tags = (it.tags||[]).map(t=>`<span class="card-exp-tag">${t}</span>`).join('');
+    const searchUrl = `https://arxiv.org/search/?searchtype=all&query=${encodeURIComponent(it.title)}`;
+    return `<div class="card" data-card>
+      <div class="card-icon">${it.icon||'⚡'}</div>
+      <h3>${it.title}</h3>
+      <p>${it.desc}</p>
+      <div class="card-expanded"><div class="card-expanded-inner">
+        <div class="card-exp-grid">
+          <div><strong>🏷️ 关键词</strong><div class="card-exp-tags">${tags||'3DGS'}</div></div>
+          <div><strong>📅 时间线</strong>${it.desc.match(/\d{4}-\d{2}/)?.[0]||'2026-03'} · 最新进展</div>
+        </div>
+      </div></div>
+      <div class="card-footer">
+        <button class="btn-expand" onclick="toggle(this)">▶ 展开概要</button>
+        <a href="${searchUrl}" target="_blank" class="btn-link">🔍 ArXiv 搜索</a>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="sec-title">⚡ 技术进展 <span>${items.length} 大方向</span></div><div class="card-grid-2">${cards}</div>`;
+}
+
+// ── 应用场景 ──
+function renderApps(items) {
+  if (!items||!items.length) return '';
+  const BADGE = {高热度:'badge-green',新兴:'badge-yellow',活跃:'badge-green',成熟:'badge-blue',前沿:'badge-yellow',增长:'badge-cyan',实用:'badge-green'};
+  const cards = items.map(it => {
+    const bc = BADGE[it.badge]||'badge-blue';
+    const searchUrl = `https://arxiv.org/search/?searchtype=all&query=3D+Gaussian+Splatting+${encodeURIComponent(it.title.replace(/[^\w\s]/g,''))}`;
+    // 从描述里抽出论文名（括号前的大写词）
+    const papers = [...(it.desc.matchAll(/([A-Z][a-zA-Z]+(?:[A-Z][a-zA-Z]*)+)(?:\s*\()/g))].map(m=>m[1]).slice(0,4);
+    return `<div class="card" data-card>
+      <h3>${it.title}${it.badge?`<span class="card-badge ${bc}">${it.badge}</span>`:''}</h3>
+      <p>${it.desc}</p>
+      <div class="card-expanded"><div class="card-expanded-inner">
+        <div class="card-exp-grid">
+          <div><strong>📄 代表论文</strong>${papers.length?papers.join('、'):'见 ArXiv 最新'}</div>
+          <div><strong>🔥 热度</strong>${it.badge||'活跃'} · 快速发展中</div>
+        </div>
+      </div></div>
+      <div class="card-footer">
+        <button class="btn-expand" onclick="toggle(this)">▶ 展开概要</button>
+        <a href="${searchUrl}" target="_blank" class="btn-link">🔍 ArXiv 搜索</a>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="sec-title">🚀 应用场景 <span>${items.length} 大领域</span></div><div class="card-grid">${cards}</div>`;
+}
+
+// ── 开源工具 ──
+function renderTools(items) {
+  if (!items||!items.length) return '';
+  const cards = items.map(it => {
+    const linkBtn = it.url
+      ? `<a href="${it.url}" target="_blank" class="btn-github">⭐ GitHub / 项目主页</a>`
+      : `<a href="https://github.com/search?q=${encodeURIComponent(it.name.replace(/[^\w\s]/g,''))}" target="_blank" class="btn-link">🔍 GitHub 搜索</a>`;
+    return `<div class="tool-card" data-card>
+      <div class="tool-name">${it.name}${it.lang?`<span class="tool-lang">${it.lang}</span>`:''}</div>
+      <div class="tool-desc">${it.desc}</div>
+      <div class="card-expanded"><div class="card-expanded-inner">
+        <div class="card-exp-grid">
+          <div><strong>🧰 语言/平台</strong>${it.lang||'Python'}</div>
+          <div><strong>🔗 获取方式</strong>${it.url?'开源项目，可直接 clone':'GitHub 可搜索获取'}</div>
+        </div>
+      </div></div>
+      <div class="card-footer">
+        <button class="btn-expand" onclick="toggle(this)">▶ 展开概要</button>
+        ${linkBtn}
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="sec-title">🛠️ 开源工具 <span>${items.length} 个项目</span></div><div class="tool-grid">${cards}</div>`;
+}
+
+// ── 行业动态 ──
+function renderIndustry(items) {
+  if (!items||!items.length) return '';
+  const cards = items.map(it => {
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent('3DGS '+it.title.replace(/[^\w\s\u4e00-\u9fff]/g,''))}`;
+    const bulletsHtml = (it.bullets||[]).map(b=>`<li>${b}</li>`).join('');
+    return `<div class="industry-card" data-card>
+      <h3>${it.title}</h3>
+      <p>${it.desc}</p>
+      <div class="card-expanded"><div class="card-expanded-inner">
+        <ul style="padding-left:0;list-style:none">${bulletsHtml||'<li>详见正文描述</li>'}</ul>
+      </div></div>
+      <div class="card-footer">
+        <button class="btn-expand" onclick="toggle(this)">▶ 展开详情</button>
+        <a href="${searchUrl}" target="_blank" class="btn-link">🔍 搜索相关资讯</a>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="sec-title">💼 行业动态 <span>${items.length} 大趋势</span></div><div class="industry-list">${cards}</div>`;
+}
+
+// ── 未来趋势 ──
+function renderFuture(items) {
+  if (!items||!items.length) return '';
+  const cards = items.map(it => {
+    const tags = (it.tags||[]).map(t=>`<span class="card-exp-tag">${t}</span>`).join('');
+    const searchUrl = `https://arxiv.org/search/?searchtype=all&query=${encodeURIComponent('3DGS '+it.title)}`;
+    return `<div class="card" data-card>
+      <div class="card-icon">${it.icon||'🔮'}</div>
+      <h3>${it.title}</h3>
+      <p>${it.desc}</p>
+      <div class="card-expanded"><div class="card-expanded-inner">
+        <div class="card-exp-grid">
+          <div><strong>🏷️ 关键词</strong><div class="card-exp-tags">${tags||'前沿探索'}</div></div>
+          <div><strong>📡 预期时间</strong>2025–2026 年落地</div>
+        </div>
+      </div></div>
+      <div class="card-footer">
+        <button class="btn-expand" onclick="toggle(this)">▶ 展开概要</button>
+        <a href="${searchUrl}" target="_blank" class="btn-link">🔍 ArXiv 搜索</a>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="sec-title">🔮 未来趋势 <span>${items.length} 个方向</span></div><div class="card-grid">${cards}</div>`;
+}
+async function showIndex() {
+  qs('#heading').innerHTML='领域资讯跟进报告 <span class="badge" id="count-badge"></span>';
+  document.title='领域资讯跟进报告';
+  qs('#subtitle').textContent='按领域浏览最新资讯，每周六凌晨自动更新';
+  const base=location.href.split('#')[0].replace(/\/[^/]*$/,'/');
+
+  // 领域兜底配置（topics_index.json 不存在时使用）
+  const FALLBACK_TOPICS = [
+    { topic:'3dgs',        label:'3D Gaussian Splatting', emoji:'🌐', desc:'3DGS核心技术、压缩、编辑、SLAM、动态场景等' },
+    { topic:'3d_ai',       label:'3D + AI 生成',           emoji:'🎨', desc:'Text→3D、4D动态生成、3D编辑、数字人' },
+    { topic:'world_model', label:'世界模型 / 空间智能',     emoji:'🌍', desc:'世界模型、具身智能、4D场景理解、视觉基础模型' },
+    { topic:'3d_web',      label:'3D + Web',               emoji:'🕸️', desc:'WebGPU、WebGL、浏览器实时渲染、Three.js生态' },
+    { topic:'openclaw',    label:'OpenClaw / AI Agent',    emoji:'🦞', desc:'AI Agent框架、LLM工具调用、Agentic工作流、开源Agent生态' },
+    { topic:'ai_apps',     label:'AI 应用',                emoji:'📱', desc:'AI产品动态、Prompt工程、多模态应用、AI工具链' },
+    { topic:'ai_games',    label:'AI 与游戏',               emoji:'🎮', desc:'AI NPC、程序化内容生成、游戏AI、强化学习与游戏' },
+  ];
+
+  let topicIndex = [];
+  try {
+    const resp = await fetch(`${base}topics_index.json`);
+    if (resp.ok) topicIndex = await resp.json();
+  } catch(e) {}
+
+  // 加载各领域最新报告历史（index.json 旧格式兼容）
+  let legacyEntries = [];
+  try {
+    const resp = await fetch(`${base}index.json`);
+    if (resp.ok) legacyEntries = await resp.json();
+  } catch(e) {}
+
+  // 构建展示数据：topics_index 优先，兜底用 FALLBACK_TOPICS
+  const topicsMap = {};
+  for (const t of topicIndex) topicsMap[t.topic] = t;
+  const displayTopics = FALLBACK_TOPICS.map(fb => ({
+    ...fb,
+    ...(topicsMap[fb.topic] || {}),
+  }));
+
+  qs('#count-badge').textContent = `${displayTopics.length} 个领域`;
+
+  const topicCards = displayTopics.map(t => {
+    const hasData = !!topicsMap[t.topic];
+    const dateStr = hasData ? topicsMap[t.topic].date : '暂无数据';
+    const count   = hasData ? topicsMap[t.topic].count : 0;
+    const dataId  = hasData ? `${t.topic}_${(topicsMap[t.topic].date||'').replace(/-/g,'')}` : '';
+    return `
+    <div class="topic-card${hasData?'':' topic-card-empty'}" ${hasData?`onclick="location.hash='${dataId}'"`:''}>
+      <div class="topic-emoji">${t.emoji}</div>
+      <div class="topic-info">
+        <div class="topic-label">${t.label}</div>
+        <div class="topic-desc">${t.desc}</div>
+      </div>
+      <div class="topic-meta">
+        ${hasData ? `<div class="topic-count">${count} 条</div><div class="topic-date">${dateStr}</div>` : '<div class="topic-count" style="color:#475569">待更新</div>'}
+      </div>
+      ${hasData ? '<div class="index-arrow">›</div>' : ''}
+    </div>`;
+  }).join('');
+
+  // 历史归档（所有领域所有期）
+  const archiveHtml = legacyEntries.length ? `
+    <div class="sec-title" style="margin-top:32px">📦 历史归档</div>
+    ${legacyEntries.map(e=>{
+      const emoji = e.emoji || '📄';
+      const label = e.label || e.id || '报告';
+      const dateStr = (e.date||'').replace(/^(\d{4})(\d{2})(\d{2})$/, '$1-$2-$3') || e.date || '';
+      const bg = e.overview_bg || '';
+      return `
+      <div class="index-card" onclick="location.hash='${e.id}'">
+        <div class="index-date" style="font-size:28px;min-width:38px;text-align:center">${emoji}</div>
+        <div class="index-meta">
+          <div class="index-title">${label} <span style="font-weight:400;color:#475569;font-size:12px">${dateStr}</span></div>
+          ${bg ? `<div class="index-preview" style="margin-top:5px">${bg}</div>` : ''}
+        </div>
+        <div class="index-count">${e.count} 篇</div>
+        <div class="index-arrow">›</div>
+      </div>`;
+    }).join('')}` : '';
+
+  qs('#main-content').innerHTML = `<div class="topic-grid">${topicCards}</div>${archiveHtml}`;
+  qs('#footer').textContent = `${displayTopics.length} 个领域 · 每周六 04:00 自动更新 · Powered by OpenClaw`;
+}
+
+// ── 报告页 ──
+async function showReport(dataId) {
+  qs('#main-content').innerHTML='<div class="loading">⏳ 正在加载…</div>';
+  const base=location.href.split('#')[0].replace(/\/[^/]*$/,'/');
+  const jsonUrl=dataId.startsWith('http')||dataId.startsWith('/')?dataId:`${base}${dataId}.json`;
+  try {
+    const resp=await fetch(jsonUrl);
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data=await resp.json();
+
+    // 兼容两种格式：纯数组（旧）/ 对象（新）
+    const papers     = Array.isArray(data) ? data : (data.papers || []);
+    const hotTopics  = (!Array.isArray(data) && data.hot_topics)     ? data.hot_topics     : [];
+    const trendRepos = (!Array.isArray(data) && data.trending_repos) ? data.trending_repos : [];
+    const biliVideos = (!Array.isArray(data) && data.bili_videos)    ? data.bili_videos    : [];
+    const xhsNotes   = (!Array.isArray(data) && data.xhs_notes)      ? data.xhs_notes      : [];
+    const topicLabel = (!Array.isArray(data) && data.label) ? data.label : '领域资讯跟进报告';
+    const generated  = (!Array.isArray(data) && data.generated) ? data.generated : '';
+
+    qs('#heading').innerHTML=`${topicLabel} <span class="badge" id="count-badge">${papers.length} 篇</span>`;
+    document.title=topicLabel;
+    qs('#subtitle').textContent=`${generated ? generated + ' · ' : ''}摘要直接可见 · 点击「扩展概要」查看更多 · 原文链接常驻`;
+
+    let html=`<a class="back-link" onclick="location.hash='';renderFromHash();">← 返回目录</a>`;
+
+    // 本周热点：HN 热帖
+    if(hotTopics.length) {
+      html += `<div class="sec-title">🔥 本周热议 <span>${hotTopics.length} 条</span></div>
+        <div class="hot-list">
+        ${hotTopics.map(h=>`
+          <a class="hot-item" href="${h.hn_url||h.url}" target="_blank">
+            <div class="hot-title">${h.title_zh||h.title}</div>
+            ${h.comment ? `<div class="hot-comment">${h.comment}</div>` : ''}
+            <div class="hot-meta">
+              <span class="hot-pts">▲ ${h.points||0}</span>
+              <span class="hot-cmts">💬 ${h.comments||0}</span>
+              <span class="hot-date">${h.date||''}</span>
+            </div>
+          </a>`).join('')}
+        </div>`;
+    }
+
+    // 本周热点：GitHub 趋势项目
+    if(trendRepos.length) {
+      html += `<div class="sec-title">⭐ GitHub 本周趋势 <span>${trendRepos.length} 个</span></div>
+        <div class="trend-list">
+        ${trendRepos.map(r=>`
+          <a class="trend-item" href="${r.url}" target="_blank">
+            <div class="trend-name">${r.name}</div>
+            ${r.comment ? `<div class="trend-comment">${r.comment}</div>` : `<div class="trend-desc">${r.desc||''}</div>`}
+            <div class="trend-stars">⭐ ${(r.stars||0).toLocaleString()} 总星数${r.weekly_stars ? ' · <span style="color:#4ade80">+' + r.weekly_stars.toLocaleString() + ' 本周</span>' : ''}</div>
+          </a>`).join('')}
+        </div>`;
+    }
+
+    // B站热门视频
+    if(biliVideos.length) {
+      html += `<div class="sec-title">📺 B站热门 <span>${biliVideos.length} 个</span></div>
+        <div class="hot-list">
+        ${biliVideos.map(v=>`
+          <a class="hot-item" href="${v.url}" target="_blank">
+            <div class="hot-title">${v.title}</div>
+            ${v.comment ? `<div class="hot-comment">${v.comment}</div>` : ''}
+            <div class="hot-meta">
+              <span class="hot-pts">▶ ${(v.play||0).toLocaleString()} 播放</span>
+              <span class="hot-cmts">💬 ${v.danmaku||0} 弹幕</span>
+              <span class="hot-date">${v.author||''}</span>
+            </div>
+          </a>`).join('')}
+        </div>`;
+    }
+
+    // 小红书热议
+    if(xhsNotes.length) {
+      html += `<div class="sec-title">🌸 小红书热议 <span>${xhsNotes.length} 条</span></div>
+        <div class="hot-list">
+        ${xhsNotes.map(n=>`
+          <a class="hot-item" href="${n.url}" target="_blank">
+            <div class="hot-title">${n.title}</div>
+            <div class="hot-meta">
+              <span class="hot-date">${n.desc||'小红书笔记'}</span>
+            </div>
+          </a>`).join('')}
+        </div>`;
+    }
+
+    if(papers.length) {
+      // 按推荐度排序：星级多 → 少
+      const getStars = p => (p.digest||'').split('\n')[0].split('★').length - 1;
+      const sorted = [...papers].sort((a,b) => getStars(b) - getStars(a));
+
+      // 分成相关（≥2星）和不相关（1星且含⚠️）
+      const relevant   = sorted.filter(p => getStars(p) >= 2);
+      const irrelevant = sorted.filter(p => getStars(p) < 2);
+
+      html += `<div class="sec-title">📄 代表性论文 <span>${papers.length} 篇</span></div>`;
+      html += relevant.map((p,i) => renderPaper(p, i+1)).join('');
+
+      if(irrelevant.length) {
+        html += `<div class="irrelevant-fold">
+          <div class="irrelevant-fold-header" onclick="
+            const body=this.nextElementSibling;
+            const arrow=this.querySelector('.irrelevant-fold-arrow');
+            const title=this.querySelector('.irrelevant-fold-title');
+            const open=body.classList.toggle('open');
+            arrow.classList.toggle('open',open);
+            title.textContent=open?'⚠️ 相关度较低，点此折叠（'+${irrelevant.length}+' 篇）':'⚠️ 相关度较低，已折叠（'+${irrelevant.length}+' 篇），点击展开';
+          ">
+            <span class="irrelevant-fold-title">⚠️ 相关度较低，已折叠（${irrelevant.length} 篇），点击展开</span>
+            <span class="irrelevant-fold-arrow">▼</span>
+          </div>
+          <div class="irrelevant-fold-body">
+            <div style="padding-top:12px">${irrelevant.map((p,i) => renderPaper(p, relevant.length+i+1)).join('')}</div>
+          </div>
+        </div>`;
+      }
+    }
+
+    qs('#main-content').innerHTML=html;
+    qs('#footer').textContent=`数据：${dataId} · ${new Date().toLocaleString('zh-CN')} · Powered by OpenClaw`;
+    translateAll(); // 批量翻译标题 + 摘要（异步，不阻塞渲染）
+  } catch(e) {
+    qs('#main-content').innerHTML=`<div class="error">加载失败：${e.message}<br>URL：${jsonUrl}</div>`;
+  }
+}
+
+// ── 路由 ──
+function renderFromHash() {
+  const hash=location.hash.slice(1);
+  if(hash) showReport(hash.includes('=')?new URLSearchParams(hash).get('data'):hash);
+  else showIndex();
+}
+window.addEventListener('hashchange',renderFromHash);
+renderFromHash();
+</script>
+</body>
+</html>
