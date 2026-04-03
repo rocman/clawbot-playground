@@ -566,7 +566,7 @@ function autoFullscreen() {
     const el = document.documentElement;
     const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
     if (req && !document.fullscreenElement && !document.webkitFullscreenElement) {
-      req.call(el).catch(() => {});
+      return req.call(el).catch(() => {});
     }
   } else {
     const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
@@ -574,6 +574,7 @@ function autoFullscreen() {
       exit.call(document).catch(() => {});
     }
   }
+  return Promise.resolve();
 }
 
 // ── Opening overlay logic ─────────────────────────────────
@@ -583,9 +584,11 @@ function showOpeningOverlay() {
 }
 
 document.getElementById('btn-fs-start').addEventListener('click', () => {
-  autoFullscreen();
   document.getElementById('overlay').classList.add('hidden');
-  startGame();
+  autoFullscreen().then(() => {
+    // wait one rAF for fullscreen resize to settle
+    requestAnimationFrame(() => { resizeCanvas(true); startGame(); });
+  });
 });
 document.getElementById('btn-start').addEventListener('click', () => {
   document.getElementById('overlay').classList.add('hidden');
@@ -821,7 +824,7 @@ function startWave(){if(waveActive)return;waveNum++;waveActive=true;spawnQueue=g
   // switch button to auto-wave toggle
   const b=document.getElementById('btn-wave');
   b.disabled=false;
-  b.textContent=autoWave?'⏹ 停止续波':'🔁 自动续波';
+  b.textContent=autoWave?'☑ 自动续波':'☐ 自动续波';
   b.style.background=autoWave?'#00b894':'#6c5ce7';
   updateHUD();
 }
@@ -834,7 +837,7 @@ document.getElementById('btn-wave').addEventListener('click',()=>{
     // in-wave: toggle auto
     autoWave=!autoWave;
     const b=document.getElementById('btn-wave');
-    b.textContent=autoWave?'⏹ 停止续波':'🔁 自动续波';
+    b.textContent=autoWave?'☑ 自动续波':'☐ 自动续波';
     b.style.background=autoWave?'#00b894':'#6c5ce7';
   }
 });
