@@ -501,31 +501,36 @@ function drawMap(){
 // ═══════════════════════════════════════════════
 //  FAKE TURRETS
 // ═══════════════════════════════════════════════
-// Base stats; actual dmg/rate/range scaled by wave each round
+// unlockWave: which wave this turret becomes active
 const FAKE_TURRETS=[
-  {c:1, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0},
-  {c:5, r:1, baseDmg:16, baseRate:1.0, baseRange:2.2, cd:0},
-  {c:9, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0},
-  {c:1, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0},
-  {c:4, r:5, baseDmg:20, baseRate:1.0, baseRange:2.3, cd:0},
-  {c:9, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0},
-  {c:1, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0},
-  {c:6, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0},
-  {c:10,r:8, baseDmg:25, baseRate:1.0, baseRange:2.5, cd:0},
-  {c:3, r:11,baseDmg:30, baseRate:1.0, baseRange:2.0, cd:0},
+  {c:1, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, unlockWave:1},
+  {c:9, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, unlockWave:1},
+  {c:4, r:5, baseDmg:20, baseRate:1.0, baseRange:2.3, cd:0, unlockWave:3},
+  {c:9, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0, unlockWave:3},
+  {c:5, r:1, baseDmg:16, baseRate:1.0, baseRange:2.2, cd:0, unlockWave:5},
+  {c:1, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0, unlockWave:6},
+  {c:6, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0, unlockWave:8},
+  {c:1, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0, unlockWave:10},
+  {c:10,r:8, baseDmg:25, baseRate:1.0, baseRange:2.5, cd:0, unlockWave:12},
+  {c:3, r:11,baseDmg:30, baseRate:1.0, baseRange:2.0, cd:0, unlockWave:13},
 ];
 // Computed live stats, rebuilt each wave
 function scaleTurrets(wave){
   const w=Math.max(1,wave);
-  const dmgMult  = 1 + (w-1)*0.10;   // +10% dmg per wave
-  const rateMult = 1 + (w-1)*0.06;   // +6% fire rate per wave
-  const rangeBon = Math.floor((w-1)/4)*0.35; // +0.35 range every 4 waves
+  const dmgMult  = 1 + (w-1)*0.10;
+  const rateMult = 1 + (w-1)*0.06;
+  const rangeBon = Math.floor((w-1)/4)*0.35;
   for(const t of FAKE_TURRETS){
+    t.active = w >= t.unlockWave;
     t.dmg   = t.baseDmg  * dmgMult;
     t.rate  = t.baseRate * rateMult;
     t.range = t.baseRange + rangeBon;
-    // tier for colour: 1-4 = green, 5-9 = orange, 10-12 = red, 13+ = purple
     t.tier  = w<=4?0:w<=8?1:w<=12?2:3;
+  }
+  // warn about newly activated turrets
+  const newlyActive = FAKE_TURRETS.filter(t=>t.unlockWave===w);
+  if(newlyActive.length>0){
+    log(`⚠️ 守方新增 ${newlyActive.length} 座炮塔！`);
   }
 }
 
@@ -534,6 +539,7 @@ const TURRET_RINGS =['#636e72','#e17055','#e94560','#a29bfe'];
 
 function updateFakeTurrets(dt){
   for(const t of FAKE_TURRETS){
+    if(!t.active) continue;
     if(t.cd>0){t.cd-=dt*gameSpeed;continue;}
     const range=(t.range??2.2)*TILE;
     const tx=t.c*TILE+TILE/2, ty=t.r*TILE+TILE/2;
@@ -554,19 +560,18 @@ function updateFakeTurrets(dt){
 
 function drawFakeTurrets(){
   for(const t of FAKE_TURRETS){
+    if(!t.active) continue;
     const tx=t.c*TILE+TILE/2, ty=t.r*TILE+TILE/2, r=TILE*.35;
     const tier=t.tier??0;
     ctx.beginPath();ctx.arc(tx,ty,r,0,Math.PI*2);
     ctx.fillStyle=TURRET_COLORS[tier];ctx.fill();
     ctx.strokeStyle=TURRET_RINGS[tier];ctx.lineWidth=tier>0?2:1.5;ctx.stroke();
-    // glow for high-tier
     if(tier>=2){
       ctx.strokeStyle=TURRET_RINGS[tier]+'44';ctx.lineWidth=4;
       ctx.beginPath();ctx.arc(tx,ty,r+3,0,Math.PI*2);ctx.stroke();
     }
     ctx.font=`${TILE*.34}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('🏰',tx,ty);
-    // wave-tier label
     if(tier>0){
       ctx.font=`bold ${TILE*.22}px sans-serif`;ctx.fillStyle=TURRET_RINGS[tier];
       ctx.fillText(['','★','★★','★★★'][tier],tx,ty+r+TILE*.18);
