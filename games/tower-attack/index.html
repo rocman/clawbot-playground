@@ -211,6 +211,7 @@ canvas{display:block;width:100%;height:100%;}
   padding:5px 8px;flex-shrink:0;
 }
 .pending-item{border-color:#e94560;background:#2a1020;padding:3px 6px;}
+.field-item{border-color:#00b894;background:#0d2a20;padding:3px 6px;}
 .pending-row{display:flex;flex-wrap:wrap;gap:4px;padding:2px 6px 4px;}
 .qi-section-hdr{font-size:0.62rem;color:#888;padding:4px 6px 2px;letter-spacing:0.5px;}
 .queue-item .qi-icon{font-size:1rem;flex-shrink:0;}
@@ -835,8 +836,10 @@ function drawFakeTurrets(){
 // ═══════════════════════════════════════════════
 //  ENEMY
 // ═══════════════════════════════════════════════
+let _enemyIdCounter=0;
 class Enemy{
   constructor(type,mods){
+    this.id=++_enemyIdCounter;
     this.type=type; this.def=UNIT_DEFS[type];
     this.hp=this.def.hp*(mods?.hpMult??1); this.maxHp=this.hp;
     this.speed=this.def.speed*(mods?.speedMult??1);
@@ -845,17 +848,18 @@ class Enemy{
     if(!PATH_WP.length) rebuildWP();
     this.x=PATH_WP[0]?.x??0; this.y=PATH_WP[0]?.y??0;
     this.dead=false; this.reached=false;
+    onFieldUnits.set(this.id,{icon:this.def.icon,name:this.def.name});
   }
   takeDamage(d){
     if(this.hasShield){this.hasShield=false;return;}
-    this.hp-=d; if(this.hp<=0) this.dead=true;
+    this.hp-=d; if(this.hp<=0){this.dead=true;onFieldUnits.delete(this.id);}
   }
   update(dt){
     if(this.dead||this.reached) return;
     let rem=this.speed*dt*gameSpeed;
     while(rem>0){
       const wp=PATH_WP[Math.floor(this.progress)+1];
-      if(!wp){this.reached=true;onBreach(this);return;}
+      if(!wp){this.reached=true;onBreach(this);onFieldUnits.delete(this.id);return;}
       const dx=wp.x-this.x,dy=wp.y-this.y,dist=Math.hypot(dx,dy);
       if(dist<=rem){this.x=wp.x;this.y=wp.y;this.progress++;rem-=dist;}
       else{this.x+=dx/dist*rem;this.y+=dy/dist*rem;this.progress+=rem/TILE;rem=0;}
@@ -886,6 +890,7 @@ let state='idle';
 let gold=0,waveNum=0,breachCount=0,gameSpeed=1,speedIdx=1;
 const SPEED_STEPS=[0.5,1,2,3,4];
 let enemies=[],spawnQueue=[],spawnTimer=0,waveActive=false;
+let onFieldUnits=new Map(); // id -> {icon,name} for currently alive enemies
 let activeSkills={},nextSkills={};
 // activeSkillTimers: {skillKey: remainingSeconds}
 let activeSkillTimers={};
@@ -1148,6 +1153,21 @@ function renderActiveSkills(){
       ql.appendChild(pendingRow);
     }
 
+    // ── 场上兵员 ──
+    if(onFieldUnits.size){
+      const hdr=document.createElement('div');
+      hdr.className='qi-section-hdr';hdr.textContent='⚔️ 场上';
+      ql.appendChild(hdr);
+      const fieldRow=document.createElement('div');
+      fieldRow.className='pending-row';
+      onFieldUnits.forEach(({icon,name})=>{
+        const chip=document.createElement('div');chip.className='queue-item field-item';
+        chip.innerHTML=`<span class="qi-icon">${icon}</span><span class="qi-label">${name}</span>`;
+        fieldRow.appendChild(chip);
+      });
+      ql.appendChild(fieldRow);
+    }
+
     // ── 已激活技能 ──
     const keys=Object.keys(activeSkillTimers);
     if(keys.length){
@@ -1315,7 +1335,7 @@ function startGame(){
   rebuildTechPerms();
   const startBonus=techPerms.startGoldBonus||0;
   gold=waveGold(1)+startBonus;waveNum=0;breachCount=0;
-  enemies=[];spawnQueue=[];waveActive=false;
+  enemies=[];spawnQueue=[];waveActive=false;onFieldUnits=new Map();
   activeSkills={};nextSkills={};activeSkillTimers={};
   defenderGold=0;defenderTimer=0;
   unlockedSkills=new Set(['rush','income']);
