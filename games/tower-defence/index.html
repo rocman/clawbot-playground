@@ -821,7 +821,7 @@ function startWave(){if(waveActive)return;waveNum++;waveActive=true;spawnQueue=g
   // switch button to auto-wave toggle
   const b=document.getElementById('btn-wave');
   b.disabled=false;
-  b.textContent=autoWave?'🔁 自动续波 ON':'🔁 自动续波';
+  b.textContent=autoWave?'⏹ 停止续波':'🔁 自动续波';
   b.style.background=autoWave?'#00b894':'#6c5ce7';
   updateHUD();
 }
@@ -834,7 +834,7 @@ document.getElementById('btn-wave').addEventListener('click',()=>{
     // in-wave: toggle auto
     autoWave=!autoWave;
     const b=document.getElementById('btn-wave');
-    b.textContent=autoWave?'🔁 自动续波 ON':'🔁 自动续波';
+    b.textContent=autoWave?'⏹ 停止续波':'🔁 自动续波';
     b.style.background=autoWave?'#00b894':'#6c5ce7';
   }
 });
