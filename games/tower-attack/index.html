@@ -1071,15 +1071,15 @@ function setQueueMode(on){
 }
 
 function enqueue(kind,key){
-  if(state!=='playing'&&state!=='wavePause') return;
-  if(!queueMode) return;
+  if(state!=='playing'&&state!=='paused') return;
   const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
   if(!def||def.cost>gold) return;
   if(kind==='skill'&&(key in activeSkillTimers)) return;
+  // auto-enter queue mode if not already in it
+  if(!queueMode){queueMode=true;setQueueMode(true);}
   gold-=def.cost;
   pendingQueue.push({kind,key,cost:def.cost});
   log(`📋 ${def.icon}${def.name} 列队`);
-  // blur any focused element so card doesn't stay highlighted
   if(document.activeElement) document.activeElement.blur();
   updateHUD();buildUnitCards();buildSkillCards();
   ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
