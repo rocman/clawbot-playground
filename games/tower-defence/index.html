@@ -155,7 +155,32 @@
   .btn.blue { background: #0984e3; }
   .btn.blue:hover { background: #0652b0; }
 
-  /* ── Panel scroll ── */
+  /* ── Fullscreen toast (in-game landscape prompt) ── */
+  #fs-toast {
+    position: fixed;
+    bottom: 18px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(22,33,62,0.95);
+    border: 1px solid #0f3460;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 0.82rem; color: #eee;
+    z-index: 200;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    white-space: nowrap;
+    transition: opacity 0.3s;
+  }
+  #fs-toast.hidden { display: none; }
+  #fs-toast button {
+    padding: 5px 12px; border: none; border-radius: 6px;
+    font-size: 0.78rem; font-weight: bold; cursor: pointer;
+  }
+  #fs-toast-yes  { background: #0984e3; color: #fff; }
+  #fs-toast-yes:hover  { background: #0652b0; }
+  #fs-toast-no   { background: #444; color: #ccc; }
+  #fs-toast-no:hover   { background: #333; }
+
+
   #panel-scroll {
     flex: 1; min-width: 0; min-height: 0;
     overflow-y: auto; overflow-x: hidden;
@@ -295,7 +320,12 @@
   <button class="btn" id="btn-start">▶ 开始游戏</button>
 </div>
 
-  <!-- Panel scroll (portrait: after map; landscape: inside sidebar via JS) -->
+<!-- In-game fullscreen toast -->
+<div id="fs-toast" class="hidden">
+  ⛶ 检测到横屏
+  <button id="fs-toast-yes">进入全屏</button>
+  <button id="fs-toast-no">维持现状</button>
+</div>
   <div id="panel-scroll">
     <div class="panel-section">
       <h3>🏗️ 建造炮塔</h3>
@@ -412,11 +442,33 @@ function onResize() {
     showOpeningOverlay();
   }, 80);
 }
+// ── In-game fullscreen toast ──────────────────────────────
+const fsToast = document.getElementById('fs-toast');
+document.getElementById('fs-toast-yes').addEventListener('click', () => {
+  autoFullscreen();
+  fsToast.classList.add('hidden');
+});
+document.getElementById('fs-toast-no').addEventListener('click', () => {
+  fsToast.classList.add('hidden');
+});
+
+function maybeShowFsToast() {
+  // only during active gameplay, only in landscape, only if not already fullscreen
+  if (state !== 'playing') return;
+  if (!isLandscape()) { fsToast.classList.add('hidden'); return; }
+  if (document.fullscreenElement || document.webkitFullscreenElement) return;
+  fsToast.classList.remove('hidden');
+  // auto-dismiss after 6s
+  clearTimeout(fsToast._timer);
+  fsToast._timer = setTimeout(() => fsToast.classList.add('hidden'), 6000);
+}
+
 window.addEventListener('resize', onResize);
 window.addEventListener('orientationchange', () => setTimeout(() => {
   autoFullscreen();
   resizeCanvas(true);
-  showOpeningOverlay();   // re-evaluate checkbox visibility on rotation
+  showOpeningOverlay();
+  maybeShowFsToast();
 }, 150));
 resizeCanvas(false);
 
