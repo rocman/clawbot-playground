@@ -358,9 +358,11 @@ function arrangePanels() {
 function calcSize() {
   const vw = window.innerWidth, vh = window.innerHeight;
   if (isLandscape()) {
-    // map height = full viewport height (minus tiny margin), width = height (square)
-    // sidebar gets whatever is left — no fixed width needed
-    const avail = vh - 12;
+    const SIDEBAR_MIN = 160;
+    // max size = full height; but must leave at least SIDEBAR_MIN for sidebar
+    const byHeight = vh - 4;
+    const byWidth  = vw - SIDEBAR_MIN - 4;
+    const avail    = Math.min(byHeight, byWidth);
     return Math.max(200, Math.floor(avail / COLS) * COLS);
   } else {
     const headerH = document.getElementById('header-portrait').offsetHeight;
