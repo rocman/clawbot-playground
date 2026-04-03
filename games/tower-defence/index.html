@@ -766,7 +766,14 @@ function updateWave(dt){
   if(!waveActive)return;
   spawnTimer+=dt*gameSpeed;
   while(spawnQueue.length&&spawnQueue[0].delay<=spawnTimer)enemies.push(new Enemy(spawnQueue.shift().type));
-  if(!spawnQueue.length&&enemies.every(e=>e.dead||e.reached)){waveActive=false;const b=50+waveNum*20;gold+=b;score+=waveNum*100;log(`✅ 第 ${waveNum} 波清除！💰+${b}`);updateHUD();document.getElementById('btn-wave').disabled=false;if(waveNum>=15){endGame(true);return;}}
+  if(!spawnQueue.length&&enemies.every(e=>e.dead||e.reached)){waveActive=false;const b=50+waveNum*20;gold+=b;score+=waveNum*100;log(`✅ 第 ${waveNum} 波清除！💰+${b}`);updateHUD();if(waveNum>=15){endGame(true);return;}
+    const btn=document.getElementById('btn-wave');
+    if(autoWave){
+      setTimeout(startWave,800);
+    } else {
+      btn.disabled=false;btn.textContent='开闸迎敌';btn.style.background='#6c5ce7';
+    }
+  }
 }
 
 // ── Game loop ─────────────────────────────────────────────
@@ -808,14 +815,36 @@ canvas.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0]
 canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];const{col,row}=getCell(t.clientX,t.clientY);hoverCol=col;hoverRow=row;},{passive:false});
 
 // ── Buttons ───────────────────────────────────────────────
-document.getElementById('btn-wave').addEventListener('click',startWave);
+let autoWave = false;
+
+function startWave(){if(waveActive)return;waveNum++;waveActive=true;spawnQueue=getWaveEnemies(waveNum).map((t,i)=>({type:t,delay:i*0.8}));spawnTimer=0;log(`🌊 第 ${waveNum} 波！`);
+  // switch button to auto-wave toggle
+  const b=document.getElementById('btn-wave');
+  b.disabled=false;
+  b.textContent=autoWave?'🔁 自动续波 ON':'🔁 自动续波';
+  b.style.background=autoWave?'#00b894':'#6c5ce7';
+  updateHUD();
+}
+
+document.getElementById('btn-wave').addEventListener('click',()=>{
+  if(!waveActive){
+    // pre-wave: start
+    startWave();
+  } else {
+    // in-wave: toggle auto
+    autoWave=!autoWave;
+    const b=document.getElementById('btn-wave');
+    b.textContent=autoWave?'🔁 自动续波 ON':'🔁 自动续波';
+    b.style.background=autoWave?'#00b894':'#6c5ce7';
+  }
+});
 document.getElementById('btn-speed').addEventListener('click',()=>{gameSpeed=gameSpeed===1?2:1;document.getElementById('btn-speed').textContent=gameSpeed===1?'⏩ 2× 加速':'⏸ 1× 恢复';});
 document.getElementById('btn-deselect').addEventListener('click',()=>{selectedPlacedTower=null;selectedTowerType=null;updateTowerCards();updateSelPanel();});
 document.getElementById('btn-upgrade').addEventListener('click',()=>{if(!selectedPlacedTower)return;const t=selectedPlacedTower;if(t.level>=t.def.maxLevel||gold<t.upgCost)return;gold-=t.upgCost;t.level++;log(`⬆️ ${t.def.name} Lv${t.level}`);updateHUD();});
 document.getElementById('btn-sell').addEventListener('click',()=>{if(!selectedPlacedTower)return;const t=selectedPlacedTower;gold+=t.sellVal;towers=towers.filter(x=>x!==t);log(`💸 出售 ${t.def.name} +💰${t.sellVal}`);selectedPlacedTower=null;updateSelPanel();updateHUD();});
 
 // ── Start / End ───────────────────────────────────────────
-function startGame(){lives=20;gold=150;score=0;waveNum=0;towers=[];enemies=[];projectiles=[];particles=[];spawnQueue=[];waveActive=false;gameSpeed=1;selectedTowerType=null;selectedPlacedTower=null;state='playing';document.getElementById('btn-speed').textContent='⏩ 2× 加速';updateHUD();log('🎮 开始！点击「开闸迎敌」。');if(animId)cancelAnimationFrame(animId);lastTime=performance.now();requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});}
+function startGame(){lives=20;gold=150;score=0;waveNum=0;towers=[];enemies=[];projectiles=[];particles=[];spawnQueue=[];waveActive=false;autoWave=false;gameSpeed=1;selectedTowerType=null;selectedPlacedTower=null;state='playing';const bw=document.getElementById('btn-wave');bw.disabled=false;bw.textContent='开闸迎敌';bw.style.background='#6c5ce7';document.getElementById('btn-speed').textContent='⏩ 2× 加速';updateHUD();log('🎮 开始！点击「开闸迎敌」。');if(animId)cancelAnimationFrame(animId);lastTime=performance.now();requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});}
 function endGame(won){state=won?'win':'gameOver';const ov=document.getElementById('overlay');ov.classList.remove('hidden');ov.innerHTML=`<h2>${won?'🎉 胜利！':'💀 游戏结束'}</h2><p>${won?`完成全部15波！得分 ⭐${score}`:`防线被突破…得分 ⭐${score}`}</p><button class="btn ${won?'blue':''}" id="btn-restart">再来一局</button>`;document.getElementById('btn-restart').addEventListener('click',()=>{ov.classList.add('hidden');startGame();});}
 
 // ── Init ──────────────────────────────────────────────────
