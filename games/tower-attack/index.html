@@ -493,23 +493,41 @@ function drawMap(){
 // ═══════════════════════════════════════════════
 //  FAKE TURRETS
 // ═══════════════════════════════════════════════
+// Base stats; actual dmg/rate/range scaled by wave each round
 const FAKE_TURRETS=[
-  {c:1, r:1, range:2.5,dmg:18,rate:1.2,cd:0},
-  {c:5, r:1, range:2.5,dmg:20,rate:1.0,cd:0},
-  {c:9, r:1, range:2.5,dmg:18,rate:1.1,cd:0},
-  {c:1, r:4, range:2.5,dmg:22,rate:1.0,cd:0},
-  {c:4, r:5, range:2.5,dmg:25,rate:0.9,cd:0},
-  {c:9, r:4, range:2.5,dmg:20,rate:1.0,cd:0},
-  {c:1, r:8, range:2.5,dmg:28,rate:0.85,cd:0},
-  {c:6, r:8, range:2.5,dmg:25,rate:0.9,cd:0},
-  {c:10,r:8, range:2.5,dmg:30,rate:0.8,cd:0},
-  {c:3, r:11,range:2.0,dmg:40,rate:0.75,cd:0},
+  {c:1, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0},
+  {c:5, r:1, baseDmg:16, baseRate:1.0, baseRange:2.2, cd:0},
+  {c:9, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0},
+  {c:1, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0},
+  {c:4, r:5, baseDmg:20, baseRate:1.0, baseRange:2.3, cd:0},
+  {c:9, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0},
+  {c:1, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0},
+  {c:6, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0},
+  {c:10,r:8, baseDmg:25, baseRate:1.0, baseRange:2.5, cd:0},
+  {c:3, r:11,baseDmg:30, baseRate:1.0, baseRange:2.0, cd:0},
 ];
+// Computed live stats, rebuilt each wave
+function scaleTurrets(wave){
+  const w=Math.max(1,wave);
+  const dmgMult  = 1 + (w-1)*0.10;   // +10% dmg per wave
+  const rateMult = 1 + (w-1)*0.06;   // +6% fire rate per wave
+  const rangeBon = Math.floor((w-1)/4)*0.35; // +0.35 range every 4 waves
+  for(const t of FAKE_TURRETS){
+    t.dmg   = t.baseDmg  * dmgMult;
+    t.rate  = t.baseRate * rateMult;
+    t.range = t.baseRange + rangeBon;
+    // tier for colour: 1-4 = green, 5-9 = orange, 10-12 = red, 13+ = purple
+    t.tier  = w<=4?0:w<=8?1:w<=12?2:3;
+  }
+}
+
+const TURRET_COLORS=['#2d3436','#5a3e1b','#5c1a1a','#2a0a4a'];
+const TURRET_RINGS =['#636e72','#e17055','#e94560','#a29bfe'];
 
 function updateFakeTurrets(dt){
   for(const t of FAKE_TURRETS){
     if(t.cd>0){t.cd-=dt*gameSpeed;continue;}
-    const range=t.range*TILE;
+    const range=(t.range??2.2)*TILE;
     const tx=t.c*TILE+TILE/2, ty=t.r*TILE+TILE/2;
     let best=null,bestD=Infinity;
     for(const e of enemies){
@@ -518,8 +536,9 @@ function updateFakeTurrets(dt){
       if(d<range&&d<bestD){bestD=d;best=e;}
     }
     if(best){
-      best.takeDamage(t.dmg); t.cd=1/t.rate;
-      ctx.strokeStyle='rgba(253,203,110,.6)';ctx.lineWidth=1.5;
+      best.takeDamage(t.dmg??18); t.cd=1/(t.rate??1);
+      const tier=t.tier??0;
+      ctx.strokeStyle=TURRET_RINGS[tier]+'99';ctx.lineWidth=1.5;
       ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(best.x,best.y);ctx.stroke();
     }
   }
@@ -528,11 +547,22 @@ function updateFakeTurrets(dt){
 function drawFakeTurrets(){
   for(const t of FAKE_TURRETS){
     const tx=t.c*TILE+TILE/2, ty=t.r*TILE+TILE/2, r=TILE*.35;
+    const tier=t.tier??0;
     ctx.beginPath();ctx.arc(tx,ty,r,0,Math.PI*2);
-    ctx.fillStyle='#2d3436';ctx.fill();
-    ctx.strokeStyle='#636e72';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle=TURRET_COLORS[tier];ctx.fill();
+    ctx.strokeStyle=TURRET_RINGS[tier];ctx.lineWidth=tier>0?2:1.5;ctx.stroke();
+    // glow for high-tier
+    if(tier>=2){
+      ctx.strokeStyle=TURRET_RINGS[tier]+'44';ctx.lineWidth=4;
+      ctx.beginPath();ctx.arc(tx,ty,r+3,0,Math.PI*2);ctx.stroke();
+    }
     ctx.font=`${TILE*.34}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('🏰',tx,ty);
+    // wave-tier label
+    if(tier>0){
+      ctx.font=`bold ${TILE*.22}px sans-serif`;ctx.fillStyle=TURRET_RINGS[tier];
+      ctx.fillText(['','★','★★','★★★'][tier],tx,ty+r+TILE*.18);
+    }
   }
 }
 
@@ -826,8 +856,13 @@ function updateWave(dt){
     const interestBonus=Math.round(gold*interest);
     gold+=income+interestBonus;
     nextSkills={};
+    const nextW=waveNum+1;
+    const tierNames=['普通','🟠加强','🔴精英','💜恶魔'];
+    const nextTier=nextW<=4?0:nextW<=8?1:nextW<=12?2:3;
     log(`✅ 第${waveNum}波结束 突破${survived} 阵亡${died} | +💰${income}${interestBonus>0?' 利息+💰'+interestBonus:''}`);
+    if(nextTier>0&&(nextW===5||nextW===9||nextW===13)) log(`⚠️ 第${nextW}波起守方炮塔升级为${tierNames[nextTier]}！`);
     enemies=[];
+    scaleTurrets(waveNum+1);  // strengthen turrets for next wave
     if(waveNum>=15){endGame();return;}
     ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
     updateHUD();buildUnitCards();buildSkillCards();renderQueues();renderMilestoneStrips();
@@ -899,6 +934,7 @@ function startGame(){
   reachedMilestones.clear();
   gameSpeed=1;speedIdx=1;state='playing';
   for(const t of FAKE_TURRETS) t.cd=0;
+  scaleTurrets(1);
   ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=true;b.textContent='⏸ 暂停';}});
   updateSpeedDisplay();updateHUD();
   buildUnitCards();buildSkillCards();renderQueues();renderMilestoneStrips();
