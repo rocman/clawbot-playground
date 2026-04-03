@@ -103,19 +103,6 @@ canvas{display:block;width:100%;height:100%;}
 @keyframes toastOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.8)}}
 
 /* ── Milestone strip ── */
-#milestone-strip{
-  flex-shrink:0;padding:4px 8px;
-  display:flex;gap:6px;overflow-x:auto;
-  border-bottom:1px solid #0f3460;background:#16213e;
-  scrollbar-width:none;
-}
-#milestone-strip::-webkit-scrollbar{display:none;}
-.ms-badge{
-  flex-shrink:0;padding:3px 8px;border-radius:12px;font-size:0.62rem;font-weight:bold;
-  border:1px solid #0f3460;background:#1a2a4a;color:#aaa;white-space:nowrap;
-}
-.ms-badge.done{background:#0d3026;border-color:#00b894;color:#00b894;}
-.ms-badge.next{border-color:#fdcb6e;color:#fdcb6e;}
 
 /* ── Panel scroll ── */
 #panel-scroll{
@@ -272,9 +259,6 @@ canvas{display:block;width:100%;height:100%;}
       </div>
     </div>
 
-    <!-- milestone strip inside sidebar for landscape -->
-    <div id="milestone-strip-ls"></div>
-
     <!-- panel scroll -->
     <div id="panel-scroll">
       <div class="panel" id="build-panel">
@@ -309,9 +293,6 @@ canvas{display:block;width:100%;height:100%;}
     </div>
   </div>
 </div>
-
-<!-- Portrait: milestone strip below map, above panel-scroll -->
-<div id="milestone-strip-pt"></div>
 
 <!-- Portrait: panel-scroll below map -->
 <div id="panel-scroll-pt">
@@ -370,27 +351,12 @@ canvas{display:block;width:100%;height:100%;}
   display:none;flex-shrink:0;flex-direction:row;align-items:stretch;
   gap:5px;padding:7px 8px;background:#16213e;border-top:1px solid #0f3460;
 }
-#milestone-strip-pt{
-  display:none;flex-shrink:0;padding:4px 8px;
-  gap:6px;overflow-x:auto;
-  border-bottom:1px solid #0f3460;background:#16213e;
-  scrollbar-width:none;
-}
-#milestone-strip-pt::-webkit-scrollbar{display:none;}
+#milestone-strip-pt{display:none;}
 @media (orientation:portrait){
   #panel-scroll-pt{display:flex;}
   #log-panel-pt{display:flex;}
   #wave-bar-pt{display:flex;}
-  #milestone-strip-pt{display:flex;}
 }
-/* ls strip hidden in portrait */
-#milestone-strip-ls{
-  flex-shrink:0;padding:4px 8px;
-  display:flex;gap:6px;overflow-x:auto;
-  border-bottom:1px solid #0f3460;background:#16213e;
-  scrollbar-width:none;
-}
-#milestone-strip-ls::-webkit-scrollbar{display:none;}
 </style>
 
 <script>
@@ -680,24 +646,9 @@ function checkMilestones(){
       if(ms.unlock) unlockedSkills.add(ms.unlock);
       showToast(`🏆 ${ms.label}\n+💰${ms.gold}${ms.unlock?' · 解锁'+SKILL_DEFS[ms.unlock].icon:''}`, 'milestone');
       log(`🏆 里程碑：${ms.desc} +💰${ms.gold}`);
-      updateHUD();buildSkillCards();renderMilestoneStrips();
+      updateHUD();buildSkillCards();
     }
   }
-}
-
-function renderMilestoneStrips(){
-  ['milestone-strip-ls','milestone-strip-pt'].forEach(id=>{
-    const strip=document.getElementById(id);
-    if(!strip) return;
-    strip.innerHTML='';
-    for(const ms of MILESTONES){
-      const done=reachedMilestones.has(ms.at);
-      const b=document.createElement('div');
-      b.className='ms-badge'+(done?' done':' next');
-      b.textContent=(done?'✓ ':'')+ms.label+(done?'':`(${ms.at})`);
-      strip.appendChild(b);
-    }
-  });
 }
 
 // ═══════════════════════════════════════════════
@@ -885,7 +836,7 @@ function updateWave(dt){
     scaleTurrets(waveNum+1);  // strengthen turrets for next wave
     if(waveNum>=15){endGame();return;}
     ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
-    updateHUD();buildUnitCards();buildSkillCards();renderQueues();renderMilestoneStrips();
+    updateHUD();buildUnitCards();buildSkillCards();renderQueues();
   }
 }
 
@@ -957,7 +908,7 @@ function startGame(){
   scaleTurrets(1);
   ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=true;b.textContent='⏸ 暂停';}});
   updateSpeedDisplay();updateHUD();
-  buildUnitCards();buildSkillCards();renderQueues();renderMilestoneStrips();
+  buildUnitCards();buildSkillCards();renderQueues();
   log(`⚔️ 开始！首波资金💰${gold}，共15波，突破防线！`);
   if(animId) cancelAnimationFrame(animId);
   lastTime=performance.now();
