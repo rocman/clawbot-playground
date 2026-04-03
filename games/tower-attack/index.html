@@ -535,7 +535,6 @@ function canUnlockTech(def){
 }
 
 function upgradeTech(id){
-  if(state!=='playing'&&state!=='wavePause') return;
   const def=TECH_DEFS.find(d=>d.id===id);
   if(!def) return;
   const curLv=techLevels[id]||0;
@@ -1198,6 +1197,10 @@ function endGame(){
 document.getElementById('btn-start').addEventListener('click',()=>{
   document.getElementById('overlay').classList.add('hidden');startGame();
 });
+
+// pre-render tech tree so it's browsable before game starts
+rebuildTechPerms();
+buildTechTree();
 
 // fix renderQueues variable leak
 var sl; // suppress lint
