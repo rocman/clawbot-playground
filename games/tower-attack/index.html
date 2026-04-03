@@ -167,19 +167,17 @@ canvas{display:block;width:100%;height:100%;}
 .skill-lock-tag{font-size:0.58rem;color:#e94560;margin-top:1px;}
 
 /* ── Queue ── */
-#queue-list{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;padding:6px;display:flex;flex-direction:row;gap:4px;align-items:flex-start;}
-#queue-list-pt{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;padding:4px 6px;display:flex;flex-direction:row;gap:4px;align-items:flex-start;}
+#queue-list{flex:1;min-height:0;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:4px;}
+#queue-list-pt{flex:1;min-height:0;overflow-y:auto;padding:4px 6px;display:flex;flex-direction:column;gap:4px;}
 .queue-item{
-  flex-shrink:0;display:flex;flex-direction:column;align-items:center;
+  display:flex;align-items:center;gap:6px;
   background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
-  padding:4px 6px;gap:2px;position:relative;min-width:44px;
+  padding:5px 8px;flex-shrink:0;
 }
-.queue-item .qi-icon{font-size:1.1rem;line-height:1;}
-.queue-item .qi-label{font-size:0.58rem;color:#aaa;text-align:center;white-space:nowrap;}
-.queue-item .qi-rm{position:absolute;top:-4px;right:-4px;background:#e94560;border:none;color:#fff;cursor:pointer;font-size:0.6rem;padding:0;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
-.queue-item .qi-rm:hover{background:#c0392b;}
-#queue-empty{color:#555;font-size:0.72rem;padding:8px;text-align:center;white-space:nowrap;}
-#queue-empty-pt{color:#555;font-size:0.65rem;padding:6px;text-align:center;white-space:nowrap;}
+.queue-item .qi-icon{font-size:1rem;flex-shrink:0;}
+.queue-item .qi-label{flex:1;font-size:0.72rem;color:#eee;}
+.queue-item .qi-timer{font-size:0.68rem;font-weight:bold;color:#fdcb6e;white-space:nowrap;flex-shrink:0;}
+.queue-empty-msg{color:#555;font-size:0.72rem;padding:8px;text-align:center;}
 
 /* ── Log ── */
 #log{flex:1;min-height:0;overflow-y:auto;padding:6px 8px;font-size:0.68rem;color:#aaa;line-height:1.6;}
@@ -268,8 +266,8 @@ canvas{display:block;width:100%;height:100%;}
         <div id="log-pt"></div>
       </div>
       <div class="panel" id="queue-panel-pt">
-        <div class="panel-title">📋 出兵/技能队列</div>
-        <div id="queue-list-pt"><div id="queue-empty-pt">队列为空</div></div>
+        <div class="panel-title">✨ 技能加持</div>
+        <div id="queue-list-pt"><div class="queue-empty-msg">暂无激活技能</div></div>
       </div>
     </div>
   </div>
@@ -308,8 +306,8 @@ canvas{display:block;width:100%;height:100%;}
       </div>
 
       <div class="panel" id="queue-panel">
-        <div class="panel-title">📋 出兵/技能队列</div>
-        <div id="queue-list"><div id="queue-empty">队列为空 — 点击兵种或技能加入</div></div>
+        <div class="panel-title">✨ 技能加持</div>
+        <div id="queue-list"><div class="queue-empty-msg">暂无激活技能</div></div>
       </div>
 
       <div class="panel" id="log-panel">
@@ -419,12 +417,12 @@ const UNIT_DEFS={
 };
 
 const SKILL_DEFS={
-  rush:    {name:'急行军', icon:'🌪️',cost:60, desc:'本波所有兵速度+40%',   unlockAt:null,type:'wave',  apply:s=>{s.speedMult=1.4;}},
-  income:  {name:'掠夺者', icon:'💰',cost:80, desc:'下波资金收入+50%',    unlockAt:null,type:'next',  apply:s=>{s.incomeBonus=0.5;}},
-  shield:  {name:'魔法护盾',icon:'🛡️',cost:100,desc:'本波所有兵获得护盾',  unlockAt:1,  type:'wave',  apply:s=>{s.shield=true;}},
-  blind:   {name:'烟雾弹', icon:'💣',cost:120,desc:'烟雾降低守方炮塔效率', unlockAt:5,  type:'instant',apply:s=>{s.blind=true;}},
-  boost:   {name:'强化血脉',icon:'🧬',cost:90, desc:'本波所有兵HP+30%',   unlockAt:10, type:'wave',  apply:s=>{s.hpMult=1.3;}},
-  interest:{name:'利滚利', icon:'📈',cost:150,desc:'未用资金下波额外+20%', unlockAt:20, type:'next',  apply:s=>{s.interest=0.2;}},
+  rush:    {name:'急行军', icon:'🌪️',cost:60, desc:'本波所有兵速度+40%',    unlockAt:null,type:'wave',  duration:0, apply:s=>{s.speedMult=1.4;}},
+  income:  {name:'掠夺者', icon:'💰',cost:80, desc:'下波资金收入+50%',     unlockAt:null,type:'next',  duration:0, apply:s=>{s.incomeBonus=0.5;}},
+  shield:  {name:'魔法护盾',icon:'🛡️',cost:100,desc:'本波所有兵获得护盾',   unlockAt:1,  type:'wave',  duration:0, apply:s=>{s.shield=true;}},
+  blind:   {name:'烟雾弹', icon:'💣',cost:120,desc:'炮塔射速-50%，持续8秒', unlockAt:5,  type:'timed', duration:8, apply:s=>{s.blind=true;}},
+  boost:   {name:'强化血脉',icon:'🧬',cost:90, desc:'本波所有兵HP+30%',    unlockAt:10, type:'wave',  duration:0, apply:s=>{s.hpMult=1.3;}},
+  interest:{name:'利滚利', icon:'📈',cost:150,desc:'未用资金下波额外+20%',  unlockAt:20, type:'next',  duration:0, apply:s=>{s.interest=0.2;}},
 };
 
 const MILESTONES=[
@@ -635,11 +633,16 @@ let state='idle';
 let gold=0,waveNum=0,breachCount=0,gameSpeed=1,speedIdx=1;
 const SPEED_STEPS=[0.5,1,2,3,4];
 let enemies=[],spawnQueue=[],spawnTimer=0,waveActive=false;
-let sendQueue=[];
 let activeSkills={},nextSkills={};
+// activeSkillTimers: {skillKey: remainingSeconds}
+let activeSkillTimers={};
 let unlockedSkills=new Set(['rush','income']);
 let lastTime=0,animId=null;
 const reachedMilestones=new Set();
+// defender economy
+let defenderGold=0;
+const DEFENDER_INCOME_PER_WAVE=60; // gold defender earns each wave
+const TURRET_BUILD_COST=80;        // cost to build one turret
 
 function waveGold(n){return 100+(n-1)*30;}
 
@@ -728,7 +731,7 @@ function switchTab(tab){
 }
 
 // ═══════════════════════════════════════════════
-//  UNIT CARDS (rendered into both ls and pt lists)
+//  UNIT CARDS — click = deploy immediately
 // ═══════════════════════════════════════════════
 function buildUnitCards(){
   ['unit-list','unit-list-pt'].forEach(id=>{
@@ -736,19 +739,20 @@ function buildUnitCards(){
     ul.innerHTML='';
     Object.entries(UNIT_DEFS).forEach(([key,def])=>{
       const canAfford=def.cost<=gold;
+      const active=state==='playing'||state==='wavePause';
       const card=document.createElement('div');
-      card.className='unit-card'+(canAfford?'':' disabled');
+      card.className='unit-card'+(canAfford&&active?'':' disabled');
       card.innerHTML=`<div class="unit-icon">${def.icon}</div>
         <div class="unit-info"><div class="unit-name">${def.name}</div><div class="unit-desc">${def.desc}</div></div>
         <div class="unit-cost">💰${def.cost}</div>`;
-      if(canAfford) card.addEventListener('click',()=>addToQueue('unit',key));
+      if(canAfford&&active) card.addEventListener('click',()=>deployUnit(key));
       ul.appendChild(card);
     });
   });
 }
 
 // ═══════════════════════════════════════════════
-//  SKILL CARDS
+//  SKILL CARDS — click = activate immediately
 // ═══════════════════════════════════════════════
 function buildSkillCards(){
   ['skill-list','skill-list-pt'].forEach(id=>{
@@ -757,63 +761,95 @@ function buildSkillCards(){
     Object.entries(SKILL_DEFS).forEach(([key,def])=>{
       const unlocked=unlockedSkills.has(key);
       const canAfford=def.cost<=gold;
+      const active=state==='playing'||state==='wavePause';
+      const alreadyOn=key in activeSkillTimers;
       const card=document.createElement('div');
       let cls='skill-card';
-      if(!unlocked) cls+=' locked'; else if(!canAfford) cls+=' disabled';
+      if(!unlocked) cls+=' locked';
+      else if(!canAfford||alreadyOn) cls+=' disabled';
       card.className=cls;
       const lockTag=unlocked?'':
         `<div class="skill-lock-tag">🔒 需突破${def.unlockAt??0}次解锁</div>`;
+      const activeTag=alreadyOn?`<div class="skill-lock-tag" style="color:#00b894">✅ 已激活</div>`:'';
       card.innerHTML=`<div class="skill-icon">${def.icon}</div>
         <div class="skill-info">
           <div class="skill-name">${def.name}</div>
-          <div class="skill-desc">${def.desc}</div>${lockTag}
+          <div class="skill-desc">${def.desc}</div>${lockTag}${activeTag}
         </div>
         <div class="skill-cost">${unlocked?'💰'+def.cost:'🔒'}</div>`;
-      if(unlocked&&canAfford&&(state==='playing'||state==='wavePause'))
-        card.addEventListener('click',()=>addToQueue('skill',key));
+      if(unlocked&&canAfford&&active&&!alreadyOn)
+        card.addEventListener('click',()=>activateSkill(key));
       sl.appendChild(card);
     });
   });
 }
 
 // ═══════════════════════════════════════════════
-//  QUEUE
+//  DEPLOY & ACTIVATE
 // ═══════════════════════════════════════════════
-function addToQueue(kind,key){
+function deployUnit(key){
   if(state!=='playing'&&state!=='wavePause') return;
-  const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
+  const def=UNIT_DEFS[key];
   if(def.cost>gold) return;
   gold-=def.cost;
-  sendQueue.push({kind,key});
-  updateHUD();buildUnitCards();buildSkillCards();renderQueues();
-  log(`➕ ${def.icon}${def.name} 加入队列（-💰${def.cost}）`);
+  // start wave if not active
+  if(!waveActive){
+    waveNum++;waveActive=true;
+    spawnTimer=0;
+    log(`🌊 第${waveNum}波！`);
+    ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
+  }
+  // collect current active mods to apply to this unit
+  const mods={...activeSkills};
+  spawnQueue.push({type:key,delay:spawnQueue.length>0?0.5:0,mods});
+  log(`⚔️ 派遣 ${def.icon}${def.name}`);
+  updateHUD();buildUnitCards();buildSkillCards();
+  // update send button: disabled while wave active
+  ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
+  renderActiveSkills();
 }
 
-function renderQueues(){
+function activateSkill(key){
+  if(state!=='playing'&&state!=='wavePause') return;
+  const def=SKILL_DEFS[key];
+  if(def.cost>gold||key in activeSkillTimers) return;
+  gold-=def.cost;
+  const ef={};def.apply(ef);
+  if(def.type==='wave'||def.type==='timed'){
+    Object.assign(activeSkills,ef);
+    // timed skills have countdown; wave skills last until wave ends (use 9999)
+    activeSkillTimers[key]=def.duration>0?def.duration:9999;
+    log(`✨ ${def.icon}${def.name} 已激活！`);
+  } else if(def.type==='next'){
+    Object.assign(nextSkills,ef);
+    activeSkillTimers[key]=9999; // show as active until wave ends
+    log(`📌 ${def.icon}${def.name} 将在下波生效`);
+  }
+  updateHUD();buildSkillCards();renderActiveSkills();
+}
+
+// ═══════════════════════════════════════════════
+//  ACTIVE SKILLS PANEL (replaces queue)
+// ═══════════════════════════════════════════════
+function renderActiveSkills(){
   ['queue-list','queue-list-pt'].forEach(id=>{
     const ql=document.getElementById(id); if(!ql) return;
     ql.innerHTML='';
-    if(!sendQueue.length){
-      const e=document.createElement('div');
-      e.textContent=id==='queue-list-pt'?'队列为空':'队列为空 — 点击兵种或技能加入';
-      ql.appendChild(e);
-    } else {
-      sendQueue.forEach(({kind,key},idx)=>{
-        const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
-        const row=document.createElement('div');row.className='queue-item';
-        const tag=kind==='skill'?`<span class="qi-label" style="color:#fdcb6e">技能</span>`:`<span class="qi-label">${def.name}</span>`;
-        row.innerHTML=`<button class="qi-rm">✕</button><span class="qi-icon">${def.icon}</span>${tag}`;
-        row.querySelector('.qi-rm').addEventListener('click',()=>{
-          gold+=def.cost;sendQueue.splice(idx,1);
-          updateHUD();buildUnitCards();buildSkillCards();renderQueues();
-        });
-        ql.appendChild(row);
-      });
+    const keys=Object.keys(activeSkillTimers);
+    if(!keys.length){
+      const e=document.createElement('div');e.className='queue-empty-msg';
+      e.textContent='暂无激活技能';ql.appendChild(e);return;
     }
-  });
-  const hasSend=sendQueue.some(i=>i.kind==='unit');
-  ['btn-send','btn-send-pt'].forEach(id=>{
-    const b=document.getElementById(id); if(b) b.disabled=!hasSend;
+    keys.forEach(key=>{
+      const def=SKILL_DEFS[key];
+      const t=activeSkillTimers[key];
+      const timeStr=t>=9999?(def.type==='next'?'下波':'波次中'):Math.ceil(t)+'s';
+      const row=document.createElement('div');row.className='queue-item';
+      row.innerHTML=`<span class="qi-icon">${def.icon}</span>
+        <span class="qi-label">${def.name}</span>
+        <span class="qi-timer">${timeStr}</span>`;
+      ql.appendChild(row);
+    });
   });
 }
 
@@ -821,24 +857,7 @@ function renderQueues(){
 //  WAVE
 // ═══════════════════════════════════════════════
 function sendWave(){
-  if(waveActive||!sendQueue.some(i=>i.kind==='unit')) return;
-  waveNum++;waveActive=true;
-  const skillItems=sendQueue.filter(i=>i.kind==='skill');
-  const unitItems=sendQueue.filter(i=>i.kind==='unit');
-  const mods={};
-  for(const {key} of skillItems){
-    const ef={};SKILL_DEFS[key].apply(ef);
-    if(SKILL_DEFS[key].type==='wave'||SKILL_DEFS[key].type==='instant') Object.assign(mods,ef);
-    else Object.assign(nextSkills,ef);
-    if(SKILL_DEFS[key].type==='instant') log(`💣 ${SKILL_DEFS[key].name}已触发！`);
-  }
-  activeSkills={...mods};
-  spawnQueue=unitItems.map((item,i)=>({type:item.key,delay:i*0.7,mods}));
-  sendQueue=[];spawnTimer=0;
-  log(`🌊 第${waveNum}波！${unitItems.length}只${skillItems.length?' ✨'+skillItems.map(i=>SKILL_DEFS[i.key].icon+SKILL_DEFS[i.key].name).join(' '):''}`);
-  ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
-  ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
-  updateHUD();renderQueues();
+  // no longer used; units deploy on click via deployUnit()
 }
 
 function updateWave(dt){
@@ -850,7 +869,8 @@ function updateWave(dt){
   if(!spawnQueue.length&&enemies.length>0&&enemies.every(e=>e.dead||e.reached)){
     const survived=enemies.filter(e=>e.reached).length;
     const died=enemies.filter(e=>e.dead).length;
-    waveActive=false;activeSkills={};
+    waveActive=false;
+    activeSkills={};activeSkillTimers={};  // clear all skill effects
     const incomeBonus=Object.values(nextSkills).reduce((a,e)=>a+(e.incomeBonus??0),0);
     const interest=Object.values(nextSkills).reduce((a,e)=>a+(e.interest??0),0);
     let income=waveGold(waveNum+1);
@@ -858,16 +878,24 @@ function updateWave(dt){
     const interestBonus=Math.round(gold*interest);
     gold+=income+interestBonus;
     nextSkills={};
+    log(`✅ 第${waveNum}波结束 突破${survived} 阵亡${died} | +💰${income}${interestBonus>0?' 利息+💰'+interestBonus:''}`);
+    // defender earns gold and may build new turret
+    defenderGold+=DEFENDER_INCOME_PER_WAVE+waveNum*10;
+    const locked=FAKE_TURRETS.filter(t=>!t.active).sort((a,b)=>a.unlockWave-b.unlockWave);
+    if(locked.length&&defenderGold>=TURRET_BUILD_COST){
+      const t=locked[0];t.active=true;defenderGold-=TURRET_BUILD_COST;
+      log(`🏰 守方建造了新炮塔！（第${waveNum+1}波前，共${FAKE_TURRETS.filter(t=>t.active).length}座）`);
+    }
     const nextW=waveNum+1;
     const tierNames=['普通','🟠加强','🔴精英','💜恶魔'];
     const nextTier=nextW<=4?0:nextW<=8?1:nextW<=12?2:3;
-    log(`✅ 第${waveNum}波结束 突破${survived} 阵亡${died} | +💰${income}${interestBonus>0?' 利息+💰'+interestBonus:''}`);
     if(nextTier>0&&(nextW===5||nextW===9||nextW===13)) log(`⚠️ 第${nextW}波起守方炮塔升级为${tierNames[nextTier]}！`);
     enemies=[];
-    scaleTurrets(waveNum+1);  // strengthen turrets for next wave
+    scaleTurrets(waveNum+1);
     if(waveNum>=15){endGame();return;}
+    ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
     ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
-    updateHUD();buildUnitCards();buildSkillCards();renderQueues();
+    updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
   }
 }
 
@@ -913,9 +941,27 @@ function togglePause(){
 function gameLoop(ts){
   const dt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;
   if(state!=='paused'){
+    const realDt=dt*gameSpeed;
     drawMap();drawFakeTurrets();updateFakeTurrets(dt);
     for(const e of enemies) e.update(dt);
     for(const e of enemies) e.draw();
+    // tick timed skill timers
+    let skillsChanged=false;
+    for(const key of Object.keys(activeSkillTimers)){
+      if(activeSkillTimers[key]<9999){
+        activeSkillTimers[key]-=realDt;
+        if(activeSkillTimers[key]<=0){
+          delete activeSkillTimers[key];
+          // remove effect
+          const ef={};SKILL_DEFS[key].apply(ef);
+          for(const k of Object.keys(ef)) delete activeSkills[k];
+          log(`⏱ ${SKILL_DEFS[key].icon}${SKILL_DEFS[key].name} 已结束`);
+          skillsChanged=true;
+        }
+      }
+    }
+    if(skillsChanged){buildSkillCards();renderActiveSkills();}
+    else if(waveActive) renderActiveSkills(); // refresh timer display each frame (throttle below)
     updateWave(dt);
   }
   animId=requestAnimationFrame(gameLoop);
@@ -930,16 +976,18 @@ function startGame(){
   if(!PATH_WP.length) rebuildWP();
 
   gold=waveGold(1);waveNum=0;breachCount=0;
-  enemies=[];spawnQueue=[];sendQueue=[];waveActive=false;
-  activeSkills={};nextSkills={};
+  enemies=[];spawnQueue=[];waveActive=false;
+  activeSkills={};nextSkills={};activeSkillTimers={};
+  defenderGold=0;
   unlockedSkills=new Set(['rush','income']);
   reachedMilestones.clear();
   gameSpeed=1;speedIdx=1;state='playing';
-  for(const t of FAKE_TURRETS) t.cd=0;
+  for(const t of FAKE_TURRETS){t.cd=0;t.active=false;}
   scaleTurrets(1);
   ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=true;b.textContent='⏸ 暂停';}});
+  ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
   updateSpeedDisplay();updateHUD();
-  buildUnitCards();buildSkillCards();renderQueues();
+  buildUnitCards();buildSkillCards();renderActiveSkills();
   log(`⚔️ 开始！首波资金💰${gold}，共15波，突破防线！`);
   if(animId) cancelAnimationFrame(animId);
   lastTime=performance.now();
