@@ -457,7 +457,7 @@
   <h2>🏰 Tower Defence</h2>
   <p>在路径旁边的空地上建造炮塔<br>阻止敌人到达终点！</p>
   <button class="btn blue" id="btn-fs-start" style="display:none">⛶ 全屏开始</button>
-  <button class="btn" id="btn-start">▶ 开始游戏</button>
+  <button class="btn" id="btn-start">⚔️ 开始守城</button>
 </div>
 
 <!-- In-game fullscreen toast -->
@@ -848,16 +848,31 @@ function updateSelPanel(){
 // ── Wave ──────────────────────────────────────────────────
 function startWave(){if(waveActive)return;waveNum++;waveActive=true;spawnQueue=getWaveEnemies(waveNum).map((t,i)=>({type:t,delay:i*0.8}));spawnTimer=0;log(`🌊 第 ${waveNum} 波！`);document.getElementById('btn-wave').disabled=true;updateHUD();}
 function updateWave(dt){
+  // pre-wave countdown
+  if(!waveActive&&waveCountdown>0){
+    waveCountdown-=dt*gameSpeed;
+    const bw=document.getElementById('btn-wave');
+    if(waveCountdown>0){
+      bw.textContent=`${Math.ceil(waveCountdown)}s 后开闸`;
+      bw.disabled=true;bw.style.background='#444';
+    } else {
+      waveCountdown=0;
+      startWave();
+    }
+    return;
+  }
   if(!waveActive)return;
   spawnTimer+=dt*gameSpeed;
   while(spawnQueue.length&&spawnQueue[0].delay<=spawnTimer)enemies.push(new Enemy(spawnQueue.shift().type));
-  if(!spawnQueue.length&&enemies.every(e=>e.dead||e.reached)){waveActive=false;const b=50+waveNum*20;gold+=b;score+=waveNum*100;log(`✅ 第 ${waveNum} 波清除！💰+${b}`);updateHUD();if(waveNum>=15){endGame(true);return;}
+  if(!spawnQueue.length&&enemies.every(e=>e.dead||e.reached)){
+    waveActive=false;const b=50+waveNum*20;gold+=b;score+=waveNum*100;
+    log(`✅ 第 ${waveNum} 波清除！💰+${b}`);updateHUD();
+    if(waveNum>=15){endGame(true);return;}
     const btn=document.getElementById('btn-wave');
-    if(autoWave){
-      setTimeout(startWave,800);
-    } else {
-      btn.disabled=false;btn.textContent='开闸迎敌';btn.style.background='#6c5ce7';
-    }
+    const delay=autoWave?0.8:5;
+    waveCountdown=delay;
+    const label=autoWave?'自动续波…':'5s 后开闸';
+    btn.disabled=true;btn.textContent=label;btn.style.background='#444';
   }
 }
 
@@ -903,12 +918,11 @@ canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];
 // ── Buttons ───────────────────────────────────────────────
 let autoWave = false;
 
-function startWave(){if(waveActive)return;waveNum++;waveActive=true;spawnQueue=getWaveEnemies(waveNum).map((t,i)=>({type:t,delay:i*0.8}));spawnTimer=0;log(`🌊 第 ${waveNum} 波！`);
+function startWave(){if(waveActive)return;waveNum++;waveActive=true;waveCountdown=0;spawnQueue=getWaveEnemies(waveNum).map((t,i)=>({type:t,delay:i*0.8}));spawnTimer=0;log(`🌊 第 ${waveNum} 波！`);
   const b=document.getElementById('btn-wave');
   b.disabled=false;
   b.textContent=autoWave?'☑ 自动续波':'☐ 自动续波';
   b.style.background=autoWave?'#00b894':'#6c5ce7';
-  // enable pause now that a wave is running
   document.getElementById('btn-pause').disabled=false;
   updateHUD();
 }
@@ -924,16 +938,14 @@ document.getElementById('btn-pause').addEventListener('click', () => {
 });
 
 document.getElementById('btn-wave').addEventListener('click',()=>{
-  if(!waveActive){
-    // pre-wave: start
-    startWave();
-  } else {
+  if(waveActive){
     // in-wave: toggle auto
     autoWave=!autoWave;
     const b=document.getElementById('btn-wave');
     b.textContent=autoWave?'☑ 自动续波':'☐ 自动续波';
     b.style.background=autoWave?'#00b894':'#6c5ce7';
   }
+  // pre-wave: button is disabled, no action
 });
 const SPEED_STEPS = [0.5, 1, 2, 3, 4];
 let speedIdx = 1; // default 1×
@@ -955,7 +967,24 @@ document.getElementById('btn-upgrade').addEventListener('click',()=>{if(!selecte
 document.getElementById('btn-sell').addEventListener('click',()=>{if(!selectedPlacedTower)return;const t=selectedPlacedTower;gold+=t.sellVal;towers=towers.filter(x=>x!==t);log(`💸 出售 ${t.def.name} +💰${t.sellVal}`);selectedPlacedTower=null;updateSelPanel();updateHUD();});
 
 // ── Start / End ───────────────────────────────────────────
-function startGame(){lives=20;gold=150;score=0;waveNum=0;towers=[];enemies=[];projectiles=[];particles=[];spawnQueue=[];waveActive=false;autoWave=false;gameSpeed=1;speedIdx=1;selectedTowerType=null;selectedPlacedTower=null;state='playing';const bw=document.getElementById('btn-wave');bw.disabled=false;bw.textContent='开闸迎敌';bw.style.background='#6c5ce7';updateSpeedDisplay();const bp=document.getElementById('btn-pause');bp.textContent='⏸ 暂停';bp.disabled=true;updateHUD();log('🎮 开始！点击「开闸迎敌」。');if(animId)cancelAnimationFrame(animId);lastTime=performance.now();requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});}
+let waveCountdown=0; // seconds remaining before first wave auto-starts
+function startGame(){
+  lives=20;gold=150;score=0;waveNum=0;
+  towers=[];enemies=[];projectiles=[];particles=[];spawnQueue=[];
+  waveActive=false;autoWave=false;gameSpeed=1;speedIdx=1;
+  selectedTowerType=null;selectedPlacedTower=null;state='playing';
+  const bw=document.getElementById('btn-wave');
+  bw.disabled=true;bw.style.background='#444';
+  waveCountdown=5;
+  bw.textContent=`${Math.ceil(waveCountdown)}s 后开闸`;
+  updateSpeedDisplay();
+  const bp=document.getElementById('btn-pause');bp.textContent='⏸ 暂停';bp.disabled=true;
+  updateHUD();
+  log('🎮 开始！5 秒后自动开闸迎敌…');
+  if(animId)cancelAnimationFrame(animId);
+  lastTime=performance.now();
+  requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});
+}
 function endGame(won){state=won?'win':'gameOver';document.getElementById('btn-pause').disabled=true;const ov=document.getElementById('overlay');ov.classList.remove('hidden');ov.innerHTML=`<h2>${won?'🎉 胜利！':'💀 游戏结束'}</h2><p>${won?`完成全部15波！得分 ⭐${score}`:`防线被突破…得分 ⭐${score}`}</p><button class="btn ${won?'blue':''}" id="btn-restart">再来一局</button>`;document.getElementById('btn-restart').addEventListener('click',()=>{ov.classList.add('hidden');startGame();});}
 
 // ── Init ──────────────────────────────────────────────────
