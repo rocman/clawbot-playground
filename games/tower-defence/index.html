@@ -51,15 +51,15 @@
     #header-portrait { display: none; }   /* hide top bar */
     #content { flex-direction: row; }
 
-    /* sidebar: fixed width column, full height */
+    /* sidebar: fills ALL remaining space beside the map */
     #sidebar {
-      display: flex !important;           /* override portrait hide */
+      display: flex !important;
       flex-direction: column;
-      width: 188px;
-      flex-shrink: 0;
+      flex: 1;
+      min-width: 0;
       height: 100%;
       background: #16213e;
-      border-right: 2px solid #0f3460;
+      border-left: 2px solid #0f3460;   /* border on left (map is on the left) */
       overflow: hidden;
     }
     /* sidebar header block */
@@ -106,15 +106,17 @@
   #map-area.resizing { opacity: 0.92; }
   canvas { display: block; }
 
-  /* ── Map wrapper: fills all space, same bg as map ── */
+  /* ── Map wrapper: centers the square canvas; sidebar fills the rest ── */
   #map-wrap {
-    flex: 1;
-    min-width: 0; min-height: 0;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #2d4a2d;
     overflow: hidden;
+  }
+  @media (orientation: portrait) {
+    #map-wrap { width: 100%; flex: 0 0 auto; }
   }
 
   /* ── Overlay ── */
@@ -246,20 +248,6 @@
 
 <div id="content">
 
-  <!-- Landscape sidebar (hidden in portrait) -->
-  <div id="sidebar">
-    <div id="sidebar-header">
-      <h1>🏰 Tower Defence</h1>
-      <div class="stats">
-        <div class="stat">❤️ <span id="lives-val2">20</span></div>
-        <div class="stat">💰 <span id="gold-val2">150</span></div>
-        <div class="stat">🌊 <span id="wave-val2">0</span></div>
-        <div class="stat">⭐ <span id="score-val2">0</span></div>
-      </div>
-    </div>
-    <!-- panel-scroll is moved here by JS in landscape, see below -->
-  </div>
-
   <!-- Map -->
   <div id="map-wrap">
     <div id="map-area">
@@ -282,6 +270,20 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Landscape sidebar (hidden in portrait, appended after map-wrap) -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h1>🏰 Tower Defence</h1>
+      <div class="stats">
+        <div class="stat">❤️ <span id="lives-val2">20</span></div>
+        <div class="stat">💰 <span id="gold-val2">150</span></div>
+        <div class="stat">🌊 <span id="wave-val2">0</span></div>
+        <div class="stat">⭐ <span id="score-val2">0</span></div>
+      </div>
+    </div>
+    <!-- panel-scroll is moved here by JS in landscape -->
   </div>
 
   <!-- Panel scroll (portrait: after map; landscape: inside sidebar via JS) -->
@@ -360,11 +362,9 @@ function arrangePanels() {
 function calcSize() {
   const vw = window.innerWidth, vh = window.innerHeight;
   if (isLandscape()) {
-    // map-wrap fills flex:1, sidebar is 188px — measure actual available area
-    const mapWrap = document.getElementById('map-wrap');
-    const ww = mapWrap ? mapWrap.clientWidth  : vw - 188;
-    const wh = mapWrap ? mapWrap.clientHeight : vh;
-    const avail = Math.min(ww, wh) - 12;
+    // map height = full viewport height (minus tiny margin), width = height (square)
+    // sidebar gets whatever is left — no fixed width needed
+    const avail = vh - 12;
     return Math.max(200, Math.floor(avail / COLS) * COLS);
   } else {
     const headerH = document.getElementById('header-portrait').offsetHeight;
