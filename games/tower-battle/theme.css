@@ -1,0 +1,12 @@
+/* tower-battle/theme.css — 共用主题变量 */
+:root {
+  --bg-deep:    #0d1b2e;
+  --bg-panel:   #16213e;
+  --bg-card:    #1a2a4a;
+  --border:     #0f3460;
+  --accent-red: #e94560;
+  --accent-blue:#0984e3;
+  --accent-gold:#fdcb6e;
+  --text:       #eee;
+  --text-muted: #aaa;
+}
