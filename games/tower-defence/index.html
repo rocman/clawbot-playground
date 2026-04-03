@@ -117,6 +117,7 @@
     justify-content: center;
     background: #0d1b2e;
     overflow: hidden;
+    padding: 8px;
   }
 
   /* Portrait: map-wrap full width, height auto */
@@ -196,33 +197,63 @@
 
   #panel-scroll {
     flex: 1; min-width: 0; min-height: 0;
-    overflow-y: auto; overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    padding: 6px 8px 10px;
+    overflow: hidden;
+    padding: 6px 8px 0;
     display: flex;
-    gap: 7px;
+    flex-direction: column;
+    gap: 6px;
   }
-  /* portrait: horizontal wrap, full width */
+  /* portrait: side-by-side for log, vertical for main panels */
   @media (orientation: portrait) {
     #panel-scroll {
-      flex-direction: row;
-      flex-wrap: wrap;
-      align-content: flex-start;
+      flex-direction: column;
       width: 100%;
+      overflow-y: auto;
     }
-    .panel-section { flex: 1; min-width: 138px; }
   }
 
-  /* ── Panel sections ── */
+  /* ── Build & selected panels: flex:1, inner scroll ── */
+  #build-panel, #sel-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 7px;
+    background: #16213e;
+    border: 1px solid #0f3460;
+    padding: 8px;
+  }
+  #build-panel-inner, #sel-panel-inner {
+    flex: 1; min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px; flex-shrink: 0;
+  }
+  .panel-header h3 {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #74b9ff;
+    margin: 0;
+  }
+  .panel-close {
+    background: none; border: none; cursor: pointer;
+    color: #777; font-size: 1rem; line-height: 1; padding: 0 2px;
+  }
+  .panel-close:hover { color: #e94560; }
+
+  /* ── Panel sections (log) ── */
   .panel-section {
     background: #16213e;
     border: 1px solid #0f3460;
     border-radius: 7px;
     padding: 8px;
-  }
-  @media (orientation: landscape) {
-    /* inside sidebar, sections are full width */
-    .panel-section { flex-shrink: 0; }
+    flex-shrink: 0;
   }
   .panel-section h3 {
     font-size: 0.68rem;
@@ -266,14 +297,14 @@
 
   /* ── Wave buttons ── */
   .wave-btn {
-    width: 100%; padding: 6px; border: none; border-radius: 6px;
+    flex: 1; padding: 10px 6px; border: none; border-radius: 6px;
     cursor: pointer; font-size: 0.8rem; font-weight: bold;
     transition: background .2s;
   }
   #btn-wave  { background: #6c5ce7; color: #fff; }
   #btn-wave:hover  { background: #5541d1; }
   #btn-wave:disabled { background: #444; cursor: not-allowed; }
-  #btn-speed { background: #0984e3; color: #fff; margin-top: 5px; }
+  #btn-speed { background: #0984e3; color: #fff; }
   #btn-speed:hover { background: #0652b0; }
 
   /* ── Log ── */
@@ -340,18 +371,30 @@
   <button id="fs-toast-no">维持现状</button>
 </div>
   <div id="panel-scroll">
-    <div class="panel-section">
-      <h3>🏗️ 建造炮塔</h3>
-      <div class="tower-grid" id="tower-grid"></div>
+    <!-- Build panel (shown when no tower selected) -->
+    <div id="build-panel">
+      <div class="panel-header">
+        <h3>🏗️ 建造炮塔</h3>
+      </div>
+      <div id="build-panel-inner">
+        <div class="tower-grid" id="tower-grid"></div>
+      </div>
     </div>
 
-    <div class="panel-section" id="sel-panel" style="display:none">
-      <h3>🔧 已选炮台</h3>
-      <div id="sel-info"></div>
-      <button id="btn-upgrade">⬆️ 升级</button>
-      <button id="btn-sell">💸 出售</button>
+    <!-- Selected tower panel (shown when a placed tower is selected) -->
+    <div id="sel-panel" style="display:none">
+      <div class="panel-header">
+        <h3>🔧 已选炮台</h3>
+        <button class="panel-close" id="btn-deselect" title="取消选择">✕</button>
+      </div>
+      <div id="sel-panel-inner">
+        <div id="sel-info"></div>
+        <button id="btn-upgrade">⬆️ 升级</button>
+        <button id="btn-sell">💸 出售</button>
+      </div>
     </div>
 
+    <!-- Log -->
     <div class="panel-section">
       <h3>📋 战报</h3>
       <div id="log"></div>
@@ -420,14 +463,14 @@ function arrangePanels() {
 function calcSize() {
   const vw = window.innerWidth, vh = window.innerHeight;
   if (isLandscape()) {
-    // CSS already constrains map-wrap width = min(100vh, 100vw-160px)
-    // read the actual rendered width for pixel-perfect tile sizing
     const mapWrap = document.getElementById('map-wrap');
-    const avail = mapWrap ? Math.min(mapWrap.clientWidth, mapWrap.clientHeight) : vh;
+    const avail = mapWrap
+      ? Math.min(mapWrap.clientWidth, mapWrap.clientHeight) - 16
+      : vh - 16;
     return Math.max(200, Math.floor(avail / COLS) * COLS);
   } else {
     const headerH = document.getElementById('header-portrait').offsetHeight;
-    const avail = Math.min(vw - 12, vh - headerH - 150);
+    const avail = Math.min(vw - 16, vh - headerH - 150);
     return Math.max(200, Math.floor(Math.max(avail, 200) / COLS) * COLS);
   }
 }
@@ -676,9 +719,15 @@ function buildTowerGrid(){
 function updateTowerCards(){for(const c of document.querySelectorAll('.tower-card')){const def=TOWER_DEFS[c.dataset.type];c.className='tower-card '+(gold>=def.cost?'':'unaffordable');if(c.dataset.type===selectedTowerType)c.classList.add('selected');}}
 function selectTowerType(key){if(state!=='playing'&&state!=='wavePause')return;selectedTowerType=selectedTowerType===key?null:key;selectedPlacedTower=null;updateTowerCards();updateSelPanel();}
 function updateSelPanel(){
-  const panel=document.getElementById('sel-panel');
-  if(!selectedPlacedTower){panel.style.display='none';return;}
-  panel.style.display='block';
+  const buildPanel=document.getElementById('build-panel');
+  const selPanel=document.getElementById('sel-panel');
+  if(!selectedPlacedTower){
+    selPanel.style.display='none';
+    buildPanel.style.display='flex';
+    return;
+  }
+  buildPanel.style.display='none';
+  selPanel.style.display='flex';
   const t=selectedPlacedTower;
   const upBtn=document.getElementById('btn-upgrade');
   upBtn.disabled=t.level>=t.def.maxLevel||gold<t.upgCost;
@@ -736,6 +785,7 @@ canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];
 // ── Buttons ───────────────────────────────────────────────
 document.getElementById('btn-wave').addEventListener('click',startWave);
 document.getElementById('btn-speed').addEventListener('click',()=>{gameSpeed=gameSpeed===1?2:1;document.getElementById('btn-speed').textContent=gameSpeed===1?'⏩ 2× 加速':'⏸ 1× 恢复';});
+document.getElementById('btn-deselect').addEventListener('click',()=>{selectedPlacedTower=null;selectedTowerType=null;updateTowerCards();updateSelPanel();});
 document.getElementById('btn-upgrade').addEventListener('click',()=>{if(!selectedPlacedTower)return;const t=selectedPlacedTower;if(t.level>=t.def.maxLevel||gold<t.upgCost)return;gold-=t.upgCost;t.level++;log(`⬆️ ${t.def.name} Lv${t.level}`);updateHUD();});
 document.getElementById('btn-sell').addEventListener('click',()=>{if(!selectedPlacedTower)return;const t=selectedPlacedTower;gold+=t.sellVal;towers=towers.filter(x=>x!==t);log(`💸 出售 ${t.def.name} +💰${t.sellVal}`);selectedPlacedTower=null;updateSelPanel();updateHUD();});
 
