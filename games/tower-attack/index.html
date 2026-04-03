@@ -179,6 +179,7 @@ canvas{display:block;width:100%;height:100%;}
 }
 .unit-card:hover:not(.disabled){background:#1e3360;border-color:#0984e3;}
 .unit-card:active:not(.disabled){background:#162040;}
+.unit-card:focus,.unit-card:focus-visible{outline:none;box-shadow:none;}
 .unit-card.disabled{opacity:.4;cursor:not-allowed;}
 .unit-icon{font-size:1.3rem;flex-shrink:0;}
 .unit-info{flex:1;min-width:0;}
@@ -195,6 +196,7 @@ canvas{display:block;width:100%;height:100%;}
 }
 .skill-card:hover:not(.disabled):not(.locked){background:#1e3360;border-color:#fdcb6e;}
 .skill-card:active:not(.disabled):not(.locked){background:#162040;}
+.skill-card:focus,.skill-card:focus-visible{outline:none;box-shadow:none;}
 .skill-card.disabled{opacity:.4;cursor:not-allowed;}
 .skill-card.locked{opacity:.35;cursor:not-allowed;filter:grayscale(.6);}
 .skill-icon{font-size:1.3rem;flex-shrink:0;}
@@ -1012,10 +1014,11 @@ function buildUnitCards(){
       const active=state==='playing'||state==='wavePause';
       const card=document.createElement('div');
       card.className='unit-card'+(canAfford&&active?'':' disabled');
+      card.setAttribute('tabindex','-1');
       card.innerHTML=`<div class="unit-icon">${def.icon}</div>
         <div class="unit-info"><div class="unit-name">${def.name}</div><div class="unit-desc">${def.desc}</div></div>
         <div class="unit-cost">💰${def.cost}</div>`;
-      if(canAfford&&active) card.addEventListener('click',()=>enqueue('unit',key));
+      if(canAfford&&active) card.addEventListener('click',e=>{e.currentTarget.blur();enqueue('unit',key);});
       ul.appendChild(card);
     });
   });
@@ -1038,6 +1041,7 @@ function buildSkillCards(){
       if(!unlocked) cls+=' locked';
       else if(!canAfford||alreadyOn) cls+=' disabled';
       card.className=cls;
+      card.setAttribute('tabindex','-1');
       const lockTag=unlocked?'':
         `<div class="skill-lock-tag">🔒 需突破${def.unlockAt??0}次解锁</div>`;
       const activeTag=alreadyOn?`<div class="skill-lock-tag" style="color:#00b894">✅ 已激活</div>`:'';
@@ -1048,7 +1052,7 @@ function buildSkillCards(){
         </div>
         <div class="skill-cost">${unlocked?'💰'+def.cost:'🔒'}</div>`;
       if(unlocked&&canAfford&&active&&!alreadyOn)
-        card.addEventListener('click',()=>enqueue('skill',key));
+        card.addEventListener('click',e=>{e.currentTarget.blur();enqueue('skill',key);});
       sl.appendChild(card);
     });
   });
