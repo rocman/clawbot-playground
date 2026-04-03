@@ -209,7 +209,8 @@ canvas{display:block;width:100%;height:100%;}
   background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
   padding:5px 8px;flex-shrink:0;
 }
-.pending-item{border-color:#e94560;background:#2a1020;}
+.pending-item{border-color:#e94560;background:#2a1020;padding:3px 6px;}
+.pending-row{display:flex;flex-wrap:wrap;gap:4px;padding:2px 6px 4px;}
 .qi-section-hdr{font-size:0.62rem;color:#888;padding:4px 6px 2px;letter-spacing:0.5px;}
 .queue-item .qi-icon{font-size:1rem;flex-shrink:0;}
 .queue-item .qi-label{flex:1;font-size:0.72rem;color:#eee;}
@@ -1125,13 +1126,15 @@ function renderActiveSkills(){
       const hdr=document.createElement('div');
       hdr.className='qi-section-hdr';hdr.textContent='⏳ 待命';
       ql.appendChild(hdr);
+      const pendingRow=document.createElement('div');
+      pendingRow.className='pending-row';
       pendingQueue.forEach((item,idx)=>{
         const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
-        const row=document.createElement('div');row.className='queue-item pending-item';
-        row.innerHTML=`<span class="qi-icon">${def.icon}</span>
+        const chip=document.createElement('div');chip.className='queue-item pending-item';
+        chip.innerHTML=`<span class="qi-icon">${def.icon}</span>
           <span class="qi-label">${def.name}</span>
           <button class="qi-rm" title="取消">✕</button>`;
-        row.querySelector('.qi-rm').addEventListener('click',()=>{
+        chip.querySelector('.qi-rm').addEventListener('click',()=>{
           gold+=item.cost;
           pendingQueue.splice(idx,1);
           if(pendingQueue.length===0){
@@ -1139,8 +1142,9 @@ function renderActiveSkills(){
           }
           updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
         });
-        ql.appendChild(row);
+        pendingRow.appendChild(chip);
       });
+      ql.appendChild(pendingRow);
     }
 
     // ── 已激活技能 ──
