@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Tower Attack — 进攻方</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;background:#0d1b2e;color:#eee;font-family:'Segoe UI',system-ui,sans-serif;}
+body{display:flex;flex-direction:column;touch-action:manipulation;}
+document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
+
+/* ── Portrait header ── */
+#header-portrait{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 12px;background:#16213e;border-bottom:1px solid #0f3460;
+  flex-shrink:0;
+}
+#header-portrait h1{font-size:1rem;letter-spacing:1px;color:#e94560;}
+.stat-row{display:flex;gap:10px;font-size:0.78rem;}
+.stat{display:flex;align-items:center;gap:4px;}
+.stat span{font-weight:bold;color:#fdcb6e;}
+
+/* ── Main layout ── */
+#content{flex:1;display:flex;overflow:hidden;}
+
+/* Portrait: column (map on top, panels below) */
+@media (orientation:portrait){
+  #content{flex-direction:column;}
+  #header-portrait{display:flex;}
+  #sidebar-header{display:none;}
+  #map-wrap{width:100%;flex:0 0 auto;}
+  #map-area{width:100%;max-height:100vw;}
+}
+/* Landscape: row (map left, sidebar right) */
+@media (orientation:landscape){
+  #content{flex-direction:row;}
+  #header-portrait{display:none;}
+  #map-wrap{flex:0 0 auto;height:100%;width:auto;aspect-ratio:1/1;max-width:calc(100vw - 220px);}
+  #map-area{width:100%;height:100%;max-height:none;}
+  #sidebar{display:flex;}
+}
+
+/* ── Map wrap & area ── */
+#map-wrap{display:flex;align-items:center;justify-content:center;background:#0d1b2e;overflow:hidden;padding:8px 8px 0;}
+#map-area{flex-shrink:0;position:relative;overflow:hidden;aspect-ratio:1/1;}
+canvas{display:block;width:100%;height:100%;}
+
+/* ── Sidebar (landscape only) ── */
+#sidebar{
+  display:none;flex-direction:column;
+  background:#16213e;border-left:1px solid #0f3460;
+  flex:1;min-width:200px;max-width:320px;overflow:hidden;
+}
+#sidebar-header{
+  flex-shrink:0;padding:8px 12px;border-bottom:1px solid #0f3460;
+}
+#sidebar-header h1{font-size:0.9rem;color:#e94560;margin-bottom:4px;}
+#sidebar .stat-row{font-size:0.75rem;}
+
+/* ── Stats row ── */
+.stat-row{display:flex;gap:10px;flex-wrap:wrap;}
+.stat{display:flex;align-items:center;gap:4px;font-size:0.75rem;}
+.stat .label{color:#aaa;}
+.stat .val{font-weight:bold;color:#fdcb6e;}
+
+/* ── Panel scroll ── */
+#panel-scroll{
+  flex:1;min-width:0;min-height:0;
+  overflow:hidden;
+  padding:6px 8px 8px;
+  display:flex;gap:6px;
+  flex-direction:column;
+}
+@media (orientation:portrait){
+  #panel-scroll{flex-direction:row;}
+}
+
+/* ── Panels ── */
+.panel{
+  flex:1;min-width:0;min-height:0;
+  background:#16213e;border:1px solid #0f3460;border-radius:8px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.panel-title{
+  font-size:0.68rem;font-weight:bold;color:#aaa;letter-spacing:0.5px;text-transform:uppercase;
+  padding:6px 8px 4px;border-bottom:1px solid #0f3460;flex-shrink:0;
+}
+
+/* ── Unit cards (build panel) ── */
+#unit-list{
+  flex:1;overflow-y:auto;padding:6px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.unit-card{
+  background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
+  padding:6px 8px;cursor:pointer;transition:background .15s,border-color .15s;
+  display:flex;align-items:center;gap:8px;
+  user-select:none;
+}
+.unit-card:hover{background:#1e3360;border-color:#0984e3;}
+.unit-card.selected{background:#0f3460;border-color:#0984e3;box-shadow:0 0 0 2px rgba(9,132,227,0.4);}
+.unit-card.disabled{opacity:0.4;cursor:not-allowed;}
+.unit-icon{font-size:1.4rem;flex-shrink:0;}
+.unit-info{flex:1;min-width:0;}
+.unit-name{font-size:0.78rem;font-weight:bold;}
+.unit-desc{font-size:0.62rem;color:#aaa;margin-top:1px;}
+.unit-cost{font-size:0.72rem;color:#fdcb6e;font-weight:bold;flex-shrink:0;}
+
+/* ── Queue panel ── */
+#queue-list{
+  flex:1;overflow-y:auto;padding:6px;
+  display:flex;flex-direction:column;gap:3px;
+}
+.queue-item{
+  background:#1a2a4a;border:1px solid #0f3460;border-radius:5px;
+  padding:4px 8px;display:flex;align-items:center;gap:6px;font-size:0.72rem;
+}
+.queue-item .qi-icon{font-size:1rem;}
+.queue-item .qi-label{flex:1;}
+.queue-item .qi-rm{
+  background:none;border:none;color:#e94560;cursor:pointer;
+  font-size:0.85rem;padding:2px 4px;border-radius:3px;
+}
+.queue-item .qi-rm:hover{background:rgba(233,69,96,0.2);}
+#queue-empty{color:#555;font-size:0.72rem;padding:8px;text-align:center;}
+
+/* ── Log panel ── */
+#log-panel{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+#log{
+  flex:1;overflow-y:auto;padding:6px 8px;
+  font-size:0.68rem;color:#aaa;line-height:1.6;
+}
+#log p{margin-bottom:2px;}
+
+/* ── Wave bar ── */
+#wave-bar{
+  flex-shrink:0;width:100%;
+  display:flex;flex-direction:row;align-items:stretch;
+  gap:5px;padding:7px 8px;
+  background:#16213e;border-top:1px solid #0f3460;
+}
+#btn-send,#btn-pause-atk{
+  flex:0 0 calc(25% - 10px);min-width:0;padding:0;
+  font-size:0.76rem;height:40px;
+  display:flex;align-items:center;justify-content:center;
+}
+#speed-group-atk{flex:1;display:flex;flex-direction:row;align-items:stretch;height:40px;}
+.speed-adj-atk{
+  flex:0 0 40px!important;width:40px!important;min-width:40px;max-width:40px;
+  padding:0!important;font-size:1.2rem;font-weight:bold;text-align:center;
+  background:#0f3460;color:#fff;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.speed-adj-atk:hover:not(:disabled){background:#1a4a8a;}
+.speed-adj-atk:disabled{color:#555;cursor:not-allowed;}
+#btn-speed-dn-atk{border-radius:6px 0 0 6px;}
+#btn-speed-up-atk{border-radius:0 6px 6px 0;}
+#speed-display-atk{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  font-size:1.05rem;font-weight:bold;color:#0f3460;background:#fff;cursor:default;user-select:none;
+}
+.wave-btn{
+  flex:1;border:none;border-radius:6px;cursor:pointer;
+  font-size:0.8rem;font-weight:bold;transition:background .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.wave-btn:disabled{background:#444;color:#888;cursor:not-allowed;}
+#btn-send{background:#e94560;color:#fff;}
+#btn-send:hover:not(:disabled){background:#c0392b;}
+#btn-send:disabled{background:#444;color:#888;}
+#btn-pause-atk{background:#fdcb6e;color:#2d3436;}
+#btn-pause-atk:hover:not(:disabled){background:#e6b655;}
+#btn-pause-atk:disabled{background:#444;color:#888;}
+
+/* ── Overlay ── */
+#overlay{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.78);gap:12px;z-index:100;
+}
+#overlay.hidden{display:none;}
+#overlay h2{font-size:1.6rem;color:#e94560;}
+#overlay p{color:#aaa;font-size:0.88rem;text-align:center;max-width:280px;}
+.btn{
+  padding:10px 24px;border:none;border-radius:8px;cursor:pointer;
+  font-size:0.9rem;font-weight:bold;background:#333;color:#eee;
+}
+.btn.red{background:#e94560;color:#fff;}
+.btn.blue{background:#0984e3;color:#fff;}
+
+/* ── Map overlay ── */
+#map-overlay{
+  position:absolute;inset:0;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+}
+#map-overlay.hidden{display:none;}
+#map-msg{
+  background:rgba(22,33,62,0.92);border:1px solid #0f3460;border-radius:10px;
+  padding:12px 20px;font-size:0.82rem;color:#aaa;text-align:center;
+}
+</style>
+</head>
+<body>
+
+<header id="header-portrait">
+  <h1>⚔️ Tower Attack</h1>
+  <div class="stat-row">
+    <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-p">200</span></div>
+    <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-p">0/15</span></div>
+    <div class="stat"><span class="label">💀</span><span class="val" id="hud-kills-p">0</span></div>
+  </div>
+</header>
+
+<div id="content">
+  <div id="map-wrap">
+    <div id="map-area">
+      <canvas id="canvas"></canvas>
+      <div id="map-overlay" class="hidden">
+        <div id="map-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h1>⚔️ Tower Attack</h1>
+      <div class="stat-row">
+        <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-l">200</span></div>
+        <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-l">0/15</span></div>
+        <div class="stat"><span class="label">💀</span><span class="val" id="hud-kills-l">0</span></div>
+      </div>
+    </div>
+
+    <!-- panels injected here by arrangePanels() in landscape -->
+  </div>
+</div>
+
+<!-- panel-scroll (moved between content/sidebar by JS) -->
+<div id="panel-scroll">
+  <div class="panel" id="build-panel">
+    <div class="panel-title">🪖 选择兵种</div>
+    <div id="unit-list"></div>
+  </div>
+  <div class="panel" id="queue-panel">
+    <div class="panel-title">📋 出兵队列</div>
+    <div id="queue-list"><div id="queue-empty">队列为空 — 点击兵种加入</div></div>
+  </div>
+  <div class="panel" id="log-panel">
+    <div class="panel-title">📡 战报</div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<!-- wave bar (moved by JS) -->
+<div id="wave-bar">
+  <button class="wave-btn" id="btn-send" disabled>发兵</button>
+  <div id="speed-group-atk">
+    <button class="speed-adj-atk" id="btn-speed-dn-atk">−</button>
+    <div id="speed-display-atk">1×</div>
+    <button class="speed-adj-atk" id="btn-speed-up-atk">+</button>
+  </div>
+  <button class="wave-btn" id="btn-pause-atk" disabled>⏸ 暂停</button>
+</div>
+
+<div id="overlay">
+  <h2>⚔️ Tower Attack</h2>
+  <p>扮演进攻方，编排兵种队列，突破守方防线！</p>
+  <p style="font-size:0.75rem;color:#555;">（对战模式开发中 — 当前为单机预览）</p>
+  <button class="btn red" id="btn-start">开始进攻</button>
+</div>
+
+<script>
+document.addEventListener('dblclick', e => e.preventDefault(), {passive: false});
+
+// ═══════════════════════════════════════════════
+//  SHARED CONFIG (mirrors tower-battle/units.js & map.js)
+// ═══════════════════════════════════════════════
+const COLS = 12, ROWS = 12;
+const T_GRASS=0, T_PATH=1, T_START=2, T_END=3;
+
+const MAP_LAYOUT = [
+  [2,1,1,1,0,0,0,0,0,0,0,0],
+  [0,0,0,1,0,0,0,0,0,0,0,0],
+  [0,0,0,1,1,1,1,0,0,0,0,0],
+  [0,0,0,0,0,0,1,0,0,0,0,0],
+  [0,0,0,0,0,0,1,1,1,0,0,0],
+  [0,0,0,0,0,0,0,0,1,0,0,0],
+  [0,0,1,1,1,0,0,0,1,0,0,0],
+  [0,0,1,0,1,1,1,1,1,0,0,0],
+  [0,0,1,0,0,0,0,0,0,0,0,0],
+  [0,0,1,1,1,1,0,0,0,0,0,0],
+  [0,0,0,0,0,1,1,1,1,1,1,0],
+  [0,0,0,0,0,0,0,0,0,0,1,3],
+];
+
+const UNIT_DEFS = {
+  swarm:   {name:'虫群',   icon:'🐛', color:'#55efc4', hp:20,   speed:70,  reward:3,  cost:5,   size:6,  desc:'极低费用，数量压制'},
+  grunt:   {name:'步兵',   icon:'🪖', color:'#ff7675', hp:60,   speed:55,  reward:8,  cost:10,  size:10, desc:'均衡型，性价比高'},
+  runner:  {name:'快跑者', icon:'💨', color:'#fdcb6e', hp:40,   speed:105, reward:10, cost:15,  size:8,  desc:'超高速，难以追踪'},
+  phantom: {name:'幽灵',   icon:'👻', color:'#a29bfe', hp:150,  speed:80,  reward:30, cost:50,  size:10, desc:'半透明，难被锁定'},
+  tank:    {name:'重甲',   icon:'🛡️', color:'#636e72', hp:250,  speed:38,  reward:20, cost:35,  size:14, desc:'血厚，消耗守方弹药'},
+  boss:    {name:'BOSS',  icon:'💀', color:'#6c5ce7', hp:800,  speed:28,  reward:80, cost:120, size:18, desc:'超强单体，威慑力极高'},
+};
+
+// ═══════════════════════════════════════════════
+//  CANVAS & LAYOUT
+// ═══════════════════════════════════════════════
+const canvas  = document.getElementById('canvas');
+const ctx     = canvas.getContext('2d');
+const mapArea = document.getElementById('map-area');
+let TILE = 30;
+
+function isLandscape(){ return window.innerWidth > window.innerHeight; }
+
+const sidebar    = document.getElementById('sidebar');
+const panelScroll= document.getElementById('panel-scroll');
+const waveBar    = document.getElementById('wave-bar');
+
+function arrangePanels(){
+  if(isLandscape()){
+    if(panelScroll.parentElement!==sidebar) sidebar.appendChild(panelScroll);
+    if(waveBar.parentElement!==sidebar) sidebar.appendChild(waveBar);
+  } else {
+    const content=document.getElementById('content');
+    if(panelScroll.parentElement!==content) content.appendChild(panelScroll);
+    if(waveBar.parentElement!==content) content.appendChild(waveBar);
+  }
+}
+
+function updateCanvasResolution(){
+  const size=Math.round(mapArea.getBoundingClientRect().width);
+  if(size<60) return;
+  if(canvas.width===size&&canvas.height===size) return;
+  TILE=size/COLS;
+  canvas.width=size; canvas.height=size;
+  rebuildWP(); drawMap();
+}
+
+let roTimer;
+const ro=new ResizeObserver(()=>{clearTimeout(roTimer);roTimer=setTimeout(updateCanvasResolution,30);});
+ro.observe(mapArea);
+
+window.addEventListener('resize',()=>setTimeout(()=>{arrangePanels();},80));
+window.addEventListener('orientationchange',()=>setTimeout(()=>{arrangePanels();},200));
+
+arrangePanels();
+
+// ═══════════════════════════════════════════════
+//  PATH
+// ═══════════════════════════════════════════════
+function buildPath(){
+  let start=null;
+  outer: for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(MAP_LAYOUT[r][c]===T_START){start={c,r};break outer;}
+  const visited=new Set(),path=[];
+  let cur=start; visited.add(`${cur.c},${cur.r}`);
+  path.push({x:cur.c*TILE+TILE/2,y:cur.r*TILE+TILE/2});
+  const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+  while(true){
+    let moved=false;
+    for(const[dc,dr]of dirs){
+      const nc=cur.c+dc,nr=cur.r+dr,key=`${nc},${nr}`;
+      if(nc<0||nc>=COLS||nr<0||nr>=ROWS||visited.has(key)) continue;
+      const t=MAP_LAYOUT[nr][nc];
+      if(t===T_PATH||t===T_END){
+        visited.add(key);path.push({x:nc*TILE+TILE/2,y:nr*TILE+TILE/2});
+        cur={c:nc,r:nr};moved=true;
+        if(t===T_END) return path;
+        break;
+      }
+    }
+    if(!moved) break;
+  }
+  return path;
+}
+let PATH_WP=[];
+function rebuildWP(){ PATH_WP=buildPath(); }
+
+// ═══════════════════════════════════════════════
+//  DRAW
+// ═══════════════════════════════════════════════
+const TC={[T_GRASS]:'#0d1b2e',[T_PATH]:'#c8a05a',[T_START]:'#e94560',[T_END]:'#00b894'};
+
+function drawMap(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const t=MAP_LAYOUT[r][c];
+    ctx.fillStyle=TC[t]??TC[T_GRASS];
+    ctx.fillRect(c*TILE,r*TILE,TILE,TILE);
+    // grid lines
+    ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.5;
+    ctx.strokeRect(c*TILE,r*TILE,TILE,TILE);
+    if(t===T_START||t===T_END){
+      ctx.font=`${TILE*0.52}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(t===T_START?'🚩':'🏁',c*TILE+TILE/2,r*TILE+TILE/2);
+    }
+  }
+}
+
+function drawEnemies(){
+  for(const e of enemies) e.draw();
+}
+
+function drawAll(){
+  drawMap();
+  drawEnemies();
+}
+
+// ═══════════════════════════════════════════════
+//  ENEMY CLASS (attack-side: we send them)
+// ═══════════════════════════════════════════════
+class Enemy{
+  constructor(type){
+    this.type=type;
+    this.def=UNIT_DEFS[type];
+    this.hp=this.def.hp;
+    this.maxHp=this.hp;
+    this.speed=this.def.speed;
+    this.progress=0;
+    this.x=PATH_WP[0]?.x??0;
+    this.y=PATH_WP[0]?.y??0;
+    this.dead=false;
+    this.reached=false;
+    this._counted=false;
+  }
+  update(dt){
+    if(this.dead||this.reached) return;
+    let rem=this.speed*dt*gameSpeed;
+    while(rem>0){
+      const wp=PATH_WP[Math.floor(this.progress)+1];
+      if(!wp){this.reached=true;breachCount++;log(`💥 ${this.def.name}成功突破！`);updateHUD();return;}
+      const dx=wp.x-this.x,dy=wp.y-this.y,dist=Math.hypot(dx,dy);
+      if(dist<=rem){this.x=wp.x;this.y=wp.y;this.progress++;rem-=dist;}
+      else{this.x+=dx/dist*rem;this.y+=dy/dist*rem;this.progress+=rem/TILE;rem=0;}
+    }
+  }
+  draw(){
+    if(this.dead) return;
+    const r=this.def.size*(TILE/40);
+    ctx.beginPath();ctx.arc(this.x,this.y,r,0,Math.PI*2);
+    ctx.fillStyle=this.def.color;ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.4)';ctx.lineWidth=1;ctx.stroke();
+    ctx.font=`${TILE*0.32}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(this.def.icon,this.x,this.y);
+    // hp bar
+    const bw=r*2.2,bh=3,bx=this.x-bw/2,by=this.y-r-5;
+    ctx.fillStyle='#333';ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle=this.hp/this.maxHp>0.5?'#55efc4':'#fdcb6e';
+    ctx.fillRect(bx,by,bw*this.hp/this.maxHp,bh);
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let state='idle',gold=200,waveNum=0,kills=0,breachCount=0,gameSpeed=1;
+let speedIdx=1;
+const SPEED_STEPS=[0.5,1,2,3,4];
+let enemies=[],spawnQueue=[],spawnTimer=0,waveActive=false;
+let sendQueue=[]; // user-built unit queue for next wave
+let selectedUnit=null;
+let lastTime=0,animId=null;
+
+// ═══════════════════════════════════════════════
+//  HUD
+// ═══════════════════════════════════════════════
+function updateHUD(){
+  ['gold','wave','kills'].forEach(k=>{
+    const v=k==='gold'?gold:k==='wave'?`${waveNum}/15`:kills;
+    document.getElementById(`hud-${k}-p`).textContent=v;
+    document.getElementById(`hud-${k}-l`).textContent=v;
+  });
+}
+
+function log(msg){
+  const div=document.getElementById('log');
+  const p=document.createElement('p');p.textContent=msg;
+  div.appendChild(p);div.scrollTop=div.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════
+//  UNIT LIST UI
+// ═══════════════════════════════════════════════
+function buildUnitCards(){
+  const ul=document.getElementById('unit-list');
+  ul.innerHTML='';
+  Object.entries(UNIT_DEFS).forEach(([key,def])=>{
+    const card=document.createElement('div');
+    card.className='unit-card'+(selectedUnit===key?' selected':'')+(def.cost>gold?' disabled':'');
+    card.dataset.key=key;
+    card.innerHTML=`
+      <div class="unit-icon">${def.icon}</div>
+      <div class="unit-info">
+        <div class="unit-name">${def.name}</div>
+        <div class="unit-desc">${def.desc}</div>
+      </div>
+      <div class="unit-cost">💰${def.cost}</div>`;
+    card.addEventListener('click',()=>selectUnit(key));
+    ul.appendChild(card);
+  });
+}
+
+function selectUnit(key){
+  if(state!=='playing'&&state!=='wavePause') return;
+  const def=UNIT_DEFS[key];
+  if(def.cost>gold) return;
+  // add to sendQueue
+  gold-=def.cost;
+  sendQueue.push(key);
+  updateHUD();
+  buildUnitCards();
+  renderQueue();
+  log(`➕ 加入队列：${def.icon} ${def.name}（-💰${def.cost}）`);
+}
+
+function renderQueue(){
+  const ql=document.getElementById('queue-list');
+  const qe=document.getElementById('queue-empty');
+  ql.innerHTML='';
+  if(sendQueue.length===0){
+    ql.appendChild(qe||Object.assign(document.createElement('div'),{id:'queue-empty',className:'',textContent:'队列为空 — 点击兵种加入'}));
+    document.getElementById('btn-send').disabled=true;
+    return;
+  }
+  document.getElementById('btn-send').disabled=false;
+  sendQueue.forEach((key,idx)=>{
+    const def=UNIT_DEFS[key];
+    const row=document.createElement('div');row.className='queue-item';
+    row.innerHTML=`<span class="qi-icon">${def.icon}</span><span class="qi-label">${def.name}</span><button class="qi-rm" data-idx="${idx}">✕</button>`;
+    row.querySelector('.qi-rm').addEventListener('click',()=>{
+      gold+=def.cost; sendQueue.splice(idx,1); updateHUD(); buildUnitCards(); renderQueue();
+    });
+    ql.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  WAVE / SPAWN
+// ═══════════════════════════════════════════════
+function sendWave(){
+  if(waveActive||sendQueue.length===0) return;
+  waveNum++;waveActive=true;
+  spawnQueue=sendQueue.map((t,i)=>({type:t,delay:i*0.8}));
+  sendQueue=[];
+  spawnTimer=0;
+  log(`🌊 第 ${waveNum} 波出击！共 ${spawnQueue.length} 只`);
+  document.getElementById('btn-send').disabled=true;
+  document.getElementById('btn-pause-atk').disabled=false;
+  renderQueue();
+  updateHUD();
+}
+
+function updateWave(dt){
+  if(!waveActive) return;
+  spawnTimer+=dt*gameSpeed;
+  while(spawnQueue.length&&spawnQueue[0].delay<=spawnTimer){
+    enemies.push(new Enemy(spawnQueue.shift().type));
+  }
+  if(!spawnQueue.length&&enemies.every(e=>e.dead||e.reached)){
+    waveActive=false;
+    const bonus=10+waveNum*5;gold+=bonus;
+    log(`✅ 第 ${waveNum} 波结束！突破 ${enemies.filter(e=>e.reached).length} 只 +💰${bonus}`);
+    kills+=enemies.filter(e=>e.dead).length;
+    enemies=[];
+    if(waveNum>=15){endGame();return;}
+    updateHUD();buildUnitCards();renderQueue();
+    document.getElementById('btn-pause-atk').disabled=true;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  GAME LOOP
+// ═══════════════════════════════════════════════
+function gameLoop(ts){
+  const dt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;
+  if(state==='paused'||state==='fsPause'){animId=requestAnimationFrame(gameLoop);return;}
+  drawAll();
+  if(state==='playing'||state==='wavePause'){
+    updateWave(dt);
+    for(const e of enemies) e.update(dt);
+  }
+  animId=requestAnimationFrame(gameLoop);
+}
+
+// ═══════════════════════════════════════════════
+//  SPEED
+// ═══════════════════════════════════════════════
+function updateSpeedDisplay(){
+  gameSpeed=SPEED_STEPS[speedIdx];
+  document.getElementById('speed-display-atk').textContent=gameSpeed+'×';
+  document.getElementById('btn-speed-dn-atk').disabled=speedIdx===0;
+  document.getElementById('btn-speed-up-atk').disabled=speedIdx===SPEED_STEPS.length-1;
+}
+document.getElementById('btn-speed-dn-atk').addEventListener('click',()=>{if(speedIdx>0){speedIdx--;updateSpeedDisplay();}});
+document.getElementById('btn-speed-up-atk').addEventListener('click',()=>{if(speedIdx<SPEED_STEPS.length-1){speedIdx++;updateSpeedDisplay();}});
+
+// pause
+document.getElementById('btn-pause-atk').addEventListener('click',()=>{
+  if(state==='playing'||state==='wavePause'){
+    state='paused';document.getElementById('btn-pause-atk').textContent='▶ 继续';
+  } else if(state==='paused'){
+    state='playing';document.getElementById('btn-pause-atk').textContent='⏸ 暂停';
+  }
+});
+
+// send wave
+document.getElementById('btn-send').addEventListener('click',sendWave);
+
+// ═══════════════════════════════════════════════
+//  START / END
+// ═══════════════════════════════════════════════
+function startGame(){
+  gold=200;waveNum=0;kills=0;breachCount=0;
+  enemies=[];spawnQueue=[];sendQueue=[];waveActive=false;
+  gameSpeed=1;speedIdx=1;selectedUnit=null;
+  state='playing';
+  document.getElementById('btn-send').disabled=true;
+  document.getElementById('btn-pause-atk').textContent='⏸ 暂停';
+  document.getElementById('btn-pause-atk').disabled=true;
+  updateSpeedDisplay();updateHUD();
+  buildUnitCards();renderQueue();
+  log('⚔️ 开始！选择兵种，组建队列，点击「发兵」！');
+  if(animId) cancelAnimationFrame(animId);
+  lastTime=performance.now();
+  requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});
+}
+
+function endGame(){
+  state='gameOver';
+  const ov=document.getElementById('overlay');
+  ov.classList.remove('hidden');
+  ov.innerHTML=`<h2>⚔️ 进攻结束</h2>
+    <p>共发动 ${waveNum} 波，突破 ${breachCount} 次</p>
+    <button class="btn red" id="btn-restart">再来一局</button>`;
+  document.getElementById('btn-restart').addEventListener('click',()=>{
+    ov.classList.add('hidden');startGame();
+  });
+}
+
+document.getElementById('btn-start').addEventListener('click',()=>{
+  document.getElementById('overlay').classList.add('hidden');
+  startGame();
+});
+</script>
+</body>
+</html>
