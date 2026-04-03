@@ -1066,6 +1066,8 @@ function setQueueMode(on){
     b.disabled=on&&pendingQueue.length===0;
     b.style.background=on?'#e94560':'#6c5ce7';
   });
+  // rebuild cards so click handlers reflect new queueMode
+  buildUnitCards();buildSkillCards();
 }
 
 function enqueue(kind,key){
