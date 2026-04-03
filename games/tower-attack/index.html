@@ -845,7 +845,7 @@ function updateWave(dt){
   while(spawnQueue.length&&spawnQueue[0].delay<=spawnTimer){
     const item=spawnQueue.shift();enemies.push(new Enemy(item.type,item.mods??{}));
   }
-  if(!spawnQueue.length&&enemies.every(e=>e.dead||e.reached)){
+  if(!spawnQueue.length&&enemies.length>0&&enemies.every(e=>e.dead||e.reached)){
     const survived=enemies.filter(e=>e.reached).length;
     const died=enemies.filter(e=>e.dead).length;
     waveActive=false;activeSkills={};
