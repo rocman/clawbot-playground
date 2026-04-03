@@ -172,12 +172,12 @@ canvas{display:block;width:100%;height:100%;}
 .tech-node .tn-desc{font-size:0.5rem;color:#888;text-align:center;line-height:1.2;}
 
 /* ── Unit cards ── */
-.unit-card{
-  background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
+.unit-card{background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
   padding:5px 8px;cursor:pointer;transition:background .15s,border-color .15s;
-  display:flex;align-items:center;gap:8px;user-select:none;flex-shrink:0;
+  display:flex;align-items:center;gap:8px;user-select:none;flex-shrink:0;outline:none;
 }
 .unit-card:hover:not(.disabled){background:#1e3360;border-color:#0984e3;}
+.unit-card:active:not(.disabled){background:#162040;}
 .unit-card.disabled{opacity:.4;cursor:not-allowed;}
 .unit-icon{font-size:1.3rem;flex-shrink:0;}
 .unit-info{flex:1;min-width:0;}
@@ -189,9 +189,10 @@ canvas{display:block;width:100%;height:100%;}
 .skill-card{
   background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
   padding:5px 8px;cursor:pointer;transition:background .15s,border-color .15s;
-  display:flex;align-items:center;gap:8px;user-select:none;flex-shrink:0;
+  display:flex;align-items:center;gap:8px;user-select:none;flex-shrink:0;outline:none;
 }
 .skill-card:hover:not(.disabled):not(.locked){background:#1e3360;border-color:#fdcb6e;}
+.skill-card:active:not(.disabled):not(.locked){background:#162040;}
 .skill-card.disabled{opacity:.4;cursor:not-allowed;}
 .skill-card.locked{opacity:.35;cursor:not-allowed;filter:grayscale(.6);}
 .skill-icon{font-size:1.3rem;flex-shrink:0;}
@@ -1064,16 +1065,16 @@ function setQueueMode(on){
 
 function enqueue(kind,key){
   if(state!=='playing'&&state!=='wavePause') return;
-  if(!queueMode) return; // 未进入列队模式时点击无效（不应到达这里，由按钮状态控制）
+  if(!queueMode) return;
   const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
   if(!def||def.cost>gold) return;
-  // 技能：已激活的不重复入队
   if(kind==='skill'&&(key in activeSkillTimers)) return;
   gold-=def.cost;
   pendingQueue.push({kind,key,cost:def.cost});
   log(`📋 ${def.icon}${def.name} 列队`);
+  // blur any focused element so card doesn't stay highlighted
+  if(document.activeElement) document.activeElement.blur();
   updateHUD();buildUnitCards();buildSkillCards();
-  // 有内容后发兵按钮才可点
   ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
   renderActiveSkills();
 }
