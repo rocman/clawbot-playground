@@ -173,13 +173,13 @@ canvas{display:block;width:100%;height:100%;}
 
 /* ── Unit cards ── */
 .unit-card{background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
-  padding:5px 8px;cursor:pointer;transition:background .15s,border-color .15s;
+  padding:5px 8px;cursor:pointer;transition:background .15s;
   display:flex;align-items:center;gap:8px;user-select:none;flex-shrink:0;outline:none;
   -webkit-tap-highlight-color:transparent;
 }
-.unit-card:hover:not(.disabled){background:#1e3360;border-color:#0984e3;}
-.unit-card:active:not(.disabled){background:#162040;}
 .unit-card:focus,.unit-card:focus-visible{outline:none;box-shadow:none;}
+.unit-card.hover{background:#1e3360;}
+.unit-card.pressed{background:#162040;}
 .unit-card.disabled{opacity:.4;cursor:not-allowed;}
 .unit-icon{font-size:1.3rem;flex-shrink:0;}
 .unit-info{flex:1;min-width:0;}
@@ -190,13 +190,13 @@ canvas{display:block;width:100%;height:100%;}
 /* ── Skill cards ── */
 .skill-card{
   background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
-  padding:5px 8px;cursor:pointer;transition:background .15s,border-color .15s;
+  padding:5px 8px;cursor:pointer;transition:background .15s;
   display:flex;align-items:center;gap:8px;user-select:none;flex-shrink:0;outline:none;
   -webkit-tap-highlight-color:transparent;
 }
-.skill-card:hover:not(.disabled):not(.locked){background:#1e3360;border-color:#fdcb6e;}
-.skill-card:active:not(.disabled):not(.locked){background:#162040;}
 .skill-card:focus,.skill-card:focus-visible{outline:none;box-shadow:none;}
+.skill-card.hover{background:#1e3360;}
+.skill-card.pressed{background:#162040;}
 .skill-card.disabled{opacity:.4;cursor:not-allowed;}
 .skill-card.locked{opacity:.35;cursor:not-allowed;filter:grayscale(.6);}
 .skill-icon{font-size:1.3rem;flex-shrink:0;}
@@ -444,9 +444,7 @@ canvas{display:block;width:100%;height:100%;}
 <script>
 document.addEventListener('dblclick', e => e.preventDefault(), {passive: false});
 // cancel :active on touch cards immediately on finger lift
-document.addEventListener('touchend', ()=>{
-  document.querySelectorAll('.unit-card,.skill-card').forEach(el=>el.blur());
-}, {passive:true});
+
 
 // ═══════════════════════════════════════════════
 //  CONFIG
@@ -1008,6 +1006,20 @@ function switchTab(tab){
 
 // ═══════════════════════════════════════════════
 //  UNIT CARDS
+function bindCardEvents(card, isDisabled, onClick){
+  if(isDisabled) return;
+  card.addEventListener('pointerenter', ()=>card.classList.add('hover'));
+  card.addEventListener('pointerleave', ()=>card.classList.remove('hover','pressed'));
+  card.addEventListener('pointerdown',  ()=>card.classList.add('pressed'));
+  card.addEventListener('pointerup',    ()=>card.classList.remove('pressed'));
+  card.addEventListener('pointercancel',()=>card.classList.remove('hover','pressed'));
+  card.addEventListener('click', ()=>{
+    card.classList.remove('hover','pressed');
+    card.blur();
+    onClick();
+  });
+}
+
 // ═══════════════════════════════════════════════
 function buildUnitCards(){
   ['unit-list','unit-list-pt'].forEach(id=>{
@@ -1022,7 +1034,7 @@ function buildUnitCards(){
       card.innerHTML=`<div class="unit-icon">${def.icon}</div>
         <div class="unit-info"><div class="unit-name">${def.name}</div><div class="unit-desc">${def.desc}</div></div>
         <div class="unit-cost">💰${def.cost}</div>`;
-      if(canAfford&&active) card.addEventListener('click',e=>{e.currentTarget.blur();enqueue('unit',key);});
+      bindCardEvents(card, !(canAfford&&active), ()=>enqueue('unit',key));
       ul.appendChild(card);
     });
   });
@@ -1055,8 +1067,7 @@ function buildSkillCards(){
           <div class="skill-desc">${def.desc}</div>${lockTag}${activeTag}
         </div>
         <div class="skill-cost">${unlocked?'💰'+def.cost:'🔒'}</div>`;
-      if(unlocked&&canAfford&&active&&!alreadyOn)
-        card.addEventListener('click',e=>{e.currentTarget.blur();enqueue('skill',key);});
+      bindCardEvents(card, !(unlocked&&canAfford&&active&&!alreadyOn), ()=>enqueue('skill',key));
       sl.appendChild(card);
     });
   });
@@ -1110,14 +1121,12 @@ function enqueue(kind,key){
         log(`📌 ${def.icon}${def.name} 将在下波生效`);
       }
     }
-    clearCardFocus();
     updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
   } else {
     // ── 列队模式：入待命队列 ──
     gold-=def.cost;
     pendingQueue.push({kind,key,cost:def.cost});
     log(`📋 ${def.icon}${def.name} 列队`);
-    clearCardFocus();
     updateHUD();buildUnitCards();buildSkillCards();
     ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
     renderActiveSkills();
