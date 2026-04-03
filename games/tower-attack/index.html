@@ -1124,28 +1124,48 @@ function flushQueue(){
   }
   const mods={...techPerms,...activeSkills};
   let delay=0;
-  for(const item of pendingQueue){
+  // copy queue so we can reference by index
+  const snapshot=[...pendingQueue];
+  for(let i=0;i<snapshot.length;i++){
+    const item=snapshot[i];
+    const idx=i; // capture for closure
     if(item.kind==='unit'){
-      spawnQueue.push({type:item.key,delay,mods:{...mods}});
+      spawnQueue.push({
+        type:item.key, delay, mods:{...mods},
+        onSpawn:()=>{
+          // remove first matching pending item
+          const pi=pendingQueue.findIndex(p=>p.kind==='unit'&&p.key===item.key);
+          if(pi>=0) pendingQueue.splice(pi,1);
+          if(pendingQueue.length===0) setQueueMode(false);
+          renderActiveSkills();
+        }
+      });
       delay+=0.5;
     } else {
-      // skill activates immediately at flush
-      const def=SKILL_DEFS[item.key];
-      const ef={};def.apply(ef);
-      if(def.type==='wave'||def.type==='timed'){
-        Object.assign(activeSkills,ef);
-        activeSkillTimers[item.key]=def.duration>0?def.duration:9999;
-        log(`✨ ${def.icon}${def.name} 已激活！`);
-      } else if(def.type==='next'){
-        Object.assign(nextSkills,ef);
-        activeSkillTimers[item.key]=9999;
-        log(`📌 ${def.icon}${def.name} 将在下波生效`);
-      }
+      // schedule skill activation with same delay cadence
+      const skillDelay=delay*1000;
+      delay+=0.5;
+      setTimeout(()=>{
+        const def=SKILL_DEFS[item.key];
+        const ef={};def.apply(ef);
+        if(def.type==='wave'||def.type==='timed'){
+          Object.assign(activeSkills,ef);
+          activeSkillTimers[item.key]=def.duration>0?def.duration:9999;
+          log(`✨ ${def.icon}${def.name} 已激活！`);
+        } else if(def.type==='next'){
+          Object.assign(nextSkills,ef);
+          activeSkillTimers[item.key]=9999;
+          log(`📌 ${def.icon}${def.name} 将在下波生效`);
+        }
+        const pi=pendingQueue.findIndex(p=>p.kind==='skill'&&p.key===item.key);
+        if(pi>=0) pendingQueue.splice(pi,1);
+        if(pendingQueue.length===0) setQueueMode(false);
+        updateHUD();buildSkillCards();renderActiveSkills();
+      }, skillDelay);
     }
   }
-  log(`⚔️ 发兵！共${pendingQueue.filter(i=>i.kind==='unit').length}只`);
-  pendingQueue=[];
-  setQueueMode(false);
+  log(`⚔️ 发兵！共${snapshot.filter(i=>i.kind==='unit').length}只`);
+  // do NOT clear pendingQueue here — items removed one by one as they spawn
   updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
 }
 
@@ -1239,7 +1259,9 @@ function updateWave(dt){
   if(!waveActive) return;
   spawnTimer+=dt*gameSpeed;
   while(spawnQueue.length&&spawnQueue[0].delay<=spawnTimer){
-    const item=spawnQueue.shift();enemies.push(new Enemy(item.type,item.mods??{}));
+    const item=spawnQueue.shift();
+    enemies.push(new Enemy(item.type,item.mods??{}));
+    if(item.onSpawn) item.onSpawn();
   }
   if(!spawnQueue.length&&enemies.length>0&&enemies.every(e=>e.dead||e.reached)){
     const survived=enemies.filter(e=>e.reached).length;
