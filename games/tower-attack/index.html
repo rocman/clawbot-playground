@@ -310,7 +310,7 @@ canvas{display:block;width:100%;height:100%;}
         <div id="log-pt"></div>
       </div>
       <div class="panel" id="queue-panel-pt">
-        <div class="panel-title">✨ 技能加持</div>
+        <div class="panel-title">⚔️ 场上兵员/技能</div>
         <div id="queue-list-pt"><div class="queue-empty-msg">暂无激活技能</div></div>
       </div>
     </div>
@@ -357,7 +357,7 @@ canvas{display:block;width:100%;height:100%;}
       </div>
 
       <div class="panel" id="queue-panel">
-        <div class="panel-title">✨ 技能加持</div>
+        <div class="panel-title">⚔️ 场上兵员/技能</div>
         <div id="queue-list"><div class="queue-empty-msg">暂无激活技能</div></div>
       </div>
 
@@ -1147,7 +1147,7 @@ function renderActiveSkills(){
     const keys=Object.keys(activeSkillTimers);
     if(keys.length){
       const hdr=document.createElement('div');
-      hdr.className='qi-section-hdr';hdr.textContent='✨ 技能加持';
+      hdr.className='qi-section-hdr';hdr.textContent='⚔️ 场上兵员/技能';
       ql.appendChild(hdr);
       keys.forEach(key=>{
         const def=SKILL_DEFS[key];
