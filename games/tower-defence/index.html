@@ -855,11 +855,12 @@ canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];
 let autoWave = false;
 
 function startWave(){if(waveActive)return;waveNum++;waveActive=true;spawnQueue=getWaveEnemies(waveNum).map((t,i)=>({type:t,delay:i*0.8}));spawnTimer=0;log(`🌊 第 ${waveNum} 波！`);
-  // switch button to auto-wave toggle
   const b=document.getElementById('btn-wave');
   b.disabled=false;
   b.textContent=autoWave?'☑ 自动续波':'☐ 自动续波';
   b.style.background=autoWave?'#00b894':'#6c5ce7';
+  // enable pause now that a wave is running
+  document.getElementById('btn-pause').disabled=false;
   updateHUD();
 }
 
@@ -891,7 +892,7 @@ document.getElementById('btn-upgrade').addEventListener('click',()=>{if(!selecte
 document.getElementById('btn-sell').addEventListener('click',()=>{if(!selectedPlacedTower)return;const t=selectedPlacedTower;gold+=t.sellVal;towers=towers.filter(x=>x!==t);log(`💸 出售 ${t.def.name} +💰${t.sellVal}`);selectedPlacedTower=null;updateSelPanel();updateHUD();});
 
 // ── Start / End ───────────────────────────────────────────
-function startGame(){lives=20;gold=150;score=0;waveNum=0;towers=[];enemies=[];projectiles=[];particles=[];spawnQueue=[];waveActive=false;autoWave=false;gameSpeed=1;selectedTowerType=null;selectedPlacedTower=null;state='playing';const bw=document.getElementById('btn-wave');bw.disabled=false;bw.textContent='开闸迎敌';bw.style.background='#6c5ce7';document.getElementById('btn-speed').textContent='⏩ 2× 加速';const bp=document.getElementById('btn-pause');bp.textContent='⏸ 暂停';bp.disabled=false;updateHUD();log('🎮 开始！点击「开闸迎敌」。');if(animId)cancelAnimationFrame(animId);lastTime=performance.now();requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});}
+function startGame(){lives=20;gold=150;score=0;waveNum=0;towers=[];enemies=[];projectiles=[];particles=[];spawnQueue=[];waveActive=false;autoWave=false;gameSpeed=1;selectedTowerType=null;selectedPlacedTower=null;state='playing';const bw=document.getElementById('btn-wave');bw.disabled=false;bw.textContent='开闸迎敌';bw.style.background='#6c5ce7';document.getElementById('btn-speed').textContent='⏩ 2× 加速';const bp=document.getElementById('btn-pause');bp.textContent='⏸ 暂停';bp.disabled=true;updateHUD();log('🎮 开始！点击「开闸迎敌」。');if(animId)cancelAnimationFrame(animId);lastTime=performance.now();requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});}
 function endGame(won){state=won?'win':'gameOver';document.getElementById('btn-pause').disabled=true;const ov=document.getElementById('overlay');ov.classList.remove('hidden');ov.innerHTML=`<h2>${won?'🎉 胜利！':'💀 游戏结束'}</h2><p>${won?`完成全部15波！得分 ⭐${score}`:`防线被突破…得分 ⭐${score}`}</p><button class="btn ${won?'blue':''}" id="btn-restart">再来一局</button>`;document.getElementById('btn-restart').addEventListener('click',()=>{ov.classList.add('hidden');startGame();});}
 
 // ── Init ──────────────────────────────────────────────────
