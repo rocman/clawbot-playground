@@ -164,12 +164,13 @@
     display: flex;
     gap: 7px;
   }
-  /* portrait: horizontal wrap */
+  /* portrait: horizontal wrap, full width */
   @media (orientation: portrait) {
     #panel-scroll {
       flex-direction: row;
       flex-wrap: wrap;
       align-content: flex-start;
+      width: 100%;
     }
     .panel-section { flex: 1; min-width: 138px; }
   }
