@@ -393,10 +393,17 @@ function resizeCanvas(animate) {
 
 function onResize() {
   clearTimeout(resizeDebounce);
-  resizeDebounce = setTimeout(() => resizeCanvas(true), 80);
+  resizeDebounce = setTimeout(() => {
+    resizeCanvas(true);
+    showOpeningOverlay();
+  }, 80);
 }
 window.addEventListener('resize', onResize);
-window.addEventListener('orientationchange', () => setTimeout(() => { autoFullscreen(); resizeCanvas(true); }, 150));
+window.addEventListener('orientationchange', () => setTimeout(() => {
+  autoFullscreen();
+  resizeCanvas(true);
+  showOpeningOverlay();   // re-evaluate checkbox visibility on rotation
+}, 150));
 resizeCanvas(false);
 
 // ── Auto fullscreen on landscape ─────────────────────────
