@@ -572,14 +572,18 @@ function toggleTechPending(id){
   if(!def) return;
   if(techPending.has(id)){
     techPending.delete(id);
+    // also deselect anything that depended on this node via pending chain
+    for(const d of TECH_DEFS){
+      if(d.req===id && techPending.has(d.id) && (techLevels[id]||0)<1){
+        techPending.delete(d.id);
+      }
+    }
   } else {
-    // check prerequisite (including already-pending nodes count as unlocked for chaining)
-    const reqMet=!def.req||(techLevels[def.req]||0)>=1||techPending.has(def.req);
-    if(!reqMet) return;
     const lv=techLevels[id]||0;
     if(lv>=3) return;
-    // cost check: total pending cost + this node <= gold
-    if(techPendingCost()+def.costs[lv]>gold) return;
+    // prerequisite: actually unlocked OR already pending
+    const reqMet=!def.req||(techLevels[def.req]||0)>=1||techPending.has(def.req);
+    if(!reqMet) return;
     techPending.add(id);
   }
   buildTechTree();
@@ -588,10 +592,13 @@ function toggleTechPending(id){
 
 function updateTechConfirmBar(){
   const cost=techPendingCost();
+  const canAfford=cost<=gold;
   ['btn-tech-confirm','btn-tech-confirm-pt'].forEach(id=>{
     const b=document.getElementById(id);if(!b)return;
     b.disabled=cost===0;
     b.textContent=cost>0?`投入研究 💰${cost}`:'投入研究';
+    b.style.background=cost>0?(canAfford?'#6c5ce7':'#c0392b'):'';
+    b.style.color=cost>0?'#fff':'';
   });
 }
 
@@ -633,7 +640,8 @@ function buildTechTree(){
         // req unlocked = actually unlocked OR pending in current selection
         const reqUnlocked=!def.req||(techLevels[def.req]||0)>=1||techPending.has(def.req);
         const cost=lv<3?def.costs[lv]:0;
-        const affordable=reqUnlocked&&lv<3&&(techPendingCost()+(pending?0:cost))<=gold;
+        // affordable = prereq met + not maxed + not already pending (gold only checked at confirm)
+        const affordable=reqUnlocked&&lv<3&&!pending;
         const maxed=lv>=3;
         const node=document.createElement('div');
         let cls='tech-node';
