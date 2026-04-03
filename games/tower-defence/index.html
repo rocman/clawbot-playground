@@ -157,29 +157,41 @@
   .btn.blue:hover { background: #0652b0; }
 
   /* ── Fullscreen toast (in-game landscape prompt) ── */
+  /* ── Fullscreen modal (in-game landscape prompt) ── */
   #fs-toast {
     position: fixed;
-    bottom: 18px; left: 50%; transform: translateX(-50%);
-    display: flex; align-items: center; gap: 10px;
-    background: rgba(22,33,62,0.95);
-    border: 1px solid #0f3460;
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-size: 0.82rem; color: #eee;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.65);
     z-index: 200;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    white-space: nowrap;
-    transition: opacity 0.3s;
   }
   #fs-toast.hidden { display: none; }
-  #fs-toast button {
-    padding: 5px 12px; border: none; border-radius: 6px;
-    font-size: 0.78rem; font-weight: bold; cursor: pointer;
+  #fs-toast-inner {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 12px;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    font-size: 0.9rem; color: #eee;
+    text-align: center;
   }
-  #fs-toast-yes  { background: #0984e3; color: #fff; }
-  #fs-toast-yes:hover  { background: #0652b0; }
-  #fs-toast-no   { background: #444; color: #ccc; }
-  #fs-toast-no:hover   { background: #333; }
+  #fs-toast-inner p { margin: 0; color: #aaa; font-size: 0.82rem; }
+  #fs-toast-btns { display: flex; gap: 10px; }
+  #fs-toast button {
+    min-width: 110px; padding: 9px 18px;
+    border: none; border-radius: 7px;
+    font-size: 0.82rem; font-weight: bold; cursor: pointer;
+  }
+  #fs-toast-yes { background: #0984e3; color: #fff; }
+  #fs-toast-yes:hover { background: #0652b0; }
+  #fs-toast-no  { background: #444; color: #ccc; }
+  #fs-toast-no:hover  { background: #333; }
 
 
   /* ── Wave bar: fixed at bottom of panel area, never scrolls ── */
@@ -391,9 +403,14 @@
 
 <!-- In-game fullscreen toast -->
 <div id="fs-toast" class="hidden">
-  ⛶ 检测到横屏
-  <button id="fs-toast-yes">进入全屏</button>
-  <button id="fs-toast-no">维持现状</button>
+  <div id="fs-toast-inner">
+    <strong>⛶ 检测到横屏</strong>
+    <p>是否进入全屏以获得最佳体验？</p>
+    <div id="fs-toast-btns">
+      <button id="fs-toast-yes">进入全屏</button>
+      <button id="fs-toast-no">维持现状</button>
+    </div>
+  </div>
 </div>
   <div id="panel-scroll">
     <!-- Build panel (shown when no tower selected) -->
@@ -533,19 +550,27 @@ function onResize() {
 const fsToast = document.getElementById('fs-toast');
 document.getElementById('fs-toast-yes').addEventListener('click', () => {
   fsToast.classList.add('hidden');
-  autoFullscreen().then(() => requestAnimationFrame(() => resizeCanvas(true)));
+  // resume game first
+  if (state === 'fsPause') { state = 'playing'; }
+  // call requestFullscreen synchronously inside click handler
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if (req) {
+    req.call(el).then(() => requestAnimationFrame(() => resizeCanvas(true))).catch(() => {});
+  }
 });
 document.getElementById('fs-toast-no').addEventListener('click', () => {
   fsToast.classList.add('hidden');
+  if (state === 'fsPause') { state = 'playing'; }
 });
 
 function maybeShowFsToast() {
   if (state !== 'playing' && state !== 'wavePause') return;
   if (!isLandscape()) { fsToast.classList.add('hidden'); return; }
   if (document.fullscreenElement || document.webkitFullscreenElement) return;
+  // pause game while asking
+  state = 'fsPause';
   fsToast.classList.remove('hidden');
-  clearTimeout(fsToast._timer);
-  fsToast._timer = setTimeout(() => fsToast.classList.add('hidden'), 6000);
 }
 
 window.addEventListener('resize', onResize);
@@ -582,10 +607,19 @@ function showOpeningOverlay() {
 
 document.getElementById('btn-fs-start').addEventListener('click', () => {
   document.getElementById('overlay').classList.add('hidden');
-  autoFullscreen().then(() => {
-    // wait one rAF for fullscreen resize to settle
-    requestAnimationFrame(() => { resizeCanvas(true); startGame(); });
-  });
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if (req) {
+    // requestFullscreen MUST be called synchronously inside a click handler
+    req.call(el).then(() => {
+      requestAnimationFrame(() => { resizeCanvas(true); startGame(); });
+    }).catch(() => {
+      // fullscreen denied — start anyway
+      startGame();
+    });
+  } else {
+    startGame();
+  }
 });
 document.getElementById('btn-start').addEventListener('click', () => {
   document.getElementById('overlay').classList.add('hidden');
@@ -779,6 +813,7 @@ function updateWave(dt){
 // ── Game loop ─────────────────────────────────────────────
 function gameLoop(ts){
   const dt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;
+  if(state==='fsPause'){animId=requestAnimationFrame(gameLoop);return;}
   ctx.clearRect(0,0,canvas.width,canvas.height);drawMap();
   if(state==='playing'||state==='wavePause'){
     updateWave(dt);
