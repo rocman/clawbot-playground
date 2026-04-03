@@ -9,56 +9,92 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
     height: 100%; height: 100dvh;
-    overflow: hidden;          /* NO page scroll, ever */
+    overflow: hidden;
     background: #1a1a2e;
     font-family: 'Segoe UI', system-ui, sans-serif;
     color: #eee;
   }
 
-  /* ── Top-level flex column: header → content ── */
+  /* ════════════════════════════════
+     PORTRAIT layout
+     body = column: header / map / panel-scroll
+  ════════════════════════════════ */
   body { display: flex; flex-direction: column; }
 
-  /* ── Header ── */
-  header {
+  /* header: full-width top bar (portrait only) */
+  #header-portrait {
     flex-shrink: 0;
     width: 100%;
-    padding: 8px 14px;
+    padding: 7px 12px;
     background: #16213e;
     border-bottom: 2px solid #0f3460;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 6px;
-    z-index: 10;
+    gap: 5px;
   }
-  header h1 { font-size: 1.1rem; letter-spacing: 1px; color: #e94560; }
-  .stats { display: flex; gap: 14px; font-size: 0.85rem; flex-wrap: wrap; }
-  .stat span { font-weight: bold; }
-  #lives-val { color: #ff6b6b; }
-  #gold-val  { color: #ffd700; }
-  #wave-val  { color: #74b9ff; }
-  #score-val { color: #a29bfe; }
+  #header-portrait h1 { font-size: 1rem; letter-spacing: 1px; color: #e94560; }
 
-  /* ── Content area: fills remaining height ── */
+  /* map + panel share remaining space */
   #content {
-    flex: 1;
-    min-height: 0;          /* crucial: lets flex child shrink below content size */
+    flex: 1; min-height: 0;
     display: flex;
-    align-items: stretch;
     overflow: hidden;
   }
 
-  /* ── Portrait: column (map on top, panel strip below) ── */
-  /* ── Landscape: row (map left, panel column right)    ── */
-  @media (orientation: portrait) {
-    #content { flex-direction: column; align-items: center; }
-  }
+  /* ════════════════════════════════
+     LANDSCAPE layout
+     body → #content = row: sidebar / map
+  ════════════════════════════════ */
   @media (orientation: landscape) {
+    #header-portrait { display: none; }   /* hide top bar */
     #content { flex-direction: row; }
+
+    /* sidebar: fixed width column, full height */
+    #sidebar {
+      display: flex !important;           /* override portrait hide */
+      flex-direction: column;
+      width: 188px;
+      flex-shrink: 0;
+      height: 100%;
+      background: #16213e;
+      border-right: 2px solid #0f3460;
+      overflow: hidden;
+    }
+    /* sidebar header block */
+    #sidebar-header {
+      flex-shrink: 0;
+      padding: 8px 10px 6px;
+      border-bottom: 1px solid #0f3460;
+    }
+    #sidebar-header h1 { font-size: 0.9rem; color: #e94560; letter-spacing: 1px; margin-bottom: 5px; }
+    /* panel scroll fills rest of sidebar */
+    #panel-scroll {
+      flex: 1; min-height: 0;
+      flex-direction: column !important;
+      flex-wrap: nowrap !important;
+      width: 100% !important;
+    }
   }
 
-  /* ── Map area: always square, never scrolls ── */
+  @media (orientation: portrait) {
+    #content { flex-direction: column; align-items: center; }
+    #sidebar { display: none; }           /* sidebar hidden in portrait */
+  }
+
+  /* ── Sidebar (landscape only) ── */
+  #sidebar { display: none; }             /* default hidden, landscape overrides */
+
+  /* ── Stats row (used in both header-portrait and sidebar-header) ── */
+  .stats { display: flex; gap: 10px; font-size: 0.8rem; flex-wrap: wrap; }
+  .stat span { font-weight: bold; }
+  #lives-val, #lives-val2 { color: #ff6b6b; }
+  #gold-val,  #gold-val2  { color: #ffd700; }
+  #wave-val,  #wave-val2  { color: #74b9ff; }
+  #score-val, #score-val2 { color: #a29bfe; }
+
+  /* ── Map area ── */
   #map-area {
     flex-shrink: 0;
     position: relative;
@@ -66,8 +102,7 @@
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 0 24px #0f3460;
-    margin: 8px;
-    /* smooth resize */
+    margin: 6px;
     transition: width  0.32s cubic-bezier(0.4,0,0.2,1),
                 height 0.32s cubic-bezier(0.4,0,0.2,1),
                 box-shadow 0.32s ease;
@@ -84,67 +119,61 @@
     gap: 12px; z-index: 10;
   }
   #overlay.hidden { display: none; }
-  #overlay h2 { font-size: 1.8rem; color: #e94560; }
-  #overlay p  { font-size: 0.9rem; color: #aaa; text-align: center; padding: 0 20px; }
+  #overlay h2 { font-size: 1.6rem; color: #e94560; }
+  #overlay p  { font-size: 0.85rem; color: #aaa; text-align: center; padding: 0 16px; }
   .btn {
-    padding: 9px 26px;
+    padding: 8px 22px;
     background: #e94560; border: none; border-radius: 6px;
-    color: #fff; font-size: 0.95rem;
+    color: #fff; font-size: 0.9rem;
     cursor: pointer; transition: background .2s;
   }
   .btn:hover { background: #c0392b; }
   .btn.blue { background: #0984e3; }
   .btn.blue:hover { background: #0652b0; }
 
-  /* ── Scrollable panel strip ── */
+  /* ── Panel scroll ── */
   #panel-scroll {
-    flex: 1;
-    min-width: 0; min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
+    flex: 1; min-width: 0; min-height: 0;
+    overflow-y: auto; overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding: 6px 8px 12px;
+    padding: 6px 8px 10px;
     display: flex;
-    gap: 8px;
+    gap: 7px;
   }
-  /* portrait: horizontal flex (cards side-by-side), vertical scroll if needed */
+  /* portrait: horizontal wrap */
   @media (orientation: portrait) {
     #panel-scroll {
       flex-direction: row;
       flex-wrap: wrap;
       align-content: flex-start;
     }
-    .panel-section { flex: 1; min-width: 140px; }
-  }
-  /* landscape: vertical stack, scrolls down */
-  @media (orientation: landscape) {
-    #panel-scroll {
-      flex-direction: column;
-      width: 200px;
-      flex-shrink: 0;
-    }
+    .panel-section { flex: 1; min-width: 138px; }
   }
 
   /* ── Panel sections ── */
   .panel-section {
     background: #16213e;
     border: 1px solid #0f3460;
-    border-radius: 8px;
-    padding: 9px;
+    border-radius: 7px;
+    padding: 8px;
+  }
+  @media (orientation: landscape) {
+    /* inside sidebar, sections are full width */
+    .panel-section { flex-shrink: 0; }
   }
   .panel-section h3 {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: #74b9ff;
-    margin-bottom: 7px;
+    margin-bottom: 6px;
   }
 
   /* ── Tower cards ── */
-  .tower-grid { display: flex; flex-direction: column; gap: 5px; }
+  .tower-grid { display: flex; flex-direction: column; gap: 4px; }
   .tower-card {
-    display: flex; align-items: center; gap: 7px;
-    padding: 6px 8px;
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 7px;
     background: #0f3460; border-radius: 6px;
     cursor: pointer; border: 2px solid transparent;
     transition: border-color .15s, background .15s;
@@ -152,19 +181,19 @@
   }
   .tower-card:hover { background: #1a4080; }
   .tower-card.selected { border-color: #e94560; }
-  .tower-card.unaffordable { opacity: .42; cursor: not-allowed; }
-  .tower-icon { font-size: 1.3rem; line-height: 1; }
+  .tower-card.unaffordable { opacity: .4; cursor: not-allowed; }
+  .tower-icon { font-size: 1.2rem; line-height: 1; }
   .tower-info { flex: 1; }
-  .tower-name { font-size: 0.78rem; font-weight: bold; }
-  .tower-cost { font-size: 0.7rem; color: #ffd700; }
+  .tower-name { font-size: 0.75rem; font-weight: bold; }
+  .tower-cost { font-size: 0.68rem; color: #ffd700; }
 
-  /* ── Selected tower ── */
-  #sel-info { font-size: 0.76rem; color: #aaa; line-height: 1.6; }
+  /* ── Selected tower info ── */
+  #sel-info { font-size: 0.74rem; color: #aaa; line-height: 1.6; }
   #sel-info strong { color: #fff; }
   #btn-sell, #btn-upgrade {
     width: 100%; margin-top: 5px;
     padding: 5px; border: none; border-radius: 5px;
-    cursor: pointer; font-size: 0.78rem; font-weight: bold;
+    cursor: pointer; font-size: 0.75rem; font-weight: bold;
   }
   #btn-upgrade { background: #00b894; color: #fff; }
   #btn-upgrade:hover { background: #019875; }
@@ -174,8 +203,8 @@
 
   /* ── Wave buttons ── */
   .wave-btn {
-    width: 100%; padding: 7px; border: none; border-radius: 6px;
-    cursor: pointer; font-size: 0.82rem; font-weight: bold;
+    width: 100%; padding: 6px; border: none; border-radius: 6px;
+    cursor: pointer; font-size: 0.8rem; font-weight: bold;
     transition: background .2s;
   }
   #btn-wave  { background: #6c5ce7; color: #fff; }
@@ -185,12 +214,11 @@
   #btn-speed:hover { background: #0652b0; }
 
   /* ── Log ── */
-  #log { font-size: 0.7rem; color: #aaa; max-height: 120px; overflow-y: auto; line-height: 1.6; }
+  #log { font-size: 0.68rem; color: #aaa; max-height: 100px; overflow-y: auto; line-height: 1.5; }
   #log p { border-bottom: 1px solid #1e3a5f; padding: 1px 0; }
 
-  /* ── Scrollbar styling ── */
-  #panel-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
-  #panel-scroll::-webkit-scrollbar-track { background: transparent; }
+  /* ── Scrollbars ── */
+  #panel-scroll::-webkit-scrollbar { width: 3px; height: 3px; }
   #panel-scroll::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 2px; }
   #log::-webkit-scrollbar { width: 3px; }
   #log::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 2px; }
@@ -198,7 +226,8 @@
 </head>
 <body>
 
-<header>
+<!-- Portrait top header (hidden in landscape) -->
+<header id="header-portrait">
   <h1>🏰 Tower Defence</h1>
   <div class="stats">
     <div class="stat">❤️ <span id="lives-val">20</span></div>
@@ -209,6 +238,22 @@
 </header>
 
 <div id="content">
+
+  <!-- Landscape sidebar (hidden in portrait) -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h1>🏰 Tower Defence</h1>
+      <div class="stats">
+        <div class="stat">❤️ <span id="lives-val2">20</span></div>
+        <div class="stat">💰 <span id="gold-val2">150</span></div>
+        <div class="stat">🌊 <span id="wave-val2">0</span></div>
+        <div class="stat">⭐ <span id="score-val2">0</span></div>
+      </div>
+    </div>
+    <!-- panel-scroll is moved here by JS in landscape, see below -->
+  </div>
+
+  <!-- Map -->
   <div id="map-area">
     <canvas id="gameCanvas"></canvas>
     <div id="overlay">
@@ -218,6 +263,7 @@
     </div>
   </div>
 
+  <!-- Panel scroll (portrait: after map; landscape: inside sidebar via JS) -->
   <div id="panel-scroll">
     <div class="panel-section">
       <h3>🏗️ 建造炮塔</h3>
@@ -242,6 +288,7 @@
       <div id="log"></div>
     </div>
   </div>
+
 </div>
 
 <script>
@@ -270,27 +317,40 @@ const MAP_LAYOUT = [
 const canvas  = document.getElementById('gameCanvas');
 const ctx     = canvas.getContext('2d');
 const mapArea = document.getElementById('map-area');
+const sidebar = document.getElementById('sidebar');
+const panelScroll = document.getElementById('panel-scroll');
 let TILE = 40;
 
 const TRANS_MS = 320;
 let resizeDebounce = null, commitTimer = null;
 
-function calcSize() {
-  const headerH = document.querySelector('header').offsetHeight;
-  const vw = window.innerWidth, vh = window.innerHeight;
-  const portrait = vw <= vh;
-  let avail;
-  if (portrait) {
-    // map stacks above panel; panel needs ~160px minimum
-    avail = Math.min(vw - 16, vh - headerH - 160);
+function isLandscape() { return window.innerWidth > window.innerHeight; }
+
+// Move panel into sidebar (landscape) or back into content (portrait)
+function arrangePanels() {
+  if (isLandscape()) {
+    if (panelScroll.parentElement !== sidebar) sidebar.appendChild(panelScroll);
   } else {
-    // map beside panel (200px wide + gaps)
-    avail = Math.min(vw - 224, vh - headerH - 16);
+    const content = document.getElementById('content');
+    if (panelScroll.parentElement !== content) content.appendChild(panelScroll);
   }
-  return Math.max(200, Math.floor(Math.max(avail, 200) / COLS) * COLS);
+}
+
+function calcSize() {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  if (isLandscape()) {
+    // sidebar is 188px wide; map gets the rest, constrained by height
+    const avail = Math.min(vw - 188 - 12, vh - 12);
+    return Math.max(200, Math.floor(avail / COLS) * COLS);
+  } else {
+    const headerH = document.getElementById('header-portrait').offsetHeight;
+    const avail = Math.min(vw - 12, vh - headerH - 150);
+    return Math.max(200, Math.floor(Math.max(avail, 200) / COLS) * COLS);
+  }
 }
 
 function resizeCanvas(animate) {
+  arrangePanels();
   const size = calcSize();
   TILE = size / COLS;
   mapArea.style.width  = size + 'px';
@@ -430,7 +490,19 @@ function hexA(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,
 function spawnDeath(x,y,c){for(let i=0;i<8;i++){const a=Math.random()*Math.PI*2,s=60+Math.random()*80;particles.push(new Particle(x,y,Math.cos(a)*s,Math.sin(a)*s-60,c,0.6,4));}}
 function spawnSplash(x,y,c){for(let i=0;i<12;i++){const a=Math.random()*Math.PI*2,s=80+Math.random()*100;particles.push(new Particle(x,y,Math.cos(a)*s,Math.sin(a)*s-40,c,0.8,5));}}
 function log(msg){const d=document.getElementById('log'),p=document.createElement('p');p.textContent=msg;d.prepend(p);while(d.children.length>20)d.removeChild(d.lastChild);}
-function updateHUD(){document.getElementById('lives-val').textContent=lives;document.getElementById('gold-val').textContent=gold;document.getElementById('wave-val').textContent=waveNum;document.getElementById('score-val').textContent=score;updateTowerCards();updateSelPanel();}
+function updateHUD(){
+  // portrait stats
+  document.getElementById('lives-val').textContent=lives;
+  document.getElementById('gold-val').textContent=gold;
+  document.getElementById('wave-val').textContent=waveNum;
+  document.getElementById('score-val').textContent=score;
+  // landscape sidebar stats
+  document.getElementById('lives-val2').textContent=lives;
+  document.getElementById('gold-val2').textContent=gold;
+  document.getElementById('wave-val2').textContent=waveNum;
+  document.getElementById('score-val2').textContent=score;
+  updateTowerCards();updateSelPanel();
+}
 function isBuildable(c,r){return MAP_LAYOUT[r]?.[c]===T_GRASS&&!towers.some(t=>t.col===c&&t.row===r);}
 
 // ── Map draw ──────────────────────────────────────────────
