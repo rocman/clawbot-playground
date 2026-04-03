@@ -200,12 +200,39 @@
     width: 100%;
     display: flex;
     flex-direction: row;
-    gap: 8px;
-    padding: 8px;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 8px;
     background: #16213e;
     border-top: 1px solid #0f3460;
   }
-  #wave-bar .wave-btn { flex: 1; }
+  /* side buttons (续波 & 暂停): smaller */
+  #btn-wave, #btn-pause {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 4px;
+    font-size: 0.72rem;
+  }
+  /* speed -/+ narrow */
+  .speed-adj {
+    flex: 0 0 32px;
+    padding: 8px 0;
+    font-size: 1rem;
+    font-weight: bold;
+  }
+  /* speed display block */
+  #speed-display {
+    flex: 0 0 46px;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+    background: #0f3460;
+    border-radius: 6px;
+    padding: 8px 0;
+    cursor: default;
+    user-select: none;
+  }
 
   /* ── panel-scroll: always flex, direction varies by orientation ── */
   #panel-scroll {
@@ -449,7 +476,9 @@
   <!-- Wave bar: fixed at bottom of panel area, never scrolls -->
   <div id="wave-bar">
     <button class="wave-btn" id="btn-wave" disabled>开闸迎敌</button>
-    <button class="wave-btn" id="btn-speed">⏩ 2× 加速</button>
+    <button class="wave-btn speed-adj" id="btn-speed-dn">−</button>
+    <div id="speed-display">1×</div>
+    <button class="wave-btn speed-adj" id="btn-speed-up">+</button>
     <button class="wave-btn" id="btn-pause" disabled>⏸ 暂停</button>
   </div>
 
@@ -886,13 +915,27 @@ document.getElementById('btn-wave').addEventListener('click',()=>{
     b.style.background=autoWave?'#00b894':'#6c5ce7';
   }
 });
-document.getElementById('btn-speed').addEventListener('click',()=>{gameSpeed=gameSpeed===1?2:1;document.getElementById('btn-speed').textContent=gameSpeed===1?'⏩ 2× 加速':'⏸ 1× 恢复';});
+const SPEED_STEPS = [0.5, 1, 2, 3, 4];
+let speedIdx = 1; // default 1×
+function updateSpeedDisplay() {
+  const s = SPEED_STEPS[speedIdx];
+  gameSpeed = s;
+  document.getElementById('speed-display').textContent = s + '×';
+  document.getElementById('btn-speed-dn').disabled = speedIdx === 0;
+  document.getElementById('btn-speed-up').disabled = speedIdx === SPEED_STEPS.length - 1;
+}
+document.getElementById('btn-speed-dn').addEventListener('click', () => {
+  if (speedIdx > 0) { speedIdx--; updateSpeedDisplay(); }
+});
+document.getElementById('btn-speed-up').addEventListener('click', () => {
+  if (speedIdx < SPEED_STEPS.length - 1) { speedIdx++; updateSpeedDisplay(); }
+});
 document.getElementById('btn-deselect').addEventListener('click',()=>{selectedPlacedTower=null;selectedTowerType=null;updateTowerCards();updateSelPanel();});
 document.getElementById('btn-upgrade').addEventListener('click',()=>{if(!selectedPlacedTower)return;const t=selectedPlacedTower;if(t.level>=t.def.maxLevel||gold<t.upgCost)return;gold-=t.upgCost;t.level++;log(`⬆️ ${t.def.name} Lv${t.level}`);updateHUD();});
 document.getElementById('btn-sell').addEventListener('click',()=>{if(!selectedPlacedTower)return;const t=selectedPlacedTower;gold+=t.sellVal;towers=towers.filter(x=>x!==t);log(`💸 出售 ${t.def.name} +💰${t.sellVal}`);selectedPlacedTower=null;updateSelPanel();updateHUD();});
 
 // ── Start / End ───────────────────────────────────────────
-function startGame(){lives=20;gold=150;score=0;waveNum=0;towers=[];enemies=[];projectiles=[];particles=[];spawnQueue=[];waveActive=false;autoWave=false;gameSpeed=1;selectedTowerType=null;selectedPlacedTower=null;state='playing';const bw=document.getElementById('btn-wave');bw.disabled=false;bw.textContent='开闸迎敌';bw.style.background='#6c5ce7';document.getElementById('btn-speed').textContent='⏩ 2× 加速';const bp=document.getElementById('btn-pause');bp.textContent='⏸ 暂停';bp.disabled=true;updateHUD();log('🎮 开始！点击「开闸迎敌」。');if(animId)cancelAnimationFrame(animId);lastTime=performance.now();requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});}
+function startGame(){lives=20;gold=150;score=0;waveNum=0;towers=[];enemies=[];projectiles=[];particles=[];spawnQueue=[];waveActive=false;autoWave=false;gameSpeed=1;speedIdx=1;selectedTowerType=null;selectedPlacedTower=null;state='playing';const bw=document.getElementById('btn-wave');bw.disabled=false;bw.textContent='开闸迎敌';bw.style.background='#6c5ce7';updateSpeedDisplay();const bp=document.getElementById('btn-pause');bp.textContent='⏸ 暂停';bp.disabled=true;updateHUD();log('🎮 开始！点击「开闸迎敌」。');if(animId)cancelAnimationFrame(animId);lastTime=performance.now();requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});}
 function endGame(won){state=won?'win':'gameOver';document.getElementById('btn-pause').disabled=true;const ov=document.getElementById('overlay');ov.classList.remove('hidden');ov.innerHTML=`<h2>${won?'🎉 胜利！':'💀 游戏结束'}</h2><p>${won?`完成全部15波！得分 ⭐${score}`:`防线被突破…得分 ⭐${score}`}</p><button class="btn ${won?'blue':''}" id="btn-restart">再来一局</button>`;document.getElementById('btn-restart').addEventListener('click',()=>{ov.classList.add('hidden');startGame();});}
 
 // ── Init ──────────────────────────────────────────────────
