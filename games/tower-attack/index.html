@@ -89,8 +89,21 @@ canvas{display:block;width:100%;height:100%;}
   padding:6px 8px 4px;border-bottom:1px solid #0f3460;flex-shrink:0;
 }
 
+/* ── Panel tabs ── */
+.panel-tabs{
+  display:flex;flex-shrink:0;border-bottom:1px solid #0f3460;
+}
+.ptab{
+  flex:1;padding:6px 0;border:none;background:none;
+  color:#aaa;font-size:0.72rem;font-weight:bold;cursor:pointer;
+  border-bottom:2px solid transparent;transition:color .15s,border-color .15s;
+}
+.ptab.active{color:#fdcb6e;border-bottom-color:#fdcb6e;}
+.tab-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding:6px;}
+.tab-body.hidden{display:none!important;}
+
 /* ── Unit cards ── */
-#unit-list{flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:4px;}
+#unit-list,#skill-list{/* managed by .tab-body */}
 .unit-card{
   background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
   padding:5px 8px;cursor:pointer;transition:background .15s,border-color .15s;
@@ -105,7 +118,7 @@ canvas{display:block;width:100%;height:100%;}
 .unit-cost{font-size:0.72rem;color:#fdcb6e;font-weight:bold;flex-shrink:0;}
 
 /* ── Skill cards ── */
-#skill-list{flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:4px;}
+
 .skill-card{
   background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
   padding:5px 8px;cursor:pointer;transition:background .15s,border-color .15s;
@@ -239,19 +252,20 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- panel-scroll moved by JS -->
 <div id="panel-scroll">
+  <!-- 合并面板：兵种 & 技能 tab 切换 -->
   <div class="panel" id="build-panel">
-    <div class="panel-title">🪖 选择兵种</div>
-    <div id="unit-list"></div>
+    <div class="panel-tabs">
+      <button class="ptab active" id="tab-units" onclick="switchTab('units')">🪖 兵种</button>
+      <button class="ptab" id="tab-skills" onclick="switchTab('skills')">✨ 技能</button>
+    </div>
+    <div id="unit-list" class="tab-body"></div>
+    <div id="skill-list" class="tab-body hidden"></div>
   </div>
 
-  <div class="panel" id="skill-panel">
-    <div class="panel-title">✨ 技能</div>
-    <div id="skill-list"></div>
-  </div>
-
+  <!-- 队列 + 战报 -->
   <div class="panel" id="queue-panel">
-    <div class="panel-title">📋 出兵队列</div>
-    <div id="queue-list"><div id="queue-empty">队列为空 — 点击兵种加入</div></div>
+    <div class="panel-title">📋 出兵/技能队列</div>
+    <div id="queue-list"><div id="queue-empty">队列为空 — 点击兵种或技能加入</div></div>
   </div>
 
   <div class="panel" id="log-panel">
@@ -611,31 +625,31 @@ function onBreach(enemy){
 }
 
 // ═══════════════════════════════════════════════
+//  TAB SWITCH
+// ═══════════════════════════════════════════════
+function switchTab(tab){
+  document.getElementById('unit-list').classList.toggle('hidden', tab!=='units');
+  document.getElementById('skill-list').classList.toggle('hidden', tab!=='skills');
+  document.getElementById('tab-units').classList.toggle('active', tab==='units');
+  document.getElementById('tab-skills').classList.toggle('active', tab==='skills');
+}
+
+// ═══════════════════════════════════════════════
 //  UNIT CARDS
 // ═══════════════════════════════════════════════
 function buildUnitCards(){
   const ul=document.getElementById('unit-list');
   ul.innerHTML='';
   Object.entries(UNIT_DEFS).forEach(([key,def])=>{
-    const card=document.createElement('div');
     const canAfford=def.cost<=gold;
+    const card=document.createElement('div');
     card.className='unit-card'+(canAfford?'':' disabled');
     card.innerHTML=`<div class="unit-icon">${def.icon}</div>
       <div class="unit-info"><div class="unit-name">${def.name}</div><div class="unit-desc">${def.desc}</div></div>
       <div class="unit-cost">💰${def.cost}</div>`;
-    if(canAfford) card.addEventListener('click',()=>addToQueue(key));
+    if(canAfford) card.addEventListener('click',()=>addToQueue('unit',key));
     ul.appendChild(card);
   });
-}
-
-function addToQueue(key){
-  if(state!=='playing'&&state!=='wavePause') return;
-  const def=UNIT_DEFS[key];
-  if(def.cost>gold) return;
-  gold-=def.cost;
-  sendQueue.push(key);
-  updateHUD();buildUnitCards();renderQueue();
-  log(`➕ ${def.icon} ${def.name} 加入队列（-💰${def.cost}）`);
 }
 
 // ═══════════════════════════════════════════════
@@ -646,65 +660,57 @@ function buildSkillCards(){
   sl.innerHTML='';
   Object.entries(SKILL_DEFS).forEach(([key,def])=>{
     const unlocked=unlockedSkills.has(key);
-    const active=!!(activeSkills[key]||nextSkills[key]);
     const canAfford=def.cost<=gold;
     const card=document.createElement('div');
     let cls='skill-card';
     if(!unlocked) cls+=' locked';
-    else if(active) cls+=' active';
     else if(!canAfford) cls+=' disabled';
     card.className=cls;
     const lockTag=unlocked?'':
       `<div class="skill-lock-tag">🔒 需突破${def.unlockAt??0}次解锁</div>`;
     card.innerHTML=`<div class="skill-icon">${def.icon}</div>
       <div class="skill-info">
-        <div class="skill-name">${def.name}${active?' ✓':''}</div>
+        <div class="skill-name">${def.name}</div>
         <div class="skill-desc">${def.desc}</div>
         ${lockTag}
       </div>
       <div class="skill-cost">${unlocked?'💰'+def.cost:'🔒'}</div>`;
-    if(unlocked&&!active&&canAfford&&(state==='playing'||state==='wavePause'))
-      card.addEventListener('click',()=>buySkill(key));
+    if(unlocked&&canAfford&&(state==='playing'||state==='wavePause'))
+      card.addEventListener('click',()=>addToQueue('skill',key));
     sl.appendChild(card);
   });
 }
 
-function buySkill(key){
+// ═══════════════════════════════════════════════
+//  UNIFIED QUEUE  {kind:'unit'|'skill', key}
+// ═══════════════════════════════════════════════
+function addToQueue(kind, key){
   if(state!=='playing'&&state!=='wavePause') return;
-  const def=SKILL_DEFS[key];
-  if(!unlockedSkills.has(key)||def.cost>gold) return;
+  const def = kind==='unit' ? UNIT_DEFS[key] : SKILL_DEFS[key];
+  if(def.cost>gold) return;
   gold-=def.cost;
-  const effect={};
-  def.apply(effect);
-  if(def.type==='wave') activeSkills[key]=effect;
-  else if(def.type==='next') nextSkills[key]=effect;
-  else if(def.type==='instant'){
-    // blind: just log for now (no real turrets in single-player preview)
-    log(`💣 烟雾弹！守方炮塔短暂致盲！`);
-  }
-  updateHUD();buildSkillCards();
-  log(`✨ 激活技能：${def.icon} ${def.name}（-💰${def.cost}）`);
+  sendQueue.push({kind, key});
+  updateHUD(); buildUnitCards(); buildSkillCards(); renderQueue();
+  log(`➕ ${def.icon} ${def.name} 加入队列（-💰${def.cost}）`);
 }
 
-// ═══════════════════════════════════════════════
-//  QUEUE
-// ═══════════════════════════════════════════════
 function renderQueue(){
   const ql=document.getElementById('queue-list');
   ql.innerHTML='';
   if(!sendQueue.length){
-    const e=document.createElement('div');e.id='queue-empty';e.className='';e.textContent='队列为空 — 点击兵种加入';
+    const e=document.createElement('div');e.id='queue-empty';e.textContent='队列为空 — 点击兵种或技能加入';
     ql.appendChild(e);
-    document.getElementById('btn-send').disabled=true;return;
+    document.getElementById('btn-send').disabled=true; return;
   }
   document.getElementById('btn-send').disabled=false;
-  sendQueue.forEach((key,idx)=>{
-    const def=UNIT_DEFS[key];
-    const row=document.createElement('div');row.className='queue-item';
-    row.innerHTML=`<span class="qi-icon">${def.icon}</span><span class="qi-label">${def.name}</span><button class="qi-rm" data-i="${idx}">✕</button>`;
+  sendQueue.forEach(({kind,key},idx)=>{
+    const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
+    const row=document.createElement('div'); row.className='queue-item';
+    const tag=kind==='skill'?'<span style="font-size:.6rem;color:#fdcb6e;margin-left:3px">技能</span>':'';
+    row.innerHTML=`<span class="qi-icon">${def.icon}</span><span class="qi-label">${def.name}${tag}</span><button class="qi-rm" data-i="${idx}">✕</button>`;
     row.querySelector('.qi-rm').addEventListener('click',()=>{
-      gold+=def.cost;sendQueue.splice(idx,1);
-      updateHUD();buildUnitCards();renderQueue();
+      gold+=def.cost; sendQueue.splice(idx,1);
+      updateHUD(); buildUnitCards(); buildSkillCards(); renderQueue();
     });
     ql.appendChild(row);
   });
@@ -715,17 +721,26 @@ function renderQueue(){
 // ═══════════════════════════════════════════════
 function sendWave(){
   if(waveActive||!sendQueue.length) return;
-  waveNum++;waveActive=true;
-  // merge active wave skills into mods
+  waveNum++; waveActive=true;
+  // extract skills from queue first, apply mods
+  const skillItems=sendQueue.filter(i=>i.kind==='skill');
+  const unitItems =sendQueue.filter(i=>i.kind==='unit');
   const mods={};
-  for(const ef of Object.values(activeSkills)) Object.assign(mods,ef);
-  // build spawn queue with delay
-  spawnQueue=sendQueue.map((t,i)=>({type:t,delay:i*0.7,mods}));
-  sendQueue=[];spawnTimer=0;
-  log(`🌊 第${waveNum}波出击！${spawnQueue.length}只`+(Object.keys(activeSkills).length?' ✨技能激活':''));
+  for(const {key} of skillItems){
+    const ef={};
+    SKILL_DEFS[key].apply(ef);
+    if(SKILL_DEFS[key].type==='wave'||SKILL_DEFS[key].type==='instant') Object.assign(mods,ef);
+    else Object.assign(nextSkills, ef); // 'next' type deferred
+    if(SKILL_DEFS[key].type==='instant') log(`💣 ${SKILL_DEFS[key].name}已触发！`);
+  }
+  activeSkills={...mods};
+  spawnQueue=unitItems.map((item,i)=>({type:item.key,delay:i*0.7,mods}));
+  sendQueue=[]; spawnTimer=0;
+  const skillNames=skillItems.map(i=>SKILL_DEFS[i.key].icon+SKILL_DEFS[i.key].name).join(' ');
+  log(`🌊 第${waveNum}波出击！${unitItems.length}只${skillNames?' ✨'+skillNames:''}`);
   document.getElementById('btn-send').disabled=true;
   document.getElementById('btn-pause-atk').disabled=false;
-  updateHUD();renderQueue();
+  updateHUD(); renderQueue();
 }
 
 function updateWave(dt){
