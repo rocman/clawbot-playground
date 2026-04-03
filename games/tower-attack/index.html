@@ -38,10 +38,10 @@ body{display:flex;flex-direction:column;}
   #header-portrait{display:none;}
   #content{flex-direction:row;}
 
-  /* sidebar: fills all space beside map */
+  /* sidebar: fills ALL remaining space beside map */
   #sidebar{
     display:flex!important;flex-direction:column;
-    flex:1;min-width:280px;max-width:360px;height:100%;
+    flex:1;min-width:200px;height:100%;
     background:#16213e;border-left:2px solid #0f3460;overflow:hidden;
   }
   #sidebar-header{
@@ -57,7 +57,7 @@ body{display:flex;flex-direction:column;}
   }
 
   /* map: square, fills content height */
-  #map-wrap{flex:0 0 auto;height:100%;width:auto;aspect-ratio:1/1;max-width:calc(100vw - 280px);}
+  #map-wrap{flex:0 0 auto;height:100%;width:auto;aspect-ratio:1/1;max-width:calc(100vh - 0px);}
   #map-area{width:100%;height:100%;max-height:none;}
 }
 
