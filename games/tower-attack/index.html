@@ -546,6 +546,7 @@ class Enemy{
     this.speed=this.def.speed*(mods?.speedMult??1);
     this.hasShield=mods?.shield??false;
     this.progress=0;
+    if(!PATH_WP.length) rebuildWP();
     this.x=PATH_WP[0]?.x??0; this.y=PATH_WP[0]?.y??0;
     this.dead=false; this.reached=false;
   }
@@ -887,6 +888,10 @@ function gameLoop(ts){
 //  START / END
 // ═══════════════════════════════════════════════
 function startGame(){
+  // ensure canvas is sized and PATH_WP is built before spawning enemies
+  updateCanvasResolution();
+  if(!PATH_WP.length) rebuildWP();
+
   gold=waveGold(1);waveNum=0;breachCount=0;
   enemies=[];spawnQueue=[];sendQueue=[];waveActive=false;
   activeSkills={};nextSkills={};
