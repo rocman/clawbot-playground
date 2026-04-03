@@ -66,13 +66,11 @@ body{display:flex;flex-direction:column;}
    body → column: header / content(col: map) / panel-scroll / wave-bar
 ══════════════════════════════════ */
 @media (orientation:portrait){
-  #content{flex-direction:column;align-items:center;flex:0 0 auto;}
+  #content{flex-direction:column;align-items:center;}
   #sidebar{display:none;}
-  #map-wrap{width:100%;flex:0 0 auto;align-self:stretch;}
-  #map-area{width:100%;aspect-ratio:1/1;max-height:none;}
+  #map-wrap{width:100%;flex:0 0 auto;}
+  #map-area{width:100%;max-height:100vw;}
   #panel-scroll{flex-direction:row;width:100%;}
-  /* panel-scroll-pt fills all remaining space after map + wave-bar */
-  #panel-scroll-pt{flex:1;min-height:0;}
 }
 
 /* ── Sidebar (landscape only, default hidden) ── */
@@ -251,6 +249,37 @@ canvas{display:block;width:100%;height:100%;}
     </div>
   </div>
 
+  <!-- Portrait: panel-scroll below map, inside #content -->
+  <div id="panel-scroll-pt">
+    <div class="panel" id="build-panel-pt">
+      <div class="panel-tabs">
+        <button class="ptab active" id="tab-units-pt" onclick="switchTab('units')">🪖 兵种</button>
+        <button class="ptab" id="tab-skills-pt" onclick="switchTab('skills')">✨ 技能</button>
+      </div>
+      <div id="unit-list-pt" class="tab-body"></div>
+      <div id="skill-list-pt" class="tab-body hidden"></div>
+    </div>
+    <div class="panel" id="queue-panel-pt">
+      <div class="panel-title">📋 出兵/技能队列</div>
+      <div id="queue-list-pt"><div id="queue-empty-pt">队列为空</div></div>
+    </div>
+    <div class="panel" id="log-panel-pt">
+      <div class="panel-title">📡 战报</div>
+      <div id="log-pt"></div>
+    </div>
+  </div>
+
+  <!-- Portrait: wave bar at bottom, inside #content -->
+  <div id="wave-bar-pt">
+    <button class="wave-btn" id="btn-send-pt" disabled>发兵</button>
+    <div id="speed-group-atk-pt" style="flex:1;display:flex;align-items:stretch;height:44px;">
+      <button class="speed-adj-atk" id="btn-speed-dn-atk-pt" style="border-radius:6px 0 0 6px;">−</button>
+      <div id="speed-display-atk-pt" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:bold;color:#0f3460;background:#fff;">1×</div>
+      <button class="speed-adj-atk" id="btn-speed-up-atk-pt" style="border-radius:0 6px 6px 0;">+</button>
+    </div>
+    <button class="wave-btn" id="btn-pause-atk-pt" disabled>⏸ 暂停</button>
+  </div>
+
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
@@ -297,37 +326,6 @@ canvas{display:block;width:100%;height:100%;}
   </div>
 </div>
 
-<!-- Portrait: panel-scroll below map -->
-<div id="panel-scroll-pt">
-  <div class="panel" id="build-panel-pt">
-    <div class="panel-tabs">
-      <button class="ptab active" id="tab-units-pt" onclick="switchTab('units')">🪖 兵种</button>
-      <button class="ptab" id="tab-skills-pt" onclick="switchTab('skills')">✨ 技能</button>
-    </div>
-    <div id="unit-list-pt" class="tab-body"></div>
-    <div id="skill-list-pt" class="tab-body hidden"></div>
-  </div>
-  <div class="panel" id="queue-panel-pt">
-    <div class="panel-title">📋 出兵/技能队列</div>
-    <div id="queue-list-pt"><div id="queue-empty-pt">队列为空</div></div>
-  </div>
-  <div class="panel" id="log-panel-pt">
-    <div class="panel-title">📡 战报</div>
-    <div id="log-pt"></div>
-  </div>
-</div>
-
-<!-- Portrait: wave bar at bottom -->
-<div id="wave-bar-pt">
-  <button class="wave-btn" id="btn-send-pt" disabled>发兵</button>
-  <div id="speed-group-atk-pt" style="flex:1;display:flex;align-items:stretch;height:44px;">
-    <button class="speed-adj-atk" id="btn-speed-dn-atk-pt" style="border-radius:6px 0 0 6px;">−</button>
-    <div id="speed-display-atk-pt" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:bold;color:#0f3460;background:#fff;">1×</div>
-    <button class="speed-adj-atk" id="btn-speed-up-atk-pt" style="border-radius:0 6px 6px 0;">+</button>
-  </div>
-  <button class="wave-btn" id="btn-pause-atk-pt" disabled>⏸ 暂停</button>
-</div>
-
 <div id="overlay">
   <h2>⚔️ Tower Attack</h2>
   <p>扮演进攻方，编排兵种与技能，突破守方防线！</p>
@@ -336,20 +334,18 @@ canvas{display:block;width:100%;height:100%;}
 </div>
 
 <style>
-/* Portrait-only panels */
+/* Portrait-only panels — now inside #content, so flex:1 works correctly */
 #panel-scroll-pt{
-  display:none;min-height:0;overflow:hidden;
-  padding:4px 8px 4px;gap:6px;flex-direction:row;
+  display:none;flex:1;min-height:0;overflow:hidden;
+  padding:4px 8px;gap:6px;flex-direction:row;
 }
-/* all three panels equal width in portrait */
 #build-panel-pt,#queue-panel-pt,#log-panel-pt{ flex:1 1 0;min-height:0; }
-#log-pt{flex:1;overflow-y:auto;padding:4px 6px;font-size:0.62rem;color:#aaa;line-height:1.5;}
+#log-pt{flex:1;min-height:0;overflow-y:auto;padding:4px 6px;font-size:0.62rem;color:#aaa;line-height:1.5;}
 #log-pt p{margin-bottom:2px;}
 #wave-bar-pt{
   display:none;flex-shrink:0;flex-direction:row;align-items:stretch;
   gap:5px;padding:7px 8px;background:#16213e;border-top:1px solid #0f3460;
 }
-#milestone-strip-pt{display:none;}
 @media (orientation:portrait){
   #panel-scroll-pt{display:flex;}
   #wave-bar-pt{display:flex;}
