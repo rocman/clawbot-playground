@@ -483,6 +483,7 @@ const SKILL_DEFS={
   blind:   {name:'烟雾弹', icon:'💣',cost:120,desc:'炮塔射速-50%，持续8秒', unlockAt:5,  type:'timed', duration:8, apply:s=>{s.blind=true;}},
   boost:   {name:'强化血脉',icon:'🧬',cost:90, desc:'本波所有兵HP+30%',    unlockAt:10, type:'wave',  duration:0, apply:s=>{s.hpMult=1.3;}},
   interest:{name:'利滚利', icon:'📈',cost:150,desc:'未用资金下波额外+20%',  unlockAt:20, type:'next',  duration:0, apply:s=>{s.interest=0.2;}},
+  double:  {name:'增兵令', icon:'⚡',cost:180,desc:'场上所有兵员立即翻倍',   unlockAt:3,  type:'instant',duration:0,apply:s=>{}},
 };
 
 // ═══════════════════════════════════════════════
@@ -687,6 +688,7 @@ function buildTechTree(){
 
 const MILESTONES=[
   {at:1,  label:'首次突破', gold:50,  unlock:null,      desc:'首次突破！'},
+  {at:3,  label:'3次突破',  gold:60,  unlock:'double',  desc:'3次突破！解锁增兵令'},
   {at:5,  label:'5次突破',  gold:80,  unlock:'shield',  desc:'5次突破！解锁魔法护盾'},
   {at:10, label:'10次突破', gold:120, unlock:'boost',   desc:'10次突破！解锁强化血脉'},
   {at:20, label:'20次突破', gold:200, unlock:'interest',desc:'20次突破！解锁利滚利'},
@@ -1091,6 +1093,27 @@ function setQueueMode(on){
   buildUnitCards();buildSkillCards();
 }
 
+function applyInstantSkill(key){
+  if(key==='double'){
+    const alive=enemies.filter(e=>!e.dead&&!e.reached);
+    if(!alive.length){log('⚡ 无场上兵员可翻倍');return;}
+    const copies=[...alive];
+    copies.forEach(e=>{
+      const clone=new Enemy(e.type,{
+        hpMult: e.hp/e.def.hp,   // 保持当前血量比例
+        speedMult: e.speed/e.def.speed,
+        shield: e.hasShield,
+      });
+      // 让克隆体从同一位置出发
+      clone.progress=e.progress;
+      clone.x=e.x; clone.y=e.y;
+      enemies.push(clone);
+    });
+    log(`⚡ 增兵令！场上兵员翻倍（+${copies.length}只）`);
+    showToast('⚡ 增兵令！兵员翻倍！','skill');
+  }
+}
+
 function enqueue(kind,key){
   if(state!=='playing'&&state!=='paused') return;
   const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
@@ -1109,6 +1132,9 @@ function enqueue(kind,key){
       const mods={...techPerms,...activeSkills};
       spawnQueue.push({type:key,delay:0,mods});
       log(`⚔️ 派遣 ${def.icon}${def.name}`);
+    } else if(def.type==='instant'){
+      // 消耗性技能：立即执行，不进 activeSkillTimers
+      applyInstantSkill(key);
     } else {
       const ef={};def.apply(ef);
       if(def.type==='wave'||def.type==='timed'){
@@ -1170,20 +1196,25 @@ function flushQueue(){
     } else {
       // schedule skill activation with same delay cadence
       const skillDelay=delay*1000;
+      const skillKey=item.key;
       delay+=0.5;
       setTimeout(()=>{
-        const def=SKILL_DEFS[item.key];
-        const ef={};def.apply(ef);
-        if(def.type==='wave'||def.type==='timed'){
-          Object.assign(activeSkills,ef);
-          activeSkillTimers[item.key]=def.duration>0?def.duration:9999;
-          log(`✨ ${def.icon}${def.name} 已激活！`);
-        } else if(def.type==='next'){
-          Object.assign(nextSkills,ef);
-          activeSkillTimers[item.key]=9999;
-          log(`📌 ${def.icon}${def.name} 将在下波生效`);
+        const def=SKILL_DEFS[skillKey];
+        if(def.type==='instant'){
+          applyInstantSkill(skillKey);
+        } else {
+          const ef={};def.apply(ef);
+          if(def.type==='wave'||def.type==='timed'){
+            Object.assign(activeSkills,ef);
+            activeSkillTimers[skillKey]=def.duration>0?def.duration:9999;
+            log(`✨ ${def.icon}${def.name} 已激活！`);
+          } else if(def.type==='next'){
+            Object.assign(nextSkills,ef);
+            activeSkillTimers[skillKey]=9999;
+            log(`📌 ${def.icon}${def.name} 将在下波生效`);
+          }
         }
-        const pi=pendingQueue.findIndex(p=>p.kind==='skill'&&p.key===item.key);
+        const pi=pendingQueue.findIndex(p=>p.kind==='skill'&&p.key===skillKey);
         if(pi>=0) pendingQueue.splice(pi,1);
         if(pendingQueue.length===0) setQueueMode(false);
         updateHUD();buildSkillCards();renderActiveSkills();
