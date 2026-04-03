@@ -443,6 +443,10 @@ canvas{display:block;width:100%;height:100%;}
 
 <script>
 document.addEventListener('dblclick', e => e.preventDefault(), {passive: false});
+// cancel :active on touch cards immediately on finger lift
+document.addEventListener('touchend', ()=>{
+  document.querySelectorAll('.unit-card,.skill-card').forEach(el=>el.blur());
+}, {passive:true});
 
 // ═══════════════════════════════════════════════
 //  CONFIG
