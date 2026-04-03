@@ -338,6 +338,9 @@
     cursor: pointer; font-size: 0.8rem; font-weight: bold;
     transition: background .2s;
   }
+  #btn-pause { background: #fdcb6e; color: #2d3436; }
+  #btn-pause:hover { background: #e6b655; }
+  #btn-pause:disabled { background: #444; color: #888; cursor: not-allowed; }
   #btn-wave  { background: #6c5ce7; color: #fff; }
   #btn-wave:hover  { background: #5541d1; }
   #btn-wave:disabled { background: #444; cursor: not-allowed; }
@@ -445,6 +448,7 @@
 
   <!-- Wave bar: fixed at bottom of panel area, never scrolls -->
   <div id="wave-bar">
+    <button class="wave-btn" id="btn-pause">⏸ 暂停</button>
     <button class="wave-btn" id="btn-wave">开闸迎敌</button>
     <button class="wave-btn" id="btn-speed">⏩ 2× 加速</button>
   </div>
@@ -813,7 +817,7 @@ function updateWave(dt){
 // ── Game loop ─────────────────────────────────────────────
 function gameLoop(ts){
   const dt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;
-  if(state==='fsPause'){animId=requestAnimationFrame(gameLoop);return;}
+  if(state==='fsPause'||state==='paused'){animId=requestAnimationFrame(gameLoop);return;}
   ctx.clearRect(0,0,canvas.width,canvas.height);drawMap();
   if(state==='playing'||state==='wavePause'){
     updateWave(dt);
@@ -861,6 +865,16 @@ function startWave(){if(waveActive)return;waveNum++;waveActive=true;spawnQueue=g
   updateHUD();
 }
 
+document.getElementById('btn-pause').addEventListener('click', () => {
+  if (state === 'playing' || state === 'wavePause') {
+    state = 'paused';
+    document.getElementById('btn-pause').textContent = '▶ 继续';
+  } else if (state === 'paused') {
+    state = 'playing';
+    document.getElementById('btn-pause').textContent = '⏸ 暂停';
+  }
+});
+
 document.getElementById('btn-wave').addEventListener('click',()=>{
   if(!waveActive){
     // pre-wave: start
@@ -879,7 +893,7 @@ document.getElementById('btn-upgrade').addEventListener('click',()=>{if(!selecte
 document.getElementById('btn-sell').addEventListener('click',()=>{if(!selectedPlacedTower)return;const t=selectedPlacedTower;gold+=t.sellVal;towers=towers.filter(x=>x!==t);log(`💸 出售 ${t.def.name} +💰${t.sellVal}`);selectedPlacedTower=null;updateSelPanel();updateHUD();});
 
 // ── Start / End ───────────────────────────────────────────
-function startGame(){lives=20;gold=150;score=0;waveNum=0;towers=[];enemies=[];projectiles=[];particles=[];spawnQueue=[];waveActive=false;autoWave=false;gameSpeed=1;selectedTowerType=null;selectedPlacedTower=null;state='playing';const bw=document.getElementById('btn-wave');bw.disabled=false;bw.textContent='开闸迎敌';bw.style.background='#6c5ce7';document.getElementById('btn-speed').textContent='⏩ 2× 加速';updateHUD();log('🎮 开始！点击「开闸迎敌」。');if(animId)cancelAnimationFrame(animId);lastTime=performance.now();requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});}
+function startGame(){lives=20;gold=150;score=0;waveNum=0;towers=[];enemies=[];projectiles=[];particles=[];spawnQueue=[];waveActive=false;autoWave=false;gameSpeed=1;selectedTowerType=null;selectedPlacedTower=null;state='playing';const bw=document.getElementById('btn-wave');bw.disabled=false;bw.textContent='开闸迎敌';bw.style.background='#6c5ce7';document.getElementById('btn-speed').textContent='⏩ 2× 加速';document.getElementById('btn-pause').textContent='⏸ 暂停';updateHUD();log('🎮 开始！点击「开闸迎敌」。');if(animId)cancelAnimationFrame(animId);lastTime=performance.now();requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});}
 function endGame(won){state=won?'win':'gameOver';const ov=document.getElementById('overlay');ov.classList.remove('hidden');ov.innerHTML=`<h2>${won?'🎉 胜利！':'💀 游戏结束'}</h2><p>${won?`完成全部15波！得分 ⭐${score}`:`防线被突破…得分 ⭐${score}`}</p><button class="btn ${won?'blue':''}" id="btn-restart">再来一局</button>`;document.getElementById('btn-restart').addEventListener('click',()=>{ov.classList.add('hidden');startGame();});}
 
 // ── Init ──────────────────────────────────────────────────
