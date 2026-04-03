@@ -110,6 +110,17 @@
   #map-area.resizing { box-shadow: 0 0 36px #6c5ce7; }
   canvas { display: block; }
 
+  /* ── Map wrapper: fills all space around the square canvas ── */
+  #map-wrap {
+    flex: 1;
+    min-width: 0; min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #11112a;
+    overflow: hidden;
+  }
+
   /* ── Overlay ── */
   #overlay {
     position: absolute; inset: 0;
@@ -254,12 +265,14 @@
   </div>
 
   <!-- Map -->
-  <div id="map-area">
-    <canvas id="gameCanvas"></canvas>
-    <div id="overlay">
-      <h2>🏰 Tower Defence</h2>
-      <p>在路径旁边的空地上建造炮塔<br>阻止敌人到达终点！</p>
-      <button class="btn blue" id="btn-start">开始游戏</button>
+  <div id="map-wrap">
+    <div id="map-area">
+      <canvas id="gameCanvas"></canvas>
+      <div id="overlay">
+        <h2>🏰 Tower Defence</h2>
+        <p>在路径旁边的空地上建造炮塔<br>阻止敌人到达终点！</p>
+        <button class="btn blue" id="btn-start">开始游戏</button>
+      </div>
     </div>
   </div>
 
@@ -339,8 +352,11 @@ function arrangePanels() {
 function calcSize() {
   const vw = window.innerWidth, vh = window.innerHeight;
   if (isLandscape()) {
-    // sidebar is 188px wide; map gets the rest, constrained by height
-    const avail = Math.min(vw - 188 - 12, vh - 12);
+    // map-wrap fills flex:1, sidebar is 188px — measure actual available area
+    const mapWrap = document.getElementById('map-wrap');
+    const ww = mapWrap ? mapWrap.clientWidth  : vw - 188;
+    const wh = mapWrap ? mapWrap.clientHeight : vh;
+    const avail = Math.min(ww, wh) - 12;
     return Math.max(200, Math.floor(avail / COLS) * COLS);
   } else {
     const headerH = document.getElementById('header-portrait').offsetHeight;
