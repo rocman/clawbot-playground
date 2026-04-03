@@ -273,19 +273,13 @@
 
 <!-- Full-screen overlay (fixed, above everything) -->
 <div id="overlay">
-  <div id="fs-prompt">
-    <h2>🏰 Tower Defence</h2>
-    <p>检测到横屏，是否进入全屏以获得最佳体验？</p>
-    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-      <button class="btn blue" id="btn-fs-yes">全屏进入 ⛶</button>
-      <button class="btn" id="btn-fs-no">直接开始</button>
-    </div>
-  </div>
-  <div id="start-prompt" style="display:none">
-    <h2>🏰 Tower Defence</h2>
-    <p>在路径旁边的空地上建造炮塔<br>阻止敌人到达终点！</p>
-    <button class="btn blue" id="btn-start">开始游戏</button>
-  </div>
+  <h2>🏰 Tower Defence</h2>
+  <p>在路径旁边的空地上建造炮塔<br>阻止敌人到达终点！</p>
+  <label id="fs-checkbox-wrap" style="display:none;align-items:center;gap:8px;font-size:0.85rem;color:#aaa;cursor:pointer">
+    <input type="checkbox" id="chk-fullscreen" checked style="width:16px;height:16px;cursor:pointer">
+    全屏模式
+  </label>
+  <button class="btn blue" id="btn-start">开始游戏 ▶</button>
 </div>
 
   <!-- Panel scroll (portrait: after map; landscape: inside sidebar via JS) -->
@@ -424,27 +418,14 @@ function autoFullscreen() {
 
 // ── Opening overlay logic ─────────────────────────────────
 function showOpeningOverlay() {
-  const fsPrompt    = document.getElementById('fs-prompt');
-  const startPrompt = document.getElementById('start-prompt');
-  if (isLandscape()) {
-    fsPrompt.style.display    = '';
-    startPrompt.style.display = 'none';
-  } else {
-    fsPrompt.style.display    = 'none';
-    startPrompt.style.display = '';
-  }
+  const fsWrap = document.getElementById('fs-checkbox-wrap');
+  // show fullscreen checkbox only in landscape
+  fsWrap.style.display = isLandscape() ? 'flex' : 'none';
 }
 
-document.getElementById('btn-fs-yes').addEventListener('click', () => {
-  autoFullscreen();
-  document.getElementById('fs-prompt').style.display    = 'none';
-  document.getElementById('start-prompt').style.display = '';
-});
-document.getElementById('btn-fs-no').addEventListener('click', () => {
-  document.getElementById('fs-prompt').style.display    = 'none';
-  document.getElementById('start-prompt').style.display = '';
-});
 document.getElementById('btn-start').addEventListener('click', () => {
+  const chk = document.getElementById('chk-fullscreen');
+  if (isLandscape() && chk && chk.checked) autoFullscreen();
   document.getElementById('overlay').classList.add('hidden');
   startGame();
 });
