@@ -135,8 +135,19 @@ canvas{display:block;width:100%;height:100%;}
 .ptab.active{color:#fdcb6e;border-bottom-color:#fdcb6e;}
 .tab-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding:6px;}
 .tab-body.hidden{display:none!important;}
-/* tech tree */
-.tech-tree-wrap{padding:8px 6px;gap:0;overflow-y:auto;}
+/* tech panel wrapper: tree scrolls, confirm bar fixed at bottom */
+.tech-panel-wrap{padding:0;gap:0;display:flex;flex-direction:column;}
+.tech-tree-wrap{flex:1;min-height:0;overflow-y:auto;padding:8px 6px 4px;}
+.tech-confirm-bar{flex-shrink:0;padding:6px 8px;border-top:1px solid #0f3460;background:#16213e;}
+.tech-confirm-btn{
+  width:100%;padding:8px;border:none;border-radius:6px;cursor:pointer;
+  font-size:0.8rem;font-weight:bold;
+  background:#444;color:#888;transition:background .2s,color .2s;
+}
+.tech-confirm-btn:not(:disabled){background:#6c5ce7;color:#fff;}
+.tech-confirm-btn:not(:disabled):hover{background:#5541d1;}
+/* selected node style */
+.tech-node.selected{border-color:#e94560!important;box-shadow:0 0 6px #e9456088;background:#2a1525!important;}
 .tech-tier{display:flex;flex-direction:row;gap:6px;justify-content:center;margin-bottom:4px;}
 .tech-connectors{display:flex;flex-direction:row;gap:6px;justify-content:center;height:18px;margin-bottom:0;}
 .tech-connector-col{flex:0 0 calc(25% - 5px);display:flex;justify-content:center;align-items:center;}
@@ -282,7 +293,12 @@ canvas{display:block;width:100%;height:100%;}
       </div>
       <div id="unit-list-pt" class="tab-body"></div>
       <div id="skill-list-pt" class="tab-body hidden"></div>
-      <div id="tech-tree-pt" class="tab-body hidden tech-tree-wrap"></div>
+      <div id="tech-panel-pt" class="tab-body hidden tech-panel-wrap">
+        <div id="tech-tree-pt" class="tech-tree-wrap"></div>
+        <div class="tech-confirm-bar" id="tech-confirm-pt">
+          <button class="tech-confirm-btn" id="btn-tech-confirm-pt" disabled onclick="confirmTech()">投入研究 💰0</button>
+        </div>
+      </div>
     </div>
     <div id="panel-right-pt">
       <div class="panel" id="log-panel-pt">
@@ -328,7 +344,12 @@ canvas{display:block;width:100%;height:100%;}
         </div>
         <div id="unit-list" class="tab-body"></div>
         <div id="skill-list" class="tab-body hidden"></div>
-        <div id="tech-tree" class="tab-body hidden tech-tree-wrap"></div>
+        <div id="tech-panel" class="tab-body hidden tech-panel-wrap">
+          <div id="tech-tree" class="tech-tree-wrap"></div>
+          <div class="tech-confirm-bar" id="tech-confirm">
+            <button class="tech-confirm-btn" id="btn-tech-confirm" disabled onclick="confirmTech()">投入研究 💰0</button>
+          </div>
+        </div>
       </div>
 
       <div class="panel" id="queue-panel">
@@ -534,29 +555,68 @@ function canUnlockTech(def){
   return (techLevels[def.req]||0)>=1;
 }
 
-function upgradeTech(id){
+// pending selections: Set of tech ids queued but not yet paid
+let techPending=new Set();
+
+function techPendingCost(){
+  let total=0;  for(const id of techPending){
+    const def=TECH_DEFS.find(d=>d.id===id);
+    const lv=(techLevels[id]||0);
+    total+=def.costs[lv];
+  }
+  return total;
+}
+
+function toggleTechPending(id){
   const def=TECH_DEFS.find(d=>d.id===id);
   if(!def) return;
-  const curLv=techLevels[id]||0;
-  if(curLv>=3) return;
-  if(!canUnlockTech(def)) return;
-  const cost=def.costs[curLv];
-  if(gold<cost) return;
+  if(techPending.has(id)){
+    techPending.delete(id);
+  } else {
+    // check prerequisite (including already-pending nodes count as unlocked for chaining)
+    const reqMet=!def.req||(techLevels[def.req]||0)>=1||techPending.has(def.req);
+    if(!reqMet) return;
+    const lv=techLevels[id]||0;
+    if(lv>=3) return;
+    // cost check: total pending cost + this node <= gold
+    if(techPendingCost()+def.costs[lv]>gold) return;
+    techPending.add(id);
+  }
+  buildTechTree();
+  updateTechConfirmBar();
+}
+
+function updateTechConfirmBar(){
+  const cost=techPendingCost();
+  ['btn-tech-confirm','btn-tech-confirm-pt'].forEach(id=>{
+    const b=document.getElementById(id);if(!b)return;
+    b.disabled=cost===0;
+    b.textContent=cost>0?`投入研究 💰${cost}`:'投入研究';
+  });
+}
+
+function confirmTech(){
+  const cost=techPendingCost();
+  if(cost>gold){showToast('💸 金币不足！','warn');return;}
   gold-=cost;
-  techLevels[id]=curLv+1;
+  const names=[];
+  for(const id of techPending){
+    const def=TECH_DEFS.find(d=>d.id===id);
+    techLevels[id]=(techLevels[id]||0)+1;
+    names.push(`${def.icon}${def.name}Lv${techLevels[id]}`);
+  }
+  techPending.clear();
   rebuildTechPerms();
-  log(`🔬 ${def.icon}${def.name} 升至 Lv${techLevels[id]}`);
-  updateHUD();buildTechTree();buildUnitCards();
+  log(`🔬 研究完成：${names.join(' · ')}`);
+  updateHUD();buildTechTree();buildUnitCards();updateTechConfirmBar();
 }
 
 function buildTechTree(){
   ['tech-tree','tech-tree-pt'].forEach(containerId=>{
     const wrap=document.getElementById(containerId);if(!wrap)return;
     wrap.innerHTML='';
-    // group by tier
     for(let tier=1;tier<=4;tier++){
       const nodes=TECH_DEFS.filter(d=>d.tier===tier);
-      // connector row (skip tier 1)
       if(tier>1){
         const connRow=document.createElement('div');connRow.className='tech-connectors';
         nodes.forEach(()=>{
@@ -566,24 +626,37 @@ function buildTechTree(){
         });
         wrap.appendChild(connRow);
       }
-      // node row
       const row=document.createElement('div');row.className='tech-tier';
       nodes.forEach(def=>{
         const lv=techLevels[def.id]||0;
-        const unlocked=canUnlockTech(def);
+        const pending=techPending.has(def.id);
+        // req unlocked = actually unlocked OR pending in current selection
+        const reqUnlocked=!def.req||(techLevels[def.req]||0)>=1||techPending.has(def.req);
         const cost=lv<3?def.costs[lv]:0;
-        const affordable=unlocked&&lv<3&&cost<=gold;
+        const affordable=reqUnlocked&&lv<3&&(techPendingCost()+(pending?0:cost))<=gold;
         const maxed=lv>=3;
         const node=document.createElement('div');
-        node.className='tech-node'+(maxed?' maxed':!unlocked?' locked':affordable?' affordable':'');
-        const stars='⭐'.repeat(lv)+'○'.repeat(3-lv);
+        let cls='tech-node';
+        if(maxed) cls+=' maxed';
+        else if(pending) cls+=' selected';
+        else if(!reqUnlocked) cls+=' locked';
+        else if(affordable) cls+=' affordable';
+        node.className=cls;
+        // show next-level desc if pending, otherwise current level desc
+        const dispLv=pending?lv+1:lv;
+        const desc=dispLv>0?def.desc[dispLv-1]:def.desc[0];
+        const stars='⭐'.repeat(lv)+(pending?'🔸':'')+'○'.repeat(Math.max(0,3-lv-(pending?1:0)));
         node.innerHTML=`
           <div class="tn-icon">${def.icon}</div>
           <div class="tn-name">${def.name}</div>
           <div class="tn-lvl">${stars}</div>
-          ${lv<3?`<div class="tn-cost">💰${cost}</div>`:'<div class="tn-cost" style="color:#fdcb6e">满级</div>'}
-          <div class="tn-desc">${lv>0?def.desc[lv-1]:def.desc[0]}</div>`;
-        if(unlocked&&!maxed) node.addEventListener('click',()=>upgradeTech(def.id));
+          ${maxed?'<div class="tn-cost" style="color:#fdcb6e">满级</div>'
+                 :pending?`<div class="tn-cost" style="color:#e94560">-💰${cost}</div>`
+                         :`<div class="tn-cost">💰${cost}</div>`}
+          <div class="tn-desc">${desc}</div>`;
+        if(!maxed&&reqUnlocked){
+          node.addEventListener('click',()=>toggleTechPending(def.id));
+        }
         row.appendChild(node);
       });
       wrap.appendChild(row);
@@ -892,9 +965,9 @@ function onBreach(enemy){
 //  TAB SWITCH
 // ═══════════════════════════════════════════════
 function switchTab(tab){
-  ['unit-list','skill-list','tech-tree','tab-units','tab-skills','tab-tech'].forEach(id=>{
+  ['unit-list','skill-list','tech-panel','tab-units','tab-skills','tab-tech'].forEach(id=>{
     both(id,el=>{
-      if(id.endsWith('-list')||id.startsWith('tech-tree')){
+      if(id.endsWith('-list')||id.startsWith('tech-panel')){
         const show=(id.startsWith('unit')?tab==='units':id.startsWith('skill')?tab==='skills':tab==='tech');
         el.classList.toggle('hidden',!show);
       } else {
@@ -1160,6 +1233,7 @@ function startGame(){
   if(!PATH_WP.length) rebuildWP();
 
   // keep techLevels across runs (persistent progression); just rebuild perms
+  techPending.clear();
   rebuildTechPerms();
   const startBonus=techPerms.startGoldBonus||0;
   gold=waveGold(1)+startBonus;waveNum=0;breachCount=0;
