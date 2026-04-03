@@ -641,8 +641,9 @@ let lastTime=0,animId=null;
 const reachedMilestones=new Set();
 // defender economy
 let defenderGold=0;
-const DEFENDER_INCOME_PER_WAVE=60; // gold defender earns each wave
-const TURRET_BUILD_COST=80;        // cost to build one turret
+let defenderTimer=0;
+const DEFENDER_INCOME_RATE=8;   // gold per second (real time, not game time)
+const TURRET_BUILD_COST=80;     // cost to build one turret
 
 function waveGold(n){return 100+(n-1)*30;}
 
@@ -879,13 +880,6 @@ function updateWave(dt){
     gold+=income+interestBonus;
     nextSkills={};
     log(`✅ 第${waveNum}波结束 突破${survived} 阵亡${died} | +💰${income}${interestBonus>0?' 利息+💰'+interestBonus:''}`);
-    // defender earns gold and may build new turret
-    defenderGold+=DEFENDER_INCOME_PER_WAVE+waveNum*10;
-    const locked=FAKE_TURRETS.filter(t=>!t.active).sort((a,b)=>a.unlockWave-b.unlockWave);
-    if(locked.length&&defenderGold>=TURRET_BUILD_COST){
-      const t=locked[0];t.active=true;defenderGold-=TURRET_BUILD_COST;
-      log(`🏰 守方建造了新炮塔！（第${waveNum+1}波前，共${FAKE_TURRETS.filter(t=>t.active).length}座）`);
-    }
     const nextW=waveNum+1;
     const tierNames=['普通','🟠加强','🔴精英','💜恶魔'];
     const nextTier=nextW<=4?0:nextW<=8?1:nextW<=12?2:3;
@@ -945,6 +939,21 @@ function gameLoop(ts){
     drawMap();drawFakeTurrets();updateFakeTurrets(dt);
     for(const e of enemies) e.update(dt);
     for(const e of enemies) e.draw();
+    // defender earns gold over real time and builds turrets
+    defenderTimer+=dt; // use real dt (not scaled), building is time-gated
+    const incomeRate=DEFENDER_INCOME_RATE+(waveNum*0.5);
+    defenderGold+=incomeRate*dt;
+    if(defenderGold>=TURRET_BUILD_COST){
+      const locked=FAKE_TURRETS.filter(t=>!t.active).sort((a,b)=>a.unlockWave-b.unlockWave);
+      if(locked.length){
+        const t=locked[0];t.active=true;defenderGold-=TURRET_BUILD_COST;
+        scaleTurrets(Math.max(1,waveNum));
+        log(`🏰 守方建造新炮塔！（当前共${FAKE_TURRETS.filter(t=>t.active).length}座）`);
+      }
+    }
+    drawMap();drawFakeTurrets();updateFakeTurrets(dt);
+    for(const e of enemies) e.update(dt);
+    for(const e of enemies) e.draw();
     // tick timed skill timers
     let skillsChanged=false;
     for(const key of Object.keys(activeSkillTimers)){
@@ -978,7 +987,7 @@ function startGame(){
   gold=waveGold(1);waveNum=0;breachCount=0;
   enemies=[];spawnQueue=[];waveActive=false;
   activeSkills={};nextSkills={};activeSkillTimers={};
-  defenderGold=0;
+  defenderGold=0;defenderTimer=0;
   unlockedSkills=new Set(['rush','income']);
   reachedMilestones.clear();
   gameSpeed=1;speedIdx=1;state='playing';
