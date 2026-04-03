@@ -195,27 +195,29 @@
   }
   #wave-bar .wave-btn { flex: 1; }
 
+  /* ── panel-scroll: always flex, direction varies by orientation ── */
   #panel-scroll {
     flex: 1; min-width: 0; min-height: 0;
     overflow: hidden;
     padding: 6px 8px 0;
     display: flex;
-    flex-direction: column;
     gap: 6px;
+    /* landscape default: column (top/bottom) */
+    flex-direction: column;
   }
-  /* portrait: side-by-side for log, vertical for main panels */
+  /* portrait: left/right */
   @media (orientation: portrait) {
     #panel-scroll {
-      flex-direction: column;
+      flex-direction: row;
       width: 100%;
-      overflow-y: auto;
     }
   }
 
-  /* ── Build & selected panels: flex:1, inner scroll ── */
+  /* ── Both panels: flex:1 = 50% each ── */
   #build-panel, #sel-panel {
     flex: 1;
     min-height: 0;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -224,6 +226,29 @@
     border: 1px solid #0f3460;
     padding: 8px;
   }
+  /* log panel: flex:1 too = 50% */
+  #log-panel {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 7px;
+    background: #16213e;
+    border: 1px solid #0f3460;
+    padding: 8px;
+  }
+  #log-panel h3 {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #74b9ff;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+  }
+  #log { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+
   #build-panel-inner, #sel-panel-inner {
     flex: 1; min-height: 0;
     overflow-y: auto;
@@ -308,7 +333,7 @@
   #btn-speed:hover { background: #0652b0; }
 
   /* ── Log ── */
-  #log { font-size: 0.68rem; color: #aaa; max-height: 100px; overflow-y: auto; line-height: 1.5; }
+  #log { flex: 1; min-height: 0; font-size: 0.68rem; color: #aaa; overflow-y: auto; overflow-x: hidden; line-height: 1.5; }
   #log p { border-bottom: 1px solid #1e3a5f; padding: 1px 0; }
 
   /* ── Scrollbars ── */
@@ -395,7 +420,7 @@
     </div>
 
     <!-- Log -->
-    <div class="panel-section">
+    <div id="log-panel">
       <h3>📋 战报</h3>
       <div id="log"></div>
     </div>
