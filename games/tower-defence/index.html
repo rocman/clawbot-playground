@@ -56,7 +56,7 @@
       display: flex !important;
       flex-direction: column;
       flex: 1;
-      min-width: 250px;
+      min-width: 350px;
       height: 100%;
       background: #16213e;
       border-left: 2px solid #0f3460;
@@ -65,10 +65,14 @@
     /* sidebar header block */
     #sidebar-header {
       flex-shrink: 0;
-      padding: 8px 10px 6px;
+      padding: 8px 12px;
       border-bottom: 1px solid #0f3460;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
     }
-    #sidebar-header h1 { font-size: 0.9rem; color: #e94560; letter-spacing: 1px; margin-bottom: 5px; }
+    #sidebar-header h1 { font-size: 0.9rem; color: #e94560; letter-spacing: 1px; white-space: nowrap; }
     /* panel scroll fills rest of sidebar */
     #panel-scroll {
       flex: 1; min-height: 0;
@@ -124,7 +128,7 @@
   @media (orientation: landscape) {
     #map-wrap {
       /* square side: smaller of full height vs (viewport - sidebar min-width) */
-      width:  min(100vh, calc(100vw - 250px));
+      width:  min(100vh, calc(100vw - 350px));
       height: 100%;
     }
   }
