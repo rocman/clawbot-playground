@@ -100,14 +100,17 @@
 
   /* ── Map area ── */
   #map-area {
+    /* CSS drives the size; canvas just fills it */
     flex-shrink: 0;
     position: relative;
     overflow: hidden;
-    transition: width  0.32s cubic-bezier(0.4,0,0.2,1),
-                height 0.32s cubic-bezier(0.4,0,0.2,1);
+    aspect-ratio: 1 / 1;
+    /* portrait: full width of map-wrap, capped so it doesn't overflow vertically */
+    width: 100%;
+    max-height: calc(100vw);
   }
   #map-area.resizing { opacity: 0.92; }
-  canvas { display: block; }
+  canvas { display: block; width: 100%; height: 100%; }
 
   /* ── Map wrapper ── */
   #map-wrap {
@@ -123,15 +126,19 @@
   /* Portrait: map-wrap full width, height auto */
   @media (orientation: portrait) {
     #map-wrap { width: 100%; flex: 0 0 auto; }
+    #map-area  { width: 100%; max-height: 100vw; }
   }
 
-  /* Landscape: map-wrap width = square side, capped by (100vw - sidebar-min) */
+  /* Landscape: map-wrap is square column, height=100%, width follows */
   @media (orientation: landscape) {
     #map-wrap {
-      /* square side: smaller of full height vs (viewport - sidebar min-width) */
-      width:  min(100vh, calc(100vw - 350px));
+      flex: 0 0 auto;
       height: 100%;
+      width: auto;
+      aspect-ratio: 1 / 1;
+      max-width: calc(100vw - 220px); /* leave room for sidebar */
     }
+    #map-area { width: 100%; height: 100%; max-height: none; }
   }
 
   /* ── Overlay: full-screen cover ── */
@@ -548,58 +555,45 @@ const waveBar = document.getElementById('wave-bar');
 
 function arrangePanels() {
   if (isLandscape()) {
-    // landscape: panel-scroll then wave-bar inside sidebar (flex column → wave-bar at bottom)
     if (panelScroll.parentElement !== sidebar) sidebar.appendChild(panelScroll);
     if (waveBar.parentElement !== sidebar) sidebar.appendChild(waveBar);
   } else {
-    // portrait: panel-scroll then wave-bar inside #content (column → wave-bar at bottom)
     const content = document.getElementById('content');
     if (panelScroll.parentElement !== content) content.appendChild(panelScroll);
     if (waveBar.parentElement !== content) content.appendChild(waveBar);
   }
 }
 
-function calcSize() {
-  const vw = window.innerWidth, vh = window.innerHeight;
-  if (isLandscape()) {
-    const mapWrap = document.getElementById('map-wrap');
-    const avail = mapWrap
-      ? Math.min(mapWrap.clientWidth, mapWrap.clientHeight) - 16
-      : vh - 16;
-    return Math.max(200, Math.floor(avail / COLS) * COLS);
-  } else {
-    const headerH = document.getElementById('header-portrait').offsetHeight;
-    const avail = Math.min(vw - 16, vh - headerH - 150);
-    return Math.max(200, Math.floor(Math.max(avail, 200) / COLS) * COLS);
-  }
+function updateCanvasResolution() {
+  // CSS controls display size; we just sync canvas pixel resolution to actual rendered size
+  const size = Math.round(mapArea.getBoundingClientRect().width);
+  if (size < 60) return;
+  if (canvas.width === size && canvas.height === size) return;
+  TILE = size / COLS;
+  canvas.width = size;
+  canvas.height = size;
+  rebuildWP();
+  redrawStatic();
 }
 
+// ResizeObserver: fires whenever CSS changes map-area size (orientation, fullscreen, etc.)
+let roTimer;
+const ro = new ResizeObserver(() => {
+  clearTimeout(roTimer);
+  roTimer = setTimeout(updateCanvasResolution, 30);
+});
+ro.observe(mapArea);
+
+// Keep arrangePanels in sync with orientation changes
 function resizeCanvas(animate) {
   arrangePanels();
-  const size = calcSize();
-  TILE = size / COLS;
-  mapArea.style.width  = size + 'px';
-  mapArea.style.height = size + 'px';
-  if (animate) {
-    mapArea.classList.add('resizing');
-    canvas.style.width  = size + 'px';
-    canvas.style.height = size + 'px';
-    clearTimeout(commitTimer);
-    commitTimer = setTimeout(() => {
-      canvas.width = size; canvas.height = size;
-      canvas.style.width = canvas.style.height = '';
-      mapArea.classList.remove('resizing');
-      rebuildWP(); redrawStatic();
-    }, TRANS_MS + 20);
-  } else {
-    canvas.width = size; canvas.height = size;
-  }
+  updateCanvasResolution();
 }
 
 function onResize() {
   clearTimeout(resizeDebounce);
   resizeDebounce = setTimeout(() => {
-    resizeCanvas(true);
+    arrangePanels();
     showOpeningOverlay();
   }, 80);
 }
@@ -636,7 +630,7 @@ window.addEventListener('orientationchange', () => setTimeout(() => {
   showOpeningOverlay();
   maybeShowFsToast();   // show toast if in-game + landscape + not fullscreen
 }, 200));
-resizeCanvas(false);
+arrangePanels();
 
 // ── Auto fullscreen on landscape ─────────────────────────
 function autoFullscreen() {
