@@ -1075,15 +1075,43 @@ function enqueue(kind,key){
   const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
   if(!def||def.cost>gold) return;
   if(kind==='skill'&&(key in activeSkillTimers)) return;
-  // auto-enter queue mode if not already in it
-  if(!queueMode){queueMode=true;setQueueMode(true);}
-  gold-=def.cost;
-  pendingQueue.push({kind,key,cost:def.cost});
-  log(`📋 ${def.icon}${def.name} 列队`);
-  if(document.activeElement) document.activeElement.blur();
-  updateHUD();buildUnitCards();buildSkillCards();
-  ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
-  renderActiveSkills();
+
+  if(!queueMode){
+    // ── 普通模式：直接上场 ──
+    gold-=def.cost;
+    if(kind==='unit'){
+      if(!waveActive){
+        waveNum++;waveActive=true;spawnTimer=0;
+        log(`🌊 第${waveNum}波！`);
+        ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
+      }
+      const mods={...techPerms,...activeSkills};
+      spawnQueue.push({type:key,delay:0,mods});
+      log(`⚔️ 派遣 ${def.icon}${def.name}`);
+    } else {
+      const ef={};def.apply(ef);
+      if(def.type==='wave'||def.type==='timed'){
+        Object.assign(activeSkills,ef);
+        activeSkillTimers[key]=def.duration>0?def.duration:9999;
+        log(`✨ ${def.icon}${def.name} 已激活！`);
+      } else if(def.type==='next'){
+        Object.assign(nextSkills,ef);
+        activeSkillTimers[key]=9999;
+        log(`📌 ${def.icon}${def.name} 将在下波生效`);
+      }
+    }
+    if(document.activeElement) document.activeElement.blur();
+    updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
+  } else {
+    // ── 列队模式：入待命队列 ──
+    gold-=def.cost;
+    pendingQueue.push({kind,key,cost:def.cost});
+    log(`📋 ${def.icon}${def.name} 列队`);
+    if(document.activeElement) document.activeElement.blur();
+    updateHUD();buildUnitCards();buildSkillCards();
+    ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
+    renderActiveSkills();
+  }
 }
 
 function flushQueue(){
