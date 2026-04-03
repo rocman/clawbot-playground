@@ -209,6 +209,8 @@ canvas{display:block;width:100%;height:100%;}
   background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
   padding:5px 8px;flex-shrink:0;
 }
+.pending-item{border-color:#e94560;background:#2a1020;}
+.qi-section-hdr{font-size:0.62rem;color:#888;padding:4px 6px 2px;letter-spacing:0.5px;}
 .queue-item .qi-icon{font-size:1rem;flex-shrink:0;}
 .queue-item .qi-label{flex:1;font-size:0.72rem;color:#eee;}
 .queue-item .qi-timer{font-size:0.68rem;font-weight:bold;color:#fdcb6e;white-space:nowrap;flex-shrink:0;}
@@ -316,7 +318,7 @@ canvas{display:block;width:100%;height:100%;}
 
   <!-- Portrait: wave bar at bottom, inside #content -->
   <div id="wave-bar-pt">
-    <button class="wave-btn" id="btn-send-pt" disabled>发兵</button>
+    <button class="wave-btn" id="btn-send-pt" disabled>列队</button>
     <div id="speed-group-atk-pt">
       <button class="speed-adj-atk" id="btn-speed-dn-atk-pt">−</button>
       <div id="speed-display-atk-pt">1×</div>
@@ -367,7 +369,7 @@ canvas{display:block;width:100%;height:100%;}
 
     <!-- wave bar inside sidebar for landscape -->
     <div id="wave-bar">
-      <button class="wave-btn" id="btn-send" disabled>发兵</button>
+      <button class="wave-btn" id="btn-send" disabled>列队</button>
       <div id="speed-group-atk">
         <button class="speed-adj-atk" id="btn-speed-dn-atk">−</button>
         <div id="speed-display-atk">1×</div>
@@ -990,7 +992,7 @@ function switchTab(tab){
 }
 
 // ═══════════════════════════════════════════════
-//  UNIT CARDS — click = deploy immediately
+//  UNIT CARDS
 // ═══════════════════════════════════════════════
 function buildUnitCards(){
   ['unit-list','unit-list-pt'].forEach(id=>{
@@ -1004,14 +1006,14 @@ function buildUnitCards(){
       card.innerHTML=`<div class="unit-icon">${def.icon}</div>
         <div class="unit-info"><div class="unit-name">${def.name}</div><div class="unit-desc">${def.desc}</div></div>
         <div class="unit-cost">💰${def.cost}</div>`;
-      if(canAfford&&active) card.addEventListener('click',()=>deployUnit(key));
+      if(canAfford&&active) card.addEventListener('click',()=>enqueue('unit',key));
       ul.appendChild(card);
     });
   });
 }
 
 // ═══════════════════════════════════════════════
-//  SKILL CARDS — click = activate immediately
+//  SKILL CARDS
 // ═══════════════════════════════════════════════
 function buildSkillCards(){
   ['skill-list','skill-list-pt'].forEach(id=>{
@@ -1037,78 +1039,132 @@ function buildSkillCards(){
         </div>
         <div class="skill-cost">${unlocked?'💰'+def.cost:'🔒'}</div>`;
       if(unlocked&&canAfford&&active&&!alreadyOn)
-        card.addEventListener('click',()=>activateSkill(key));
+        card.addEventListener('click',()=>enqueue('skill',key));
       sl.appendChild(card);
     });
   });
 }
 
 // ═══════════════════════════════════════════════
-//  DEPLOY & ACTIVATE
+//  QUEUE MODE & PENDING QUEUE
 // ═══════════════════════════════════════════════
-function deployUnit(key){
+let queueMode=false;         // false=列队模式待机, true=已进入列队
+let pendingQueue=[];         // [{kind:'unit'|'skill', key, cost}]
+
+function setQueueMode(on){
+  queueMode=on;
+  ['btn-send','btn-send-pt'].forEach(id=>{
+    const b=document.getElementById(id);if(!b)return;
+    b.textContent=on?'发兵':'列队';
+    b.disabled=on&&pendingQueue.length===0;
+    b.style.background=on?'#e94560':'#6c5ce7';
+  });
+}
+
+function enqueue(kind,key){
   if(state!=='playing'&&state!=='wavePause') return;
-  const def=UNIT_DEFS[key];
-  if(def.cost>gold) return;
+  if(!queueMode) return; // 未进入列队模式时点击无效（不应到达这里，由按钮状态控制）
+  const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
+  if(!def||def.cost>gold) return;
+  // 技能：已激活的不重复入队
+  if(kind==='skill'&&(key in activeSkillTimers)) return;
   gold-=def.cost;
-  // start wave if not active
-  if(!waveActive){
-    waveNum++;waveActive=true;
-    spawnTimer=0;
-    log(`🌊 第${waveNum}波！`);
-    ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
-  }
-  // merge tech perms + active skill effects into mods
-  const mods={...techPerms,...activeSkills};
-  spawnQueue.push({type:key,delay:spawnQueue.length>0?0.5:0,mods});
-  log(`⚔️ 派遣 ${def.icon}${def.name}`);
+  pendingQueue.push({kind,key,cost:def.cost});
+  log(`📋 ${def.icon}${def.name} 列队`);
   updateHUD();buildUnitCards();buildSkillCards();
-  // update send button: disabled while wave active
-  ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
+  // 有内容后发兵按钮才可点
+  ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
   renderActiveSkills();
 }
 
-function activateSkill(key){
-  if(state!=='playing'&&state!=='wavePause') return;
-  const def=SKILL_DEFS[key];
-  if(def.cost>gold||key in activeSkillTimers) return;
-  gold-=def.cost;
-  const ef={};def.apply(ef);
-  if(def.type==='wave'||def.type==='timed'){
-    Object.assign(activeSkills,ef);
-    // timed skills have countdown; wave skills last until wave ends (use 9999)
-    activeSkillTimers[key]=def.duration>0?def.duration:9999;
-    log(`✨ ${def.icon}${def.name} 已激活！`);
-  } else if(def.type==='next'){
-    Object.assign(nextSkills,ef);
-    activeSkillTimers[key]=9999; // show as active until wave ends
-    log(`📌 ${def.icon}${def.name} 将在下波生效`);
+function flushQueue(){
+  if(!pendingQueue.length) return;
+  // start wave if not active
+  if(!waveActive){
+    waveNum++;waveActive=true;spawnTimer=0;
+    log(`🌊 第${waveNum}波！`);
+    ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
   }
-  updateHUD();buildSkillCards();renderActiveSkills();
+  const mods={...techPerms,...activeSkills};
+  let delay=0;
+  for(const item of pendingQueue){
+    if(item.kind==='unit'){
+      spawnQueue.push({type:item.key,delay,mods:{...mods}});
+      delay+=0.5;
+    } else {
+      // skill activates immediately at flush
+      const def=SKILL_DEFS[item.key];
+      const ef={};def.apply(ef);
+      if(def.type==='wave'||def.type==='timed'){
+        Object.assign(activeSkills,ef);
+        activeSkillTimers[item.key]=def.duration>0?def.duration:9999;
+        log(`✨ ${def.icon}${def.name} 已激活！`);
+      } else if(def.type==='next'){
+        Object.assign(nextSkills,ef);
+        activeSkillTimers[item.key]=9999;
+        log(`📌 ${def.icon}${def.name} 将在下波生效`);
+      }
+    }
+  }
+  log(`⚔️ 发兵！共${pendingQueue.filter(i=>i.kind==='unit').length}只`);
+  pendingQueue=[];
+  setQueueMode(false);
+  updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
 }
 
 // ═══════════════════════════════════════════════
-//  ACTIVE SKILLS PANEL (replaces queue)
+//  ACTIVE SKILLS + PENDING QUEUE PANEL
 // ═══════════════════════════════════════════════
 function renderActiveSkills(){
   ['queue-list','queue-list-pt'].forEach(id=>{
     const ql=document.getElementById(id); if(!ql) return;
     ql.innerHTML='';
-    const keys=Object.keys(activeSkillTimers);
-    if(!keys.length){
-      const e=document.createElement('div');e.className='queue-empty-msg';
-      e.textContent='暂无激活技能';ql.appendChild(e);return;
+
+    // ── 待命区（pendingQueue）──
+    if(pendingQueue.length){
+      const hdr=document.createElement('div');
+      hdr.className='qi-section-hdr';hdr.textContent='⏳ 待命';
+      ql.appendChild(hdr);
+      pendingQueue.forEach((item,idx)=>{
+        const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
+        const row=document.createElement('div');row.className='queue-item pending-item';
+        row.innerHTML=`<span class="qi-icon">${def.icon}</span>
+          <span class="qi-label">${def.name}</span>
+          <button class="qi-rm" title="取消">✕</button>`;
+        row.querySelector('.qi-rm').addEventListener('click',()=>{
+          gold+=item.cost;
+          pendingQueue.splice(idx,1);
+          if(pendingQueue.length===0){
+            ['btn-send','btn-send-pt'].forEach(bid=>{const b=document.getElementById(bid);if(b)b.disabled=true;});
+          }
+          updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
+        });
+        ql.appendChild(row);
+      });
     }
-    keys.forEach(key=>{
-      const def=SKILL_DEFS[key];
-      const t=activeSkillTimers[key];
-      const timeStr=t>=9999?(def.type==='next'?'下波':'波次中'):Math.ceil(t)+'s';
-      const row=document.createElement('div');row.className='queue-item';
-      row.innerHTML=`<span class="qi-icon">${def.icon}</span>
-        <span class="qi-label">${def.name}</span>
-        <span class="qi-timer">${timeStr}</span>`;
-      ql.appendChild(row);
-    });
+
+    // ── 已激活技能 ──
+    const keys=Object.keys(activeSkillTimers);
+    if(keys.length){
+      const hdr=document.createElement('div');
+      hdr.className='qi-section-hdr';hdr.textContent='✨ 技能加持';
+      ql.appendChild(hdr);
+      keys.forEach(key=>{
+        const def=SKILL_DEFS[key];
+        const t=activeSkillTimers[key];
+        const timeStr=t>=9999?(def.type==='next'?'下波':'波次中'):Math.ceil(t)+'s';
+        const row=document.createElement('div');row.className='queue-item';
+        row.innerHTML=`<span class="qi-icon">${def.icon}</span>
+          <span class="qi-label">${def.name}</span>
+          <span class="qi-timer">${timeStr}</span>`;
+        ql.appendChild(row);
+      });
+    }
+
+    if(!pendingQueue.length&&!keys.length){
+      const e=document.createElement('div');e.className='queue-empty-msg';
+      e.textContent='暂无';ql.appendChild(e);
+    }
   });
 }
 
@@ -1116,7 +1172,12 @@ function renderActiveSkills(){
 //  WAVE
 // ═══════════════════════════════════════════════
 function sendWave(){
-  // no longer used; units deploy on click via deployUnit()
+  // btn-send now toggles queue mode or flushes
+  if(!queueMode){
+    setQueueMode(true);
+  } else {
+    flushQueue();
+  }
 }
 
 function updateWave(dt){
@@ -1145,6 +1206,8 @@ function updateWave(dt){
     enemies=[];
     scaleTurrets(waveNum+1);
     if(waveNum>=15){endGame();return;}
+    queueMode=false;pendingQueue=[];
+    setQueueMode(false);
     ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
     ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
     updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
@@ -1253,9 +1316,11 @@ function startGame(){
   unlockedSkills=new Set(['rush','income']);
   reachedMilestones.clear();
   gameSpeed=1;speedIdx=1;state='playing';
+  queueMode=false;pendingQueue=[];
   for(const t of FAKE_TURRETS){t.cd=0;t.active=false;}
   scaleTurrets(1);
   ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=true;b.textContent='⏸ 暂停';}});
+  setQueueMode(false);
   ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
   updateSpeedDisplay();updateHUD();
   buildUnitCards();buildSkillCards();renderActiveSkills();buildTechTree();
