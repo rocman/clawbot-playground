@@ -19,7 +19,7 @@
      PORTRAIT layout
      body = column: header / map / panel-scroll
   ════════════════════════════════ */
-  body { display: flex; flex-direction: column; }
+  body { display: flex; flex-direction: column; touch-action: manipulation; }
 
   /* header: full-width top bar (portrait only) */
   #header-portrait {
@@ -487,6 +487,8 @@
   </div>
 
 <script>
+// Prevent double-tap zoom on all browsers
+document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
 // ═══════════════════════════════════════════════════════════
 //  CONFIG
 // ═══════════════════════════════════════════════════════════
