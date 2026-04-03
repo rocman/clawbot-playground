@@ -99,14 +99,13 @@
     flex-shrink: 0;
     position: relative;
     overflow: hidden;
-    /* no border, no radius, no margin, no shadow — fully immersive */
     transition: width  0.32s cubic-bezier(0.4,0,0.2,1),
                 height 0.32s cubic-bezier(0.4,0,0.2,1);
   }
   #map-area.resizing { opacity: 0.92; }
   canvas { display: block; }
 
-  /* ── Map wrapper: centers the square canvas; sidebar fills the rest ── */
+  /* ── Map wrapper ── */
   #map-wrap {
     flex-shrink: 0;
     display: flex;
@@ -115,8 +114,19 @@
     background: #0d1b2e;
     overflow: hidden;
   }
+
+  /* Portrait: map-wrap full width, height auto */
   @media (orientation: portrait) {
     #map-wrap { width: 100%; flex: 0 0 auto; }
+  }
+
+  /* Landscape: map-wrap width = square side, capped by (100vw - sidebar-min) */
+  @media (orientation: landscape) {
+    #map-wrap {
+      /* square side: smaller of full height vs (viewport - sidebar min-width) */
+      width:  min(100vh, calc(100vw - 160px));
+      height: 100%;
+    }
   }
 
   /* ── Overlay: full-screen cover ── */
@@ -356,11 +366,10 @@ function arrangePanels() {
 function calcSize() {
   const vw = window.innerWidth, vh = window.innerHeight;
   if (isLandscape()) {
-    const SIDEBAR_MIN = 160;
-    // max size = full height; but must leave at least SIDEBAR_MIN for sidebar
-    const byHeight = vh - 4;
-    const byWidth  = vw - SIDEBAR_MIN - 4;
-    const avail    = Math.min(byHeight, byWidth);
+    // CSS already constrains map-wrap width = min(100vh, 100vw-160px)
+    // read the actual rendered width for pixel-perfect tile sizing
+    const mapWrap = document.getElementById('map-wrap');
+    const avail = mapWrap ? Math.min(mapWrap.clientWidth, mapWrap.clientHeight) : vh;
     return Math.max(200, Math.floor(avail / COLS) * COLS);
   } else {
     const headerH = document.getElementById('header-portrait').offsetHeight;
