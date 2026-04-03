@@ -61,9 +61,20 @@
     overflow: hidden;
     box-shadow: 0 0 24px #0f3460;
     flex-shrink: 0;
-    /* JS will set explicit width/height */
+    /* smooth resize transition */
+    transition: width 0.35s cubic-bezier(0.4,0,0.2,1),
+                height 0.35s cubic-bezier(0.4,0,0.2,1),
+                box-shadow 0.35s ease;
   }
-  canvas { display: block; }
+  #canvas-wrap.resizing {
+    box-shadow: 0 0 40px #6c5ce7;
+  }
+  canvas {
+    display: block;
+    /* canvas itself scales via CSS during transition, then snaps */
+    transition: width 0.35s cubic-bezier(0.4,0,0.2,1),
+                height 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
 
   /* ── Overlay ── */
   #overlay {
@@ -255,31 +266,72 @@ const wrap   = document.getElementById('canvas-wrap');
 
 let TILE = 40; // recalculated on resize
 
-function resizeCanvas() {
+// ── Eased resize ─────────────────────────────────────────
+// During transition: canvas CSS size animates smoothly via CSS transition.
+// After transition ends: canvas resolution (width/height attrs) snaps to new size.
+let resizeDebounce = null;
+let resizeCommitTimer = null;
+const TRANSITION_MS = 350;
+
+function calcTargetSize() {
   const headerH = document.querySelector('header').offsetHeight;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const portrait = vw <= vh;
-
   let available;
   if (portrait) {
-    // canvas sits above side-panel; leave ~180px for panel + gaps
     available = Math.min(vw - 20, vh - headerH - 200);
   } else {
-    // canvas beside side-panel; leave ~220px for panel
     available = Math.min(vw - 240, vh - headerH - 24);
   }
-  const size = Math.max(220, Math.floor(available / COLS) * COLS);
-  TILE = size / COLS;
-
-  canvas.width  = size;
-  canvas.height = size;
-  wrap.style.width  = size + 'px';
-  wrap.style.height = size + 'px';
+  return Math.max(220, Math.floor(available / COLS) * COLS);
 }
 
-window.addEventListener('resize', () => { resizeCanvas(); redrawStatic(); });
-resizeCanvas();
+function resizeCanvas(animate = false) {
+  const size = calcTargetSize();
+  TILE = size / COLS;
+
+  if (animate) {
+    // Phase 1: CSS transition — wrap + canvas CSS dimensions animate
+    wrap.classList.add('resizing');
+    wrap.style.width  = size + 'px';
+    wrap.style.height = size + 'px';
+    canvas.style.width  = size + 'px';
+    canvas.style.height = size + 'px';
+
+    // Phase 2: after transition, commit canvas resolution & redraw
+    clearTimeout(resizeCommitTimer);
+    resizeCommitTimer = setTimeout(() => {
+      canvas.width  = size;
+      canvas.height = size;
+      canvas.style.width  = '';
+      canvas.style.height = '';
+      wrap.classList.remove('resizing');
+      rebuildPathWaypoints();
+      redrawStatic();
+    }, TRANSITION_MS + 20);
+  } else {
+    // Instant (first load)
+    wrap.style.width  = size + 'px';
+    wrap.style.height = size + 'px';
+    canvas.width  = size;
+    canvas.height = size;
+  }
+}
+
+function onResize() {
+  clearTimeout(resizeDebounce);
+  resizeDebounce = setTimeout(() => resizeCanvas(true), 80);
+}
+
+window.addEventListener('resize', onResize);
+// Also handle device orientation change
+window.addEventListener('orientationchange', () => {
+  // slight delay to let browser finish rotating
+  setTimeout(() => resizeCanvas(true), 150);
+});
+
+resizeCanvas(false);
 
 // ── Path builder ──────────────────────────────────────────
 function buildPath() {
@@ -314,18 +366,16 @@ function buildPath() {
   return path;
 }
 
-// Path waypoints rebuild on resize
+// Path waypoints rebuild on resize (called after canvas commits new size)
 let PATH_WP = buildPath();
 function rebuildPathWaypoints() {
   PATH_WP = buildPath();
-  // update existing enemy positions (approximate)
   for(const e of enemies) {
     const idx = Math.max(0, Math.floor(e.progress));
     const wp = PATH_WP[Math.min(idx, PATH_WP.length-1)];
     if(wp){ e.x=wp.x; e.y=wp.y; }
   }
 }
-window.addEventListener('resize', rebuildPathWaypoints);
 
 // ── Tower defs ────────────────────────────────────────────
 const TOWER_DEFS = {
