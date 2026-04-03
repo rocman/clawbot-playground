@@ -68,8 +68,8 @@ body{display:flex;flex-direction:column;}
 @media (orientation:portrait){
   #content{flex-direction:column;align-items:center;}
   #sidebar{display:none;}           /* sidebar hidden in portrait */
-  #map-wrap{width:100%;flex:0 0 auto;}
-  #map-area{width:100%;max-height:100vw;}
+  #map-wrap{width:100%;flex:0 0 auto;align-self:flex-start;}
+  #map-area{width:100%;aspect-ratio:1/1;max-height:none;}
   #panel-scroll{flex-direction:row;width:100%;}
 }
 
@@ -79,9 +79,9 @@ body{display:flex;flex-direction:column;}
 /* ── Map wrapper ── */
 #map-wrap{
   flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  background:#0d1b2e;overflow:hidden;padding:8px 8px 0;
+  background:#0d1b2e;overflow:hidden;padding:8px;
 }
-#map-area{flex-shrink:0;position:relative;overflow:hidden;aspect-ratio:1/1;}
+#map-area{flex-shrink:0;position:relative;overflow:hidden;aspect-ratio:1/1;width:100%;}
 canvas{display:block;width:100%;height:100%;}
 
 /* ── Toast ── */
