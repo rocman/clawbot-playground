@@ -167,17 +167,19 @@ canvas{display:block;width:100%;height:100%;}
 .skill-lock-tag{font-size:0.58rem;color:#e94560;margin-top:1px;}
 
 /* ── Queue ── */
-#queue-list{flex:1;min-height:0;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:3px;}
-#queue-list-pt{flex:1;min-height:0;overflow-y:auto;padding:4px 6px;display:flex;flex-direction:column;gap:3px;}
+#queue-list{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;padding:6px;display:flex;flex-direction:row;gap:4px;align-items:flex-start;}
+#queue-list-pt{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;padding:4px 6px;display:flex;flex-direction:row;gap:4px;align-items:flex-start;}
 .queue-item{
-  background:#1a2a4a;border:1px solid #0f3460;border-radius:5px;
-  padding:4px 8px;display:flex;align-items:center;gap:6px;font-size:0.72rem;flex-shrink:0;
+  flex-shrink:0;display:flex;flex-direction:column;align-items:center;
+  background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
+  padding:4px 6px;gap:2px;position:relative;min-width:44px;
 }
-.queue-item .qi-icon{font-size:1rem;}
-.queue-item .qi-label{flex:1;}
-.queue-item .qi-rm{background:none;border:none;color:#e94560;cursor:pointer;font-size:0.85rem;padding:2px 4px;border-radius:3px;}
-.queue-item .qi-rm:hover{background:rgba(233,69,96,.2);}
-#queue-empty{color:#555;font-size:0.72rem;padding:8px;text-align:center;}
+.queue-item .qi-icon{font-size:1.1rem;line-height:1;}
+.queue-item .qi-label{font-size:0.58rem;color:#aaa;text-align:center;white-space:nowrap;}
+.queue-item .qi-rm{position:absolute;top:-4px;right:-4px;background:#e94560;border:none;color:#fff;cursor:pointer;font-size:0.6rem;padding:0;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.queue-item .qi-rm:hover{background:#c0392b;}
+#queue-empty{color:#555;font-size:0.72rem;padding:8px;text-align:center;white-space:nowrap;}
+#queue-empty-pt{color:#555;font-size:0.65rem;padding:6px;text-align:center;white-space:nowrap;}
 
 /* ── Log ── */
 #log{flex:1;min-height:0;overflow-y:auto;padding:6px 8px;font-size:0.68rem;color:#aaa;line-height:1.6;}
@@ -799,8 +801,8 @@ function renderQueues(){
       sendQueue.forEach(({kind,key},idx)=>{
         const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
         const row=document.createElement('div');row.className='queue-item';
-        const tag=kind==='skill'?'<span style="font-size:.6rem;color:#fdcb6e;margin-left:3px">技能</span>':'';
-        row.innerHTML=`<span class="qi-icon">${def.icon}</span><span class="qi-label">${def.name}${tag}</span><button class="qi-rm">✕</button>`;
+        const tag=kind==='skill'?`<span class="qi-label" style="color:#fdcb6e">技能</span>`:`<span class="qi-label">${def.name}</span>`;
+        row.innerHTML=`<button class="qi-rm">✕</button><span class="qi-icon">${def.icon}</span>${tag}`;
         row.querySelector('.qi-rm').addEventListener('click',()=>{
           gold+=def.cost;sendQueue.splice(idx,1);
           updateHUD();buildUnitCards();buildSkillCards();renderQueues();
