@@ -8,23 +8,22 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:100%;height:100%;overflow:hidden;background:#0d1b2e;color:#eee;font-family:'Segoe UI',system-ui,sans-serif;}
 body{display:flex;flex-direction:column;touch-action:manipulation;}
-document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
 
 /* ── Portrait header ── */
 #header-portrait{
   display:flex;align-items:center;justify-content:space-between;
-  padding:6px 12px;background:#16213e;border-bottom:1px solid #0f3460;
-  flex-shrink:0;
+  padding:6px 12px;background:#16213e;border-bottom:1px solid #0f3460;flex-shrink:0;
 }
 #header-portrait h1{font-size:1rem;letter-spacing:1px;color:#e94560;}
-.stat-row{display:flex;gap:10px;font-size:0.78rem;}
-.stat{display:flex;align-items:center;gap:4px;}
-.stat span{font-weight:bold;color:#fdcb6e;}
+
+/* ── Stats ── */
+.stat-row{display:flex;gap:8px;flex-wrap:wrap;}
+.stat{display:flex;align-items:center;gap:3px;font-size:0.75rem;}
+.stat .label{color:#aaa;}
+.stat .val{font-weight:bold;color:#fdcb6e;}
 
 /* ── Main layout ── */
 #content{flex:1;display:flex;overflow:hidden;}
-
-/* Portrait: column (map on top, panels below) */
 @media (orientation:portrait){
   #content{flex-direction:column;}
   #header-portrait{display:flex;}
@@ -32,7 +31,6 @@ document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
   #map-wrap{width:100%;flex:0 0 auto;}
   #map-area{width:100%;max-height:100vw;}
 }
-/* Landscape: row (map left, sidebar right) */
 @media (orientation:landscape){
   #content{flex-direction:row;}
   #header-portrait{display:none;}
@@ -41,40 +39,44 @@ document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
   #sidebar{display:flex;}
 }
 
-/* ── Map wrap & area ── */
+/* ── Map ── */
 #map-wrap{display:flex;align-items:center;justify-content:center;background:#0d1b2e;overflow:hidden;padding:8px 8px 0;}
 #map-area{flex-shrink:0;position:relative;overflow:hidden;aspect-ratio:1/1;}
 canvas{display:block;width:100%;height:100%;}
 
-/* ── Sidebar (landscape only) ── */
+/* ── Toast ── */
+#toast-container{
+  position:absolute;inset:0;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;z-index:50;
+}
+.toast{
+  padding:10px 22px;border-radius:10px;font-size:1rem;font-weight:bold;
+  text-align:center;white-space:pre-line;line-height:1.4;
+  box-shadow:0 4px 20px rgba(0,0,0,0.6);
+  animation:toastIn .25s ease, toastOut .4s ease 1.8s forwards;
+  max-width:85%;
+}
+.toast.breach{background:linear-gradient(135deg,#e94560,#c0392b);color:#fff;}
+.toast.milestone{background:linear-gradient(135deg,#fdcb6e,#e17055);color:#2d3436;font-size:1.1rem;}
+@keyframes toastIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+@keyframes toastOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.8)}}
+
+/* ── Sidebar ── */
 #sidebar{
   display:none;flex-direction:column;
   background:#16213e;border-left:1px solid #0f3460;
   flex:1;min-width:200px;max-width:320px;overflow:hidden;
 }
-#sidebar-header{
-  flex-shrink:0;padding:8px 12px;border-bottom:1px solid #0f3460;
-}
+#sidebar-header{flex-shrink:0;padding:8px 12px;border-bottom:1px solid #0f3460;}
 #sidebar-header h1{font-size:0.9rem;color:#e94560;margin-bottom:4px;}
-#sidebar .stat-row{font-size:0.75rem;}
-
-/* ── Stats row ── */
-.stat-row{display:flex;gap:10px;flex-wrap:wrap;}
-.stat{display:flex;align-items:center;gap:4px;font-size:0.75rem;}
-.stat .label{color:#aaa;}
-.stat .val{font-weight:bold;color:#fdcb6e;}
 
 /* ── Panel scroll ── */
 #panel-scroll{
-  flex:1;min-width:0;min-height:0;
-  overflow:hidden;
-  padding:6px 8px 8px;
-  display:flex;gap:6px;
-  flex-direction:column;
+  flex:1;min-width:0;min-height:0;overflow:hidden;
+  padding:6px 8px 8px;display:flex;gap:6px;flex-direction:column;
 }
-@media (orientation:portrait){
-  #panel-scroll{flex-direction:row;}
-}
+@media (orientation:portrait){#panel-scroll{flex-direction:row;}}
 
 /* ── Panels ── */
 .panel{
@@ -83,54 +85,73 @@ canvas{display:block;width:100%;height:100%;}
   display:flex;flex-direction:column;overflow:hidden;
 }
 .panel-title{
-  font-size:0.68rem;font-weight:bold;color:#aaa;letter-spacing:0.5px;text-transform:uppercase;
+  font-size:0.68rem;font-weight:bold;color:#aaa;letter-spacing:.5px;text-transform:uppercase;
   padding:6px 8px 4px;border-bottom:1px solid #0f3460;flex-shrink:0;
 }
 
-/* ── Unit cards (build panel) ── */
-#unit-list{
-  flex:1;overflow-y:auto;padding:6px;
-  display:flex;flex-direction:column;gap:4px;
-}
+/* ── Unit cards ── */
+#unit-list{flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:4px;}
 .unit-card{
   background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
-  padding:6px 8px;cursor:pointer;transition:background .15s,border-color .15s;
-  display:flex;align-items:center;gap:8px;
-  user-select:none;
+  padding:5px 8px;cursor:pointer;transition:background .15s,border-color .15s;
+  display:flex;align-items:center;gap:8px;user-select:none;
 }
-.unit-card:hover{background:#1e3360;border-color:#0984e3;}
-.unit-card.selected{background:#0f3460;border-color:#0984e3;box-shadow:0 0 0 2px rgba(9,132,227,0.4);}
-.unit-card.disabled{opacity:0.4;cursor:not-allowed;}
-.unit-icon{font-size:1.4rem;flex-shrink:0;}
+.unit-card:hover:not(.disabled){background:#1e3360;border-color:#0984e3;}
+.unit-card.disabled{opacity:.4;cursor:not-allowed;}
+.unit-icon{font-size:1.3rem;flex-shrink:0;}
 .unit-info{flex:1;min-width:0;}
-.unit-name{font-size:0.78rem;font-weight:bold;}
-.unit-desc{font-size:0.62rem;color:#aaa;margin-top:1px;}
+.unit-name{font-size:0.76rem;font-weight:bold;}
+.unit-desc{font-size:0.6rem;color:#aaa;margin-top:1px;}
 .unit-cost{font-size:0.72rem;color:#fdcb6e;font-weight:bold;flex-shrink:0;}
 
-/* ── Queue panel ── */
-#queue-list{
-  flex:1;overflow-y:auto;padding:6px;
-  display:flex;flex-direction:column;gap:3px;
+/* ── Skill cards ── */
+#skill-list{flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:4px;}
+.skill-card{
+  background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
+  padding:5px 8px;cursor:pointer;transition:background .15s,border-color .15s;
+  display:flex;align-items:center;gap:8px;user-select:none;
 }
+.skill-card:hover:not(.disabled):not(.locked){background:#1e3360;border-color:#fdcb6e;}
+.skill-card.disabled{opacity:.4;cursor:not-allowed;}
+.skill-card.locked{opacity:.35;cursor:not-allowed;filter:grayscale(.6);}
+.skill-card.active{border-color:#00b894;background:#0d3026;}
+.skill-icon{font-size:1.3rem;flex-shrink:0;}
+.skill-info{flex:1;min-width:0;}
+.skill-name{font-size:0.76rem;font-weight:bold;}
+.skill-desc{font-size:0.6rem;color:#aaa;margin-top:1px;}
+.skill-cost{font-size:0.72rem;color:#fdcb6e;font-weight:bold;flex-shrink:0;}
+.skill-lock-tag{font-size:0.58rem;color:#e94560;margin-top:1px;}
+
+/* ── Queue ── */
+#queue-list{flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:3px;}
 .queue-item{
   background:#1a2a4a;border:1px solid #0f3460;border-radius:5px;
   padding:4px 8px;display:flex;align-items:center;gap:6px;font-size:0.72rem;
 }
 .queue-item .qi-icon{font-size:1rem;}
 .queue-item .qi-label{flex:1;}
-.queue-item .qi-rm{
-  background:none;border:none;color:#e94560;cursor:pointer;
-  font-size:0.85rem;padding:2px 4px;border-radius:3px;
-}
-.queue-item .qi-rm:hover{background:rgba(233,69,96,0.2);}
+.queue-item .qi-rm{background:none;border:none;color:#e94560;cursor:pointer;font-size:0.85rem;padding:2px 4px;border-radius:3px;}
+.queue-item .qi-rm:hover{background:rgba(233,69,96,.2);}
 #queue-empty{color:#555;font-size:0.72rem;padding:8px;text-align:center;}
 
-/* ── Log panel ── */
-#log-panel{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
-#log{
-  flex:1;overflow-y:auto;padding:6px 8px;
-  font-size:0.68rem;color:#aaa;line-height:1.6;
+/* ── Milestone strip ── */
+#milestone-strip{
+  flex-shrink:0;padding:4px 8px;
+  display:flex;gap:6px;overflow-x:auto;
+  border-bottom:1px solid #0f3460;background:#16213e;
+  scrollbar-width:none;
 }
+#milestone-strip::-webkit-scrollbar{display:none;}
+.ms-badge{
+  flex-shrink:0;padding:3px 8px;border-radius:12px;font-size:0.62rem;font-weight:bold;
+  border:1px solid #0f3460;background:#1a2a4a;color:#aaa;white-space:nowrap;
+}
+.ms-badge.done{background:#0d3026;border-color:#00b894;color:#00b894;}
+.ms-badge.next{border-color:#fdcb6e;color:#fdcb6e;}
+
+/* ── Log ── */
+#log-panel{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+#log{flex:1;overflow-y:auto;padding:6px 8px;font-size:0.68rem;color:#aaa;line-height:1.6;}
 #log p{margin-bottom:2px;}
 
 /* ── Wave bar ── */
@@ -140,15 +161,22 @@ canvas{display:block;width:100%;height:100%;}
   gap:5px;padding:7px 8px;
   background:#16213e;border-top:1px solid #0f3460;
 }
-#btn-send,#btn-pause-atk{
-  flex:0 0 calc(25% - 10px);min-width:0;padding:0;
-  font-size:0.76rem;height:40px;
-  display:flex;align-items:center;justify-content:center;
+.wave-btn{
+  flex:1;border:none;border-radius:6px;cursor:pointer;
+  font-size:0.8rem;font-weight:bold;transition:background .2s;
+  display:flex;align-items:center;justify-content:center;height:40px;
 }
+.wave-btn:disabled{background:#444;color:#888;cursor:not-allowed;}
+#btn-send{flex:0 0 calc(25% - 10px);background:#e94560;color:#fff;}
+#btn-send:hover:not(:disabled){background:#c0392b;}
+#btn-send:disabled{background:#444;color:#888;}
+#btn-pause-atk{flex:0 0 calc(25% - 10px);background:#fdcb6e;color:#2d3436;}
+#btn-pause-atk:hover:not(:disabled){background:#e6b655;}
+#btn-pause-atk:disabled{background:#444;color:#888;}
 #speed-group-atk{flex:1;display:flex;flex-direction:row;align-items:stretch;height:40px;}
 .speed-adj-atk{
   flex:0 0 40px!important;width:40px!important;min-width:40px;max-width:40px;
-  padding:0!important;font-size:1.2rem;font-weight:bold;text-align:center;
+  padding:0!important;font-size:1.2rem;font-weight:bold;
   background:#0f3460;color:#fff;border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
 }
@@ -160,45 +188,18 @@ canvas{display:block;width:100%;height:100%;}
   flex:1;display:flex;align-items:center;justify-content:center;
   font-size:1.05rem;font-weight:bold;color:#0f3460;background:#fff;cursor:default;user-select:none;
 }
-.wave-btn{
-  flex:1;border:none;border-radius:6px;cursor:pointer;
-  font-size:0.8rem;font-weight:bold;transition:background .2s;
-  display:flex;align-items:center;justify-content:center;
-}
-.wave-btn:disabled{background:#444;color:#888;cursor:not-allowed;}
-#btn-send{background:#e94560;color:#fff;}
-#btn-send:hover:not(:disabled){background:#c0392b;}
-#btn-send:disabled{background:#444;color:#888;}
-#btn-pause-atk{background:#fdcb6e;color:#2d3436;}
-#btn-pause-atk:hover:not(:disabled){background:#e6b655;}
-#btn-pause-atk:disabled{background:#444;color:#888;}
 
 /* ── Overlay ── */
 #overlay{
-  position:fixed;inset:0;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:fixed;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
   background:rgba(0,0,0,.78);gap:12px;z-index:100;
 }
 #overlay.hidden{display:none;}
 #overlay h2{font-size:1.6rem;color:#e94560;}
-#overlay p{color:#aaa;font-size:0.88rem;text-align:center;max-width:280px;}
-.btn{
-  padding:10px 24px;border:none;border-radius:8px;cursor:pointer;
-  font-size:0.9rem;font-weight:bold;background:#333;color:#eee;
-}
+#overlay p{color:#aaa;font-size:0.88rem;text-align:center;max-width:300px;}
+.btn{padding:10px 24px;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:bold;}
 .btn.red{background:#e94560;color:#fff;}
-.btn.blue{background:#0984e3;color:#fff;}
-
-/* ── Map overlay ── */
-#map-overlay{
-  position:absolute;inset:0;pointer-events:none;
-  display:flex;align-items:center;justify-content:center;
-}
-#map-overlay.hidden{display:none;}
-#map-msg{
-  background:rgba(22,33,62,0.92);border:1px solid #0f3460;border-radius:10px;
-  padding:12px 20px;font-size:0.82rem;color:#aaa;text-align:center;
-}
 </style>
 </head>
 <body>
@@ -208,7 +209,7 @@ canvas{display:block;width:100%;height:100%;}
   <div class="stat-row">
     <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-p">200</span></div>
     <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-p">0/15</span></div>
-    <div class="stat"><span class="label">💀</span><span class="val" id="hud-kills-p">0</span></div>
+    <div class="stat"><span class="label">💥</span><span class="val" id="hud-breach-p">0</span></div>
   </div>
 </header>
 
@@ -216,9 +217,7 @@ canvas{display:block;width:100%;height:100%;}
   <div id="map-wrap">
     <div id="map-area">
       <canvas id="canvas"></canvas>
-      <div id="map-overlay" class="hidden">
-        <div id="map-msg"></div>
-      </div>
+      <div id="toast-container"></div>
     </div>
   </div>
 
@@ -228,31 +227,39 @@ canvas{display:block;width:100%;height:100%;}
       <div class="stat-row">
         <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-l">200</span></div>
         <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-l">0/15</span></div>
-        <div class="stat"><span class="label">💀</span><span class="val" id="hud-kills-l">0</span></div>
+        <div class="stat"><span class="label">💥</span><span class="val" id="hud-breach-l">0</span></div>
       </div>
     </div>
-
-    <!-- panels injected here by arrangePanels() in landscape -->
   </div>
 </div>
 
-<!-- panel-scroll (moved between content/sidebar by JS) -->
+<!-- panel-scroll moved by JS -->
 <div id="panel-scroll">
+  <!-- milestone strip -->
+  <div id="milestone-strip"></div>
+
   <div class="panel" id="build-panel">
     <div class="panel-title">🪖 选择兵种</div>
     <div id="unit-list"></div>
   </div>
+
+  <div class="panel" id="skill-panel">
+    <div class="panel-title">✨ 技能</div>
+    <div id="skill-list"></div>
+  </div>
+
   <div class="panel" id="queue-panel">
     <div class="panel-title">📋 出兵队列</div>
     <div id="queue-list"><div id="queue-empty">队列为空 — 点击兵种加入</div></div>
   </div>
+
   <div class="panel" id="log-panel">
     <div class="panel-title">📡 战报</div>
     <div id="log"></div>
   </div>
 </div>
 
-<!-- wave bar (moved by JS) -->
+<!-- wave bar moved by JS -->
 <div id="wave-bar">
   <button class="wave-btn" id="btn-send" disabled>发兵</button>
   <div id="speed-group-atk">
@@ -265,8 +272,8 @@ canvas{display:block;width:100%;height:100%;}
 
 <div id="overlay">
   <h2>⚔️ Tower Attack</h2>
-  <p>扮演进攻方，编排兵种队列，突破守方防线！</p>
-  <p style="font-size:0.75rem;color:#555;">（对战模式开发中 — 当前为单机预览）</p>
+  <p>扮演进攻方，编排兵种与技能，突破守方防线！</p>
+  <p style="font-size:.75rem;color:#555;">当前为单机预览 — 对战模式开发中</p>
   <button class="btn red" id="btn-start">开始进攻</button>
 </div>
 
@@ -274,12 +281,12 @@ canvas{display:block;width:100%;height:100%;}
 document.addEventListener('dblclick', e => e.preventDefault(), {passive: false});
 
 // ═══════════════════════════════════════════════
-//  SHARED CONFIG (mirrors tower-battle/units.js & map.js)
+//  CONFIG — map & units (mirrors tower-battle/)
 // ═══════════════════════════════════════════════
-const COLS = 12, ROWS = 12;
-const T_GRASS=0, T_PATH=1, T_START=2, T_END=3;
+const COLS=12,ROWS=12;
+const T_GRASS=0,T_PATH=1,T_START=2,T_END=3;
 
-const MAP_LAYOUT = [
+const MAP_LAYOUT=[
   [2,1,1,1,0,0,0,0,0,0,0,0],
   [0,0,0,1,0,0,0,0,0,0,0,0],
   [0,0,0,1,1,1,1,0,0,0,0,0],
@@ -294,37 +301,56 @@ const MAP_LAYOUT = [
   [0,0,0,0,0,0,0,0,0,0,1,3],
 ];
 
-const UNIT_DEFS = {
-  swarm:   {name:'虫群',   icon:'🐛', color:'#55efc4', hp:20,   speed:70,  reward:3,  cost:5,   size:6,  desc:'极低费用，数量压制'},
-  grunt:   {name:'步兵',   icon:'🪖', color:'#ff7675', hp:60,   speed:55,  reward:8,  cost:10,  size:10, desc:'均衡型，性价比高'},
-  runner:  {name:'快跑者', icon:'💨', color:'#fdcb6e', hp:40,   speed:105, reward:10, cost:15,  size:8,  desc:'超高速，难以追踪'},
-  phantom: {name:'幽灵',   icon:'👻', color:'#a29bfe', hp:150,  speed:80,  reward:30, cost:50,  size:10, desc:'半透明，难被锁定'},
-  tank:    {name:'重甲',   icon:'🛡️', color:'#636e72', hp:250,  speed:38,  reward:20, cost:35,  size:14, desc:'血厚，消耗守方弹药'},
-  boss:    {name:'BOSS',  icon:'💀', color:'#6c5ce7', hp:800,  speed:28,  reward:80, cost:120, size:18, desc:'超强单体，威慑力极高'},
+const UNIT_DEFS={
+  swarm:  {name:'虫群',  icon:'🐛',color:'#55efc4',hp:20,  speed:70, reward:3, cost:5,  size:6, desc:'极低费用，数量压制'},
+  grunt:  {name:'步兵',  icon:'🪖',color:'#ff7675',hp:60,  speed:55, reward:8, cost:10, size:10,desc:'均衡型，性价比高'},
+  runner: {name:'快跑者',icon:'💨',color:'#fdcb6e',hp:40,  speed:105,reward:10,cost:15, size:8, desc:'超高速，难以追踪'},
+  phantom:{name:'幽灵',  icon:'👻',color:'#a29bfe',hp:150, speed:80, reward:30,cost:50, size:10,desc:'半透明，难被锁定'},
+  tank:   {name:'重甲',  icon:'🛡️',color:'#636e72',hp:250, speed:38, reward:20,cost:35, size:14,desc:'血厚，消耗守方弹药'},
+  boss:   {name:'BOSS', icon:'💀',color:'#6c5ce7',hp:800, speed:28, reward:80,cost:120,size:18,desc:'超强单体，威慑力极高'},
 };
+
+// ── Skills ──────────────────────────────────────────────────
+// unlockAt: breach count needed; null = available from start
+const SKILL_DEFS={
+  rush:    {name:'急行军', icon:'🌪️',cost:60, desc:'本波所有兵速度+40%',   unlockAt:null, type:'wave',  apply:s=>{s.speedMult=1.4;}},
+  income:  {name:'掠夺者', icon:'💰',cost:80, desc:'下波资金收入+50%',    unlockAt:null, type:'next',  apply:s=>{s.incomeBonus=0.5;}},
+  shield:  {name:'魔法护盾',icon:'🛡️',cost:100,desc:'本波所有兵获得护盾', unlockAt:1,   type:'wave',  apply:s=>{s.shield=true;}},
+  blind:   {name:'烟雾弹', icon:'💣',cost:120,desc:'烟雾降低守方炮塔效率',unlockAt:5,   type:'instant',apply:s=>{s.blind=true;}},
+  boost:   {name:'强化血脉',icon:'🧬',cost:90, desc:'本波所有兵HP+30%',   unlockAt:10,  type:'wave',  apply:s=>{s.hpMult=1.3;}},
+  interest:{name:'利滚利', icon:'📈',cost:150,desc:'未用资金下波额外+20%',unlockAt:20,  type:'next',  apply:s=>{s.interest=0.2;}},
+};
+
+// ── Milestones ──────────────────────────────────────────────
+const MILESTONES=[
+  {at:1,  label:'首次突破',  gold:50,  unlock:null,        desc:'首次突破！'},
+  {at:5,  label:'5次突破',   gold:80,  unlock:'shield',    desc:'5次突破！解锁魔法护盾'},
+  {at:10, label:'10次突破',  gold:120, unlock:'boost',     desc:'10次突破！解锁强化血脉'},
+  {at:20, label:'20次突破',  gold:200, unlock:'interest',  desc:'20次突破！解锁利滚利'},
+  {at:50, label:'50次突破',  gold:500, unlock:null,        desc:'50次突破！传奇攻势！'},
+];
 
 // ═══════════════════════════════════════════════
 //  CANVAS & LAYOUT
 // ═══════════════════════════════════════════════
-const canvas  = document.getElementById('canvas');
-const ctx     = canvas.getContext('2d');
-const mapArea = document.getElementById('map-area');
-let TILE = 30;
+const canvas =document.getElementById('canvas');
+const ctx    =canvas.getContext('2d');
+const mapArea=document.getElementById('map-area');
+let TILE=30;
 
-function isLandscape(){ return window.innerWidth > window.innerHeight; }
-
-const sidebar    = document.getElementById('sidebar');
-const panelScroll= document.getElementById('panel-scroll');
-const waveBar    = document.getElementById('wave-bar');
+function isLandscape(){return window.innerWidth>window.innerHeight;}
+const sidebar    =document.getElementById('sidebar');
+const panelScroll=document.getElementById('panel-scroll');
+const waveBar    =document.getElementById('wave-bar');
 
 function arrangePanels(){
   if(isLandscape()){
     if(panelScroll.parentElement!==sidebar) sidebar.appendChild(panelScroll);
     if(waveBar.parentElement!==sidebar) sidebar.appendChild(waveBar);
   } else {
-    const content=document.getElementById('content');
-    if(panelScroll.parentElement!==content) content.appendChild(panelScroll);
-    if(waveBar.parentElement!==content) content.appendChild(waveBar);
+    const c=document.getElementById('content');
+    if(panelScroll.parentElement!==c) c.appendChild(panelScroll);
+    if(waveBar.parentElement!==c) c.appendChild(waveBar);
   }
 }
 
@@ -332,18 +358,14 @@ function updateCanvasResolution(){
   const size=Math.round(mapArea.getBoundingClientRect().width);
   if(size<60) return;
   if(canvas.width===size&&canvas.height===size) return;
-  TILE=size/COLS;
-  canvas.width=size; canvas.height=size;
+  TILE=size/COLS; canvas.width=size; canvas.height=size;
   rebuildWP(); drawMap();
 }
-
 let roTimer;
 const ro=new ResizeObserver(()=>{clearTimeout(roTimer);roTimer=setTimeout(updateCanvasResolution,30);});
 ro.observe(mapArea);
-
-window.addEventListener('resize',()=>setTimeout(()=>{arrangePanels();},80));
-window.addEventListener('orientationchange',()=>setTimeout(()=>{arrangePanels();},200));
-
+window.addEventListener('resize',()=>setTimeout(()=>arrangePanels(),80));
+window.addEventListener('orientationchange',()=>setTimeout(()=>arrangePanels(),200));
 arrangePanels();
 
 // ═══════════════════════════════════════════════
@@ -351,7 +373,7 @@ arrangePanels();
 // ═══════════════════════════════════════════════
 function buildPath(){
   let start=null;
-  outer: for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(MAP_LAYOUT[r][c]===T_START){start={c,r};break outer;}
+  outer:for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(MAP_LAYOUT[r][c]===T_START){start={c,r};break outer;}
   const visited=new Set(),path=[];
   let cur=start; visited.add(`${cur.c},${cur.r}`);
   path.push({x:cur.c*TILE+TILE/2,y:cur.r*TILE+TILE/2});
@@ -364,9 +386,7 @@ function buildPath(){
       const t=MAP_LAYOUT[nr][nc];
       if(t===T_PATH||t===T_END){
         visited.add(key);path.push({x:nc*TILE+TILE/2,y:nr*TILE+TILE/2});
-        cur={c:nc,r:nr};moved=true;
-        if(t===T_END) return path;
-        break;
+        cur={c:nc,r:nr};moved=true;if(t===T_END) return path;break;
       }
     }
     if(!moved) break;
@@ -374,7 +394,7 @@ function buildPath(){
   return path;
 }
 let PATH_WP=[];
-function rebuildWP(){ PATH_WP=buildPath(); }
+function rebuildWP(){PATH_WP=buildPath();}
 
 // ═══════════════════════════════════════════════
 //  DRAW
@@ -385,50 +405,39 @@ function drawMap(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     const t=MAP_LAYOUT[r][c];
-    ctx.fillStyle=TC[t]??TC[T_GRASS];
-    ctx.fillRect(c*TILE,r*TILE,TILE,TILE);
-    // grid lines
-    ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.5;
-    ctx.strokeRect(c*TILE,r*TILE,TILE,TILE);
+    ctx.fillStyle=TC[t]??TC[T_GRASS]; ctx.fillRect(c*TILE,r*TILE,TILE,TILE);
+    ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=.5;ctx.strokeRect(c*TILE,r*TILE,TILE,TILE);
     if(t===T_START||t===T_END){
-      ctx.font=`${TILE*0.52}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.font=`${TILE*.52}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.fillText(t===T_START?'🚩':'🏁',c*TILE+TILE/2,r*TILE+TILE/2);
     }
   }
 }
 
-function drawEnemies(){
-  for(const e of enemies) e.draw();
-}
-
-function drawAll(){
-  drawMap();
-  drawEnemies();
-}
-
 // ═══════════════════════════════════════════════
-//  ENEMY CLASS (attack-side: we send them)
+//  ENEMY
 // ═══════════════════════════════════════════════
 class Enemy{
-  constructor(type){
-    this.type=type;
-    this.def=UNIT_DEFS[type];
-    this.hp=this.def.hp;
-    this.maxHp=this.hp;
-    this.speed=this.def.speed;
+  constructor(type,mods){
+    this.type=type; this.def=UNIT_DEFS[type];
+    const hpM=mods?.hpMult??1;
+    this.hp=this.def.hp*hpM; this.maxHp=this.hp;
+    this.speed=this.def.speed*(mods?.speedMult??1);
+    this.hasShield=mods?.shield??false;
     this.progress=0;
-    this.x=PATH_WP[0]?.x??0;
-    this.y=PATH_WP[0]?.y??0;
-    this.dead=false;
-    this.reached=false;
-    this._counted=false;
+    this.x=PATH_WP[0]?.x??0; this.y=PATH_WP[0]?.y??0;
+    this.dead=false; this.reached=false;
+  }
+  takeDamage(d){
+    if(this.hasShield){this.hasShield=false;return;}
+    this.hp-=d; if(this.hp<=0) this.dead=true;
   }
   update(dt){
     if(this.dead||this.reached) return;
     let rem=this.speed*dt*gameSpeed;
     while(rem>0){
       const wp=PATH_WP[Math.floor(this.progress)+1];
-      if(!wp){this.reached=true;breachCount++;log(`💥 ${this.def.name}成功突破！`);updateHUD();return;}
+      if(!wp){this.reached=true;onBreach(this);return;}
       const dx=wp.x-this.x,dy=wp.y-this.y,dist=Math.hypot(dx,dy);
       if(dist<=rem){this.x=wp.x;this.y=wp.y;this.progress++;rem-=dist;}
       else{this.x+=dx/dist*rem;this.y+=dy/dist*rem;this.progress+=rem/TILE;rem=0;}
@@ -439,34 +448,133 @@ class Enemy{
     const r=this.def.size*(TILE/40);
     ctx.beginPath();ctx.arc(this.x,this.y,r,0,Math.PI*2);
     ctx.fillStyle=this.def.color;ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,0.4)';ctx.lineWidth=1;ctx.stroke();
-    ctx.font=`${TILE*0.32}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    if(this.hasShield){
+      ctx.strokeStyle='#74b9ff';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(this.x,this.y,r+3,0,Math.PI*2);ctx.stroke();
+    }
+    ctx.font=`${TILE*.32}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(this.def.icon,this.x,this.y);
     // hp bar
     const bw=r*2.2,bh=3,bx=this.x-bw/2,by=this.y-r-5;
     ctx.fillStyle='#333';ctx.fillRect(bx,by,bw,bh);
-    ctx.fillStyle=this.hp/this.maxHp>0.5?'#55efc4':'#fdcb6e';
-    ctx.fillRect(bx,by,bw*this.hp/this.maxHp,bh);
+    ctx.fillStyle=this.hp/this.maxHp>.5?'#55efc4':'#fdcb6e';
+    ctx.fillRect(bx,by,bw*(this.hp/this.maxHp),bh);
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  FAKE DEFENCE (single-player preview)
+//  Simple auto-turrets along the path so enemies actually die
+// ═══════════════════════════════════════════════
+const FAKE_TURRETS=[
+  {c:3,r:1,range:2.5,dmg:18,rate:1.2,cd:0},
+  {c:6,r:3,range:2.5,dmg:22,rate:1.0,cd:0},
+  {c:8,r:5,range:2.5,dmg:20,rate:1.1,cd:0},
+  {c:4,r:7,range:2.5,dmg:25,rate:0.9,cd:0},
+  {c:5,r:9,range:2.5,dmg:28,rate:0.85,cd:0},
+  {c:10,r:10,range:2,dmg:35,rate:0.8,cd:0},
+];
+
+function updateFakeTurrets(dt){
+  for(const t of FAKE_TURRETS){
+    if(t.cd>0){t.cd-=dt*gameSpeed;continue;}
+    const range=t.range*TILE;
+    const tx=t.c*TILE+TILE/2, ty=t.r*TILE+TILE/2;
+    // find closest live enemy in range
+    let best=null,bestD=Infinity;
+    for(const e of enemies){
+      if(e.dead||e.reached) continue;
+      const d=Math.hypot(e.x-tx,e.y-ty);
+      if(d<range&&d<bestD){bestD=d;best=e;}
+    }
+    if(best){
+      best.takeDamage(t.dmg);
+      t.cd=1/t.rate;
+      // draw shoot flash
+      ctx.strokeStyle='rgba(253,203,110,.6)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(best.x,best.y);ctx.stroke();
+    }
+  }
+}
+
+function drawFakeTurrets(){
+  for(const t of FAKE_TURRETS){
+    const tx=t.c*TILE+TILE/2, ty=t.r*TILE+TILE/2;
+    const r=TILE*.35;
+    ctx.beginPath();ctx.arc(tx,ty,r,0,Math.PI*2);
+    ctx.fillStyle='#2d3436';ctx.fill();
+    ctx.strokeStyle='#636e72';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.font=`${TILE*.34}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('🏰',tx,ty);
   }
 }
 
 // ═══════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════
-let state='idle',gold=200,waveNum=0,kills=0,breachCount=0,gameSpeed=1;
+let state='idle';
+let gold=0,waveNum=0,breachCount=0,gameSpeed=1;
 let speedIdx=1;
 const SPEED_STEPS=[0.5,1,2,3,4];
 let enemies=[],spawnQueue=[],spawnTimer=0,waveActive=false;
-let sendQueue=[]; // user-built unit queue for next wave
-let selectedUnit=null;
+let sendQueue=[];
+let activeSkills={};   // effects active for current wave
+let nextSkills={};     // effects queued for next wave
+let unlockedSkills=new Set(['rush','income']); // starts unlocked
 let lastTime=0,animId=null;
+
+function waveGold(n){return 100+(n-1)*30;}  // wave n income
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+function showToast(msg, kind='breach'){
+  const tc=document.getElementById('toast-container');
+  const d=document.createElement('div');
+  d.className=`toast ${kind}`;
+  d.textContent=msg;
+  tc.appendChild(d);
+  setTimeout(()=>d.remove(), 2400);
+}
+
+// ═══════════════════════════════════════════════
+//  MILESTONE
+// ═══════════════════════════════════════════════
+const reachedMilestones=new Set();
+
+function checkMilestones(){
+  for(const ms of MILESTONES){
+    if(!reachedMilestones.has(ms.at)&&breachCount>=ms.at){
+      reachedMilestones.add(ms.at);
+      gold+=ms.gold;
+      if(ms.unlock) unlockedSkills.add(ms.unlock);
+      const lines=[`🏆 里程碑：${ms.label}`,`+💰${ms.gold}${ms.unlock?' · 解锁 '+SKILL_DEFS[ms.unlock].icon+SKILL_DEFS[ms.unlock].name:''}`];
+      showToast(lines.join('\n'),'milestone');
+      log(`🏆 里程碑达成：${ms.desc} +💰${ms.gold}`);
+      updateHUD();buildSkillCards();renderMilestoneStrip();
+    }
+  }
+}
+
+function renderMilestoneStrip(){
+  const strip=document.getElementById('milestone-strip');
+  strip.innerHTML='';
+  for(const ms of MILESTONES){
+    const done=reachedMilestones.has(ms.at);
+    const next=!done&&breachCount<ms.at;
+    const b=document.createElement('div');
+    b.className='ms-badge'+(done?' done':next?' next':'');
+    b.textContent=(done?'✓ ':'')+ ms.label+(done?'':` (${ms.at})`);
+    strip.appendChild(b);
+  }
+}
 
 // ═══════════════════════════════════════════════
 //  HUD
 // ═══════════════════════════════════════════════
 function updateHUD(){
-  ['gold','wave','kills'].forEach(k=>{
-    const v=k==='gold'?gold:k==='wave'?`${waveNum}/15`:kills;
+  ['gold','wave','breach'].forEach(k=>{
+    const v=k==='gold'?gold:k==='wave'?`${waveNum}/15`:breachCount;
     document.getElementById(`hud-${k}-p`).textContent=v;
     document.getElementById(`hud-${k}-l`).textContent=v;
   });
@@ -479,92 +587,161 @@ function log(msg){
 }
 
 // ═══════════════════════════════════════════════
-//  UNIT LIST UI
+//  BREACH HANDLER
+// ═══════════════════════════════════════════════
+function onBreach(enemy){
+  breachCount++;
+  const bonus=10;
+  gold+=bonus;
+  showToast(`💥 ${enemy.def.icon} ${enemy.def.name} 突破！\n+💰${bonus}`,'breach');
+  log(`💥 ${enemy.def.name}突破！+💰${bonus}（累计${breachCount}次）`);
+  checkMilestones();
+  updateHUD();
+}
+
+// ═══════════════════════════════════════════════
+//  UNIT CARDS
 // ═══════════════════════════════════════════════
 function buildUnitCards(){
   const ul=document.getElementById('unit-list');
   ul.innerHTML='';
   Object.entries(UNIT_DEFS).forEach(([key,def])=>{
     const card=document.createElement('div');
-    card.className='unit-card'+(selectedUnit===key?' selected':'')+(def.cost>gold?' disabled':'');
-    card.dataset.key=key;
-    card.innerHTML=`
-      <div class="unit-icon">${def.icon}</div>
-      <div class="unit-info">
-        <div class="unit-name">${def.name}</div>
-        <div class="unit-desc">${def.desc}</div>
-      </div>
+    const canAfford=def.cost<=gold;
+    card.className='unit-card'+(canAfford?'':' disabled');
+    card.innerHTML=`<div class="unit-icon">${def.icon}</div>
+      <div class="unit-info"><div class="unit-name">${def.name}</div><div class="unit-desc">${def.desc}</div></div>
       <div class="unit-cost">💰${def.cost}</div>`;
-    card.addEventListener('click',()=>selectUnit(key));
+    if(canAfford) card.addEventListener('click',()=>addToQueue(key));
     ul.appendChild(card);
   });
 }
 
-function selectUnit(key){
+function addToQueue(key){
   if(state!=='playing'&&state!=='wavePause') return;
   const def=UNIT_DEFS[key];
   if(def.cost>gold) return;
-  // add to sendQueue
   gold-=def.cost;
   sendQueue.push(key);
-  updateHUD();
-  buildUnitCards();
-  renderQueue();
-  log(`➕ 加入队列：${def.icon} ${def.name}（-💰${def.cost}）`);
+  updateHUD();buildUnitCards();renderQueue();
+  log(`➕ ${def.icon} ${def.name} 加入队列（-💰${def.cost}）`);
 }
 
+// ═══════════════════════════════════════════════
+//  SKILL CARDS
+// ═══════════════════════════════════════════════
+function buildSkillCards(){
+  const sl=document.getElementById('skill-list');
+  sl.innerHTML='';
+  Object.entries(SKILL_DEFS).forEach(([key,def])=>{
+    const unlocked=unlockedSkills.has(key);
+    const active=!!(activeSkills[key]||nextSkills[key]);
+    const canAfford=def.cost<=gold;
+    const card=document.createElement('div');
+    let cls='skill-card';
+    if(!unlocked) cls+=' locked';
+    else if(active) cls+=' active';
+    else if(!canAfford) cls+=' disabled';
+    card.className=cls;
+    const lockTag=unlocked?'':
+      `<div class="skill-lock-tag">🔒 需突破${def.unlockAt??0}次解锁</div>`;
+    card.innerHTML=`<div class="skill-icon">${def.icon}</div>
+      <div class="skill-info">
+        <div class="skill-name">${def.name}${active?' ✓':''}</div>
+        <div class="skill-desc">${def.desc}</div>
+        ${lockTag}
+      </div>
+      <div class="skill-cost">${unlocked?'💰'+def.cost:'🔒'}</div>`;
+    if(unlocked&&!active&&canAfford&&(state==='playing'||state==='wavePause'))
+      card.addEventListener('click',()=>buySkill(key));
+    sl.appendChild(card);
+  });
+}
+
+function buySkill(key){
+  if(state!=='playing'&&state!=='wavePause') return;
+  const def=SKILL_DEFS[key];
+  if(!unlockedSkills.has(key)||def.cost>gold) return;
+  gold-=def.cost;
+  const effect={};
+  def.apply(effect);
+  if(def.type==='wave') activeSkills[key]=effect;
+  else if(def.type==='next') nextSkills[key]=effect;
+  else if(def.type==='instant'){
+    // blind: just log for now (no real turrets in single-player preview)
+    log(`💣 烟雾弹！守方炮塔短暂致盲！`);
+  }
+  updateHUD();buildSkillCards();
+  log(`✨ 激活技能：${def.icon} ${def.name}（-💰${def.cost}）`);
+}
+
+// ═══════════════════════════════════════════════
+//  QUEUE
+// ═══════════════════════════════════════════════
 function renderQueue(){
   const ql=document.getElementById('queue-list');
-  const qe=document.getElementById('queue-empty');
   ql.innerHTML='';
-  if(sendQueue.length===0){
-    ql.appendChild(qe||Object.assign(document.createElement('div'),{id:'queue-empty',className:'',textContent:'队列为空 — 点击兵种加入'}));
-    document.getElementById('btn-send').disabled=true;
-    return;
+  if(!sendQueue.length){
+    const e=document.createElement('div');e.id='queue-empty';e.className='';e.textContent='队列为空 — 点击兵种加入';
+    ql.appendChild(e);
+    document.getElementById('btn-send').disabled=true;return;
   }
   document.getElementById('btn-send').disabled=false;
   sendQueue.forEach((key,idx)=>{
     const def=UNIT_DEFS[key];
     const row=document.createElement('div');row.className='queue-item';
-    row.innerHTML=`<span class="qi-icon">${def.icon}</span><span class="qi-label">${def.name}</span><button class="qi-rm" data-idx="${idx}">✕</button>`;
+    row.innerHTML=`<span class="qi-icon">${def.icon}</span><span class="qi-label">${def.name}</span><button class="qi-rm" data-i="${idx}">✕</button>`;
     row.querySelector('.qi-rm').addEventListener('click',()=>{
-      gold+=def.cost; sendQueue.splice(idx,1); updateHUD(); buildUnitCards(); renderQueue();
+      gold+=def.cost;sendQueue.splice(idx,1);
+      updateHUD();buildUnitCards();renderQueue();
     });
     ql.appendChild(row);
   });
 }
 
 // ═══════════════════════════════════════════════
-//  WAVE / SPAWN
+//  WAVE
 // ═══════════════════════════════════════════════
 function sendWave(){
-  if(waveActive||sendQueue.length===0) return;
+  if(waveActive||!sendQueue.length) return;
   waveNum++;waveActive=true;
-  spawnQueue=sendQueue.map((t,i)=>({type:t,delay:i*0.8}));
-  sendQueue=[];
-  spawnTimer=0;
-  log(`🌊 第 ${waveNum} 波出击！共 ${spawnQueue.length} 只`);
+  // merge active wave skills into mods
+  const mods={};
+  for(const ef of Object.values(activeSkills)) Object.assign(mods,ef);
+  // build spawn queue with delay
+  spawnQueue=sendQueue.map((t,i)=>({type:t,delay:i*0.7,mods}));
+  sendQueue=[];spawnTimer=0;
+  log(`🌊 第${waveNum}波出击！${spawnQueue.length}只`+(Object.keys(activeSkills).length?' ✨技能激活':''));
   document.getElementById('btn-send').disabled=true;
   document.getElementById('btn-pause-atk').disabled=false;
-  renderQueue();
-  updateHUD();
+  updateHUD();renderQueue();
 }
 
 function updateWave(dt){
   if(!waveActive) return;
   spawnTimer+=dt*gameSpeed;
-  while(spawnQueue.length&&spawnQueue[0].delay<=spawnTimer){
-    enemies.push(new Enemy(spawnQueue.shift().type));
-  }
+  while(spawnQueue.length&&spawnQueue[0].delay<=spawnTimer)
+    enemies.push(new Enemy(spawnQueue.shift().type,spawnQueue[0]?.mods??{}));
   if(!spawnQueue.length&&enemies.every(e=>e.dead||e.reached)){
+    // wave done
+    const survived=enemies.filter(e=>e.reached).length;
+    const died=enemies.filter(e=>e.dead).length;
     waveActive=false;
-    const bonus=10+waveNum*5;gold+=bonus;
-    log(`✅ 第 ${waveNum} 波结束！突破 ${enemies.filter(e=>e.reached).length} 只 +💰${bonus}`);
-    kills+=enemies.filter(e=>e.dead).length;
+    activeSkills={};  // clear wave skills
+    // apply next-wave skills
+    const prevGold=gold;
+    const incomeBonus=Object.values(nextSkills).reduce((a,e)=>a+(e.incomeBonus??0),0);
+    const interest=Object.values(nextSkills).reduce((a,e)=>a+(e.interest??0),0);
+    let income=waveGold(waveNum+1);
+    income=Math.round(income*(1+incomeBonus));
+    const interestBonus=Math.round(gold*interest);
+    gold+=income+interestBonus;
+    nextSkills={};
+    log(`✅ 第${waveNum}波结束 突破${survived} 阵亡${died} | +💰${income}${interestBonus>0?' 利息+💰'+interestBonus:''}`);
     enemies=[];
     if(waveNum>=15){endGame();return;}
-    updateHUD();buildUnitCards();renderQueue();
     document.getElementById('btn-pause-atk').disabled=true;
+    updateHUD();buildUnitCards();buildSkillCards();renderQueue();renderMilestoneStrip();
   }
 }
 
@@ -573,17 +750,18 @@ function updateWave(dt){
 // ═══════════════════════════════════════════════
 function gameLoop(ts){
   const dt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;
-  if(state==='paused'||state==='fsPause'){animId=requestAnimationFrame(gameLoop);return;}
-  drawAll();
-  if(state==='playing'||state==='wavePause'){
-    updateWave(dt);
-    for(const e of enemies) e.update(dt);
-  }
+  if(state==='paused'){animId=requestAnimationFrame(gameLoop);return;}
+  drawMap();
+  drawFakeTurrets();
+  updateFakeTurrets(dt);
+  for(const e of enemies) e.update(dt);
+  for(const e of enemies) e.draw();
+  updateWave(dt);
   animId=requestAnimationFrame(gameLoop);
 }
 
 // ═══════════════════════════════════════════════
-//  SPEED
+//  SPEED & PAUSE
 // ═══════════════════════════════════════════════
 function updateSpeedDisplay(){
   gameSpeed=SPEED_STEPS[speedIdx];
@@ -593,33 +771,29 @@ function updateSpeedDisplay(){
 }
 document.getElementById('btn-speed-dn-atk').addEventListener('click',()=>{if(speedIdx>0){speedIdx--;updateSpeedDisplay();}});
 document.getElementById('btn-speed-up-atk').addEventListener('click',()=>{if(speedIdx<SPEED_STEPS.length-1){speedIdx++;updateSpeedDisplay();}});
-
-// pause
 document.getElementById('btn-pause-atk').addEventListener('click',()=>{
-  if(state==='playing'||state==='wavePause'){
-    state='paused';document.getElementById('btn-pause-atk').textContent='▶ 继续';
-  } else if(state==='paused'){
-    state='playing';document.getElementById('btn-pause-atk').textContent='⏸ 暂停';
-  }
+  if(state==='playing'){state='paused';document.getElementById('btn-pause-atk').textContent='▶ 继续';}
+  else if(state==='paused'){state='playing';document.getElementById('btn-pause-atk').textContent='⏸ 暂停';}
 });
-
-// send wave
 document.getElementById('btn-send').addEventListener('click',sendWave);
 
 // ═══════════════════════════════════════════════
 //  START / END
 // ═══════════════════════════════════════════════
 function startGame(){
-  gold=200;waveNum=0;kills=0;breachCount=0;
+  gold=waveGold(1);waveNum=0;breachCount=0;
   enemies=[];spawnQueue=[];sendQueue=[];waveActive=false;
-  gameSpeed=1;speedIdx=1;selectedUnit=null;
-  state='playing';
+  activeSkills={};nextSkills={};
+  unlockedSkills=new Set(['rush','income']);
+  reachedMilestones.clear();
+  gameSpeed=1;speedIdx=1;state='playing';
+  for(const t of FAKE_TURRETS) t.cd=0;
   document.getElementById('btn-send').disabled=true;
   document.getElementById('btn-pause-atk').textContent='⏸ 暂停';
   document.getElementById('btn-pause-atk').disabled=true;
   updateSpeedDisplay();updateHUD();
-  buildUnitCards();renderQueue();
-  log('⚔️ 开始！选择兵种，组建队列，点击「发兵」！');
+  buildUnitCards();buildSkillCards();renderQueue();renderMilestoneStrip();
+  log(`⚔️ 开始！首波资金 💰${gold}，共15波，突破防线吧！`);
   if(animId) cancelAnimationFrame(animId);
   lastTime=performance.now();
   requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});
@@ -630,7 +804,8 @@ function endGame(){
   const ov=document.getElementById('overlay');
   ov.classList.remove('hidden');
   ov.innerHTML=`<h2>⚔️ 进攻结束</h2>
-    <p>共发动 ${waveNum} 波，突破 ${breachCount} 次</p>
+    <p>共发动 ${waveNum} 波进攻</p>
+    <p>累计突破 <strong style="color:#fdcb6e;font-size:1.2em">${breachCount}</strong> 次</p>
     <button class="btn red" id="btn-restart">再来一局</button>`;
   document.getElementById('btn-restart').addEventListener('click',()=>{
     ov.classList.add('hidden');startGame();
@@ -638,8 +813,7 @@ function endGame(){
 }
 
 document.getElementById('btn-start').addEventListener('click',()=>{
-  document.getElementById('overlay').classList.add('hidden');
-  startGame();
+  document.getElementById('overlay').classList.add('hidden');startGame();
 });
 </script>
 </body>
