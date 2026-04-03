@@ -272,10 +272,10 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Portrait: wave bar at bottom, inside #content -->
   <div id="wave-bar-pt">
     <button class="wave-btn" id="btn-send-pt" disabled>发兵</button>
-    <div id="speed-group-atk-pt" style="flex:1;display:flex;align-items:stretch;height:44px;">
-      <button class="speed-adj-atk" id="btn-speed-dn-atk-pt" style="border-radius:6px 0 0 6px;">−</button>
-      <div id="speed-display-atk-pt" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:bold;color:#0f3460;background:#fff;">1×</div>
-      <button class="speed-adj-atk" id="btn-speed-up-atk-pt" style="border-radius:0 6px 6px 0;">+</button>
+    <div id="speed-group-atk-pt">
+      <button class="speed-adj-atk" id="btn-speed-dn-atk-pt">−</button>
+      <div id="speed-display-atk-pt">1×</div>
+      <button class="speed-adj-atk" id="btn-speed-up-atk-pt">+</button>
     </div>
     <button class="wave-btn" id="btn-pause-atk-pt" disabled>⏸ 暂停</button>
   </div>
@@ -344,8 +344,16 @@ canvas{display:block;width:100%;height:100%;}
 #log-pt p{margin-bottom:2px;}
 #wave-bar-pt{
   display:none;flex-shrink:0;flex-direction:row;align-items:stretch;
-  gap:5px;padding:7px 8px;background:#16213e;border-top:1px solid #0f3460;
+  height:56px;gap:5px;padding:7px 8px;background:#16213e;border-top:1px solid #0f3460;
 }
+#btn-send-pt{flex:0 0 25%;background:#e94560;color:#fff;}
+#btn-send-pt:hover:not(:disabled){background:#c0392b;}
+#btn-pause-atk-pt{flex:0 0 25%;background:#fdcb6e;color:#2d3436;}
+#btn-pause-atk-pt:hover:not(:disabled){background:#e6b655;}
+#speed-group-atk-pt{flex:1;display:flex;align-items:stretch;}
+#speed-display-atk-pt{flex:1;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:bold;color:#0f3460;background:#fff;}
+#btn-speed-dn-atk-pt{border-radius:6px 0 0 6px!important;}
+#btn-speed-up-atk-pt{border-radius:0 6px 6px 0!important;}
 @media (orientation:portrait){
   #panel-scroll-pt{display:flex;}
   #wave-bar-pt{display:flex;}
