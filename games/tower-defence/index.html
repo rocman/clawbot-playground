@@ -428,7 +428,7 @@
 
   <!-- Wave bar: fixed at bottom of panel area, never scrolls -->
   <div id="wave-bar">
-    <button class="wave-btn" id="btn-wave">发起进攻</button>
+    <button class="wave-btn" id="btn-wave">开闸迎敌</button>
     <button class="wave-btn" id="btn-speed">⏩ 2× 加速</button>
   </div>
 
@@ -815,7 +815,7 @@ document.getElementById('btn-upgrade').addEventListener('click',()=>{if(!selecte
 document.getElementById('btn-sell').addEventListener('click',()=>{if(!selectedPlacedTower)return;const t=selectedPlacedTower;gold+=t.sellVal;towers=towers.filter(x=>x!==t);log(`💸 出售 ${t.def.name} +💰${t.sellVal}`);selectedPlacedTower=null;updateSelPanel();updateHUD();});
 
 // ── Start / End ───────────────────────────────────────────
-function startGame(){lives=20;gold=150;score=0;waveNum=0;towers=[];enemies=[];projectiles=[];particles=[];spawnQueue=[];waveActive=false;gameSpeed=1;selectedTowerType=null;selectedPlacedTower=null;state='playing';document.getElementById('btn-speed').textContent='⏩ 2× 加速';updateHUD();log('🎮 开始！点击「发起进攻」。');if(animId)cancelAnimationFrame(animId);lastTime=performance.now();requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});}
+function startGame(){lives=20;gold=150;score=0;waveNum=0;towers=[];enemies=[];projectiles=[];particles=[];spawnQueue=[];waveActive=false;gameSpeed=1;selectedTowerType=null;selectedPlacedTower=null;state='playing';document.getElementById('btn-speed').textContent='⏩ 2× 加速';updateHUD();log('🎮 开始！点击「开闸迎敌」。');if(animId)cancelAnimationFrame(animId);lastTime=performance.now();requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});}
 function endGame(won){state=won?'win':'gameOver';const ov=document.getElementById('overlay');ov.classList.remove('hidden');ov.innerHTML=`<h2>${won?'🎉 胜利！':'💀 游戏结束'}</h2><p>${won?`完成全部15波！得分 ⭐${score}`:`防线被突破…得分 ⭐${score}`}</p><button class="btn ${won?'blue':''}" id="btn-restart">再来一局</button>`;document.getElementById('btn-restart').addEventListener('click',()=>{ov.classList.add('hidden');startGame();});}
 
 // ── Init ──────────────────────────────────────────────────
