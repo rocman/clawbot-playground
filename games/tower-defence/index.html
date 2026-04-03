@@ -532,31 +532,28 @@ function onResize() {
 // ── In-game fullscreen toast ──────────────────────────────
 const fsToast = document.getElementById('fs-toast');
 document.getElementById('fs-toast-yes').addEventListener('click', () => {
-  autoFullscreen();
   fsToast.classList.add('hidden');
+  autoFullscreen().then(() => requestAnimationFrame(() => resizeCanvas(true)));
 });
 document.getElementById('fs-toast-no').addEventListener('click', () => {
   fsToast.classList.add('hidden');
 });
 
 function maybeShowFsToast() {
-  // only during active gameplay, only in landscape, only if not already fullscreen
-  if (state !== 'playing') return;
+  if (state !== 'playing' && state !== 'wavePause') return;
   if (!isLandscape()) { fsToast.classList.add('hidden'); return; }
   if (document.fullscreenElement || document.webkitFullscreenElement) return;
   fsToast.classList.remove('hidden');
-  // auto-dismiss after 6s
   clearTimeout(fsToast._timer);
   fsToast._timer = setTimeout(() => fsToast.classList.add('hidden'), 6000);
 }
 
 window.addEventListener('resize', onResize);
 window.addEventListener('orientationchange', () => setTimeout(() => {
-  autoFullscreen();
   resizeCanvas(true);
   showOpeningOverlay();
-  maybeShowFsToast();
-}, 150));
+  maybeShowFsToast();   // show toast if in-game + landscape + not fullscreen
+}, 200));
 resizeCanvas(false);
 
 // ── Auto fullscreen on landscape ─────────────────────────
