@@ -136,7 +136,8 @@ canvas{display:block;width:100%;height:100%;}
 
 /* ── Milestone strip ── */
 #milestone-strip{
-  flex-shrink:0;padding:4px 8px;
+  flex-shrink:0;
+  padding:4px 8px;
   display:flex;gap:6px;overflow-x:auto;
   border-bottom:1px solid #0f3460;background:#16213e;
   scrollbar-width:none;
@@ -233,11 +234,11 @@ canvas{display:block;width:100%;height:100%;}
   </div>
 </div>
 
+<!-- milestone strip: always above panel-scroll, never inside it -->
+<div id="milestone-strip"></div>
+
 <!-- panel-scroll moved by JS -->
 <div id="panel-scroll">
-  <!-- milestone strip -->
-  <div id="milestone-strip"></div>
-
   <div class="panel" id="build-panel">
     <div class="panel-title">🪖 选择兵种</div>
     <div id="unit-list"></div>
@@ -343,12 +344,18 @@ const sidebar    =document.getElementById('sidebar');
 const panelScroll=document.getElementById('panel-scroll');
 const waveBar    =document.getElementById('wave-bar');
 
+const milestoneStrip=document.getElementById('milestone-strip');
+
 function arrangePanels(){
   if(isLandscape()){
+    // sidebar order: strip → panel-scroll → wave-bar
+    if(milestoneStrip.parentElement!==sidebar) sidebar.insertBefore(milestoneStrip, sidebar.querySelector('#panel-scroll')||null);
     if(panelScroll.parentElement!==sidebar) sidebar.appendChild(panelScroll);
     if(waveBar.parentElement!==sidebar) sidebar.appendChild(waveBar);
   } else {
     const c=document.getElementById('content');
+    // content order (below map): strip → panel-scroll → wave-bar
+    if(milestoneStrip.parentElement!==c) c.appendChild(milestoneStrip);
     if(panelScroll.parentElement!==c) c.appendChild(panelScroll);
     if(waveBar.parentElement!==c) c.appendChild(waveBar);
   }
