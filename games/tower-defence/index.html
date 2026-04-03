@@ -376,8 +376,35 @@ function onResize() {
   resizeDebounce = setTimeout(() => resizeCanvas(true), 80);
 }
 window.addEventListener('resize', onResize);
-window.addEventListener('orientationchange', () => setTimeout(() => resizeCanvas(true), 150));
+window.addEventListener('orientationchange', () => setTimeout(() => { autoFullscreen(); resizeCanvas(true); }, 150));
 resizeCanvas(false);
+
+// ── Auto fullscreen on landscape ─────────────────────────
+function autoFullscreen() {
+  const landscape = window.innerWidth > window.innerHeight;
+  if (landscape) {
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+    if (req && !document.fullscreenElement && !document.webkitFullscreenElement) {
+      req.call(el).catch(() => {}); // silently ignore if blocked (e.g. desktop without gesture)
+    }
+  } else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+    if (exit && (document.fullscreenElement || document.webkitFullscreenElement)) {
+      exit.call(document).catch(() => {});
+    }
+  }
+}
+
+// Also trigger on first user interaction (required by browsers for fullscreen)
+let _fsGestureReady = false;
+function _onFirstGesture() {
+  if (_fsGestureReady) return;
+  _fsGestureReady = true;
+  autoFullscreen();
+}
+document.addEventListener('touchstart', _onFirstGesture, { once: true });
+document.addEventListener('click',      _onFirstGesture, { once: true });
 
 // ── Path ─────────────────────────────────────────────────
 function buildPath() {
