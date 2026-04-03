@@ -265,9 +265,21 @@
     <div id="map-area">
       <canvas id="gameCanvas"></canvas>
       <div id="overlay">
-        <h2>🏰 Tower Defence</h2>
-        <p>在路径旁边的空地上建造炮塔<br>阻止敌人到达终点！</p>
-        <button class="btn blue" id="btn-start">开始游戏</button>
+        <!-- Step 1: fullscreen prompt (landscape only) -->
+        <div id="fs-prompt">
+          <h2>🏰 Tower Defence</h2>
+          <p>检测到横屏，是否进入全屏以获得最佳体验？</p>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button class="btn blue" id="btn-fs-yes">全屏进入 ⛶</button>
+            <button class="btn" id="btn-fs-no">直接开始</button>
+          </div>
+        </div>
+        <!-- Step 2: normal start screen -->
+        <div id="start-prompt" style="display:none">
+          <h2>🏰 Tower Defence</h2>
+          <p>在路径旁边的空地上建造炮塔<br>阻止敌人到达终点！</p>
+          <button class="btn blue" id="btn-start">开始游戏</button>
+        </div>
       </div>
     </div>
   </div>
@@ -398,7 +410,7 @@ function autoFullscreen() {
     const el = document.documentElement;
     const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
     if (req && !document.fullscreenElement && !document.webkitFullscreenElement) {
-      req.call(el).catch(() => {}); // silently ignore if blocked (e.g. desktop without gesture)
+      req.call(el).catch(() => {});
     }
   } else {
     const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
@@ -408,15 +420,32 @@ function autoFullscreen() {
   }
 }
 
-// Also trigger on first user interaction (required by browsers for fullscreen)
-let _fsGestureReady = false;
-function _onFirstGesture() {
-  if (_fsGestureReady) return;
-  _fsGestureReady = true;
-  autoFullscreen();
+// ── Opening overlay logic ─────────────────────────────────
+function showOpeningOverlay() {
+  const fsPrompt    = document.getElementById('fs-prompt');
+  const startPrompt = document.getElementById('start-prompt');
+  if (isLandscape()) {
+    fsPrompt.style.display    = '';
+    startPrompt.style.display = 'none';
+  } else {
+    fsPrompt.style.display    = 'none';
+    startPrompt.style.display = '';
+  }
 }
-document.addEventListener('touchstart', _onFirstGesture, { once: true });
-document.addEventListener('click',      _onFirstGesture, { once: true });
+
+document.getElementById('btn-fs-yes').addEventListener('click', () => {
+  autoFullscreen();
+  document.getElementById('fs-prompt').style.display    = 'none';
+  document.getElementById('start-prompt').style.display = '';
+});
+document.getElementById('btn-fs-no').addEventListener('click', () => {
+  document.getElementById('fs-prompt').style.display    = 'none';
+  document.getElementById('start-prompt').style.display = '';
+});
+document.getElementById('btn-start').addEventListener('click', () => {
+  document.getElementById('overlay').classList.add('hidden');
+  startGame();
+});
 
 // ── Path ─────────────────────────────────────────────────
 function buildPath() {
@@ -628,7 +657,6 @@ canvas.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0]
 canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];const{col,row}=getCell(t.clientX,t.clientY);hoverCol=col;hoverRow=row;},{passive:false});
 
 // ── Buttons ───────────────────────────────────────────────
-document.getElementById('btn-start').addEventListener('click',()=>{document.getElementById('overlay').classList.add('hidden');startGame();});
 document.getElementById('btn-wave').addEventListener('click',startWave);
 document.getElementById('btn-speed').addEventListener('click',()=>{gameSpeed=gameSpeed===1?2:1;document.getElementById('btn-speed').textContent=gameSpeed===1?'⏩ 2× 加速':'⏸ 1× 恢复';});
 document.getElementById('btn-upgrade').addEventListener('click',()=>{if(!selectedPlacedTower)return;const t=selectedPlacedTower;if(t.level>=t.def.maxLevel||gold<t.upgCost)return;gold-=t.upgCost;t.level++;log(`⬆️ ${t.def.name} Lv${t.level}`);updateHUD();});
@@ -642,6 +670,7 @@ function endGame(won){state=won?'win':'gameOver';const ov=document.getElementByI
 buildTowerGrid();
 updateHUD();
 redrawStatic();
+showOpeningOverlay();
 </script>
 </body>
 </html>
