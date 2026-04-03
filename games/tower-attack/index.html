@@ -336,12 +336,11 @@ canvas{display:block;width:100%;height:100%;}
 <style>
 /* Portrait-only panels */
 #panel-scroll-pt{
-  display:none;flex-shrink:0;overflow:hidden;
-  padding:4px 8px 0;gap:6px;flex-direction:row;
-  height:150px;
+  display:none;flex:1;min-height:0;overflow:hidden;
+  padding:4px 8px 4px;gap:6px;flex-direction:row;
 }
 /* all three panels equal width in portrait */
-#build-panel-pt,#queue-panel-pt,#log-panel-pt{ flex:1 1 0; }
+#build-panel-pt,#queue-panel-pt,#log-panel-pt{ flex:1 1 0;min-height:0; }
 #log-pt{flex:1;overflow-y:auto;padding:4px 6px;font-size:0.62rem;color:#aaa;line-height:1.5;}
 #log-pt p{margin-bottom:2px;}
 #wave-bar-pt{
