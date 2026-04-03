@@ -1097,19 +1097,23 @@ function applyInstantSkill(key){
   if(key==='double'){
     const alive=enemies.filter(e=>!e.dead&&!e.reached);
     if(!alive.length){log('⚡ 无场上兵员可翻倍');return;}
-    const copies=[...alive];
-    copies.forEach(e=>{
-      // 克隆体从起点出发，保留兵种属性
-      const clone=new Enemy(e.type,{
+    if(!waveActive){
+      waveNum++;waveActive=true;spawnTimer=0;
+      log(`🌊 第${waveNum}波！`);
+      ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
+    }
+    const mods={...techPerms,...activeSkills};
+    let delay=0;
+    alive.forEach(e=>{
+      spawnQueue.push({type:e.type, delay, mods:{...mods,
         hpMult: e.hp/e.def.hp,
         speedMult: e.speed/e.def.speed,
         shield: e.hasShield,
-      });
-      // 不修改 progress/x/y，new Enemy 已从 PATH_WP[0] 起点开始
-      enemies.push(clone);
+      }});
+      delay+=0.5;
     });
-    log(`⚡ 增兵令！从起点增援 ${copies.length} 只`);
-    showToast('⚡ 增兵令！援兵从起点出发！','skill');
+    log(`⚡ 增兵令！${alive.length} 只援兵依次从起点出发`);
+    showToast('⚡ 增兵令！援兵出发！','skill');
   }
 }
 
