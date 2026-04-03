@@ -135,6 +135,28 @@ canvas{display:block;width:100%;height:100%;}
 .ptab.active{color:#fdcb6e;border-bottom-color:#fdcb6e;}
 .tab-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding:6px;}
 .tab-body.hidden{display:none!important;}
+/* tech tree */
+.tech-tree-wrap{padding:8px 6px;gap:0;overflow-y:auto;}
+.tech-tier{display:flex;flex-direction:row;gap:6px;justify-content:center;margin-bottom:4px;}
+.tech-connectors{display:flex;flex-direction:row;gap:6px;justify-content:center;height:18px;margin-bottom:0;}
+.tech-connector-col{flex:0 0 calc(25% - 5px);display:flex;justify-content:center;align-items:center;}
+.tech-connector-col svg{display:block;}
+.tech-node{
+  flex:0 0 calc(25% - 5px);
+  display:flex;flex-direction:column;align-items:center;
+  background:#1a2a4a;border:1px solid #0f3460;border-radius:8px;
+  padding:5px 3px;gap:2px;cursor:pointer;transition:border-color .15s,background .15s;
+  position:relative;min-height:62px;
+}
+.tech-node:hover:not(.locked):not(.maxed){background:#1e3260;border-color:#4a6fa5;}
+.tech-node.locked{opacity:0.45;cursor:not-allowed;}
+.tech-node.maxed{border-color:#fdcb6e;background:#2a2010;}
+.tech-node.affordable{border-color:#00b894;}
+.tech-node .tn-icon{font-size:1.2rem;line-height:1;}
+.tech-node .tn-name{font-size:0.58rem;color:#ccc;text-align:center;line-height:1.2;}
+.tech-node .tn-lvl{font-size:0.55rem;color:#fdcb6e;font-weight:bold;}
+.tech-node .tn-cost{font-size:0.52rem;color:#aaa;}
+.tech-node .tn-desc{font-size:0.5rem;color:#888;text-align:center;line-height:1.2;}
 
 /* ── Unit cards ── */
 .unit-card{
@@ -256,9 +278,11 @@ canvas{display:block;width:100%;height:100%;}
       <div class="panel-tabs">
         <button class="ptab active" id="tab-units-pt" onclick="switchTab('units')">🪖 兵种</button>
         <button class="ptab" id="tab-skills-pt" onclick="switchTab('skills')">✨ 技能</button>
+        <button class="ptab" id="tab-tech-pt" onclick="switchTab('tech')">🔬 科技</button>
       </div>
       <div id="unit-list-pt" class="tab-body"></div>
       <div id="skill-list-pt" class="tab-body hidden"></div>
+      <div id="tech-tree-pt" class="tab-body hidden tech-tree-wrap"></div>
     </div>
     <div id="panel-right-pt">
       <div class="panel" id="log-panel-pt">
@@ -300,9 +324,11 @@ canvas{display:block;width:100%;height:100%;}
         <div class="panel-tabs">
           <button class="ptab active" id="tab-units" onclick="switchTab('units')">🪖 兵种</button>
           <button class="ptab" id="tab-skills" onclick="switchTab('skills')">✨ 技能</button>
+          <button class="ptab" id="tab-tech" onclick="switchTab('tech')">🔬 科技</button>
         </div>
         <div id="unit-list" class="tab-body"></div>
         <div id="skill-list" class="tab-body hidden"></div>
+        <div id="tech-tree" class="tab-body hidden tech-tree-wrap"></div>
       </div>
 
       <div class="panel" id="queue-panel">
@@ -424,6 +450,147 @@ const SKILL_DEFS={
   boost:   {name:'强化血脉',icon:'🧬',cost:90, desc:'本波所有兵HP+30%',    unlockAt:10, type:'wave',  duration:0, apply:s=>{s.hpMult=1.3;}},
   interest:{name:'利滚利', icon:'📈',cost:150,desc:'未用资金下波额外+20%',  unlockAt:20, type:'next',  duration:0, apply:s=>{s.interest=0.2;}},
 };
+
+// ═══════════════════════════════════════════════
+//  TECH TREE
+//  4 tiers × 4 nodes = 16 nodes
+//  req: id of prerequisite node (same or prev tier)
+//  levels: max 3; costs per level [L1,L2,L3]
+//  effect(lvl, perms): mutates the persistent perms object
+// ═══════════════════════════════════════════════
+const TECH_DEFS=[
+  // ── Tier 1 (no prerequisites) ──────────────
+  {id:'t_warrior', tier:1, req:null,       icon:'⚔️', name:'战士强化',  costs:[80,150,250],
+   desc:['兵种HP+10%','兵种HP+25%','兵种HP+40%'],
+   effect:(lv,p)=>{p.hpMult=1+[0.10,0.25,0.40][lv-1];}},
+  {id:'t_logistic',tier:1, req:null,       icon:'💰', name:'资金流转',  costs:[60,120,200],
+   desc:['每波收入+15%','每波收入+30%','每波收入+50%'],
+   effect:(lv,p)=>{p.incomeBonus=1+[0.15,0.30,0.50][lv-1];}},
+  {id:'t_rush',    tier:1, req:null,       icon:'🏃', name:'急行纵队',  costs:[70,130,220],
+   desc:['兵种速度+10%','兵种速度+20%','兵种速度+35%'],
+   effect:(lv,p)=>{p.speedMult=1+[0.10,0.20,0.35][lv-1];}},
+  {id:'t_armor',   tier:1, req:null,       icon:'🛡️', name:'钢铁护甲',  costs:[80,160,260],
+   desc:['50%概率免疫一次伤害','75%概率免疫','所有兵获得护盾'],
+   effect:(lv,p)=>{p.shieldChance=[0.5,0.75,1.0][lv-1];}},
+
+  // ── Tier 2 (each requires one tier-1) ──────
+  {id:'t_pierce',  tier:2, req:'t_warrior',icon:'💥', name:'破甲锋刃',  costs:[100,180,300],
+   desc:['造成额外10%伤害','额外20%伤害','额外30%伤害(穿甲)'],
+   effect:(lv,p)=>{p.dmgBonus=1+[0.10,0.20,0.30][lv-1];}},
+  {id:'t_compound',tier:2, req:'t_logistic',icon:'📈',name:'复利经济',  costs:[90,170,280],
+   desc:['累积金额利息+5%/波','利息+10%/波','利息+15%/波'],
+   effect:(lv,p)=>{p.interestRate=[0.05,0.10,0.15][lv-1];}},
+  {id:'t_wind',    tier:2, req:'t_rush',   icon:'🌪️', name:'疾风步伐',  costs:[100,180,300],
+   desc:['兵种无视减速效果','速度再+15%','冲刺：入场加速2秒'],
+   effect:(lv,p)=>{p.speedMult=(p.speedMult||1)+[0.05,0.15,0.25][lv-1];}},
+  {id:'t_regen',   tier:2, req:'t_armor',  icon:'🧬', name:'再生血脉',  costs:[110,200,320],
+   desc:['每秒回复1%最大HP','每秒回复2%','每秒回复3%'],
+   effect:(lv,p)=>{p.regenRate=[0.01,0.02,0.03][lv-1];}},
+
+  // ── Tier 3 (each requires one tier-2) ──────
+  {id:'t_death',   tier:3, req:'t_pierce', icon:'☠️', name:'死亡凝视',  costs:[150,250,400],
+   desc:['击杀时溅射范围伤害','溅射伤害+50%','溅射范围扩大'],
+   effect:(lv,p)=>{p.splashOnKill=lv;}},
+  {id:'t_bond',    tier:3, req:'t_compound',icon:'🏦',name:'战争债券',  costs:[140,240,380],
+   desc:['每波开始额外+50金','额外+100金','额外+150金'],
+   effect:(lv,p)=>{p.waveBonus=[50,100,150][lv-1];}},
+  {id:'t_thunder', tier:3, req:'t_wind',   icon:'⚡', name:'雷霆突击',  costs:[150,260,420],
+   desc:['兵种入场时使附近炮塔眩晕1s','眩晕2s','眩晕3s且AOE'],
+   effect:(lv,p)=>{p.stunOnEntry=[1,2,3][lv-1];}},
+  {id:'t_undying', tier:3, req:'t_regen',  icon:'💊', name:'不死之躯',  costs:[160,270,440],
+   desc:['HP低于20%时免疫1次致死','免疫2次','永久+50%最大HP'],
+   effect:(lv,p)=>{p.undying=lv;}},
+
+  // ── Tier 4 (each requires one tier-3) ──────
+  {id:'t_god',     tier:4, req:'t_death',  icon:'👑', name:'无双战神',  costs:[220,360,550],
+   desc:['所有兵攻击+20%','攻击+35%','攻击+50%且AOE'],
+   effect:(lv,p)=>{p.dmgBonus=(p.dmgBonus||1)+[0.20,0.35,0.50][lv-1];}},
+  {id:'t_empire',  tier:4, req:'t_bond',   icon:'🌟', name:'黄金帝国',  costs:[200,340,520],
+   desc:['游戏开始+200金','开局+400金','每波收入×2'],
+   effect:(lv,p)=>{p.startGoldBonus=[200,400,0][lv-1];if(lv===3)p.incomeBonus=(p.incomeBonus||1)*2;}},
+  {id:'t_legion',  tier:4, req:'t_thunder',icon:'🔱', name:'神速军团',  costs:[210,350,540],
+   desc:['同时出兵上限+2','上限+4','无出兵间隔'],
+   effect:(lv,p)=>{p.spawnCapBonus=[2,4,99][lv-1];}},
+  {id:'t_eternal', tier:4, req:'t_undying',icon:'💎', name:'永恒传承',  costs:[230,380,580],
+   desc:['上波阵亡兵下波以50%HP复活','复活HP 75%','复活HP 100%'],
+   effect:(lv,p)=>{p.reviveRate=[0.5,0.75,1.0][lv-1];}},
+];
+
+// tech state: {nodeId: currentLevel (0=locked,1-3)}
+let techLevels={};
+// persistent perms built from tech levels
+let techPerms={};
+
+function rebuildTechPerms(){
+  techPerms={};
+  for(const def of TECH_DEFS){
+    const lv=techLevels[def.id]||0;
+    if(lv>0) def.effect(lv,techPerms);
+  }
+}
+
+function canUnlockTech(def){
+  if(!def.req) return true;
+  return (techLevels[def.req]||0)>=1;
+}
+
+function upgradeTech(id){
+  if(state!=='playing'&&state!=='wavePause') return;
+  const def=TECH_DEFS.find(d=>d.id===id);
+  if(!def) return;
+  const curLv=techLevels[id]||0;
+  if(curLv>=3) return;
+  if(!canUnlockTech(def)) return;
+  const cost=def.costs[curLv];
+  if(gold<cost) return;
+  gold-=cost;
+  techLevels[id]=curLv+1;
+  rebuildTechPerms();
+  log(`🔬 ${def.icon}${def.name} 升至 Lv${techLevels[id]}`);
+  updateHUD();buildTechTree();buildUnitCards();
+}
+
+function buildTechTree(){
+  ['tech-tree','tech-tree-pt'].forEach(containerId=>{
+    const wrap=document.getElementById(containerId);if(!wrap)return;
+    wrap.innerHTML='';
+    // group by tier
+    for(let tier=1;tier<=4;tier++){
+      const nodes=TECH_DEFS.filter(d=>d.tier===tier);
+      // connector row (skip tier 1)
+      if(tier>1){
+        const connRow=document.createElement('div');connRow.className='tech-connectors';
+        nodes.forEach(()=>{
+          const col=document.createElement('div');col.className='tech-connector-col';
+          col.innerHTML=`<svg width="2" height="18"><line x1="1" y1="0" x2="1" y2="18" stroke="#0f3460" stroke-width="2"/></svg>`;
+          connRow.appendChild(col);
+        });
+        wrap.appendChild(connRow);
+      }
+      // node row
+      const row=document.createElement('div');row.className='tech-tier';
+      nodes.forEach(def=>{
+        const lv=techLevels[def.id]||0;
+        const unlocked=canUnlockTech(def);
+        const cost=lv<3?def.costs[lv]:0;
+        const affordable=unlocked&&lv<3&&cost<=gold;
+        const maxed=lv>=3;
+        const node=document.createElement('div');
+        node.className='tech-node'+(maxed?' maxed':!unlocked?' locked':affordable?' affordable':'');
+        const stars='⭐'.repeat(lv)+'○'.repeat(3-lv);
+        node.innerHTML=`
+          <div class="tn-icon">${def.icon}</div>
+          <div class="tn-name">${def.name}</div>
+          <div class="tn-lvl">${stars}</div>
+          ${lv<3?`<div class="tn-cost">💰${cost}</div>`:'<div class="tn-cost" style="color:#fdcb6e">满级</div>'}
+          <div class="tn-desc">${lv>0?def.desc[lv-1]:def.desc[0]}</div>`;
+        if(unlocked&&!maxed) node.addEventListener('click',()=>upgradeTech(def.id));
+        row.appendChild(node);
+      });
+      wrap.appendChild(row);
+    }
+  });
+}
 
 const MILESTONES=[
   {at:1,  label:'首次突破', gold:50,  unlock:null,      desc:'首次突破！'},
@@ -645,7 +812,13 @@ let defenderTimer=0;
 const DEFENDER_INCOME_RATE=8;   // gold per second (real time, not game time)
 const TURRET_BUILD_COST=80;     // cost to build one turret
 
-function waveGold(n){return 100+(n-1)*30;}
+function waveGold(n){
+  const base=100+(n-1)*30;
+  const mult=techPerms.incomeBonus||1;
+  const bonus=techPerms.waveBonus||0;
+  const interest=Math.floor((gold||0)*(techPerms.interestRate||0));
+  return Math.round(base*mult)+bonus+interest;
+}
 
 function isPortrait(){return window.innerHeight>window.innerWidth;}
 
@@ -720,12 +893,15 @@ function onBreach(enemy){
 //  TAB SWITCH
 // ═══════════════════════════════════════════════
 function switchTab(tab){
-  ['unit-list','skill-list','tab-units','tab-skills'].forEach(id=>{
+  ['unit-list','skill-list','tech-tree','tab-units','tab-skills','tab-tech'].forEach(id=>{
     both(id,el=>{
-      if(id==='unit-list'||id==='skill-list'){
-        el.classList.toggle('hidden', id==='unit-list'?tab!=='units':tab!=='skills');
+      if(id.endsWith('-list')||id.startsWith('tech-tree')){
+        const show=(id.startsWith('unit')?tab==='units':id.startsWith('skill')?tab==='skills':tab==='tech');
+        el.classList.toggle('hidden',!show);
       } else {
-        el.classList.toggle('active', id==='tab-units'?tab==='units':tab==='skills');
+        el.classList.toggle('active',
+          id.startsWith('tab-units')?tab==='units':
+          id.startsWith('tab-skills')?tab==='skills':tab==='tech');
       }
     });
   });
@@ -800,8 +976,8 @@ function deployUnit(key){
     log(`🌊 第${waveNum}波！`);
     ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
   }
-  // collect current active mods to apply to this unit
-  const mods={...activeSkills};
+  // merge tech perms + active skill effects into mods
+  const mods={...techPerms,...activeSkills};
   spawnQueue.push({type:key,delay:spawnQueue.length>0?0.5:0,mods});
   log(`⚔️ 派遣 ${def.icon}${def.name}`);
   updateHUD();buildUnitCards();buildSkillCards();
@@ -984,7 +1160,10 @@ function startGame(){
   updateCanvasResolution();
   if(!PATH_WP.length) rebuildWP();
 
-  gold=waveGold(1);waveNum=0;breachCount=0;
+  // keep techLevels across runs (persistent progression); just rebuild perms
+  rebuildTechPerms();
+  const startBonus=techPerms.startGoldBonus||0;
+  gold=waveGold(1)+startBonus;waveNum=0;breachCount=0;
   enemies=[];spawnQueue=[];waveActive=false;
   activeSkills={};nextSkills={};activeSkillTimers={};
   defenderGold=0;defenderTimer=0;
@@ -996,8 +1175,8 @@ function startGame(){
   ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=true;b.textContent='⏸ 暂停';}});
   ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
   updateSpeedDisplay();updateHUD();
-  buildUnitCards();buildSkillCards();renderActiveSkills();
-  log(`⚔️ 开始！首波资金💰${gold}，共15波，突破防线！`);
+  buildUnitCards();buildSkillCards();renderActiveSkills();buildTechTree();
+  log(`⚔️ 开始！首波资金💰${gold}${startBonus>0?'（含科技奖励+'+startBonus+'）':''}，共15波，突破防线！`);
   if(animId) cancelAnimationFrame(animId);
   lastTime=performance.now();
   requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});
