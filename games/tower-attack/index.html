@@ -1120,7 +1120,7 @@ function applyInstantSkill(key){
         speedMult: e.speed/e.def.speed,
         shield: e.hasShield,
       }});
-      delay+=0.5;
+      delay+=0.2;
     });
     log(`⚡ 增兵令！${alive.length} 只援兵依次从起点出发`);
     showToast('⚡ 增兵令！援兵出发！','skill');
@@ -1219,12 +1219,12 @@ function flushQueue(){
           renderActiveSkills();
         }
       });
-      delay+=0.5;
+      delay+=0.2;
     } else {
       quotaUsed++;
       const skillDelay=delay*1000;
       const skillKey=item.key;
-      delay+=0.5;
+      delay+=0.2;
       setTimeout(()=>{
         const def=SKILL_DEFS[skillKey];
         if(def.type==='instant'){
