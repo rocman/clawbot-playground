@@ -1103,7 +1103,9 @@ function applyInstantSkill(key){
       ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
     }
     const mods={...techPerms,...activeSkills};
-    let delay=0;
+    // 以当前 spawnTimer 为基准（或队列末尾 delay）依次排队，避免一口气全部出场
+    const lastQueueDelay=spawnQueue.length?Math.max(...spawnQueue.map(i=>i.delay)):spawnTimer;
+    let delay=Math.max(lastQueueDelay,spawnTimer)+0.5;
     alive.forEach(e=>{
       spawnQueue.push({type:e.type, delay, mods:{...mods,
         hpMult: e.hp/e.def.hp,
