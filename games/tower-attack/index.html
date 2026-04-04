@@ -1167,7 +1167,7 @@ function onBreach(enemy){
     const targets=FAKE_TURRETS.filter(t=>t.active);
     if(targets.length){
       const t=targets[Math.floor(Math.random()*targets.length)];
-      const destroyed=damageTurret(t, t.maxHp??999);
+      const destroyed=damageTurret(t, (t.maxHp??200)*0.5); // 造成 50% 最大HP伤害
       const tx=t.c*TILE+TILE/2, ty=t.r*TILE+TILE/2;
       if(destroyed) addBlast(tx,ty);
       showToast(`🧨 工兵炸毁一座炮塔！`,'breach');
