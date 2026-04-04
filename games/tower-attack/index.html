@@ -1259,7 +1259,7 @@ function flushQueue(){
         onSpawn:()=>{
           const pi=pendingQueue.findIndex(p=>p.kind==='unit'&&p.key===item.key);
           if(pi>=0) pendingQueue.splice(pi,1);
-          if(pendingQueue.length===0) setQueueMode(false);
+          if(pendingQueue.length===0) setQueueMode(true);
           renderActiveSkills();
         }
       });
@@ -1287,7 +1287,7 @@ function flushQueue(){
         }
         const pi=pendingQueue.findIndex(p=>p.kind==='skill'&&p.key===skillKey);
         if(pi>=0) pendingQueue.splice(pi,1);
-        if(pendingQueue.length===0) setQueueMode(false);
+        if(pendingQueue.length===0) setQueueMode(true);
         updateHUD();buildSkillCards();renderActiveSkills();
       }, skillDelay);
     }
@@ -1421,7 +1421,7 @@ function updateWave(dt){
     scaleTurrets(waveNum+1);
     if(waveNum>=15){endGame();return;}
     pendingQueue=[];
-    setQueueMode(false); // 波结束后重置为列队模式
+    setQueueMode(true); // 波结束后重置为列队模式
     ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
     ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
     updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
@@ -1538,8 +1538,7 @@ function startGame(){
   for(const t of FAKE_TURRETS){t.cd=0;t.active=false;}
   scaleTurrets(1);
   ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=true;b.textContent='⏸ 暂停';}});
-  setQueueMode(false);
-  ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
+  setQueueMode(true);
   updateSpeedDisplay();updateHUD();
   buildUnitCards();buildSkillCards();renderActiveSkills();buildTechTree();
   log(`⚔️ 开始！首波资金💰${gold}${startBonus>0?'（含科技奖励+'+startBonus+'）':''}，共15波，突破防线！`);
