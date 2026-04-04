@@ -1267,28 +1267,6 @@ function renderActiveSkills(){
     const ql=document.getElementById(id); if(!ql) return;
     ql.innerHTML='';
 
-    // ── 待命区（pendingQueue）──
-    if(pendingQueue.length){
-      const pendingRow=document.createElement('div');
-      pendingRow.className='pending-row';
-      pendingQueue.forEach((item,idx)=>{
-        const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
-        const chip=document.createElement('div');chip.className='queue-item pending-item';
-        chip.innerHTML=`<span class="qi-icon">${def.icon}</span>
-          <span class="qi-label">${def.name}</span>
-          <button class="qi-rm" title="取消">✕</button>`;
-        chip.querySelector('.qi-rm').addEventListener('click',()=>{
-          pendingQueue.splice(idx,1);
-          if(pendingQueue.length===0){
-            ['btn-send','btn-send-pt'].forEach(bid=>{const b=document.getElementById(bid);if(b)b.disabled=true;});
-          }
-          updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
-        });
-        pendingRow.appendChild(chip);
-      });
-      ql.appendChild(pendingRow);
-    }
-
     // ── 场上兵员 ──
     if(onFieldUnits.size){
       const fieldRow=document.createElement('div');
@@ -1319,7 +1297,32 @@ function renderActiveSkills(){
       });
     }
 
-    if(!pendingQueue.length&&!keys.length){
+    // ── 待命区（pendingQueue）── 排在场上内容之后
+    if(pendingQueue.length){
+      const hdr=document.createElement('div');
+      hdr.className='qi-section-hdr';hdr.textContent='📋 待发队列';
+      ql.appendChild(hdr);
+      const pendingRow=document.createElement('div');
+      pendingRow.className='pending-row';
+      pendingQueue.forEach((item,idx)=>{
+        const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
+        const chip=document.createElement('div');chip.className='queue-item pending-item';
+        chip.innerHTML=`<span class="qi-icon">${def.icon}</span>
+          <span class="qi-label">${def.name}</span>
+          <button class="qi-rm" title="取消">✕</button>`;
+        chip.querySelector('.qi-rm').addEventListener('click',()=>{
+          pendingQueue.splice(idx,1);
+          if(pendingQueue.length===0){
+            ['btn-send','btn-send-pt'].forEach(bid=>{const b=document.getElementById(bid);if(b)b.disabled=true;});
+          }
+          updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
+        });
+        pendingRow.appendChild(chip);
+      });
+      ql.appendChild(pendingRow);
+    }
+
+    if(!onFieldUnits.size&&!keys.length&&!pendingQueue.length){
       const e=document.createElement('div');e.className='queue-empty-msg';
       e.textContent='暂无';ql.appendChild(e);
     }
