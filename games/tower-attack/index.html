@@ -1101,18 +1101,19 @@ function buildSkillCards(){
 // ═══════════════════════════════════════════════
 //  QUEUE MODE & PENDING QUEUE
 // ═══════════════════════════════════════════════
-let queueMode=true;          // true=列队模式（默认），false=直接出场
+let queueMode=false;         // false=单发模式，true=队列模式
 let pendingQueue=[];         // [{kind:'unit'|'skill', key, cost}]
 
 function setQueueMode(on){
   queueMode=on;
   ['btn-send','btn-send-pt'].forEach(id=>{
     const b=document.getElementById(id);if(!b)return;
-    b.disabled=on?(pendingQueue.length===0):false;
+    b.disabled=on?(pendingQueue.length===0):true; // 单发模式发兵按钮无意义，禁用
   });
   ['btn-mode','btn-mode-pt'].forEach(id=>{
     const b=document.getElementById(id);if(!b)return;
-    b.title=on?'当前：列队模式（点击切换为直接出场）':'当前：直接出场模式（点击切换为列队）';
+    b.textContent=on?'队列 ⋯':'单发 ⋯';
+    b.title=on?'队列模式：攒好后点发兵（点击切换为单发）':'单发模式：点卡片即上场（点击切换为队列）';
     b.style.background=on?'#b02040':'#5a3e8a';
   });
   buildUnitCards();buildSkillCards();
@@ -1232,7 +1233,7 @@ function flushQueue(){
         onSpawn:()=>{
           const pi=pendingQueue.findIndex(p=>p.kind==='unit'&&p.key===item.key);
           if(pi>=0) pendingQueue.splice(pi,1);
-          if(pendingQueue.length===0) setQueueMode(true);
+          if(pendingQueue.length===0) setQueueMode(false);
           renderActiveSkills();
         }
       });
@@ -1260,7 +1261,7 @@ function flushQueue(){
         }
         const pi=pendingQueue.findIndex(p=>p.kind==='skill'&&p.key===skillKey);
         if(pi>=0) pendingQueue.splice(pi,1);
-        if(pendingQueue.length===0) setQueueMode(true);
+        if(pendingQueue.length===0) setQueueMode(false);
         updateHUD();buildSkillCards();renderActiveSkills();
       }, skillDelay);
     }
@@ -1348,9 +1349,8 @@ function sendWave(){
 }
 
 function toggleDeployMode(){
-  // ⋯ 按钮：切换列队/直接出场模式
   setQueueMode(!queueMode);
-  showToast(queueMode?'📋 列队模式：选好后点发兵':'⚡ 直接出场模式：点卡片即上场','info');
+  showToast(queueMode?'📋 队列模式：选好后点发兵':'⚡ 单发模式：点卡片即上场','info');
 }
 
 function updateWave(dt){
@@ -1395,7 +1395,7 @@ function updateWave(dt){
     scaleTurrets(waveNum+1);
     if(waveNum>=15){endGame();return;}
     pendingQueue=[];
-    setQueueMode(true); // 波结束后重置为列队模式
+    setQueueMode(false); // 波结束后重置为列队模式
     ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
     ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
     updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
@@ -1508,11 +1508,11 @@ function startGame(){
   unlockedSkills=new Set(['rush','income']);
   reachedMilestones.clear();
   gameSpeed=1;speedIdx=1;state='playing';
-  queueMode=true;pendingQueue=[];
+  queueMode=false;pendingQueue=[];
   for(const t of FAKE_TURRETS){t.cd=0;t.active=false;}
   scaleTurrets(1);
   ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=true;b.textContent='⏸ 暂停';}});
-  setQueueMode(true);
+  setQueueMode(false);
   ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
   updateSpeedDisplay();updateHUD();
   buildUnitCards();buildSkillCards();renderActiveSkills();buildTechTree();
