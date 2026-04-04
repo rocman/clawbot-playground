@@ -763,18 +763,18 @@ function drawMap(){
 // ═══════════════════════════════════════════════
 //  FAKE TURRETS
 // ═══════════════════════════════════════════════
-// unlockWave: which wave this turret becomes active
+// buildCost: 守方需花费此金额才能建造该塔（按位置难易/强度分级）
 const FAKE_TURRETS=[
-  {c:1, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, unlockWave:1},
-  {c:9, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, unlockWave:1},
-  {c:4, r:5, baseDmg:20, baseRate:1.0, baseRange:2.3, cd:0, unlockWave:3},
-  {c:9, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0, unlockWave:3},
-  {c:5, r:1, baseDmg:16, baseRate:1.0, baseRange:2.2, cd:0, unlockWave:5},
-  {c:1, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0, unlockWave:6},
-  {c:6, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0, unlockWave:8},
-  {c:1, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0, unlockWave:10},
-  {c:10,r:8, baseDmg:25, baseRate:1.0, baseRange:2.5, cd:0, unlockWave:12},
-  {c:3, r:11,baseDmg:30, baseRate:1.0, baseRange:2.0, cd:0, unlockWave:13},
+  {c:1, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, buildCost:60},
+  {c:9, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, buildCost:60},
+  {c:4, r:5, baseDmg:20, baseRate:1.0, baseRange:2.3, cd:0, buildCost:80},
+  {c:9, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0, buildCost:80},
+  {c:5, r:1, baseDmg:16, baseRate:1.0, baseRange:2.2, cd:0, buildCost:90},
+  {c:1, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0, buildCost:100},
+  {c:6, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0, buildCost:120},
+  {c:1, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0, buildCost:130},
+  {c:10,r:8, baseDmg:25, baseRate:1.0, baseRange:2.5, cd:0, buildCost:150},
+  {c:3, r:11,baseDmg:30, baseRate:1.0, baseRange:2.0, cd:0, buildCost:180},
 ];
 // Computed live stats, rebuilt each wave
 function scaleTurrets(wave){
@@ -783,16 +783,11 @@ function scaleTurrets(wave){
   const rateMult = 1 + (w-1)*0.06;
   const rangeBon = Math.floor((w-1)/4)*0.35;
   for(const t of FAKE_TURRETS){
-    t.active = w >= t.unlockWave;
+    // active 只由 defenderGold 购买决定，scaleTurrets 只更新战斗属性
     t.dmg   = t.baseDmg  * dmgMult;
     t.rate  = t.baseRate * rateMult;
     t.range = t.baseRange + rangeBon;
     t.tier  = w<=4?0:w<=8?1:w<=12?2:3;
-  }
-  // warn about newly activated turrets
-  const newlyActive = FAKE_TURRETS.filter(t=>t.unlockWave===w);
-  if(newlyActive.length>0){
-    log(`⚠️ 守方新增 ${newlyActive.length} 座炮塔！`);
   }
 }
 
@@ -913,8 +908,8 @@ let lastTime=0,animId=null;
 const reachedMilestones=new Set();
 // defender economy
 let defenderGold=0;
-const DEFENDER_INCOME_RATE=8;   // gold per second (real time, not game time)
-const TURRET_BUILD_COST=80;     // cost to build one turret
+const DEFENDER_BASE_INCOME=30;  // 基础收益（金/秒，游戏时间）
+const DEFENDER_WAVE_BONUS=3;    // 每波额外 +3 金/秒
 
 function waveGold(n){
   const base=100+(n-1)*30;
@@ -1398,15 +1393,19 @@ function gameLoop(ts){
     drawMap();drawFakeTurrets();updateFakeTurrets(dt);
     for(const e of enemies) e.update(dt);
     for(const e of enemies) e.draw();
-    // defender earns gold over game time (scaled by speed) + kill bounties (handled in takeDamage)
-    const incomeRate=DEFENDER_INCOME_RATE+(waveNum*0.5);
-    defenderGold+=incomeRate*dt*gameSpeed;
-    if(defenderGold>=TURRET_BUILD_COST){
-      const locked=FAKE_TURRETS.filter(t=>!t.active).sort((a,b)=>a.unlockWave-b.unlockWave);
-      if(locked.length){
-        const t=locked[0];t.active=true;defenderGold-=TURRET_BUILD_COST;
-        scaleTurrets(Math.max(1,waveNum));
-        log(`🏰 守方建造新炮塔！（当前共${FAKE_TURRETS.filter(t=>t.active).length}座）`);
+    // 守方收益：时间自然增长（游戏时间，加速时同步加快）+ 杀敌赏金（在 takeDamage 中结算）
+    const incomeRate = DEFENDER_BASE_INCOME + waveNum * DEFENDER_WAVE_BONUS;
+    defenderGold += incomeRate * dt * gameSpeed;
+    // 有钱就按 buildCost 从最便宜的塔开始建
+    const affordable = FAKE_TURRETS
+      .filter(t => !t.active)
+      .sort((a,b) => a.buildCost - b.buildCost);
+    for(const t of affordable){
+      if(defenderGold >= t.buildCost){
+        defenderGold -= t.buildCost;
+        t.active = true;
+        scaleTurrets(Math.max(1, waveNum));
+        log(`🏰 守方建造新炮塔！花费💰${t.buildCost}（当前共${FAKE_TURRETS.filter(t=>t.active).length}座）`);
       }
     }
     drawMap();drawFakeTurrets();updateFakeTurrets(dt);
