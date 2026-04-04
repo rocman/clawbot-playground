@@ -914,8 +914,6 @@ let lastTime=0,animId=null;
 const reachedMilestones=new Set();
 // defender economy
 let defenderGold=0;
-const DEFENDER_BASE_INCOME=30;  // 基础收益（金/秒，游戏时间）
-const DEFENDER_WAVE_BONUS=3;    // 每波额外 +3 金/秒
 
 function waveGold(n){
   const base=100+(n-1)*30;
@@ -1425,9 +1423,7 @@ function gameLoop(ts){
     drawMap();drawFakeTurrets();updateFakeTurrets(dt);
     for(const e of enemies) e.update(dt);
     for(const e of enemies) e.draw();
-    // 守方收益：时间自然增长（游戏时间，加速时同步加快）+ 杀敌赏金（在 takeDamage 中结算）
-    const incomeRate = DEFENDER_BASE_INCOME + waveNum * DEFENDER_WAVE_BONUS;
-    defenderGold += incomeRate * dt * gameSpeed;
+    // 守方收益：仅靠杀敌赏金（在 takeDamage 中结算），无时间自然收益
     // 有钱就按 buildCost 从最便宜的塔开始建
     const affordable = FAKE_TURRETS
       .filter(t => !t.active)
