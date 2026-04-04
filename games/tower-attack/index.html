@@ -967,7 +967,9 @@ function checkMilestones(){
 // ═══════════════════════════════════════════════
 function updateHUD(){
   const wv=`${waveNum}/15`;
-  const quota=waveActive?`${waveQuota-quotaUsed}/${waveQuota}`:'—';
+  const quota=waveActive
+    ? `${waveQuota-quotaUsed}/${waveQuota}`
+    : `${calcQuota(waveNum+1)}`; // 波间显示下一波配额预告
   [['hud-gold-p',gold],['hud-gold-l',gold],
    ['hud-wave-p',wv],['hud-wave-l',wv],
    ['hud-breach-p',breachCount],['hud-breach-l',breachCount],
