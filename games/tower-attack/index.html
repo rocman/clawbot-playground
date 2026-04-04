@@ -860,7 +860,13 @@ class Enemy{
   }
   takeDamage(d){
     if(this.hasShield){this.hasShield=false;return;}
-    this.hp-=d; if(this.hp<=0){this.dead=true;onFieldUnits.delete(this.id);}
+    this.hp-=d;
+    if(this.hp<=0){
+      this.dead=true;
+      onFieldUnits.delete(this.id);
+      // 守方杀敌奖励：按兵种造价的 40% 结算
+      defenderGold+=Math.round(this.def.cost*0.4);
+    }
   }
   update(dt){
     if(this.dead||this.reached) return;
@@ -907,7 +913,6 @@ let lastTime=0,animId=null;
 const reachedMilestones=new Set();
 // defender economy
 let defenderGold=0;
-let defenderTimer=0;
 const DEFENDER_INCOME_RATE=8;   // gold per second (real time, not game time)
 const TURRET_BUILD_COST=80;     // cost to build one turret
 
@@ -1393,10 +1398,9 @@ function gameLoop(ts){
     drawMap();drawFakeTurrets();updateFakeTurrets(dt);
     for(const e of enemies) e.update(dt);
     for(const e of enemies) e.draw();
-    // defender earns gold over real time and builds turrets
-    defenderTimer+=dt; // use real dt (not scaled), building is time-gated
+    // defender earns gold over game time (scaled by speed) + kill bounties (handled in takeDamage)
     const incomeRate=DEFENDER_INCOME_RATE+(waveNum*0.5);
-    defenderGold+=incomeRate*dt;
+    defenderGold+=incomeRate*dt*gameSpeed;
     if(defenderGold>=TURRET_BUILD_COST){
       const locked=FAKE_TURRETS.filter(t=>!t.active).sort((a,b)=>a.unlockWave-b.unlockWave);
       if(locked.length){
@@ -1445,7 +1449,7 @@ function startGame(){
   gold=waveGold(1)+startBonus;waveNum=0;breachCount=0;
   enemies=[];spawnQueue=[];waveActive=false;onFieldUnits=new Map();
   activeSkills={};nextSkills={};activeSkillTimers={};
-  defenderGold=0;defenderTimer=0;
+  defenderGold=0;
   unlockedSkills=new Set(['rush','income']);
   reachedMilestones.clear();
   gameSpeed=1;speedIdx=1;state='playing';
