@@ -1177,8 +1177,8 @@ function enqueue(kind,key){
   const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
   if(!def||def.cost>gold) return;
   if(kind==='skill'&&(key in activeSkillTimers)) return;
-  // 波进行中时检查配额（增兵令不消耗配额，属于场上翻倍）
-  if(waveActive&&key!=='double'&&quotaUsed>=waveQuota){
+  // 配额检查：单发模式下波进行中才检查（队列模式在 flushQueue 时统一检查）
+  if(!queueMode&&waveActive&&key!=='double'&&quotaUsed>=waveQuota){
     showToast('📦 本波配额已用完！','warn');return;
   }
 
@@ -1240,6 +1240,12 @@ function flushQueue(){
   // 发兵时统一扣钱，先检查总费用
   const totalCost=pendingQueue.reduce((s,i)=>s+i.cost,0);
   if(totalCost>gold){showToast('💸 金币不足，无法发兵！','warn');return;}
+  // 波进行中检查配额是否够用
+  if(waveActive){
+    const needed=pendingQueue.length;
+    const remaining=waveQuota-quotaUsed;
+    if(needed>remaining){showToast(`📦 配额不足！本波剩余 ${remaining} 次，队列共 ${needed} 项`,'warn');return;}
+  }
   gold-=totalCost;
   if(!waveActive){
     waveNum++;waveActive=true;spawnTimer=0;
