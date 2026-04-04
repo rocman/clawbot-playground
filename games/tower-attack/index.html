@@ -1338,7 +1338,20 @@ function updateWave(dt){
     enemies.push(new Enemy(item.type,item.mods??{}));
     if(item.onSpawn) item.onSpawn();
   }
-  if(!spawnQueue.length&&quotaUsed>=waveQuota&&enemies.length>0&&enemies.every(e=>e.dead||e.reached)){
+
+  const fieldClear=!spawnQueue.length&&enemies.every(e=>e.dead||e.reached);
+
+  // ── 破产检测：配额未用完，场上清空，且买不起任何东西 ──
+  if(fieldClear&&quotaUsed<waveQuota&&enemies.length>0){
+    const cheapest=Math.min(...Object.values(UNIT_DEFS).map(d=>d.cost),
+                             ...Object.entries(SKILL_DEFS).filter(([k])=>unlockedSkills.has(k)).map(([,d])=>d.cost));
+    if(gold<cheapest){
+      defeatGame();return;
+    }
+  }
+
+  // ── 正常波结束：配额用完 + 场上清空 ──
+  if(fieldClear&&quotaUsed>=waveQuota&&enemies.length>0){
     const survived=enemies.filter(e=>e.reached).length;
     const died=enemies.filter(e=>e.dead).length;
     waveActive=false;
@@ -1483,6 +1496,20 @@ function startGame(){
   if(animId) cancelAnimationFrame(animId);
   lastTime=performance.now();
   requestAnimationFrame(ts=>{lastTime=ts;requestAnimationFrame(gameLoop);});
+}
+
+function defeatGame(){
+  state='gameOver';
+  log('💀 弹尽粮绝，守方胜利！');
+  const ov=document.getElementById('overlay');
+  ov.classList.remove('hidden');
+  ov.innerHTML=`<h2 style="color:#a29bfe">🏰 守方胜利</h2>
+    <p>第 ${waveNum} 波，弹尽粮绝</p>
+    <p>累计突破 <strong style="color:#fdcb6e;font-size:1.2em">${breachCount}</strong> 次</p>
+    <button class="btn red" id="btn-restart">再来一局</button>`;
+  document.getElementById('btn-restart').addEventListener('click',()=>{
+    ov.classList.add('hidden');startGame();
+  });
 }
 
 function endGame(){
