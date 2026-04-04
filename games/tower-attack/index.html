@@ -41,7 +41,7 @@ body{display:flex;flex-direction:column;}
   /* sidebar: fills ALL remaining space beside map */
   #sidebar{
     display:flex!important;flex-direction:column;
-    flex:1;min-width:200px;height:100%;
+    flex:1;min-width:200px;min-height:0;align-self:stretch;
     background:#16213e;border-left:2px solid #0f3460;overflow:hidden;
   }
   #sidebar-header{
@@ -66,7 +66,7 @@ body{display:flex;flex-direction:column;}
    body → column: header / content(col: map) / panel-scroll / wave-bar
 ══════════════════════════════════ */
 @media (orientation:portrait){
-  #content{flex-direction:column;align-items:center;}
+  #content{flex-direction:column;align-items:center;flex:0 0 auto;}
   #sidebar{display:none;}
   #map-wrap{width:100%;flex:0 0 auto;}
   #map-area{width:100%;max-height:100vw;}
@@ -450,7 +450,7 @@ canvas{display:block;width:100%;height:100%;}
 <style>
 /* Portrait-only panels — now inside #content, so flex:1 works correctly */
 #panel-scroll-pt{
-  display:none;flex:1;min-height:0;overflow:hidden;
+  display:none;flex:1;min-height:0;width:100%;overflow:hidden;
   padding:4px 8px;gap:6px;flex-direction:row;
 }
 /* left col: build panel, takes half */
