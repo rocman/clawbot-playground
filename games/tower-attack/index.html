@@ -240,9 +240,26 @@ canvas{display:block;width:100%;height:100%;}
 .wave-btn:disabled{background:#444;color:#888;cursor:not-allowed;}
 #btn-send{flex:0 0 auto;background:#e94560;color:#fff;border-radius:6px;}
 #btn-send:hover:not(:disabled){background:#c0392b;}
-.wave-btn-mode{flex:0 0 auto;padding:0 10px;background:#5a3e8a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.85em;font-weight:600;white-space:nowrap;}
-.wave-btn-mode:hover{filter:brightness(1.2);}
 #send-group,#send-group-pt{display:contents;}
+/* 悬浮发兵按钮 */
+.btn-send-float{
+  display:none; /* 单发模式隐藏，队列模式由 JS 控制 */
+  position:absolute;
+  bottom:8px;right:8px;
+  z-index:10;
+  padding:6px 16px;
+  background:#e94560;color:#fff;
+  border:none;border-radius:8px;
+  font-size:.9em;font-weight:700;
+  cursor:pointer;
+  box-shadow:0 2px 8px #0008;
+}
+.btn-send-float:hover:not(:disabled){background:#c0392b;}
+.btn-send-float:disabled{background:#555;color:#888;cursor:not-allowed;}
+#queue-panel,#queue-panel-pt{position:relative;}
+/* 队列模式时 queue-list 底部留出按钮空间 */
+.queue-mode #queue-list,
+.queue-mode #queue-list-pt{padding-bottom:44px;}
 #btn-send:hover:not(:disabled){background:#c0392b;}
 #btn-pause-atk{flex:0 0 25%;background:#fdcb6e;color:#2d3436;}
 #btn-pause-atk:hover:not(:disabled){background:#e6b655;}
@@ -324,14 +341,14 @@ canvas{display:block;width:100%;height:100%;}
       <div class="panel" id="queue-panel-pt">
         <div class="panel-title">⚔️ 场上兵员/技能</div>
         <div id="queue-list-pt"><div class="queue-empty-msg">暂无激活技能</div></div>
+        <button class="btn-send-float" id="btn-send-pt" disabled>发兵 ▶</button>
       </div>
     </div>
   </div>
 
   <!-- Portrait: wave bar at bottom, inside #content -->
   <div id="wave-bar-pt">
-    <button class="wave-btn" id="btn-send-pt" disabled>发兵 ▶</button>
-    <button class="wave-btn-mode" id="btn-mode-pt">单发</button>
+    <button class="wave-btn" id="btn-mode-pt">单发 ↓</button>
     <div id="speed-group-atk-pt">
       <button class="speed-adj-atk" id="btn-speed-dn-atk-pt">−</button>
       <div id="speed-display-atk-pt">1×</div>
@@ -373,6 +390,7 @@ canvas{display:block;width:100%;height:100%;}
       <div class="panel" id="queue-panel">
         <div class="panel-title">⚔️ 场上兵员/技能</div>
         <div id="queue-list"><div class="queue-empty-msg">暂无激活技能</div></div>
+        <button class="btn-send-float" id="btn-send" disabled>发兵 ▶</button>
       </div>
 
       <div class="panel" id="log-panel">
@@ -383,8 +401,7 @@ canvas{display:block;width:100%;height:100%;}
 
     <!-- wave bar inside sidebar for landscape -->
     <div id="wave-bar">
-      <button class="wave-btn" id="btn-send" disabled>发兵 ▶</button>
-      <button class="wave-btn-mode" id="btn-mode">单发</button>
+      <button class="wave-btn" id="btn-mode">单发 ↓</button>
       <div id="speed-group-atk">
         <button class="speed-adj-atk" id="btn-speed-dn-atk">−</button>
         <div id="speed-display-atk">1×</div>
@@ -1104,16 +1121,20 @@ let pendingQueue=[];         // [{kind:'unit'|'skill', key, cost}]
 
 function setQueueMode(on){
   queueMode=on;
+  // 发兵按钮：队列模式显示，单发模式隐藏
   ['btn-send','btn-send-pt'].forEach(id=>{
     const b=document.getElementById(id);if(!b)return;
-    b.disabled=on?(pendingQueue.length===0):true; // 单发模式发兵按钮无意义，禁用
+    b.style.display=on?'block':'none';
+    b.disabled=on?(pendingQueue.length===0):true;
   });
+  // 模式切换按钮文案
   ['btn-mode','btn-mode-pt'].forEach(id=>{
     const b=document.getElementById(id);if(!b)return;
-    b.textContent=on?'队列':'单发';
+    b.textContent=on?'队列 ↓':'单发 ↓';
     b.title=on?'当前队列模式，点击切换为单发':'当前单发模式，点击切换为队列';
-    b.style.background=on?'#b02040':'#5a3e8a';
   });
+  // queue-mode class 控制 padding
+  document.body.classList.toggle('queue-mode',on);
   buildUnitCards();buildSkillCards();
 }
 
