@@ -1058,13 +1058,19 @@ function bindCardEvents(card, isDisabled, onClick){
   if(isDisabled) return;
   card.addEventListener('pointerenter', ()=>card.classList.add('hover'));
   card.addEventListener('pointerleave', ()=>card.classList.remove('hover','pressed'));
-  card.addEventListener('pointerdown',  ()=>card.classList.add('pressed'));
-  card.addEventListener('pointerup',    ()=>card.classList.remove('pressed'));
   card.addEventListener('pointercancel',()=>card.classList.remove('hover','pressed'));
-  card.addEventListener('click', ()=>{
-    card.classList.remove('hover','pressed');
-    card.blur();
-    onClick();
+  let pointerDownInside=false;
+  card.addEventListener('pointerdown', e=>{
+    e.preventDefault(); // 阻止 focus/blur 导致的事件吞噬
+    card.classList.add('pressed');
+    pointerDownInside=true;
+  });
+  card.addEventListener('pointerup', e=>{
+    card.classList.remove('pressed');
+    if(pointerDownInside){
+      pointerDownInside=false;
+      onClick();
+    }
   });
 }
 
