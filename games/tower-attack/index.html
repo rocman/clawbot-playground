@@ -463,13 +463,14 @@ canvas{display:block;width:100%;height:100%;}
 }
 #panel-cols-pt{
   flex:1;min-height:0;width:100%;max-width:100%;overflow:hidden;
-  padding:4px 8px;gap:6px;flex-direction:row;display:flex;box-sizing:border-box;
+  padding:4px 8px;gap:6px;flex-direction:row;display:flex;
+  align-items:stretch;box-sizing:border-box;
 }
 /* left col: build panel, takes half */
-#build-panel-pt{ flex:0 0 calc(50% - 3px);min-width:0;min-height:0;overflow:hidden; }
+#build-panel-pt{ flex:0 0 calc(50% - 3px);min-width:0;min-height:0;max-height:100%;overflow:hidden; }
 /* right col: queue + log stacked vertically */
 #panel-right-pt{
-  flex:1;min-width:0;max-width:50%;min-height:0;
+  flex:1;min-width:0;max-width:50%;min-height:0;max-height:100%;
   display:flex;flex-direction:column;gap:6px;overflow:hidden;
 }
 #queue-panel-pt{ flex:0 0 auto;min-width:0;overflow:hidden; }
