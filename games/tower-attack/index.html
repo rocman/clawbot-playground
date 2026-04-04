@@ -903,8 +903,8 @@ const SPEED_STEPS=[0.5,1,2,3,4];
 let enemies=[],spawnQueue=[],spawnTimer=0,waveActive=false;
 let waveQuota=0,quotaUsed=0;  // 本波配额 & 已用次数
 
-// 配额公式：方案C —— 3 + floor(wave/3)*2，每3波跳一档
-function calcQuota(wave){ return 3 + Math.floor(wave/3)*2; }
+// 配额公式：10 + floor(wave/3)*2，第1波10次，每3波+2
+function calcQuota(wave){ return 10 + Math.floor(wave/3)*2; }
 let onFieldUnits=new Map(); // id -> {icon,name} for currently alive enemies
 let activeSkills={},nextSkills={};
 // activeSkillTimers: {skillKey: remainingSeconds}
