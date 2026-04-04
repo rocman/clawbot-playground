@@ -238,7 +238,11 @@ canvas{display:block;width:100%;height:100%;}
   display:flex;align-items:center;justify-content:center;height:44px;
 }
 .wave-btn:disabled{background:#444;color:#888;cursor:not-allowed;}
-#btn-send{flex:0 0 25%;background:#e94560;color:#fff;}
+#btn-send{flex:0 0 auto;background:#e94560;color:#fff;border-radius:6px 0 0 6px;}
+#btn-send:hover:not(:disabled){background:#c0392b;}
+.wave-btn-mode{flex:0 0 auto;padding:0 8px;background:#b02040;color:#fff;border:none;border-left:1px solid #ff6b81;border-radius:0 6px 6px 0;cursor:pointer;font-size:1em;line-height:1;}
+.wave-btn-mode:hover{background:#c0392b;}
+#send-group,#send-group-pt{display:flex;flex-direction:row;align-items:stretch;}
 #btn-send:hover:not(:disabled){background:#c0392b;}
 #btn-pause-atk{flex:0 0 25%;background:#fdcb6e;color:#2d3436;}
 #btn-pause-atk:hover:not(:disabled){background:#e6b655;}
@@ -326,7 +330,9 @@ canvas{display:block;width:100%;height:100%;}
 
   <!-- Portrait: wave bar at bottom, inside #content -->
   <div id="wave-bar-pt">
-    <button class="wave-btn" id="btn-send-pt" disabled>列队</button>
+    <div id="send-group-pt">
+      <button class="wave-btn" id="btn-send-pt" disabled>发兵 ▶</button><button class="wave-btn-mode" id="btn-mode-pt" title="切换出兵模式">⋯</button>
+    </div>
     <div id="speed-group-atk-pt">
       <button class="speed-adj-atk" id="btn-speed-dn-atk-pt">−</button>
       <div id="speed-display-atk-pt">1×</div>
@@ -378,7 +384,9 @@ canvas{display:block;width:100%;height:100%;}
 
     <!-- wave bar inside sidebar for landscape -->
     <div id="wave-bar">
-      <button class="wave-btn" id="btn-send" disabled>列队</button>
+    <div id="send-group">
+      <button class="wave-btn" id="btn-send" disabled>发兵 ▶</button><button class="wave-btn-mode" id="btn-mode" title="切换出兵模式">⋯</button>
+    </div>
       <div id="speed-group-atk">
         <button class="speed-adj-atk" id="btn-speed-dn-atk">−</button>
         <div id="speed-display-atk">1×</div>
@@ -1093,18 +1101,20 @@ function buildSkillCards(){
 // ═══════════════════════════════════════════════
 //  QUEUE MODE & PENDING QUEUE
 // ═══════════════════════════════════════════════
-let queueMode=false;         // false=列队模式待机, true=已进入列队
+let queueMode=true;          // true=列队模式（默认），false=直接出场
 let pendingQueue=[];         // [{kind:'unit'|'skill', key, cost}]
 
 function setQueueMode(on){
   queueMode=on;
   ['btn-send','btn-send-pt'].forEach(id=>{
     const b=document.getElementById(id);if(!b)return;
-    b.textContent=on?'发兵':'列队';
-    b.disabled=on&&pendingQueue.length===0;
-    b.style.background=on?'#e94560':'#6c5ce7';
+    b.disabled=on?(pendingQueue.length===0):false;
   });
-  // rebuild cards so click handlers reflect new queueMode
+  ['btn-mode','btn-mode-pt'].forEach(id=>{
+    const b=document.getElementById(id);if(!b)return;
+    b.title=on?'当前：列队模式（点击切换为直接出场）':'当前：直接出场模式（点击切换为列队）';
+    b.style.background=on?'#b02040':'#5a3e8a';
+  });
   buildUnitCards();buildSkillCards();
 }
 
@@ -1222,7 +1232,7 @@ function flushQueue(){
         onSpawn:()=>{
           const pi=pendingQueue.findIndex(p=>p.kind==='unit'&&p.key===item.key);
           if(pi>=0) pendingQueue.splice(pi,1);
-          if(pendingQueue.length===0) setQueueMode(false);
+          if(pendingQueue.length===0) setQueueMode(true);
           renderActiveSkills();
         }
       });
@@ -1250,7 +1260,7 @@ function flushQueue(){
         }
         const pi=pendingQueue.findIndex(p=>p.kind==='skill'&&p.key===skillKey);
         if(pi>=0) pendingQueue.splice(pi,1);
-        if(pendingQueue.length===0) setQueueMode(false);
+        if(pendingQueue.length===0) setQueueMode(true);
         updateHUD();buildSkillCards();renderActiveSkills();
       }, skillDelay);
     }
@@ -1333,12 +1343,14 @@ function renderActiveSkills(){
 //  WAVE
 // ═══════════════════════════════════════════════
 function sendWave(){
-  // btn-send now toggles queue mode or flushes
-  if(!queueMode){
-    setQueueMode(true);
-  } else {
-    flushQueue();
-  }
+  // 主按钮：列队模式=发兵，直接模式=无意义（卡片直接上场）
+  if(queueMode) flushQueue();
+}
+
+function toggleDeployMode(){
+  // ⋯ 按钮：切换列队/直接出场模式
+  setQueueMode(!queueMode);
+  showToast(queueMode?'📋 列队模式：选好后点发兵':'⚡ 直接出场模式：点卡片即上场','info');
 }
 
 function updateWave(dt){
@@ -1382,8 +1394,8 @@ function updateWave(dt){
     enemies=[];
     scaleTurrets(waveNum+1);
     if(waveNum>=15){endGame();return;}
-    queueMode=false;pendingQueue=[];
-    setQueueMode(false);
+    pendingQueue=[];
+    setQueueMode(true); // 波结束后重置为列队模式
     ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
     ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
     updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
@@ -1424,6 +1436,9 @@ function togglePause(){
 });
 ['btn-send','btn-send-pt'].forEach(id=>{
   const b=document.getElementById(id);if(b) b.addEventListener('click',sendWave);
+});
+['btn-mode','btn-mode-pt'].forEach(id=>{
+  const b=document.getElementById(id);if(b) b.addEventListener('click',toggleDeployMode);
 });
 
 // ═══════════════════════════════════════════════
@@ -1493,11 +1508,11 @@ function startGame(){
   unlockedSkills=new Set(['rush','income']);
   reachedMilestones.clear();
   gameSpeed=1;speedIdx=1;state='playing';
-  queueMode=false;pendingQueue=[];
+  queueMode=true;pendingQueue=[];
   for(const t of FAKE_TURRETS){t.cd=0;t.active=false;}
   scaleTurrets(1);
   ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=true;b.textContent='⏸ 暂停';}});
-  setQueueMode(false);
+  setQueueMode(true);
   ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
   updateSpeedDisplay();updateHUD();
   buildUnitCards();buildSkillCards();renderActiveSkills();buildTechTree();
