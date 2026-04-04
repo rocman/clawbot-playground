@@ -970,10 +970,17 @@ function updateHUD(){
   const quota=waveActive
     ? `${waveQuota-quotaUsed}/${waveQuota}`
     : `${calcQuota(waveNum+1)}`; // 波间显示下一波配额预告
-  [['hud-gold-p',gold],['hud-gold-l',gold],
+
+  // 队列中待发兵的金币消耗和配额占用
+  const qCost=pendingQueue.reduce((s,i)=>s+i.cost,0);
+  const qCount=pendingQueue.length;
+  const goldStr=qCost>0?`${gold} (-${qCost})`:`${gold}`;
+  const quotaStr=qCount>0?`${quota} (-${qCount})`:quota;
+
+  [['hud-gold-p',goldStr],['hud-gold-l',goldStr],
    ['hud-wave-p',wv],['hud-wave-l',wv],
    ['hud-breach-p',breachCount],['hud-breach-l',breachCount],
-   ['hud-quota-p',quota],['hud-quota-l',quota]].forEach(([id,v])=>{
+   ['hud-quota-p',quotaStr],['hud-quota-l',quotaStr]].forEach(([id,v])=>{
     const el=document.getElementById(id); if(el) el.textContent=v;
   });
 }
