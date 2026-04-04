@@ -1174,8 +1174,21 @@ function enqueue(kind,key){
     showToast('📦 本波配额已用完！','warn');return;
   }
 
-  if(!queueMode){
-    // ── 普通模式：直接上场 ──
+  if(queueMode){
+    // ── 队列模式：入待命队列（不扣钱，发兵时统一结算）──
+    if(!waveActive){
+      const nextQuota=calcQuota(waveNum+1);
+      if(pendingQueue.filter(i=>i.kind!=='skill'||SKILL_DEFS[i.key].type!=='instant').length>=nextQuota){
+        showToast('📦 本波配额已满！','warn');return;
+      }
+    }
+    pendingQueue.push({kind,key,cost:def.cost});
+    log(`📋 ${def.icon}${def.name} 列队`);
+    updateHUD();buildUnitCards();buildSkillCards();
+    ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
+    renderActiveSkills();
+  } else {
+    // ── 单发模式：直接上场 ──
     gold-=def.cost;
     if(kind==='unit'){
       if(!waveActive){
@@ -1204,20 +1217,6 @@ function enqueue(kind,key){
       }
     }
     updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
-  } else {
-    // ── 列队模式：入待命队列（不扣钱，发兵时统一结算）──
-    // 配额检查：列队时预占配额
-    if(!waveActive){
-      const nextQuota=calcQuota(waveNum+1);
-      if(pendingQueue.filter(i=>i.kind!=='skill'||SKILL_DEFS[i.key].type!=='instant').length>=nextQuota){
-        showToast('📦 本波配额已满！','warn');return;
-      }
-    }
-    pendingQueue.push({kind,key,cost:def.cost});
-    log(`📋 ${def.icon}${def.name} 列队`);
-    updateHUD();buildUnitCards();buildSkillCards();
-    ['btn-send','btn-send-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
-    renderActiveSkills();
   }
 }
 
