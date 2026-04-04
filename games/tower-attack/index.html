@@ -1056,22 +1056,23 @@ function switchTab(tab){
 //  UNIT CARDS
 function bindCardEvents(card, isDisabled, onClick){
   if(isDisabled) return;
-  card.addEventListener('pointerenter', ()=>card.classList.add('hover'));
-  card.addEventListener('pointerleave', ()=>card.classList.remove('hover','pressed'));
-  card.addEventListener('pointercancel',()=>card.classList.remove('hover','pressed'));
-  let pointerDownInside=false;
-  card.addEventListener('pointerdown', e=>{
-    e.preventDefault(); // 阻止 focus/blur 导致的事件吞噬
-    card.classList.add('pressed');
-    pointerDownInside=true;
-  });
-  card.addEventListener('pointerup', e=>{
+  let touchMoved=false;
+  // 触摸端：touchstart/touchend 直接触发，阻止后续 click 重复执行
+  card.addEventListener('touchstart', ()=>{ touchMoved=false; card.classList.add('pressed'); }, {passive:true});
+  card.addEventListener('touchmove',  ()=>{ touchMoved=true;  card.classList.remove('pressed'); }, {passive:true});
+  card.addEventListener('touchend', e=>{
     card.classList.remove('pressed');
-    if(pointerDownInside){
-      pointerDownInside=false;
+    if(!touchMoved){
+      e.preventDefault(); // 阻止 touchend 后触发的 click
       onClick();
     }
   });
+  // 桌面端 fallback
+  card.addEventListener('mouseenter', ()=>card.classList.add('hover'));
+  card.addEventListener('mouseleave', ()=>card.classList.remove('hover','pressed'));
+  card.addEventListener('mousedown',  ()=>card.classList.add('pressed'));
+  card.addEventListener('mouseup',    ()=>card.classList.remove('pressed'));
+  card.addEventListener('click', ()=>{ onClick(); });
 }
 
 // ═══════════════════════════════════════════════
