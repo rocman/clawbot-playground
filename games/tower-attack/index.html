@@ -282,6 +282,7 @@ canvas{display:block;width:100%;height:100%;}
     <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-p">0</span></div>
     <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-p">0/15</span></div>
     <div class="stat"><span class="label">💥</span><span class="val" id="hud-breach-p">0</span></div>
+    <div class="stat"><span class="label">📦</span><span class="val" id="hud-quota-p">—</span></div>
   </div>
 </header>
 
@@ -342,6 +343,7 @@ canvas{display:block;width:100%;height:100%;}
         <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-l">0</span></div>
         <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-l">0/15</span></div>
         <div class="stat"><span class="label">💥</span><span class="val" id="hud-breach-l">0</span></div>
+        <div class="stat"><span class="label">📦</span><span class="val" id="hud-quota-l">—</span></div>
       </div>
     </div>
 
@@ -899,6 +901,10 @@ let state='idle';
 let gold=0,waveNum=0,breachCount=0,gameSpeed=1,speedIdx=1;
 const SPEED_STEPS=[0.5,1,2,3,4];
 let enemies=[],spawnQueue=[],spawnTimer=0,waveActive=false;
+let waveQuota=0,quotaUsed=0;  // 本波配额 & 已用次数
+
+// 配额公式：方案C —— 3 + floor(wave/3)*2，每3波跳一档
+function calcQuota(wave){ return 3 + Math.floor(wave/3)*2; }
 let onFieldUnits=new Map(); // id -> {icon,name} for currently alive enemies
 let activeSkills={},nextSkills={};
 // activeSkillTimers: {skillKey: remainingSeconds}
@@ -963,9 +969,11 @@ function checkMilestones(){
 // ═══════════════════════════════════════════════
 function updateHUD(){
   const wv=`${waveNum}/15`;
+  const quota=waveActive?`${waveQuota-quotaUsed}/${waveQuota}`:'—';
   [['hud-gold-p',gold],['hud-gold-l',gold],
    ['hud-wave-p',wv],['hud-wave-l',wv],
-   ['hud-breach-p',breachCount],['hud-breach-l',breachCount]].forEach(([id,v])=>{
+   ['hud-breach-p',breachCount],['hud-breach-l',breachCount],
+   ['hud-quota-p',quota],['hud-quota-l',quota]].forEach(([id,v])=>{
     const el=document.getElementById(id); if(el) el.textContent=v;
   });
 }
@@ -1124,6 +1132,10 @@ function enqueue(kind,key){
   const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
   if(!def||def.cost>gold) return;
   if(kind==='skill'&&(key in activeSkillTimers)) return;
+  // 波进行中时检查配额（增兵令不消耗配额，属于场上翻倍）
+  if(waveActive&&key!=='double'&&quotaUsed>=waveQuota){
+    showToast('📦 本波配额已用完！','warn');return;
+  }
 
   if(!queueMode){
     // ── 普通模式：直接上场 ──
@@ -1131,16 +1143,18 @@ function enqueue(kind,key){
     if(kind==='unit'){
       if(!waveActive){
         waveNum++;waveActive=true;spawnTimer=0;
-        log(`🌊 第${waveNum}波！`);
+        waveQuota=calcQuota(waveNum);quotaUsed=0;
+        log(`🌊 第${waveNum}波！配额 ${waveQuota} 次`);
         ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
       }
+      quotaUsed++;
       const mods={...techPerms,...activeSkills};
       spawnQueue.push({type:key,delay:0,mods});
-      log(`⚔️ 派遣 ${def.icon}${def.name}`);
+      log(`⚔️ 派遣 ${def.icon}${def.name}（配额 ${quotaUsed}/${waveQuota}）`);
     } else if(def.type==='instant'){
-      // 消耗性技能：立即执行，不进 activeSkillTimers
       applyInstantSkill(key);
     } else {
+      if(waveActive) quotaUsed++;
       const ef={};def.apply(ef);
       if(def.type==='wave'||def.type==='timed'){
         Object.assign(activeSkills,ef);
@@ -1155,6 +1169,14 @@ function enqueue(kind,key){
     updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
   } else {
     // ── 列队模式：入待命队列 ──
+    // 配额检查：列队时预占配额
+    if(!waveActive){
+      // 波未开始时，按下波配额预估（waveNum+1）
+      const nextQuota=calcQuota(waveNum+1);
+      if(pendingQueue.filter(i=>i.kind!=='skill'||SKILL_DEFS[i.key].type!=='instant').length>=nextQuota){
+        showToast('📦 本波配额已满！','warn');return;
+      }
+    }
     gold-=def.cost;
     pendingQueue.push({kind,key,cost:def.cost});
     log(`📋 ${def.icon}${def.name} 列队`);
@@ -1173,24 +1195,22 @@ function clearCardFocus(){
 
 function flushQueue(){
   if(!pendingQueue.length) return;
-  // start wave if not active
   if(!waveActive){
     waveNum++;waveActive=true;spawnTimer=0;
-    log(`🌊 第${waveNum}波！`);
+    waveQuota=calcQuota(waveNum);quotaUsed=0;
+    log(`🌊 第${waveNum}波！配额 ${waveQuota} 次`);
     ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
   }
   const mods={...techPerms,...activeSkills};
   let delay=0;
-  // copy queue so we can reference by index
   const snapshot=[...pendingQueue];
   for(let i=0;i<snapshot.length;i++){
     const item=snapshot[i];
-    const idx=i; // capture for closure
     if(item.kind==='unit'){
+      quotaUsed++;
       spawnQueue.push({
         type:item.key, delay, mods:{...mods},
         onSpawn:()=>{
-          // remove first matching pending item
           const pi=pendingQueue.findIndex(p=>p.kind==='unit'&&p.key===item.key);
           if(pi>=0) pendingQueue.splice(pi,1);
           if(pendingQueue.length===0) setQueueMode(false);
@@ -1199,7 +1219,7 @@ function flushQueue(){
       });
       delay+=0.5;
     } else {
-      // schedule skill activation with same delay cadence
+      quotaUsed++;
       const skillDelay=delay*1000;
       const skillKey=item.key;
       delay+=0.5;
@@ -1226,8 +1246,7 @@ function flushQueue(){
       }, skillDelay);
     }
   }
-  log(`⚔️ 发兵！共${snapshot.filter(i=>i.kind==='unit').length}只`);
-  // do NOT clear pendingQueue here — items removed one by one as they spawn
+  log(`⚔️ 发兵！共${snapshot.filter(i=>i.kind==='unit').length}只（配额 ${quotaUsed}/${waveQuota}）`);
   updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
 }
 
@@ -1319,7 +1338,7 @@ function updateWave(dt){
     enemies.push(new Enemy(item.type,item.mods??{}));
     if(item.onSpawn) item.onSpawn();
   }
-  if(!spawnQueue.length&&enemies.length>0&&enemies.every(e=>e.dead||e.reached)){
+  if(!spawnQueue.length&&quotaUsed>=waveQuota&&enemies.length>0&&enemies.every(e=>e.dead||e.reached)){
     const survived=enemies.filter(e=>e.reached).length;
     const died=enemies.filter(e=>e.dead).length;
     waveActive=false;
@@ -1446,7 +1465,7 @@ function startGame(){
   rebuildTechPerms();
   const startBonus=techPerms.startGoldBonus||0;
   gold=waveGold(1)+startBonus;waveNum=0;breachCount=0;
-  enemies=[];spawnQueue=[];waveActive=false;onFieldUnits=new Map();
+  enemies=[];spawnQueue=[];waveActive=false;waveQuota=0;quotaUsed=0;onFieldUnits=new Map();
   activeSkills={};nextSkills={};activeSkillTimers={};
   defenderGold=0;
   unlockedSkills=new Set(['rush','income']);
