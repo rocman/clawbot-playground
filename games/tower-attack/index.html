@@ -102,7 +102,35 @@ canvas{display:block;width:100%;height:100%;}
 @keyframes toastIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
 @keyframes toastOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.8)}}
 
-/* ── Milestone strip ── */
+/* ── 选塔浮层 ── */
+#target-overlay{
+  display:none;position:absolute;inset:0;
+  background:rgba(0,0,0,.6);z-index:80;
+  align-items:center;justify-content:center;
+}
+#target-overlay.show{display:flex;}
+#target-panel{
+  background:#16213e;border:2px solid #e94560;border-radius:12px;
+  padding:14px 16px;min-width:200px;max-width:90vw;
+}
+#target-panel h3{color:#e94560;font-size:.9rem;margin-bottom:10px;text-align:center;}
+#target-list{display:flex;flex-direction:column;gap:6px;}
+.target-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px;border-radius:8px;
+  background:#0f3460;border:1px solid #0984e3;cursor:pointer;
+  font-size:.82rem;
+}
+.target-item:hover{background:#1a4a8a;}
+.target-item .t-hp{margin-left:auto;color:#aaa;font-size:.75rem;}
+#target-cancel{
+  margin-top:10px;width:100%;padding:7px;
+  background:#444;color:#eee;border:none;border-radius:8px;
+  cursor:pointer;font-size:.82rem;
+}
+#target-cancel:hover{background:#555;}
+/* ── 选塔模式地图高亮 ── */
+.targeting #map-area{cursor:crosshair;}
 
 /* ── Panel scroll ── */
 #panel-scroll{
@@ -340,6 +368,13 @@ canvas{display:block;width:100%;height:100%;}
     <div id="map-area">
       <canvas id="canvas"></canvas>
       <div id="toast-container"></div>
+      <div id="target-overlay">
+        <div id="target-panel">
+          <h3>🎯 选择打击目标</h3>
+          <div id="target-list"></div>
+          <button id="target-cancel">取消</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -544,7 +579,8 @@ const SKILL_DEFS={
   boost:   {name:'强化血脉',icon:'🧬',cost:90, desc:'本波所有兵HP+30%',    unlockAt:10, type:'wave',  duration:0, apply:s=>{s.hpMult=1.3;}},
   interest:{name:'利滚利', icon:'📈',cost:150,desc:'未用资金下波额外+20%',  unlockAt:20, type:'next',  duration:0, apply:s=>{s.interest=0.2;}},
   double:  {name:'增兵令', icon:'⚡',cost:180,desc:'场上所有兵员立即翻倍',   unlockAt:3,  type:'instant',duration:0,apply:s=>{}},
-  rocket:  {name:'火箭弹', icon:'🚀',cost:120,desc:'立即打击一座炮塔，造成重伤', unlockAt:null,type:'instant',duration:0,apply:s=>{}},
+  rocket:  {name:'火箭弹', icon:'🚀',cost:120,desc:'立即打击HP最低炮塔，造成重伤', unlockAt:null,type:'instant', duration:0,apply:s=>{}},
+  missile: {name:'导弹',   icon:'🎯',cost:200,desc:'定点打击，一击摧毁指定炮塔',   unlockAt:null,type:'targeted',duration:0,apply:s=>{}},
 };
 
 // ═══════════════════════════════════════════════
@@ -858,6 +894,32 @@ function scaleTurrets(wave){
 
 const TURRET_COLORS=['#2d3436','#5a3e1b','#5c1a1a','#2a0a4a'];
 const TURRET_RINGS =['#636e72','#e17055','#e94560','#a29bfe'];
+
+// ─── 选塔浮层 ───
+function openTargetOverlay(skillKey){
+  const targets=FAKE_TURRETS.map((t,i)=>({t,i})).filter(({t})=>t.active);
+  if(!targets.length){showToast('🎯 无可打击炮塔','info');return;}
+  const overlay=document.getElementById('target-overlay');
+  const list=document.getElementById('target-list');
+  list.innerHTML='';
+  targets.forEach(({t,i})=>{
+    const hpPct=t.hp!=null&&t.maxHp?Math.ceil(t.hp/t.maxHp*100):100;
+    const item=document.createElement('div');
+    item.className='target-item';
+    item.innerHTML=`<span>🏰 炮台 #${i+1}</span>
+      <span style="color:${hpPct>60?'#00b894':hpPct>30?'#fdcb6e':'#e17055'}">HP ${hpPct}%</span>
+      <span class="t-hp">📍(${t.c},${t.r})</span>`;
+    const confirm=()=>{closeTargetOverlay();enqueue('skill',skillKey,i);};
+    item.addEventListener('click',confirm);
+    item.addEventListener('touchend',e=>{e.preventDefault();confirm();});
+    list.appendChild(item);
+  });
+  overlay.classList.add('show');
+  document.getElementById('target-cancel').onclick=closeTargetOverlay;
+}
+function closeTargetOverlay(){
+  document.getElementById('target-overlay').classList.remove('show');
+}
 
 // ─── 爆炸粒子 ───
 const blasts=[];
@@ -1214,7 +1276,10 @@ function buildSkillCards(){
           <div class="skill-desc">${def.desc}</div>${lockTag}${activeTag}
         </div>
         <div class="skill-cost">${unlocked?'💰'+def.cost:'🔒'}</div>`;
-      bindCardEvents(card, !(unlocked&&canAfford&&active&&!alreadyOn), ()=>enqueue('skill',key));
+      bindCardEvents(card, !(unlocked&&canAfford&&active&&!alreadyOn), ()=>{
+        if(def.type==='targeted') openTargetOverlay(key);
+        else enqueue('skill',key);
+      });
       sl.appendChild(card);
     });
   });
@@ -1240,7 +1305,17 @@ function setQueueMode(on){
   buildUnitCards();buildSkillCards();
 }
 
-function applyInstantSkill(key){
+function applyInstantSkill(key,targetIdx){
+  if(key==='missile'){
+    const t=targetIdx!=null?FAKE_TURRETS[targetIdx]:null;
+    if(!t||!t.active){showToast('🎯 目标已摧毁或无效','info');return;}
+    damageTurret(t,t.maxHp??9999); // 一击必杀
+    const tx=t.c*TILE+TILE/2, ty=t.r*TILE+TILE/2;
+    addBlast(tx,ty);addBlast(tx,ty); // 双爆
+    showToast('🎯 导弹命中，炮塔摧毁！','skill');
+    log(`🎯 导弹精准打击炮台 #${targetIdx+1}，摧毁！（剩余 ${FAKE_TURRETS.filter(x=>x.active).length} 座）`);
+    return;
+  }
   if(key==='rocket'){
     const targets=FAKE_TURRETS.filter(t=>t.active);
     if(!targets.length){log('🚀 无可打击炮塔');showToast('🚀 无炮塔目标','info');return;}
@@ -1285,7 +1360,7 @@ function applyInstantSkill(key){
   }
 }
 
-function enqueue(kind,key){
+function enqueue(kind,key,targetIdx){
   if(state!=='playing'&&state!=='paused') return;
   const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
   if(!def||def.cost>gold) return;
@@ -1303,8 +1378,8 @@ function enqueue(kind,key){
         showToast('📦 本波配额已满！','warn');return;
       }
     }
-    pendingQueue.push({kind,key,cost:def.cost});
-    log(`📋 ${def.icon}${def.name} 列队`);
+    pendingQueue.push({kind,key,cost:def.cost,targetIdx});
+    log(`📋 ${def.icon}${def.name} 列队${targetIdx!=null?' → 炮台#'+(targetIdx+1):''}`);
     updateHUD();buildUnitCards();buildSkillCards();
     renderActiveSkills();
   } else {
@@ -1321,8 +1396,8 @@ function enqueue(kind,key){
       const mods={...techPerms,...activeSkills};
       spawnQueue.push({type:key,delay:0,mods});
       log(`⚔️ 派遣 ${def.icon}${def.name}（配额 ${quotaUsed}/${waveQuota}）`);
-    } else if(def.type==='instant'){
-      applyInstantSkill(key);
+    } else if(def.type==='instant'||def.type==='targeted'){
+      applyInstantSkill(key,targetIdx);
     } else {
       if(waveActive) quotaUsed++;
       const ef={};def.apply(ef);
@@ -1389,8 +1464,8 @@ function flushQueue(){
       delay+=0.2;
       setTimeout(()=>{
         const def=SKILL_DEFS[skillKey];
-        if(def.type==='instant'){
-          applyInstantSkill(skillKey);
+        if(def.type==='instant'||def.type==='targeted'){
+          applyInstantSkill(skillKey,item.targetIdx);
         } else {
           const ef={};def.apply(ef);
           if(def.type==='wave'||def.type==='timed'){
