@@ -66,10 +66,10 @@ body{display:flex;flex-direction:column;}
    body → column: header / content(col: map) / panel-scroll / wave-bar
 ══════════════════════════════════ */
 @media (orientation:portrait){
-  #content{flex-direction:column;align-items:center;flex:0 0 auto;}
+  #content{flex-direction:column;align-items:center;flex:0 0 auto;max-height:50vh;}
   #sidebar{display:none;}
-  #map-wrap{width:100%;flex:0 0 auto;}
-  #map-area{width:100%;max-height:100vw;}
+  #map-wrap{width:100%;flex:0 0 auto;max-height:50vh;}
+  #map-area{width:100%;max-height:50vh;}
   #panel-scroll{flex-direction:row;width:100%;}
 }
 
