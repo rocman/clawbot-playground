@@ -1025,15 +1025,19 @@ function checkMilestones(){
 // ═══════════════════════════════════════════════
 function updateHUD(){
   const wv=`${waveNum}/15`;
-  const quota=waveActive
-    ? `${waveQuota-quotaUsed}/${waveQuota}`
-    : `${calcQuota(waveNum+1)}`; // 波间显示下一波配额预告
 
-  // 队列中待发兵的金币消耗和配额占用
+  // 队列待发占用
   const qCost=pendingQueue.reduce((s,i)=>s+i.cost,0);
-  const qCount=pendingQueue.length;
-  const goldStr=qCost>0?`${gold} (-${qCost})`:`${gold}`;
-  const quotaStr=qCount>0?`${quota} (-${qCount})`:quota;
+  const qCount=pendingQueue.filter(i=>i.kind!=='skill'||SKILL_DEFS[i.key].type!=='instant').length;
+
+  // HUD 显示值 = 实际值 - 队列占用（仅用于 UI 可购检验，不改变实际变量）
+  const dispGold=gold-qCost;
+  const baseQuota=waveActive
+    ? `${waveQuota-quotaUsed-qCount}/${waveQuota}`
+    : `${calcQuota(waveNum+1)-qCount}`;
+
+  const goldStr=`${dispGold}`;
+  const quotaStr=baseQuota;
 
   [['hud-gold-p',goldStr],['hud-gold-l',goldStr],
    ['hud-wave-p',wv],['hud-wave-l',wv],
@@ -1107,8 +1111,9 @@ function buildUnitCards(){
   ['unit-list','unit-list-pt'].forEach(id=>{
     const ul=document.getElementById(id); if(!ul) return;
     ul.innerHTML='';
+    const dispGold=gold-pendingQueue.reduce((s,i)=>s+i.cost,0);
     Object.entries(UNIT_DEFS).forEach(([key,def])=>{
-      const canAfford=queueMode||def.cost<=gold; // 列队模式发兵时才扣钱，不提前禁用
+      const canAfford=def.cost<=dispGold;
       const active=state==='playing'||state==='paused';
       const card=document.createElement('div');
       card.className='unit-card'+((canAfford&&active)?'':' disabled');
@@ -1129,9 +1134,10 @@ function buildSkillCards(){
   ['skill-list','skill-list-pt'].forEach(id=>{
     const sl=document.getElementById(id); if(!sl) return;
     sl.innerHTML='';
+    const dispGold=gold-pendingQueue.reduce((s,i)=>s+i.cost,0);
     Object.entries(SKILL_DEFS).forEach(([key,def])=>{
       const unlocked=unlockedSkills.has(key);
-      const canAfford=queueMode||def.cost<=gold; // 列队模式不提前禁用
+      const canAfford=def.cost<=dispGold;
       const active=state==='playing'||state==='paused';
       const alreadyOn=key in activeSkillTimers;
       const card=document.createElement('div');
