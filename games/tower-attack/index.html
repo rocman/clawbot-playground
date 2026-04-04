@@ -209,18 +209,30 @@ canvas{display:block;width:100%;height:100%;}
 /* ── Queue ── */
 #queue-list{flex:1;min-height:0;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:4px;}
 #queue-list-pt{flex:1;min-height:0;overflow-y:auto;padding:4px 6px;display:flex;flex-direction:column;gap:4px;}
-.queue-item{
-  display:flex;align-items:center;gap:6px;
-  background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
-  padding:5px 8px;flex-shrink:0;
+.qi-row{display:flex;flex-wrap:wrap;gap:6px;padding:4px 6px;}
+.qi-row-label{font-size:0.6rem;color:#888;padding:4px 6px 0;letter-spacing:0.5px;}
+.qi-chip{
+  width:40px;height:40px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-radius:8px;border:1.5px solid;
+  font-size:1.3rem;line-height:1;
+  flex-shrink:0;position:relative;
+  user-select:none;
 }
-.pending-item{border-color:#00b894;background:#0a2a1a;padding:3px 6px;}
-.field-item{border-color:#0984e3;background:#0a1a2e;padding:3px 6px;}
-.pending-row{display:flex;flex-wrap:wrap;gap:4px;padding:2px 6px 4px;}
-.qi-section-hdr{font-size:0.62rem;color:#888;padding:4px 6px 2px;letter-spacing:0.5px;}
-.queue-item .qi-icon{font-size:1rem;flex-shrink:0;}
-.queue-item .qi-label{flex:1;font-size:0.72rem;color:#eee;}
-.queue-item .qi-timer{font-size:0.68rem;font-weight:bold;color:#fdcb6e;white-space:nowrap;flex-shrink:0;}
+.qi-chip.field{background:#0a1a2e;border-color:#0984e3;}
+.qi-chip.pending{background:#0a2a1a;border-color:#00b894;cursor:pointer;}
+.qi-chip.pending:active{filter:brightness(1.4);}
+.qi-chip .qi-badge{
+  position:absolute;bottom:2px;right:3px;
+  font-size:0.5rem;color:#aaa;line-height:1;
+}
+.qi-chip.pending .qi-rm-hint{
+  position:absolute;top:1px;right:2px;
+  font-size:0.55rem;color:#ff7675;opacity:0;
+  transition:opacity .15s;
+}
+.qi-chip.pending:hover .qi-rm-hint,
+.qi-chip.pending:active .qi-rm-hint{opacity:1;}
 .queue-empty-msg{color:#555;font-size:0.72rem;padding:8px;text-align:center;}
 
 /* ── Log ── */
@@ -1317,62 +1329,59 @@ function renderActiveSkills(){
     const ql=document.getElementById(id); if(!ql) return;
     ql.innerHTML='';
 
-    // ── 场上兵员 ──
-    if(onFieldUnits.size){
-      const fieldRow=document.createElement('div');
-      fieldRow.className='pending-row';
-      onFieldUnits.forEach(({icon,name})=>{
-        const chip=document.createElement('div');chip.className='queue-item field-item';
-        chip.innerHTML=`<span class="qi-icon">${icon}</span><span class="qi-label">${name}</span>`;
-        fieldRow.appendChild(chip);
+    // ── 场上兵员 & 已激活技能（蓝色）──
+    const fieldChips=[];
+    onFieldUnits.forEach(({icon,name})=>{
+      fieldChips.push({icon,badge:name});
+    });
+    Object.keys(activeSkillTimers).forEach(key=>{
+      const def=SKILL_DEFS[key];
+      const t=activeSkillTimers[key];
+      const badge=t>=9999?(def.type==='next'?'次波':'中'):Math.ceil(t)+'s';
+      fieldChips.push({icon:def.icon,badge});
+    });
+
+    if(fieldChips.length){
+      const lbl=document.createElement('div');lbl.className='qi-row-label';lbl.textContent='场上';
+      ql.appendChild(lbl);
+      const row=document.createElement('div');row.className='qi-row';
+      fieldChips.forEach(({icon,badge})=>{
+        const chip=document.createElement('div');chip.className='qi-chip field';
+        chip.innerHTML=`${icon}<span class="qi-badge">${badge}</span>`;
+        row.appendChild(chip);
       });
-      ql.appendChild(fieldRow);
+      ql.appendChild(row);
     }
 
-    // ── 已激活技能 ──
-    const keys=Object.keys(activeSkillTimers);
-    if(keys.length){
-      const hdr=document.createElement('div');
-      hdr.className='qi-section-hdr';hdr.textContent='⚔️ 场上兵员/技能';
-      ql.appendChild(hdr);
-      keys.forEach(key=>{
-        const def=SKILL_DEFS[key];
-        const t=activeSkillTimers[key];
-        const timeStr=t>=9999?(def.type==='next'?'下波':'波次中'):Math.ceil(t)+'s';
-        const row=document.createElement('div');row.className='queue-item';
-        row.innerHTML=`<span class="qi-icon">${def.icon}</span>
-          <span class="qi-label">${def.name}</span>
-          <span class="qi-timer">${timeStr}</span>`;
-        ql.appendChild(row);
-      });
-    }
-
-    // ── 待命区（pendingQueue）── 排在场上内容之后
+    // ── 待发队列（绿色，点击移除）──
     if(pendingQueue.length){
-      const hdr=document.createElement('div');
-      hdr.className='qi-section-hdr';hdr.textContent='📋 待发队列';
-      ql.appendChild(hdr);
-      const pendingRow=document.createElement('div');
-      pendingRow.className='pending-row';
+      const lbl=document.createElement('div');lbl.className='qi-row-label';lbl.textContent='队列';
+      ql.appendChild(lbl);
+      const row=document.createElement('div');row.className='qi-row';
       pendingQueue.forEach((item,idx)=>{
         const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
-        const chip=document.createElement('div');chip.className='queue-item pending-item';
-        chip.innerHTML=`<span class="qi-icon">${def.icon}</span>
-          <span class="qi-label">${def.name}</span>
-          <button class="qi-rm" title="取消">✕</button>`;
-        chip.querySelector('.qi-rm').addEventListener('click',()=>{
+        const chip=document.createElement('div');chip.className='qi-chip pending';
+        chip.title=`${def.name}（点击移除）`;
+        chip.innerHTML=`${def.icon}<span class="qi-rm-hint">✕</span>`;
+        const doRemove=()=>{
           pendingQueue.splice(idx,1);
           if(pendingQueue.length===0){
             ['btn-send','btn-send-pt'].forEach(bid=>{const b=document.getElementById(bid);if(b)b.disabled=true;});
           }
           updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
-        });
-        pendingRow.appendChild(chip);
+        };
+        // 移动端 touch，桌面 click
+        let touchMoved=false;
+        chip.addEventListener('touchstart',()=>{touchMoved=false;},{passive:true});
+        chip.addEventListener('touchmove', ()=>{touchMoved=true; },{passive:true});
+        chip.addEventListener('touchend',  e=>{if(!touchMoved){e.preventDefault();doRemove();}});
+        chip.addEventListener('click', doRemove);
+        row.appendChild(chip);
       });
-      ql.appendChild(pendingRow);
+      ql.appendChild(row);
     }
 
-    if(!onFieldUnits.size&&!keys.length&&!pendingQueue.length){
+    if(!fieldChips.length&&!pendingQueue.length){
       const e=document.createElement('div');e.className='queue-empty-msg';
       e.textContent='暂无';ql.appendChild(e);
     }
