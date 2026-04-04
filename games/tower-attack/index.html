@@ -1034,10 +1034,9 @@ function buildUnitCards(){
     const ul=document.getElementById(id); if(!ul) return;
     ul.innerHTML='';
     Object.entries(UNIT_DEFS).forEach(([key,def])=>{
-      const canAfford=def.cost<=gold;
-      const active=state==='playing'||state==='wavePause';
-      const card=document.createElement('div');
-      card.className='unit-card'+(canAfford&&active?'':' disabled');
+      const canAfford=queueMode||def.cost<=gold; // 列队模式发兵时才扣钱，不提前禁用
+      const active=state==='playing'||state==='paused';
+      card.className='unit-card'+((canAfford&&active)?'':' disabled');
       card.setAttribute('tabindex','-1');
       card.innerHTML=`<div class="unit-icon">${def.icon}</div>
         <div class="unit-info"><div class="unit-name">${def.name}</div><div class="unit-desc">${def.desc}</div></div>
@@ -1057,8 +1056,8 @@ function buildSkillCards(){
     sl.innerHTML='';
     Object.entries(SKILL_DEFS).forEach(([key,def])=>{
       const unlocked=unlockedSkills.has(key);
-      const canAfford=def.cost<=gold;
-      const active=state==='playing'||state==='wavePause';
+      const canAfford=queueMode||def.cost<=gold; // 列队模式不提前禁用
+      const active=state==='playing'||state==='paused';
       const alreadyOn=key in activeSkillTimers;
       const card=document.createElement('div');
       let cls='skill-card';
@@ -1166,16 +1165,14 @@ function enqueue(kind,key){
     }
     updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
   } else {
-    // ── 列队模式：入待命队列 ──
+    // ── 列队模式：入待命队列（不扣钱，发兵时统一结算）──
     // 配额检查：列队时预占配额
     if(!waveActive){
-      // 波未开始时，按下波配额预估（waveNum+1）
       const nextQuota=calcQuota(waveNum+1);
       if(pendingQueue.filter(i=>i.kind!=='skill'||SKILL_DEFS[i.key].type!=='instant').length>=nextQuota){
         showToast('📦 本波配额已满！','warn');return;
       }
     }
-    gold-=def.cost;
     pendingQueue.push({kind,key,cost:def.cost});
     log(`📋 ${def.icon}${def.name} 列队`);
     updateHUD();buildUnitCards();buildSkillCards();
@@ -1193,6 +1190,10 @@ function clearCardFocus(){
 
 function flushQueue(){
   if(!pendingQueue.length) return;
+  // 发兵时统一扣钱，先检查总费用
+  const totalCost=pendingQueue.reduce((s,i)=>s+i.cost,0);
+  if(totalCost>gold){showToast('💸 金币不足，无法发兵！','warn');return;}
+  gold-=totalCost;
   if(!waveActive){
     waveNum++;waveActive=true;spawnTimer=0;
     waveQuota=calcQuota(waveNum);quotaUsed=0;
@@ -1267,7 +1268,6 @@ function renderActiveSkills(){
           <span class="qi-label">${def.name}</span>
           <button class="qi-rm" title="取消">✕</button>`;
         chip.querySelector('.qi-rm').addEventListener('click',()=>{
-          gold+=item.cost;
           pendingQueue.splice(idx,1);
           if(pendingQueue.length===0){
             ['btn-send','btn-send-pt'].forEach(bid=>{const b=document.getElementById(bid);if(b)b.disabled=true;});
