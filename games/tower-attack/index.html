@@ -1036,6 +1036,7 @@ function buildUnitCards(){
     Object.entries(UNIT_DEFS).forEach(([key,def])=>{
       const canAfford=queueMode||def.cost<=gold; // 列队模式发兵时才扣钱，不提前禁用
       const active=state==='playing'||state==='paused';
+      const card=document.createElement('div');
       card.className='unit-card'+((canAfford&&active)?'':' disabled');
       card.setAttribute('tabindex','-1');
       card.innerHTML=`<div class="unit-icon">${def.icon}</div>
