@@ -137,7 +137,7 @@ canvas{display:block;width:100%;height:100%;}
 .tab-body.hidden{display:none!important;}
 /* tech panel wrapper: tree scrolls, confirm bar fixed at bottom */
 .tech-panel-wrap{padding:0;gap:0;display:flex;flex-direction:column;}
-.tech-tree-wrap{flex:1;min-height:0;min-width:0;width:100%;overflow-y:auto;overflow-x:hidden;padding:8px 6px 4px;}
+.tech-tree-wrap{flex:1;min-height:0;min-width:0;overflow-y:auto;overflow-x:auto;padding:8px 6px 4px;}
 .tech-confirm-bar{flex-shrink:0;padding:6px 8px;border-top:1px solid #0f3460;background:#16213e;}
 .tech-confirm-btn{
   width:100%;padding:8px;border:none;border-radius:6px;cursor:pointer;
@@ -148,8 +148,8 @@ canvas{display:block;width:100%;height:100%;}
 .tech-confirm-btn:not(:disabled):hover{background:#5541d1;}
 /* selected node style */
 /* selected node style handled in .tech-node block below */
-.tech-tier{display:flex;flex-direction:row;gap:6px;justify-content:center;margin-bottom:4px;width:100%;box-sizing:border-box;}
-.tech-connectors{display:flex;flex-direction:row;gap:6px;justify-content:center;height:18px;margin-bottom:0;width:100%;}
+.tech-tier{display:flex;flex-direction:row;gap:6px;justify-content:center;margin-bottom:4px;}
+.tech-connectors{display:flex;flex-direction:row;gap:6px;justify-content:center;height:18px;margin-bottom:0;}
 .tech-connector-col{flex:0 0 calc(25% - 5px);display:flex;justify-content:center;align-items:center;}
 .tech-connector-col svg{display:block;}
 .tech-node{
