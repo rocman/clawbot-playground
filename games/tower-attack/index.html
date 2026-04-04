@@ -1347,18 +1347,13 @@ function renderActiveSkills(){
     const ql=document.getElementById(id); if(!ql) return;
     ql.innerHTML='';
 
-    // ── 场上兵员 & 已激活技能（蓝色，始终渲染）──
+    // ── 场上行（蓝色，始终渲染）──
     const fieldChips=[];
-    onFieldUnits.forEach(({icon,name})=>{
-      fieldChips.push({icon,badge:name});
-    });
+    onFieldUnits.forEach(({icon,name})=>fieldChips.push({icon,badge:name}));
     Object.keys(activeSkillTimers).forEach(key=>{
-      const def=SKILL_DEFS[key];
-      const t=activeSkillTimers[key];
-      const badge=t>=9999?(def.type==='next'?'次波':'中'):Math.ceil(t)+'s';
-      fieldChips.push({icon:def.icon,badge});
+      const def=SKILL_DEFS[key],t=activeSkillTimers[key];
+      fieldChips.push({icon:def.icon,badge:t>=9999?(def.type==='next'?'次波':'中'):Math.ceil(t)+'s'});
     });
-
     const fieldWrap=document.createElement('div');fieldWrap.className='qi-row-wrap';
     const fieldLbl=document.createElement('div');fieldLbl.className='qi-row-label';fieldLbl.textContent='场上';
     const fieldRow=document.createElement('div');fieldRow.className='qi-row';
@@ -1370,33 +1365,30 @@ function renderActiveSkills(){
     fieldWrap.appendChild(fieldLbl);fieldWrap.appendChild(fieldRow);
     ql.appendChild(fieldWrap);
 
-    // ── 待发队列（绿色，始终渲染，点击移除）──
+    // ── 队列行（绿色，始终渲染，点击移除）──
     const pendingWrap=document.createElement('div');pendingWrap.className='qi-row-wrap';
     const pendingLbl=document.createElement('div');pendingLbl.className='qi-row-label';pendingLbl.textContent='队列';
     const pendingRow=document.createElement('div');pendingRow.className='qi-row';
     pendingQueue.forEach((item,idx)=>{
-      pendingQueue.forEach((item,idx)=>{
-        const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
-        const chip=document.createElement('div');chip.className='qi-chip pending';
-        chip.title=`${def.name}（点击移除）`;
-        chip.innerHTML=`${def.icon}<span class="qi-rm-hint">✕</span>`;
-        const doRemove=()=>{
-          pendingQueue.splice(idx,1);
-          if(pendingQueue.length===0){
-            ['btn-send','btn-send-pt'].forEach(bid=>{const b=document.getElementById(bid);if(b)b.disabled=true;});
-          }
-          updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
-        };
-        // 移动端 touch，桌面 click
-        let touchMoved=false;
-        chip.addEventListener('touchstart',()=>{touchMoved=false;},{passive:true});
-        chip.addEventListener('touchmove', ()=>{touchMoved=true; },{passive:true});
-        chip.addEventListener('touchend',  e=>{if(!touchMoved){e.preventDefault();doRemove();}});
-        chip.addEventListener('click', doRemove);
-        pendingRow.appendChild(chip);
-      });
-      pendingWrap.appendChild(pendingLbl);pendingWrap.appendChild(pendingRow);
-      ql.appendChild(pendingWrap);
+      const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
+      const chip=document.createElement('div');chip.className='qi-chip pending';
+      chip.title=`${def.name}（点击移除）`;
+      chip.innerHTML=`${def.icon}<span class="qi-rm-hint">✕</span>`;
+      const doRemove=()=>{
+        pendingQueue.splice(idx,1);
+        if(pendingQueue.length===0)
+          ['btn-send','btn-send-pt'].forEach(bid=>{const b=document.getElementById(bid);if(b)b.disabled=true;});
+        updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
+      };
+      let touchMoved=false;
+      chip.addEventListener('touchstart',()=>{touchMoved=false;},{passive:true});
+      chip.addEventListener('touchmove', ()=>{touchMoved=true; },{passive:true});
+      chip.addEventListener('touchend',  e=>{if(!touchMoved){e.preventDefault();doRemove();}});
+      chip.addEventListener('click',doRemove);
+      pendingRow.appendChild(chip);
+    });
+    pendingWrap.appendChild(pendingLbl);pendingWrap.appendChild(pendingRow);
+    ql.appendChild(pendingWrap);
   });
 }
 
