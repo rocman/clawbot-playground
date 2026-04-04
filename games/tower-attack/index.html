@@ -861,17 +861,27 @@ function drawMap(){
 //  FAKE TURRETS
 // ═══════════════════════════════════════════════
 // buildCost: 守方需花费此金额才能建造该塔（按位置难易/强度分级）
+// 塔类型定义
+const TURRET_KINDS={
+  basic:   {icon:'🏰', label:'炮台',   color:'#2d3436', ring:'#636e72', desc:'均衡单体伤害'},
+  gatling: {icon:'🔫', label:'机枪塔', color:'#1a3a1a', ring:'#00b894', desc:'高射速，优先弱目标'},
+  sniper:  {icon:'🎯', label:'狙击塔', color:'#1a1a3a', ring:'#74b9ff', desc:'超远程，高单体伤害'},
+  slow:    {icon:'❄️', label:'减速塔', color:'#1a2a3a', ring:'#81ecec', desc:'命中减速50%，持续2s'},
+  splash:  {icon:'💥', label:'榴弹塔', color:'#3a1a1a', ring:'#e17055', desc:'范围伤害，低射速'},
+};
+
 const FAKE_TURRETS=[
-  {c:1, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, buildCost:40},
-  {c:9, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, buildCost:40},
-  {c:4, r:5, baseDmg:20, baseRate:1.0, baseRange:2.3, cd:0, buildCost:55},
-  {c:9, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0, buildCost:55},
-  {c:5, r:1, baseDmg:16, baseRate:1.0, baseRange:2.2, cd:0, buildCost:65},
-  {c:1, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0, buildCost:75},
-  {c:6, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0, buildCost:90},
-  {c:1, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0, buildCost:100},
-  {c:10,r:8, baseDmg:25, baseRate:1.0, baseRange:2.5, cd:0, buildCost:120},
-  {c:3, r:11,baseDmg:30, baseRate:1.0, baseRange:2.0, cd:0, buildCost:150},
+  // kind 决定战斗风格；baseDmg/baseRate/baseRange 作为该类型的基础值
+  {c:1, r:1,  kind:'gatling',baseDmg:8,  baseRate:2.5, baseRange:2.0, cd:0, buildCost:40},
+  {c:9, r:1,  kind:'basic',  baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, buildCost:40},
+  {c:4, r:5,  kind:'slow',   baseDmg:8,  baseRate:0.9, baseRange:2.3, cd:0, buildCost:55},
+  {c:9, r:4,  kind:'sniper', baseDmg:45, baseRate:0.4, baseRange:4.0, cd:0, buildCost:55},
+  {c:5, r:1,  kind:'basic',  baseDmg:16, baseRate:1.0, baseRange:2.2, cd:0, buildCost:65},
+  {c:1, r:4,  kind:'splash', baseDmg:12, baseRate:0.6, baseRange:2.3, cd:0, buildCost:75},
+  {c:6, r:8,  kind:'gatling',baseDmg:10, baseRate:2.8, baseRange:2.0, cd:0, buildCost:90},
+  {c:1, r:8,  kind:'sniper', baseDmg:55, baseRate:0.35,baseRange:4.5, cd:0, buildCost:100},
+  {c:10,r:8,  kind:'slow',   baseDmg:10, baseRate:0.8, baseRange:2.8, cd:0, buildCost:120},
+  {c:3, r:11, kind:'splash', baseDmg:18, baseRate:0.5, baseRange:2.5, cd:0, buildCost:150},
 ];
 // Computed live stats, rebuilt each wave
 function scaleTurrets(wave){
@@ -904,9 +914,10 @@ function openTargetOverlay(skillKey){
   list.innerHTML='';
   targets.forEach(({t,i})=>{
     const hpPct=t.hp!=null&&t.maxHp?Math.ceil(t.hp/t.maxHp*100):100;
+    const kdef=TURRET_KINDS[t.kind??'basic'];
     const item=document.createElement('div');
     item.className='target-item';
-    item.innerHTML=`<span>🏰 炮台 #${i+1}</span>
+    item.innerHTML=`<span>${kdef.icon} ${kdef.label}</span>
       <span style="color:${hpPct>60?'#00b894':hpPct>30?'#fdcb6e':'#e17055'}">HP ${hpPct}%</span>
       <span class="t-hp">📍(${t.c},${t.r})</span>`;
     const confirm=()=>{closeTargetOverlay();enqueue('skill',skillKey,i);};
@@ -951,18 +962,53 @@ function updateFakeTurrets(dt){
     if(t.cd>0){t.cd-=dt*gameSpeed;continue;}
     const range=(t.range??2.2)*TILE;
     const tx=t.c*TILE+TILE/2, ty=t.r*TILE+TILE/2;
-    let best=null,bestD=Infinity;
-    for(const e of enemies){
-      if(e.dead||e.reached) continue;
-      const d=Math.hypot(e.x-tx,e.y-ty);
-      if(d<range&&d<bestD){bestD=d;best=e;}
+    const kind=t.kind??'basic';
+    const kdef=TURRET_KINDS[kind];
+    const ringCol=(kdef?.ring??'#636e72')+'99';
+
+    // 候选目标
+    const inRange=enemies.filter(e=>{
+      if(e.dead||e.reached) return false;
+      return Math.hypot(e.x-tx,e.y-ty)<range;
+    });
+    if(!inRange.length) continue;
+
+    let target=null;
+    if(kind==='gatling'){
+      // 优先 HP 最低目标
+      target=inRange.reduce((a,b)=>a.hp<b.hp?a:b);
+    } else if(kind==='sniper'){
+      // 优先最靠近终点（wp索引最大）的目标
+      target=inRange.reduce((a,b)=>a.wpIdx>b.wpIdx?a:b);
+    } else {
+      // 普通/减速/榴弹：最近目标
+      target=inRange.reduce((a,b)=>
+        Math.hypot(a.x-tx,a.y-ty)<Math.hypot(b.x-tx,b.y-ty)?a:b);
     }
-    if(best){
-      best.takeDamage(t.dmg??18); t.cd=1/(t.rate??1);
-      const tier=t.tier??0;
-      ctx.strokeStyle=TURRET_RINGS[tier]+'99';ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(best.x,best.y);ctx.stroke();
+
+    t.cd=1/(t.rate??1);
+
+    if(kind==='splash'){
+      // AOE：对范围内所有目标造成伤害
+      const splashR=TILE*1.2;
+      inRange.forEach(e=>{
+        if(Math.hypot(e.x-target.x,e.y-target.y)<splashR) e.takeDamage(t.dmg??12);
+      });
+      // 爆炸小特效
+      ctx.strokeStyle=ringCol;ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(target.x,target.y,splashR,0,Math.PI*2);ctx.stroke();
+    } else {
+      target.takeDamage(t.dmg??18);
+      if(kind==='slow'){
+        // 减速：命中后打 slowTimer 标记
+        target.slowTimer=2.0;
+        target.speed=target.def.speed*(target.mods?.speedMult??1)*0.5;
+      }
     }
+
+    // 射线特效
+    ctx.strokeStyle=ringCol;ctx.lineWidth=kind==='sniper'?2.5:1.5;
+    ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(target.x,target.y);ctx.stroke();
   }
 }
 
@@ -971,27 +1017,35 @@ function drawFakeTurrets(){
     if(!t.active) continue;
     const tx=t.c*TILE+TILE/2, ty=t.r*TILE+TILE/2, r=TILE*.35;
     const tier=t.tier??0;
+    const kind=t.kind??'basic';
+    const kdef=TURRET_KINDS[kind];
+    const bodyCol=tier===0?kdef.color:`hsl(${kindHue(kind)},40%,${12+tier*5}%)`;
+    const ringCol=kdef.ring;
+
     ctx.beginPath();ctx.arc(tx,ty,r,0,Math.PI*2);
-    ctx.fillStyle=TURRET_COLORS[tier];ctx.fill();
-    ctx.strokeStyle=TURRET_RINGS[tier];ctx.lineWidth=tier>0?2:1.5;ctx.stroke();
+    ctx.fillStyle=bodyCol;ctx.fill();
+    ctx.strokeStyle=ringCol;ctx.lineWidth=tier>0?2:1.5;ctx.stroke();
     if(tier>=2){
-      ctx.strokeStyle=TURRET_RINGS[tier]+'44';ctx.lineWidth=4;
+      ctx.strokeStyle=ringCol+'44';ctx.lineWidth=4;
       ctx.beginPath();ctx.arc(tx,ty,r+3,0,Math.PI*2);ctx.stroke();
     }
     ctx.font=`${TILE*.34}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText('🏰',tx,ty);
+    ctx.fillText(kdef.icon,tx,ty);
     if(tier>0){
-      ctx.font=`bold ${TILE*.22}px sans-serif`;ctx.fillStyle=TURRET_RINGS[tier];
+      ctx.font=`bold ${TILE*.22}px sans-serif`;ctx.fillStyle=ringCol;
       ctx.fillText(['','★','★★','★★★'][tier],tx,ty+r+TILE*.18);
     }
     // 血条（HP 不满时显示）
-    if(t.hp!==undefined && t.maxHp && t.hp<t.maxHp){
-      const bw=TILE*.7, bh=4, bx=tx-bw/2, by=ty-r-8;
+    if(t.hp!=null&&t.maxHp&&t.hp<t.maxHp){
+      const bw=TILE*.7,bh=4,bx=tx-bw/2,by=ty-r-8;
       ctx.fillStyle='#333';ctx.fillRect(bx,by,bw,bh);
       ctx.fillStyle=t.hp/t.maxHp>0.5?'#00b894':'#e17055';
       ctx.fillRect(bx,by,bw*(t.hp/t.maxHp),bh);
     }
   }
+}
+function kindHue(kind){
+  return {basic:0,gatling:150,sniper:210,slow:185,splash:20}[kind]??0;
 }
 
 // ═══════════════════════════════════════════════
@@ -1023,6 +1077,14 @@ class Enemy{
   }
   update(dt){
     if(this.dead||this.reached) return;
+    // 减速计时器恢复
+    if(this.slowTimer>0){
+      this.slowTimer-=dt*gameSpeed;
+      if(this.slowTimer<=0){
+        this.slowTimer=0;
+        this.speed=this.def.speed*(this.mods?.speedMult??1);
+      }
+    }
     let rem=this.speed*dt*gameSpeed;
     while(rem>0){
       const wp=PATH_WP[Math.floor(this.progress)+1];
@@ -1678,7 +1740,8 @@ function gameLoop(ts){
         defenderGold -= t.buildCost;
         t.active = true;
         scaleTurrets(Math.max(1, waveNum));
-        log(`🏰 守方建造新炮塔！花费💰${t.buildCost}（当前共${FAKE_TURRETS.filter(t=>t.active).length}座）`);
+        const kname=TURRET_KINDS[t.kind??'basic']?.label??'炮台';
+        log(`${TURRET_KINDS[t.kind??'basic']?.icon??'🏰'} 守方建造${kname}！花费💰${t.buildCost}（共${FAKE_TURRETS.filter(t=>t.active).length}座）`);
       }
     }
     drawMap();drawFakeTurrets();updateFakeTurrets(dt);updateBlasts(dt);drawBlasts();
