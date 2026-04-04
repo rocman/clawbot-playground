@@ -213,9 +213,15 @@ canvas{display:block;width:100%;height:100%;}
   padding:4px 6px;
   display:flex;flex-direction:column;gap:2px;
 }
+.qi-row-wrap{display:flex;align-items:center;gap:4px;overflow:hidden;}
+.qi-row-label{
+  writing-mode:vertical-rl;text-orientation:mixed;
+  font-size:0.58rem;color:#666;letter-spacing:1px;
+  flex-shrink:0;white-space:nowrap;
+}
 .qi-row{
   display:flex;flex-wrap:nowrap;
-  gap:6px;
+  gap:6px;flex:1;min-width:0;
   overflow-x:auto;
   padding:2px 0 4px;
   scrollbar-width:thin;
@@ -223,8 +229,6 @@ canvas{display:block;width:100%;height:100%;}
 }
 .qi-row::-webkit-scrollbar{height:3px;}
 .qi-row::-webkit-scrollbar-thumb{background:#444;border-radius:2px;}
-.qi-row{display:flex;flex-wrap:wrap;gap:6px;padding:4px 6px;}
-.qi-row-label{font-size:0.6rem;color:#888;padding:4px 6px 0;letter-spacing:0.5px;}
 .qi-chip{
   width:40px;height:40px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -1356,21 +1360,22 @@ function renderActiveSkills(){
     });
 
     if(fieldChips.length){
+      const wrap=document.createElement('div');wrap.className='qi-row-wrap';
       const lbl=document.createElement('div');lbl.className='qi-row-label';lbl.textContent='场上';
-      ql.appendChild(lbl);
       const row=document.createElement('div');row.className='qi-row';
       fieldChips.forEach(({icon,badge})=>{
         const chip=document.createElement('div');chip.className='qi-chip field';
         chip.innerHTML=`${icon}<span class="qi-badge">${badge}</span>`;
         row.appendChild(chip);
       });
-      ql.appendChild(row);
+      wrap.appendChild(lbl);wrap.appendChild(row);
+      ql.appendChild(wrap);
     }
 
     // ── 待发队列（绿色，点击移除）──
     if(pendingQueue.length){
+      const wrap=document.createElement('div');wrap.className='qi-row-wrap';
       const lbl=document.createElement('div');lbl.className='qi-row-label';lbl.textContent='队列';
-      ql.appendChild(lbl);
       const row=document.createElement('div');row.className='qi-row';
       pendingQueue.forEach((item,idx)=>{
         const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
@@ -1392,7 +1397,8 @@ function renderActiveSkills(){
         chip.addEventListener('click', doRemove);
         row.appendChild(chip);
       });
-      ql.appendChild(row);
+      wrap.appendChild(lbl);wrap.appendChild(row);
+      ql.appendChild(wrap);
     }
 
     if(!fieldChips.length&&!pendingQueue.length){
