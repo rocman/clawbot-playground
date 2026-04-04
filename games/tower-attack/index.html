@@ -238,11 +238,11 @@ canvas{display:block;width:100%;height:100%;}
   display:flex;align-items:center;justify-content:center;height:44px;
 }
 .wave-btn:disabled{background:#444;color:#888;cursor:not-allowed;}
-#btn-send{flex:0 0 auto;background:#e94560;color:#fff;border-radius:6px 0 0 6px;}
+#btn-send{flex:0 0 auto;background:#e94560;color:#fff;border-radius:6px;}
 #btn-send:hover:not(:disabled){background:#c0392b;}
-.wave-btn-mode{flex:0 0 auto;padding:0 8px;background:#b02040;color:#fff;border:none;border-left:1px solid #ff6b81;border-radius:0 6px 6px 0;cursor:pointer;font-size:1em;line-height:1;}
-.wave-btn-mode:hover{background:#c0392b;}
-#send-group,#send-group-pt{display:flex;flex-direction:row;align-items:stretch;}
+.wave-btn-mode{flex:0 0 auto;padding:0 10px;background:#5a3e8a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.85em;font-weight:600;white-space:nowrap;}
+.wave-btn-mode:hover{filter:brightness(1.2);}
+#send-group,#send-group-pt{display:contents;}
 #btn-send:hover:not(:disabled){background:#c0392b;}
 #btn-pause-atk{flex:0 0 25%;background:#fdcb6e;color:#2d3436;}
 #btn-pause-atk:hover:not(:disabled){background:#e6b655;}
@@ -330,9 +330,8 @@ canvas{display:block;width:100%;height:100%;}
 
   <!-- Portrait: wave bar at bottom, inside #content -->
   <div id="wave-bar-pt">
-    <div id="send-group-pt">
-      <button class="wave-btn" id="btn-send-pt" disabled>发兵 ▶</button><button class="wave-btn-mode" id="btn-mode-pt" title="切换出兵模式">⋯</button>
-    </div>
+    <button class="wave-btn" id="btn-send-pt" disabled>发兵 ▶</button>
+    <button class="wave-btn-mode" id="btn-mode-pt">单发</button>
     <div id="speed-group-atk-pt">
       <button class="speed-adj-atk" id="btn-speed-dn-atk-pt">−</button>
       <div id="speed-display-atk-pt">1×</div>
@@ -384,9 +383,8 @@ canvas{display:block;width:100%;height:100%;}
 
     <!-- wave bar inside sidebar for landscape -->
     <div id="wave-bar">
-    <div id="send-group">
-      <button class="wave-btn" id="btn-send" disabled>发兵 ▶</button><button class="wave-btn-mode" id="btn-mode" title="切换出兵模式">⋯</button>
-    </div>
+      <button class="wave-btn" id="btn-send" disabled>发兵 ▶</button>
+      <button class="wave-btn-mode" id="btn-mode">单发</button>
       <div id="speed-group-atk">
         <button class="speed-adj-atk" id="btn-speed-dn-atk">−</button>
         <div id="speed-display-atk">1×</div>
@@ -1112,8 +1110,8 @@ function setQueueMode(on){
   });
   ['btn-mode','btn-mode-pt'].forEach(id=>{
     const b=document.getElementById(id);if(!b)return;
-    b.textContent=on?'队列 ⋯':'单发 ⋯';
-    b.title=on?'队列模式：攒好后点发兵（点击切换为单发）':'单发模式：点卡片即上场（点击切换为队列）';
+    b.textContent=on?'队列':'单发';
+    b.title=on?'当前队列模式，点击切换为单发':'当前单发模式，点击切换为队列';
     b.style.background=on?'#b02040':'#5a3e8a';
   });
   buildUnitCards();buildSkillCards();
