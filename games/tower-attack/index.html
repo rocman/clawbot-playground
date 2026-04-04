@@ -784,12 +784,12 @@ function buildTechTree(){
 }
 
 const MILESTONES=[
-  {at:1,  label:'首次突破', gold:50,  unlock:null,      desc:'首次突破！'},
-  {at:3,  label:'3次突破',  gold:60,  unlock:'double',  desc:'3次突破！解锁增兵令'},
-  {at:5,  label:'5次突破',  gold:80,  unlock:'shield',  desc:'5次突破！解锁魔法护盾'},
-  {at:10, label:'10次突破', gold:120, unlock:'boost',   desc:'10次突破！解锁强化血脉'},
-  {at:20, label:'20次突破', gold:200, unlock:'interest',desc:'20次突破！解锁利滚利'},
-  {at:50, label:'50次突破', gold:500, unlock:null,      desc:'50次突破！传奇攻势！'},
+  {at:1,  label:'首次突破', gold:150, unlock:null,      desc:'首次突破！'},
+  {at:3,  label:'3次突破',  gold:200, unlock:'double',  desc:'3次突破！解锁增兵令'},
+  {at:5,  label:'5次突破',  gold:300, unlock:'shield',  desc:'5次突破！解锁魔法护盾'},
+  {at:10, label:'10次突破', gold:500, unlock:'boost',   desc:'10次突破！解锁强化血脉'},
+  {at:20, label:'20次突破', gold:800, unlock:'interest',desc:'20次突破！解锁利滚利'},
+  {at:50, label:'50次突破', gold:2000,unlock:null,      desc:'50次突破！传奇攻势！'},
 ];
 
 // ═══════════════════════════════════════════════
@@ -1229,22 +1229,24 @@ function onBreach(enemy){
     const targets=FAKE_TURRETS.filter(t=>t.active);
     if(targets.length){
       const t=targets[Math.floor(Math.random()*targets.length)];
-      const destroyed=damageTurret(t, (t.maxHp??200)*0.5); // 造成 50% 最大HP伤害
+      const destroyed=damageTurret(t, (t.maxHp??200)*0.5);
       const tx=t.c*TILE+TILE/2, ty=t.r*TILE+TILE/2;
       if(destroyed) addBlast(tx,ty);
       showToast(`🧨 工兵炸毁一座炮塔！`,'breach');
       log(`🧨 工兵突入防线，炸毁炮台！（剩余 ${targets.filter(x=>x.active).length} 座）`);
     } else {
-      breachCount++;gold+=10;
-      showToast(`🧨 ${enemy.def.name}突破（无塔可炸）\n+💰10`,'breach');
-      log(`🧨 工兵突入但无炮塔可摧毁，+💰10`);
+      const reward=enemy.def.cost*2;
+      breachCount++;gold+=reward;
+      showToast(`🧨 ${enemy.def.name}突破（无塔可炸）\n+💰${reward}`,'breach');
+      log(`🧨 工兵突入但无炮塔可摧毁，+💰${reward}`);
     }
     checkMilestones();updateHUD();
     return;
   }
-  breachCount++;gold+=10;
-  showToast(`💥 ${enemy.def.icon}${enemy.def.name} 突破！\n+💰10`,'breach');
-  log(`💥 ${enemy.def.name}突破！+💰10（累计${breachCount}次）`);
+  const reward=enemy.def.cost*2;
+  breachCount++;gold+=reward;
+  showToast(`💥 ${enemy.def.icon}${enemy.def.name} 突破！\n+💰${reward}`,'breach');
+  log(`💥 ${enemy.def.name}突破！+💰${reward}（累计${breachCount}次）`);
   checkMilestones();updateHUD();
 }
 
