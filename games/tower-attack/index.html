@@ -767,16 +767,16 @@ function drawMap(){
 // ═══════════════════════════════════════════════
 // buildCost: 守方需花费此金额才能建造该塔（按位置难易/强度分级）
 const FAKE_TURRETS=[
-  {c:1, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, buildCost:60},
-  {c:9, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, buildCost:60},
-  {c:4, r:5, baseDmg:20, baseRate:1.0, baseRange:2.3, cd:0, buildCost:80},
-  {c:9, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0, buildCost:80},
-  {c:5, r:1, baseDmg:16, baseRate:1.0, baseRange:2.2, cd:0, buildCost:90},
-  {c:1, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0, buildCost:100},
-  {c:6, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0, buildCost:120},
-  {c:1, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0, buildCost:130},
-  {c:10,r:8, baseDmg:25, baseRate:1.0, baseRange:2.5, cd:0, buildCost:150},
-  {c:3, r:11,baseDmg:30, baseRate:1.0, baseRange:2.0, cd:0, buildCost:180},
+  {c:1, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, buildCost:40},
+  {c:9, r:1, baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, buildCost:40},
+  {c:4, r:5, baseDmg:20, baseRate:1.0, baseRange:2.3, cd:0, buildCost:55},
+  {c:9, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0, buildCost:55},
+  {c:5, r:1, baseDmg:16, baseRate:1.0, baseRange:2.2, cd:0, buildCost:65},
+  {c:1, r:4, baseDmg:18, baseRate:1.0, baseRange:2.3, cd:0, buildCost:75},
+  {c:6, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0, buildCost:90},
+  {c:1, r:8, baseDmg:22, baseRate:1.0, baseRange:2.5, cd:0, buildCost:100},
+  {c:10,r:8, baseDmg:25, baseRate:1.0, baseRange:2.5, cd:0, buildCost:120},
+  {c:3, r:11,baseDmg:30, baseRate:1.0, baseRange:2.0, cd:0, buildCost:150},
 ];
 // Computed live stats, rebuilt each wave
 function scaleTurrets(wave){
@@ -862,7 +862,7 @@ class Enemy{
       this.dead=true;
       onFieldUnits.delete(this.id);
       // 守方杀敌奖励：按兵种造价的 40% 结算
-      defenderGold+=Math.round(this.def.cost*0.4);
+      defenderGold+=Math.round(this.def.cost*0.6);
     }
   }
   update(dt){
@@ -913,7 +913,7 @@ let unlockedSkills=new Set(['rush','income']);
 let lastTime=0,animId=null;
 const reachedMilestones=new Set();
 // defender economy
-let defenderGold=0;
+let defenderGold=120; // 起始资金，够建2座基础塔
 
 function waveGold(n){
   const base=100+(n-1)*30;
@@ -1476,7 +1476,7 @@ function startGame(){
   gold=waveGold(1)+startBonus;waveNum=0;breachCount=0;
   enemies=[];spawnQueue=[];waveActive=false;waveQuota=0;quotaUsed=0;onFieldUnits=new Map();
   activeSkills={};nextSkills={};activeSkillTimers={};
-  defenderGold=0;
+  defenderGold=120;
   unlockedSkills=new Set(['rush','income']);
   reachedMilestones.clear();
   gameSpeed=1;speedIdx=1;state='playing';
