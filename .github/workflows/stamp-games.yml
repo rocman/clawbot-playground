@@ -1,0 +1,100 @@
+name: Stamp Game Versions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'games/**'
+
+jobs:
+  stamp:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Generate build version (human-friendly timestamp)
+        id: ver
+        run: |
+          # 格式：2025-04-05 08:41 CST
+          VERSION=$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M CST')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Build version: $VERSION"
+
+      - name: Stamp __BUILD_VERSION__ in changed game files
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+
+          # 找本次 push 里 games/ 下变动的 HTML 文件
+          CHANGED=$(git diff --name-only HEAD~1 HEAD -- 'games/**/*.html' 2>/dev/null || \
+                    git show --name-only --format='' HEAD -- 'games/**/*.html')
+
+          if [ -z "$CHANGED" ]; then
+            echo "No HTML files changed under games/, skipping stamp."
+            exit 0
+          fi
+
+          echo "Files to stamp:"
+          echo "$CHANGED"
+
+          for FILE in $CHANGED; do
+            if [ -f "$FILE" ]; then
+              # 替换占位符
+              sed -i "s|__BUILD_VERSION__|${VERSION}|g" "$FILE"
+              echo "Stamped: $FILE"
+            fi
+          done
+
+      - name: Commit stamped files back to main
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet; then
+            echo "Nothing to commit (no __BUILD_VERSION__ placeholders found)."
+            exit 0
+          fi
+
+          git add games/
+          git commit -m "chore: stamp build version [${{ steps.ver.outputs.version }}]"
+          git push origin main
+
+      - name: Sync stamped files to pages branch
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+
+          # 找所有在 main 上已 stamp 的 games HTML
+          STAMPED=$(git show --name-only --format='' HEAD -- 'games/**/*.html' 2>/dev/null || true)
+          # 如果上一步没改动（占位符已经不在了），直接取本次推的文件
+          if [ -z "$STAMPED" ]; then
+            STAMPED=$(git diff --name-only HEAD~1 HEAD -- 'games/**/*.html' 2>/dev/null || true)
+          fi
+
+          if [ -z "$STAMPED" ]; then
+            echo "Nothing to sync to pages."
+            exit 0
+          fi
+
+          git fetch origin pages
+          git checkout pages
+
+          for FILE in $STAMPED; do
+            # 从 main 检出已 stamp 的文件覆盖 pages
+            git checkout main -- "$FILE" 2>/dev/null || true
+          done
+
+          if git diff --quiet; then
+            echo "pages branch already up to date."
+            exit 0
+          fi
+
+          git add games/
+          git commit -m "deploy: sync games from main [${{ steps.ver.outputs.version }}]"
+          git push origin pages
