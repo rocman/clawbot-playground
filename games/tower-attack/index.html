@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="__BUILD_VERSION__">
+<meta name="build-version" content="202604050949">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:100%;height:100%;overflow:hidden;background:#0d1b2e;color:#eee;
@@ -380,7 +380,7 @@ canvas{display:block;width:100%;height:100%;}
 <header id="header-portrait">
   <h1 style="display:flex;align-items:baseline;justify-content:space-between;width:100%">
     <span>⚔️ Tower Attack</span>
-    <span style="font-size:0.6rem;color:#fff;font-weight:normal;letter-spacing:0;opacity:.7">__BUILD_VERSION__</span>
+    <span style="font-size:0.6rem;color:#fff;font-weight:normal;letter-spacing:0;opacity:.7">202604050949</span>
   </h1>
 </header>
 
@@ -453,7 +453,7 @@ canvas{display:block;width:100%;height:100%;}
     <div id="sidebar-header">
       <h1 style="display:flex;align-items:baseline;justify-content:space-between;width:100%">
         <span>⚔️ Tower Attack</span>
-        <span style="font-size:0.6rem;color:#fff;font-weight:normal;letter-spacing:0;opacity:.7">__BUILD_VERSION__</span>
+        <span style="font-size:0.6rem;color:#fff;font-weight:normal;letter-spacing:0;opacity:.7">202604050949</span>
       </h1>
     </div>
 
@@ -1933,7 +1933,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '__BUILD_VERSION__') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '202604050949') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
