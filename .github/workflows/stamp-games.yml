@@ -25,23 +25,39 @@ jobs:
       - name: Generate build version (human-friendly timestamp)
         id: ver
         run: |
-          # 格式：2025-04-05 08:41 CST
           VERSION=$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M CST')
+          COMMIT="${{ github.sha }}"
+          SHORT_COMMIT="${COMMIT:0:7}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Build version: $VERSION"
+          echo "short_commit=$SHORT_COMMIT" >> "$GITHUB_OUTPUT"
+          echo "Build version: $VERSION ($SHORT_COMMIT)"
 
-      - name: Stamp __BUILD_VERSION__ in all game HTML files
+      - name: Stamp __BUILD_VERSION__ and write version.json for each game
         run: |
           VERSION="${{ steps.ver.outputs.version }}"
+          SHORT_COMMIT="${{ steps.ver.outputs.short_commit }}"
 
-          # 替换 games/ 下所有 HTML 里的占位符
-          find games/ -name "*.html" | while read FILE; do
-            if grep -q '__BUILD_VERSION__' "$FILE"; then
-              sed -i "s|__BUILD_VERSION__|${VERSION}|g" "$FILE"
-              echo "Stamped: $FILE"
-            else
-              echo "No placeholder in: $FILE (skipped)"
+          for GAME_DIR in games/*/; do
+            GAME=$(basename "$GAME_DIR")
+            HTML="$GAME_DIR/index.html"
+
+            # 1. 替换 HTML 占位符
+            if [ -f "$HTML" ] && grep -q '__BUILD_VERSION__' "$HTML"; then
+              sed -i "s|__BUILD_VERSION__|${VERSION}|g" "$HTML"
+              echo "Stamped HTML: $HTML"
             fi
+
+            # 2. 写 version.json（无论 HTML 有没有占位符，只要目录存在就写）
+            VERSION_FILE="$GAME_DIR/version.json"
+            cat > "$VERSION_FILE" << EOF
+{
+  "game": "$GAME",
+  "version": "$VERSION",
+  "commit": "$SHORT_COMMIT",
+  "updatedAt": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+}
+EOF
+            echo "Written: $VERSION_FILE"
           done
 
       - name: Commit stamped files back to main
@@ -50,7 +66,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           if git diff --quiet; then
-            echo "Nothing to commit — no __BUILD_VERSION__ placeholders found."
+            echo "Nothing to commit."
             exit 0
           fi
 
@@ -63,13 +79,9 @@ jobs:
           VERSION="${{ steps.ver.outputs.version }}"
 
           git fetch origin pages
-
-          # 暂存当前 games/ 内容（已 stamp）
           cp -r games/ /tmp/games-stamped/
 
           git checkout pages
-
-          # 覆盖 pages 上的 games/
           rm -rf games/
           cp -r /tmp/games-stamped/ games/
 
