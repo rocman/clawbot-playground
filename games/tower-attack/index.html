@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="202604050949">
+<meta name="build-version" content="202604050956">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:100%;height:100%;overflow:hidden;background:#0d1b2e;color:#eee;
@@ -13,6 +13,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1b2e;color:#eee;
 /* ══════════════════════════════════
    COMMON
 ══════════════════════════════════ */
+html{font-size:80%;}
 body{display:flex;flex-direction:column;}
 
 /* ── Top bar (portrait only) ── */
@@ -24,13 +25,6 @@ body{display:flex;flex-direction:column;}
 
 /* Stats */
 .stat-row{display:flex;gap:8px;flex-wrap:wrap;}
-.hud-stat-bar{
-  display:flex;gap:10px;flex-wrap:wrap;flex-shrink:0;
-  padding:4px 8px 5px;border-bottom:1px solid #0f3460;
-  background:#16213e;position:sticky;top:0;z-index:1;
-}
-.hud-stat-bar .stat .label{color:#aaa;font-size:0.7rem;}
-.hud-stat-bar .stat .val{font-weight:bold;color:#fdcb6e;font-size:0.78rem;}
 .stat{display:flex;align-items:center;gap:3px;font-size:0.75rem;}
 .stat .label{color:#aaa;}
 .stat .val{font-weight:bold;color:#fdcb6e;}
@@ -160,15 +154,6 @@ canvas{display:block;width:100%;height:100%;}
   background:#16213e;border:1px solid #0f3460;border-radius:8px;
   display:flex;flex-direction:column;overflow:hidden;
 }
-#log-panel, #log-panel-pt {
-  overflow-y:auto;
-}
-#log-panel .panel-title,
-#log-panel-pt .panel-title {
-  position:sticky;top:0;z-index:2;background:#16213e;flex-shrink:0;
-}
-/* log 区域不再自带 overflow，由父 panel 统一滚动 */
-#log, #log-pt { overflow-y:visible; flex:none; }
 /* landscape: queue 固定高度由内容撑开，log 吃剩余空间 */
 #build-panel { flex: 2 1 0; }
 #queue-panel { flex: 0 0 auto; }
@@ -378,10 +363,13 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1 style="display:flex;align-items:baseline;justify-content:space-between;width:100%">
-    <span>⚔️ Tower Attack</span>
-    <span style="font-size:0.6rem;color:#fff;font-weight:normal;letter-spacing:0;opacity:.7">202604050949</span>
-  </h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.55rem;color:#fff;font-weight:normal;letter-spacing:0;opacity:.75">202604050956</span></h1>
+  <div class="stat-row">
+    <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-p">0</span></div>
+    <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-p">0/15</span></div>
+    <div class="stat"><span class="label">💥</span><span class="val" id="hud-breach-p">0</span></div>
+    <div class="stat"><span class="label">📦</span><span class="val" id="hud-quota-p">—</span></div>
+  </div>
 </header>
 
 <div id="content">
@@ -421,12 +409,6 @@ canvas{display:block;width:100%;height:100%;}
     <div id="panel-right-pt">
       <div class="panel" id="log-panel-pt">
         <div class="panel-title">📡 战报</div>
-        <div class="hud-stat-bar" id="hud-stat-bar-pt">
-          <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-p">0</span></div>
-          <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-p">0/15</span></div>
-          <div class="stat"><span class="label">💥</span><span class="val" id="hud-breach-p">0</span></div>
-          <div class="stat"><span class="label">📦</span><span class="val" id="hud-quota-p">—</span></div>
-        </div>
         <div id="log-pt"></div>
       </div>
       <div class="panel" id="queue-panel-pt">
@@ -451,10 +433,13 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1 style="display:flex;align-items:baseline;justify-content:space-between;width:100%">
-        <span>⚔️ Tower Attack</span>
-        <span style="font-size:0.6rem;color:#fff;font-weight:normal;letter-spacing:0;opacity:.7">202604050949</span>
-      </h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.55rem;color:#fff;font-weight:normal;letter-spacing:0;opacity:.75">202604050956</span></h1>
+      <div class="stat-row">
+        <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-l">0</span></div>
+        <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-l">0/15</span></div>
+        <div class="stat"><span class="label">💥</span><span class="val" id="hud-breach-l">0</span></div>
+        <div class="stat"><span class="label">📦</span><span class="val" id="hud-quota-l">—</span></div>
+      </div>
     </div>
 
     <!-- panel scroll -->
@@ -483,12 +468,6 @@ canvas{display:block;width:100%;height:100%;}
 
       <div class="panel" id="log-panel">
         <div class="panel-title">📡 战报</div>
-        <div class="hud-stat-bar" id="hud-stat-bar-l">
-          <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-l">0</span></div>
-          <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-l">0/15</span></div>
-          <div class="stat"><span class="label">💥</span><span class="val" id="hud-breach-l">0</span></div>
-          <div class="stat"><span class="label">📦</span><span class="val" id="hud-quota-l">—</span></div>
-        </div>
         <div id="log"></div>
       </div>
     </div>
@@ -1933,7 +1912,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '202604050949') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '202604050956') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
