@@ -49,14 +49,9 @@ jobs:
 
             # 2. 写 version.json（无论 HTML 有没有占位符，只要目录存在就写）
             VERSION_FILE="$GAME_DIR/version.json"
-            cat > "$VERSION_FILE" << EOF
-{
-  "game": "$GAME",
-  "version": "$VERSION",
-  "commit": "$SHORT_COMMIT",
-  "updatedAt": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-}
-EOF
+            UPDATED_AT=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+            printf '{\n  "game": "%s",\n  "version": "%s",\n  "commit": "%s",\n  "updatedAt": "%s"\n}\n' \
+              "$GAME" "$VERSION" "$SHORT_COMMIT" "$UPDATED_AT" > "$VERSION_FILE"
             echo "Written: $VERSION_FILE"
           done
 
