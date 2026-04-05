@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="2026-04-05 09:04 CST">
+<meta name="build-version" content="__BUILD_VERSION__">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:100%;height:100%;overflow:hidden;background:#0d1b2e;color:#eee;
@@ -354,7 +354,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span style="font-size:0.6rem;color:#555;font-weight:normal;letter-spacing:0">v 2026-04-05 09:04 CST</span></h1>
+  <h1>⚔️ Tower Attack <span style="font-size:0.6rem;color:#555;font-weight:normal;letter-spacing:0">v __BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <div class="stat"><span class="label">💥</span><span class="val" id="hud-breach-p">0</span></div>
     <div class="stat"><span class="label">📦</span><span class="val" id="hud-quota-p">—</span></div>
@@ -422,7 +422,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span style="font-size:0.6rem;color:#555;font-weight:normal;letter-spacing:0">v 2026-04-05 09:04 CST</span></h1>
+      <h1>⚔️ Tower Attack <span style="font-size:0.6rem;color:#555;font-weight:normal;letter-spacing:0">v __BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-l">0</span></div>
         <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-l">0/15</span></div>
@@ -1862,6 +1862,90 @@ buildTechTree();
 
 // fix renderQueues variable leak
 var sl; // suppress lint
+</script>
+
+<!-- ═══════════════════════════════════════════════
+     HOT UPDATE CHECKER
+     轮询 version.json，发现新版本时弹提示
+═══════════════════════════════════════════════ -->
+<style>
+#update-toast{
+  display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  background:#16213e;border:1px solid #e94560;border-radius:10px;
+  padding:12px 16px;z-index:200;max-width:320px;width:calc(100% - 32px);
+  box-shadow:0 4px 24px rgba(0,0,0,.7);
+  animation:toastIn .25s ease;
+}
+#update-toast.show{display:flex;flex-direction:column;gap:8px;}
+#update-toast .ut-title{font-size:.85rem;font-weight:bold;color:#e94560;}
+#update-toast .ut-info{font-size:.72rem;color:#aaa;line-height:1.5;}
+#update-toast .ut-btns{display:flex;gap:8px;}
+#update-toast .ut-btn{
+  flex:1;padding:7px 0;border:none;border-radius:6px;
+  font-size:.78rem;font-weight:bold;cursor:pointer;
+}
+#update-toast .ut-btn.refresh{background:#e94560;color:#fff;}
+#update-toast .ut-btn.refresh:hover{background:#c0392b;}
+#update-toast .ut-btn.dismiss{background:#2d3436;color:#aaa;}
+#update-toast .ut-btn.dismiss:hover{background:#3d4446;}
+</style>
+
+<div id="update-toast">
+  <div class="ut-title">🆕 发现新版本</div>
+  <div class="ut-info" id="update-info"></div>
+  <div class="ut-btns">
+    <button class="ut-btn refresh" onclick="location.reload()">立即刷新</button>
+    <button class="ut-btn dismiss" onclick="dismissUpdate()">忽略</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // 从 meta 标签读取当前页面版本
+  const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
+  if(!currentVersion || currentVersion === '__BUILD_VERSION__') return; // 本地开发不启动
+
+  let dismissed = false;
+  let checkTimer = null;
+
+  function dismissUpdate(){
+    dismissed = true;
+    document.getElementById('update-toast').classList.remove('show');
+  }
+  window.dismissUpdate = dismissUpdate;
+
+  function showUpdateToast(newVersion, commit){
+    if(dismissed) return;
+    const toast = document.getElementById('update-toast');
+    document.getElementById('update-info').innerHTML =
+      `当前：<span style="color:#fdcb6e">${currentVersion}</span><br>` +
+      `最新：<span style="color:#00b894">${newVersion}</span>` +
+      (commit ? ` <span style="color:#555">(${commit})</span>` : '');
+    toast.classList.add('show');
+  }
+
+  async function checkVersion(){
+    if(dismissed) return;
+    try{
+      // 加随机参数避免缓存
+      const res = await fetch(`version.json?_=${Date.now()}`, {cache:'no-store'});
+      if(!res.ok) return;
+      const data = await res.json();
+      if(data.version && data.version !== currentVersion){
+        showUpdateToast(data.version, data.commit);
+        clearInterval(checkTimer); // 已弹提示，停止轮询
+      }
+    } catch(e){
+      // 网络错误静默忽略
+    }
+  }
+
+  // 页面加载 5 秒后开始，每 10 秒检查一次
+  setTimeout(()=>{
+    checkVersion();
+    checkTimer = setInterval(checkVersion, 10000);
+  }, 5000);
+})();
 </script>
 </body>
 </html>
