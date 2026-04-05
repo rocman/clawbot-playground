@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="202604050956">
+<meta name="build-version" content="202604051010">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:100%;height:100%;overflow:hidden;background:#0d1b2e;color:#eee;
@@ -363,7 +363,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.55rem;color:#fff;font-weight:normal;letter-spacing:0;opacity:.75">202604050956</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.55rem;color:#fff;font-weight:normal;letter-spacing:0;opacity:.75">202604051010</span></h1>
   <div class="stat-row">
     <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-p">0</span></div>
     <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-p">0/15</span></div>
@@ -433,7 +433,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.55rem;color:#fff;font-weight:normal;letter-spacing:0;opacity:.75">202604050956</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.55rem;color:#fff;font-weight:normal;letter-spacing:0;opacity:.75">202604051010</span></h1>
       <div class="stat-row">
         <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-l">0</span></div>
         <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-l">0/15</span></div>
@@ -1146,6 +1146,7 @@ let onFieldUnits=new Map(); // id -> {icon,name} for currently alive enemies
 let activeSkills={},nextSkills={};
 // activeSkillTimers: {skillKey: remainingSeconds}
 let activeSkillTimers={};
+let waveSkillsUsed=new Set(); // tracks skills used this wave; reset each wave
 let unlockedSkills=new Set(['rush','income']);
 let lastTime=0,animId=null;
 const reachedMilestones=new Set();
@@ -1347,22 +1348,24 @@ function buildSkillCards(){
       const canAfford=def.cost<=dispGold;
       const active=state==='playing'||state==='paused';
       const alreadyOn=key in activeSkillTimers;
+      const usedThisWave=waveSkillsUsed.has(key);
       const card=document.createElement('div');
       let cls='skill-card';
       if(!unlocked) cls+=' locked';
-      else if(!canAfford||alreadyOn) cls+=' disabled';
+      else if(!canAfford||alreadyOn||usedThisWave) cls+=' disabled';
       card.className=cls;
       card.setAttribute('tabindex','-1');
       const lockTag=unlocked?'':
         `<div class="skill-lock-tag">🔒 需突破${def.unlockAt??0}次解锁</div>`;
-      const activeTag=alreadyOn?`<div class="skill-lock-tag" style="color:#00b894">✅ 已激活</div>`:'';
+      const activeTag=alreadyOn?`<div class="skill-lock-tag" style="color:#00b894">✅ 已激活</div>`
+                     :usedThisWave?`<div class="skill-lock-tag" style="color:#636e72">⏳ 本波已用</div>`:'';
       card.innerHTML=`<div class="skill-icon">${def.icon}</div>
         <div class="skill-info">
           <div class="skill-name">${def.name}</div>
           <div class="skill-desc">${def.desc}</div>${lockTag}${activeTag}
         </div>
         <div class="skill-cost">${unlocked?'💰'+def.cost:'🔒'}</div>`;
-      bindCardEvents(card, !(unlocked&&canAfford&&active&&!alreadyOn), ()=>{
+      bindCardEvents(card, !(unlocked&&canAfford&&active&&!alreadyOn&&!usedThisWave), ()=>{
         if(def.type==='targeted') openTargetOverlay(key);
         else enqueue('skill',key);
       });
@@ -1451,6 +1454,7 @@ function enqueue(kind,key,targetIdx){
   const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
   if(!def||def.cost>gold) return;
   if(kind==='skill'&&(key in activeSkillTimers)) return;
+  if(kind==='skill'&&waveSkillsUsed.has(key)){showToast('⏳ 本波已使用过该技能！','warn');return;}
   // 配额检查（战力点）：单发模式下波进行中才检查
   const unitWeight = kind==='unit' ? (def.weight??1) : 0;
   if(!queueMode&&waveActive&&kind==='unit'&&quotaUsed+unitWeight>waveQuota){
@@ -1486,16 +1490,19 @@ function enqueue(kind,key,targetIdx){
       log(`⚔️ 派遣 ${def.icon}${def.name}（已用 ${quotaUsed.toFixed(1)}/${waveQuota.toFixed(1)}⚡）`);
     } else if(def.type==='instant'||def.type==='targeted'){
       applyInstantSkill(key,targetIdx);
+      waveSkillsUsed.add(key);
     } else {
       if(waveActive) quotaUsed += unitWeight;
       const ef={};def.apply(ef);
       if(def.type==='wave'||def.type==='timed'){
         Object.assign(activeSkills,ef);
         activeSkillTimers[key]=def.duration>0?def.duration:9999;
+        waveSkillsUsed.add(key);
         log(`✨ ${def.icon}${def.name} 已激活！`);
       } else if(def.type==='next'){
         Object.assign(nextSkills,ef);
         activeSkillTimers[key]=9999;
+        waveSkillsUsed.add(key);
         log(`📌 ${def.icon}${def.name} 将在下波生效`);
       }
     }
@@ -1557,15 +1564,18 @@ function flushQueue(){
         const def=SKILL_DEFS[skillKey];
         if(def.type==='instant'||def.type==='targeted'){
           applyInstantSkill(skillKey,item.targetIdx);
+          waveSkillsUsed.add(skillKey);
         } else {
           const ef={};def.apply(ef);
           if(def.type==='wave'||def.type==='timed'){
             Object.assign(activeSkills,ef);
             activeSkillTimers[skillKey]=def.duration>0?def.duration:9999;
+            waveSkillsUsed.add(skillKey);
             log(`✨ ${def.icon}${def.name} 已激活！`);
           } else if(def.type==='next'){
             Object.assign(nextSkills,ef);
             activeSkillTimers[skillKey]=9999;
+            waveSkillsUsed.add(skillKey);
             log(`📌 ${def.icon}${def.name} 将在下波生效`);
           }
         }
@@ -1694,7 +1704,7 @@ function updateWave(dt){
     const survived=enemies.filter(e=>e.reached).length;
     const died=enemies.filter(e=>e.dead).length;
     waveActive=false;
-    activeSkills={};activeSkillTimers={};  // clear all skill effects
+    activeSkills={};activeSkillTimers={};waveSkillsUsed=new Set();  // clear all skill effects
     const incomeBonus=Object.values(nextSkills).reduce((a,e)=>a+(e.incomeBonus??0),0);
     const interest=Object.values(nextSkills).reduce((a,e)=>a+(e.interest??0),0);
     let income=waveGold(waveNum+1);
@@ -1816,7 +1826,7 @@ function startGame(){
   const startBonus=techPerms.startGoldBonus||0;
   gold=waveGold(1)+startBonus;waveNum=0;breachCount=0;
   enemies=[];spawnQueue=[];waveActive=false;waveQuota=0;quotaUsed=0;onFieldUnits=new Map();
-  activeSkills={};nextSkills={};activeSkillTimers={};
+  activeSkills={};nextSkills={};activeSkillTimers={};waveSkillsUsed=new Set();
   defenderGold=50;
   unlockedSkills=new Set(['rush','income']);
   reachedMilestones.clear();
@@ -1912,7 +1922,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '202604050956') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '202604051010') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
