@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="202604050926">
+<meta name="build-version" content="202604050937">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:100%;height:100%;overflow:hidden;background:#0d1b2e;color:#eee;
@@ -37,12 +37,12 @@ body{display:flex;flex-direction:column;}
 ══════════════════════════════════ */
 @media (orientation:landscape){
   #header-portrait{display:none;}
-  #content{flex-direction:row;}
+  #content{flex-direction:row;align-items:stretch;}
 
-  /* sidebar: fills ALL remaining space beside map */
+  /* sidebar: fixed min-width 450px, takes remaining space */
   #sidebar{
     display:flex!important;flex-direction:column;
-    flex:1;min-width:200px;min-height:0;align-self:stretch;
+    flex:1 0 450px;min-width:450px;min-height:0;align-self:stretch;
     background:#16213e;border-left:2px solid #0f3460;overflow:hidden;
   }
   #sidebar-header{
@@ -57,8 +57,16 @@ body{display:flex;flex-direction:column;}
     flex-wrap:nowrap!important;width:100%!important;
   }
 
-  /* map: square, fills content height */
-  #map-wrap{flex:0 0 auto;height:100%;width:auto;aspect-ratio:1/1;max-width:calc(100vh - 0px);}
+  /* map: square, vertically centered, never exceeds available width or full height */
+  #map-wrap{
+    flex:0 0 auto;
+    align-self:center;
+    /* side length = min(content height, remaining width after sidebar) */
+    height:min(100%, calc(100vw - 450px));
+    width:min(100%, calc(100vw - 450px));
+    aspect-ratio:1/1;
+    display:flex;align-items:center;justify-content:center;
+  }
   #map-area{width:100%;height:100%;max-height:none;}
 }
 
@@ -354,7 +362,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span style="font-size:0.6rem;color:#555;font-weight:normal;letter-spacing:0">202604050926</span></h1>
+  <h1>⚔️ Tower Attack <span style="font-size:0.6rem;color:#555;font-weight:normal;letter-spacing:0">202604050937</span></h1>
   <div class="stat-row">
     <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-p">0</span></div>
     <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-p">0/15</span></div>
@@ -424,7 +432,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span style="font-size:0.6rem;color:#555;font-weight:normal;letter-spacing:0">202604050926</span></h1>
+      <h1>⚔️ Tower Attack <span style="font-size:0.6rem;color:#555;font-weight:normal;letter-spacing:0">202604050937</span></h1>
       <div class="stat-row">
         <div class="stat"><span class="label">💰</span><span class="val" id="hud-gold-l">0</span></div>
         <div class="stat"><span class="label">🌊</span><span class="val" id="hud-wave-l">0/15</span></div>
@@ -1903,7 +1911,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '202604050926') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '202604050937') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
