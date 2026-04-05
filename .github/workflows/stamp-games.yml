@@ -25,7 +25,7 @@ jobs:
       - name: Generate build version (human-friendly timestamp)
         id: ver
         run: |
-          VERSION=$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M CST')
+          VERSION=$(TZ='Asia/Shanghai' date '+%Y%m%d %H:%M')
           COMMIT="${{ github.sha }}"
           SHORT_COMMIT="${COMMIT:0:7}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
