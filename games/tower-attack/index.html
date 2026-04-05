@@ -562,13 +562,13 @@ const MAP_LAYOUT=[
 ];
 
 const UNIT_DEFS={
-  swarm:  {name:'虫群',  icon:'🐛',color:'#55efc4',hp:20,  speed:70, cost:5,  size:6, desc:'极低费用，数量压制'},
-  grunt:  {name:'步兵',  icon:'🪖',color:'#ff7675',hp:60,  speed:55, cost:10, size:10,desc:'均衡型，性价比高'},
-  runner: {name:'快跑者',icon:'💨',color:'#fdcb6e',hp:40,  speed:105,cost:15, size:8, desc:'超高速，难以追踪'},
-  sapper: {name:'工兵',  icon:'🧨',color:'#e17055',hp:80,  speed:50, cost:30, size:10,desc:'突破后炸毁一座炮塔',saboteur:true},
-  phantom:{name:'幽灵',  icon:'👻',color:'#a29bfe',hp:150, speed:80, cost:50, size:10,desc:'半透明，难被锁定'},
-  tank:   {name:'重甲',  icon:'🛡️',color:'#636e72',hp:250, speed:38, cost:35, size:14,desc:'血厚，消耗守方弹药'},
-  boss:   {name:'BOSS', icon:'💀',color:'#6c5ce7',hp:800, speed:28, cost:120,size:18,desc:'超强单体，威慑力极高'},
+  swarm:  {name:'虫群',  icon:'🐛',color:'#55efc4',hp:20,  speed:70, cost:5,  size:6, weight:0.5,desc:'极低费用，数量压制'},
+  grunt:  {name:'步兵',  icon:'🪖',color:'#ff7675',hp:60,  speed:55, cost:10, size:10,weight:1,  desc:'均衡型，性价比高'},
+  runner: {name:'快跑者',icon:'💨',color:'#fdcb6e',hp:40,  speed:105,cost:15, size:8, weight:1.5,desc:'超高速，难以追踪'},
+  sapper: {name:'工兵',  icon:'🧨',color:'#e17055',hp:80,  speed:50, cost:30, size:10,weight:2,  desc:'突破后炸毁一座炮塔',saboteur:true},
+  phantom:{name:'幽灵',  icon:'👻',color:'#a29bfe',hp:150, speed:80, cost:50, size:10,weight:3,  desc:'半透明，难被锁定'},
+  tank:   {name:'重甲',  icon:'🛡️',color:'#636e72',hp:250, speed:38, cost:35, size:14,weight:3,  desc:'血厚，消耗守方弹药'},
+  boss:   {name:'BOSS', icon:'💀',color:'#6c5ce7',hp:800, speed:28, cost:120,size:18,weight:8,  desc:'超强单体，威慑力极高'},
 };
 
 const SKILL_DEFS={
@@ -886,9 +886,10 @@ const FAKE_TURRETS=[
 // Computed live stats, rebuilt each wave
 function scaleTurrets(wave){
   const w=Math.max(1,wave);
-  const dmgMult  = 1 + (w-1)*0.10;
-  const rateMult = 1 + (w-1)*0.06;
-  const rangeBon = Math.floor((w-1)/4)*0.35;
+  // 缩放放缓：伤害每波+5%（原10%），射速每波+3%（原6%），射程增幅不变
+  const dmgMult  = 1 + (w-1)*0.05;
+  const rateMult = 1 + (w-1)*0.03;
+  const rangeBon = Math.floor((w-1)/5)*0.30;
   for(const t of FAKE_TURRETS){
     // active 只由 defenderGold 购买决定，scaleTurrets 只更新战斗属性
     t.dmg   = t.baseDmg  * dmgMult;
@@ -1072,7 +1073,7 @@ class Enemy{
       this.dead=true;
       onFieldUnits.delete(this.id);
       // 守方杀敌奖励：按兵种造价的 40% 结算
-      defenderGold+=Math.round(this.def.cost*0.6);
+      defenderGold+=Math.round(this.def.cost*0.35); // 杀敌赏金降低，减缓守方建塔速度
     }
   }
   update(dt){
@@ -1119,10 +1120,18 @@ let state='idle';
 let gold=0,waveNum=0,breachCount=0,gameSpeed=1,speedIdx=1;
 const SPEED_STEPS=[0.5,1,2,3,4];
 let enemies=[],spawnQueue=[],spawnTimer=0,waveActive=false;
-let waveQuota=0,quotaUsed=0;  // 本波配额 & 已用次数
+let waveQuota=0,quotaUsed=0;  // 本波配额(战力点) & 已用战力点
 
-// 配额公式：10 + floor(wave/3)*2，第1波10次，每3波+2
-function calcQuota(wave){ return 10 + Math.floor(wave/3)*2; }
+// 配额公式（战力点）：8 + wave*1.5，第1波9.5点，逐波线性增加
+// 各兵种 weight：swarm=0.5, grunt=1, runner=1.5, sapper=2, phantom=3, tank=3, boss=8
+function calcQuota(wave){ return 8 + wave * 1.5; }
+// 计算队列中已用战力点（仅计兵种，技能不占配额）
+function calcQueueWeight(queue){
+  return queue.reduce((s,i)=>{
+    if(i.kind!=='unit') return s;
+    return s + (UNIT_DEFS[i.key]?.weight ?? 1);
+  }, 0);
+}
 let onFieldUnits=new Map(); // id -> {icon,name} for currently alive enemies
 let activeSkills={},nextSkills={};
 // activeSkillTimers: {skillKey: remainingSeconds}
@@ -1131,7 +1140,7 @@ let unlockedSkills=new Set(['rush','income']);
 let lastTime=0,animId=null;
 const reachedMilestones=new Set();
 // defender economy
-let defenderGold=120; // 起始资金，够建2座基础塔
+let defenderGold=50; // 起始资金，勉强建1座基础塔
 
 function waveGold(n){
   const base=100+(n-1)*30;
@@ -1188,13 +1197,15 @@ function updateHUD(){
 
   // 队列待发占用
   const qCost=pendingQueue.reduce((s,i)=>s+i.cost,0);
-  const qCount=pendingQueue.filter(i=>i.kind!=='skill'||SKILL_DEFS[i.key].type!=='instant').length;
+  const qWeight=calcQueueWeight(pendingQueue);
 
   // HUD 显示值 = 实际值 - 队列占用（仅用于 UI 可购检验，不改变实际变量）
   const dispGold=gold-qCost;
+  // 配额改为战力点显示（保留1位小数）
+  const fmt=v=>Number.isInteger(v)?v:v.toFixed(1);
   const baseQuota=waveActive
-    ? `${waveQuota-quotaUsed-qCount}/${waveQuota}`
-    : `${calcQuota(waveNum+1)-qCount}`;
+    ? `${fmt(Math.max(0,waveQuota-quotaUsed-qWeight))}/${fmt(waveQuota)}⚡`
+    : `${fmt(Math.max(0,calcQuota(waveNum+1)-qWeight))}⚡`;
 
   const goldStr=`${dispGold}`;
   const quotaStr=baseQuota;
@@ -1305,7 +1316,10 @@ function buildUnitCards(){
       card.setAttribute('tabindex','-1');
       card.innerHTML=`<div class="unit-icon">${def.icon}</div>
         <div class="unit-info"><div class="unit-name">${def.name}</div><div class="unit-desc">${def.desc}</div></div>
-        <div class="unit-cost">💰${def.cost}</div>`;
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0">
+          <div class="unit-cost">💰${def.cost}</div>
+          <div style="font-size:0.6rem;color:#74b9ff">⚡${def.weight??1}</div>
+        </div>`;
       bindCardEvents(card, !(canAfford&&active), ()=>enqueue('unit',key));
       ul.appendChild(card);
     });
@@ -1429,21 +1443,23 @@ function enqueue(kind,key,targetIdx){
   const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
   if(!def||def.cost>gold) return;
   if(kind==='skill'&&(key in activeSkillTimers)) return;
-  // 配额检查：单发模式下波进行中才检查（队列模式在 flushQueue 时统一检查）
-  if(!queueMode&&waveActive&&key!=='double'&&quotaUsed>=waveQuota){
-    showToast('📦 本波配额已用完！','warn');return;
+  // 配额检查（战力点）：单发模式下波进行中才检查
+  const unitWeight = kind==='unit' ? (def.weight??1) : 0;
+  if(!queueMode&&waveActive&&kind==='unit'&&quotaUsed+unitWeight>waveQuota){
+    showToast('📦 本波战力配额已满！','warn');return;
   }
 
   if(queueMode){
     // ── 队列模式：入待命队列（不扣钱，发兵时统一结算）──
-    if(!waveActive){
+    if(!waveActive && kind==='unit'){
       const nextQuota=calcQuota(waveNum+1);
-      if(pendingQueue.filter(i=>i.kind!=='skill'||SKILL_DEFS[i.key].type!=='instant').length>=nextQuota){
-        showToast('📦 本波配额已满！','warn');return;
+      const usedWeight=calcQueueWeight(pendingQueue);
+      if(usedWeight + unitWeight > nextQuota){
+        showToast(`📦 本波战力配额已满！(${usedWeight.toFixed(1)}/${nextQuota.toFixed(1)}⚡)`,'warn');return;
       }
     }
     pendingQueue.push({kind,key,cost:def.cost,targetIdx});
-    log(`📋 ${def.icon}${def.name} 列队${targetIdx!=null?' → 炮台#'+(targetIdx+1):''}`);
+    log(`📋 ${def.icon}${def.name} 列队${targetIdx!=null?' → 炮台#'+(targetIdx+1):''}（+${unitWeight>0?unitWeight+'⚡':''}）`);
     updateHUD();buildUnitCards();buildSkillCards();
     renderActiveSkills();
   } else {
@@ -1453,17 +1469,17 @@ function enqueue(kind,key,targetIdx){
       if(!waveActive){
         waveNum++;waveActive=true;spawnTimer=0;
         waveQuota=calcQuota(waveNum);quotaUsed=0;
-        log(`🌊 第${waveNum}波！配额 ${waveQuota} 次`);
+        log(`🌊 第${waveNum}波！战力配额 ${waveQuota.toFixed(1)}⚡`);
         ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
       }
-      quotaUsed++;
+      quotaUsed += unitWeight;
       const mods={...techPerms,...activeSkills};
       spawnQueue.push({type:key,delay:0,mods});
-      log(`⚔️ 派遣 ${def.icon}${def.name}（配额 ${quotaUsed}/${waveQuota}）`);
+      log(`⚔️ 派遣 ${def.icon}${def.name}（已用 ${quotaUsed.toFixed(1)}/${waveQuota.toFixed(1)}⚡）`);
     } else if(def.type==='instant'||def.type==='targeted'){
       applyInstantSkill(key,targetIdx);
     } else {
-      if(waveActive) quotaUsed++;
+      if(waveActive) quotaUsed += unitWeight;
       const ef={};def.apply(ef);
       if(def.type==='wave'||def.type==='timed'){
         Object.assign(activeSkills,ef);
@@ -1491,17 +1507,19 @@ function flushQueue(){
   // 发兵时统一扣钱，先检查总费用
   const totalCost=pendingQueue.reduce((s,i)=>s+i.cost,0);
   if(totalCost>gold){showToast('💸 金币不足，无法发兵！','warn');return;}
-  // 波进行中检查配额是否够用
+  // 波进行中检查战力配额是否够用
   if(waveActive){
-    const needed=pendingQueue.length;
+    const neededWeight=calcQueueWeight(pendingQueue);
     const remaining=waveQuota-quotaUsed;
-    if(needed>remaining){showToast(`📦 配额不足！本波剩余 ${remaining} 次，队列共 ${needed} 项`,'warn');return;}
+    if(neededWeight>remaining){
+      showToast(`📦 战力配额不足！剩余 ${remaining.toFixed(1)}⚡，队列需 ${neededWeight.toFixed(1)}⚡`,'warn');return;
+    }
   }
   gold-=totalCost;
   if(!waveActive){
     waveNum++;waveActive=true;spawnTimer=0;
     waveQuota=calcQuota(waveNum);quotaUsed=0;
-    log(`🌊 第${waveNum}波！配额 ${waveQuota} 次`);
+    log(`🌊 第${waveNum}波！战力配额 ${waveQuota.toFixed(1)}⚡`);
     ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
   }
   const mods={...techPerms,...activeSkills};
@@ -1510,7 +1528,8 @@ function flushQueue(){
   for(let i=0;i<snapshot.length;i++){
     const item=snapshot[i];
     if(item.kind==='unit'){
-      quotaUsed++;
+      const w=UNIT_DEFS[item.key]?.weight??1;
+      quotaUsed+=w;
       spawnQueue.push({
         type:item.key, delay, mods:{...mods},
         onSpawn:()=>{
@@ -1522,7 +1541,7 @@ function flushQueue(){
       });
       delay+=0.2;
     } else {
-      quotaUsed++;
+      // 技能不消耗战力点
       const skillDelay=delay*1000;
       const skillKey=item.key;
       delay+=0.2;
@@ -1549,7 +1568,8 @@ function flushQueue(){
       }, skillDelay);
     }
   }
-  log(`⚔️ 发兵！共${snapshot.filter(i=>i.kind==='unit').length}只（配额 ${quotaUsed}/${waveQuota}）`);
+  const unitCount=snapshot.filter(i=>i.kind==='unit').length;
+  log(`⚔️ 发兵！共${unitCount}只（已用 ${quotaUsed.toFixed(1)}/${waveQuota.toFixed(1)}⚡）`);
   updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
 }
 
@@ -1651,9 +1671,12 @@ function updateWave(dt){
 
   // ── 破产检测：配额未用完，场上清空，且买不起任何东西 ──
   if(fieldClear&&quotaUsed<waveQuota&&enemies.length>0){
+    // 检查剩余战力是否还够派一只最轻的兵
+    const minWeight=Math.min(...Object.values(UNIT_DEFS).map(d=>d.weight??1));
+    const canSendMore = (waveQuota-quotaUsed) >= minWeight;
     const cheapest=Math.min(...Object.values(UNIT_DEFS).map(d=>d.cost),
                              ...Object.entries(SKILL_DEFS).filter(([k])=>unlockedSkills.has(k)).map(([,d])=>d.cost));
-    if(gold<cheapest){
+    if(!canSendMore || gold<cheapest){
       defeatGame();return;
     }
   }
@@ -1786,7 +1809,7 @@ function startGame(){
   gold=waveGold(1)+startBonus;waveNum=0;breachCount=0;
   enemies=[];spawnQueue=[];waveActive=false;waveQuota=0;quotaUsed=0;onFieldUnits=new Map();
   activeSkills={};nextSkills={};activeSkillTimers={};
-  defenderGold=120;
+  defenderGold=50;
   unlockedSkills=new Set(['rush','income']);
   reachedMilestones.clear();
   gameSpeed=1;speedIdx=1;state='playing';
