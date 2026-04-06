@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-38">
+<meta name="build-version" content="0406-39">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -372,7 +372,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-38</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-39</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -442,7 +442,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-38</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-39</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1259,8 +1259,21 @@ function log(msg){
 // ═══════════════════════════════════════════════
 //  BREACH
 // ═══════════════════════════════════════════════
-function damageTurret(t, dmg){
-  t.hp=Math.max(0,(t.hp??t.maxHp??100)-dmg);
+function sapperHitsRequired(t){
+  const cost=t.buildCost??20;
+  if(cost<=45)  return 3;   // 初期塔：3次工兵突防摧毁
+  if(cost<=190) return 5;   // 中期塔：5次
+  return 8;                  // 后期塔：8次
+}
+function damageTurret(t, dmg, isSapper=false){
+  if(isSapper){
+    // 工兵模式：按 hitsRequired 折算每次伤害，不受 dmg 参数影响
+    const req = sapperHitsRequired(t);
+    const dmgPerHit = (t.maxHp??200) / req;
+    t.hp = Math.max(0, (t.hp??t.maxHp??100) - dmgPerHit);
+  } else {
+    t.hp=Math.max(0,(t.hp??t.maxHp??100)-dmg);
+  }
   if(t.hp<=0){ t.active=false; t.hp=0; return true; }
   return false;
 }
@@ -1270,11 +1283,14 @@ function onBreach(enemy){
     const targets=FAKE_TURRETS.filter(t=>t.active);
     if(targets.length){
       const t=targets[Math.floor(Math.random()*targets.length)];
-      const destroyed=damageTurret(t, (t.maxHp??200)*0.5);
+      const req=sapperHitsRequired(t);
+      const destroyed=damageTurret(t, 0, true);
       const tx=t.c*TILE+TILE/2, ty=t.r*TILE+TILE/2;
       if(destroyed) addBlast(tx,ty);
-      showToast(`🧨 工兵炸毁一座炮塔！`,'breach');
-      log(`🧨 工兵突入防线，炸毁炮台！（剩余 ${targets.filter(x=>x.active).length} 座）`);
+      const hpPct=destroyed?0:Math.ceil((t.hp??0)/(t.maxHp??1)*100);
+      const hitsLeft=destroyed?0:Math.ceil((t.hp??0)/((t.maxHp??200)/req));
+      showToast(destroyed?`🧨 工兵摧毁一座炮塔！`:`🧨 工兵重创炮塔！还需 ${hitsLeft} 次突防`,'breach');
+      log(`🧨 工兵突入，炮台HP ${hpPct}%${destroyed?' ✅已摧毁':'（还需'+hitsLeft+'次）'}（剩余 ${targets.filter(x=>x.active).length} 座）`);
     } else {
       const reward=enemy.def.cost*2;
       breachCount++;gold+=reward;
