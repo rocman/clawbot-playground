@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-60">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -288,6 +288,14 @@ canvas{display:block;width:100%;height:100%;}
 .qi-chip.field{background:#0a1a2e;border-color:#0984e3;}
 .qi-chip.pending{background:#0a2a1a;border-color:#00b894;cursor:pointer;}
 .qi-chip.pending:active{filter:brightness(1.4);}
+/* 队列操作菜单 */
+#qi-ctx-menu{position:fixed;z-index:9999;background:#1a1a2e;border:1px solid #00b894;
+  border-radius:8px;padding:4px 0;min-width:110px;box-shadow:0 4px 16px #0008;display:none;}
+#qi-ctx-menu.show{display:block;}
+#qi-ctx-menu button{display:block;width:100%;padding:8px 14px;background:none;border:none;
+  color:#eee;font-size:0.88rem;text-align:left;cursor:pointer;white-space:nowrap;}
+#qi-ctx-menu button:active{background:#ffffff18;}
+#qi-ctx-menu hr{border:none;border-top:1px solid #ffffff22;margin:3px 0;}
 .qi-chip .qi-badge{
   position:absolute;bottom:2px;right:3px;
   font-size:0.5rem;color:#aaa;line-height:1;
@@ -372,7 +380,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-60</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -442,7 +450,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-60</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1777,17 +1785,21 @@ function renderActiveSkills(){
       const wrap=document.createElement('div');wrap.className='qi-chip-wrap';
       const chip=document.createElement('div');chip.className='qi-chip pending new';
       chip.dataset.uid=item.uid;
-      chip.title=`${def.name}（点击移除）`;
-      chip.innerHTML=`${def.icon}<span class="qi-rm-hint">✕</span>`;
-      const doRemove=()=>{
-        const i=pendingQueue.findIndex(p=>p.uid===item.uid);
-        if(i>=0){pendingQueue.splice(i,1);updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();}
-      };
-      let touchMoved=false;
-      chip.addEventListener('touchstart',()=>{touchMoved=false;},{passive:true});
-      chip.addEventListener('touchmove', ()=>{touchMoved=true;},{passive:true});
-      chip.addEventListener('touchend',  e=>{if(!touchMoved){e.preventDefault();doRemove();}});
-      chip.addEventListener('click',doRemove);
+      chip.title=`${def.name}（点击操作）`;
+      chip.innerHTML=`${def.icon}`;
+      const doMenu=(x,y)=>{ window._showQiMenu(x,y,item.uid); };
+      let touchMoved=false,touchTimer=null,touchX=0,touchY=0;
+      chip.addEventListener('touchstart',e=>{
+        touchMoved=false;
+        touchX=e.touches[0].clientX;touchY=e.touches[0].clientY;
+        touchTimer=setTimeout(()=>{if(!touchMoved)doMenu(touchX,touchY);},300);
+      },{passive:true});
+      chip.addEventListener('touchmove',()=>{touchMoved=true;clearTimeout(touchTimer);},{passive:true});
+      chip.addEventListener('touchend',e=>{
+        clearTimeout(touchTimer);
+        if(!touchMoved){e.preventDefault();doMenu(touchX+10,touchY+10);}
+      });
+      chip.addEventListener('click',e=>{ doMenu(e.clientX,e.clientY+4); });
       wrap.appendChild(chip);pendingRow.appendChild(wrap);
     });
     if(curPendingCount>_prevPendingCount) pendingRow.scrollLeft=pendingRow.scrollWidth;
@@ -2194,6 +2206,44 @@ var sl; // suppress lint
   checkVersion();
   checkTimer = setInterval(checkVersion, 5000);
 })();
+
+// ── 队列 chip 右键/长按菜单 ──
+(function(){
+  const menu=document.getElementById('qi-ctx-menu');
+  let _uid=null;
+  function hideMenu(){menu.classList.remove('show');}
+  function showMenu(x,y,uid){
+    _uid=uid;
+    menu.style.left=Math.min(x,window.innerWidth-130)+'px';
+    menu.style.top =Math.min(y,window.innerHeight-110)+'px';
+    menu.classList.add('show');
+  }
+  document.addEventListener('click',e=>{if(!menu.contains(e.target))hideMenu();},{capture:true});
+  document.addEventListener('touchstart',e=>{if(!menu.contains(e.target))hideMenu();},{passive:true,capture:true});
+  document.getElementById('qi-ctx-front').onclick=()=>{
+    const i=pendingQueue.findIndex(p=>p.uid===_uid);
+    if(i>0){pendingQueue.unshift(pendingQueue.splice(i,1)[0]);}
+    hideMenu();updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
+  };
+  document.getElementById('qi-ctx-back').onclick=()=>{
+    const i=pendingQueue.findIndex(p=>p.uid===_uid);
+    if(i>=0&&i<pendingQueue.length-1){pendingQueue.push(pendingQueue.splice(i,1)[0]);}
+    hideMenu();updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
+  };
+  document.getElementById('qi-ctx-del').onclick=()=>{
+    const i=pendingQueue.findIndex(p=>p.uid===_uid);
+    if(i>=0){pendingQueue.splice(i,1);}
+    hideMenu();updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
+  };
+  // 暴露给 chip 调用
+  window._showQiMenu=showMenu;
+})();
 </script>
+<div id="qi-ctx-menu">
+  <button id="qi-ctx-front">⬆️ 移到队首</button>
+  <button id="qi-ctx-back">⬇️ 移到队末</button>
+  <hr>
+  <button id="qi-ctx-del" style="color:#e17055">✕ 删除</button>
+</div>
 </body>
 </html>
