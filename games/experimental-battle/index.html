@@ -41,7 +41,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
   <h2>连接状态 <span id="role-badge"></span></h2>
   <div id="status" class="status">未连接</div>
   <div id="qr-wrap">
-    <canvas id="qr-canvas"></canvas>
+    <div id="qr-canvas" style="background:#fff;padding:8px;border-radius:8px;display:inline-block"></div>
     <div class="room-id" id="room-id-text"></div>
     <div style="font-size:0.75rem;color:#a29bfe">扫码或分享链接邀请对方加入</div>
   </div>
@@ -63,7 +63,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 <!-- PeerJS CDN -->
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <!-- QRCode CDN -->
-<script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const params = new URLSearchParams(location.search);
 const roomParam = params.get('room');
@@ -131,9 +131,9 @@ function createHost(){
     document.getElementById('btn-copy').onclick = ()=>{
       navigator.clipboard.writeText(joinUrl).then(()=>addMsg('链接已复制到剪贴板'));
     };
-    QRCode.toCanvas(document.getElementById('qr-canvas'), joinUrl, {width:200,margin:1}, err=>{
-      if(err) console.error(err);
-    });
+    const qrEl = document.getElementById('qr-canvas');
+    qrEl.innerHTML = '';
+    new QRCode(qrEl, {text: joinUrl, width: 200, height: 200, colorDark:'#000', colorLight:'#fff'});
   });
 
   peer.on('connection', c=>{
