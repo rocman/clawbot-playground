@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-79">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -394,7 +394,7 @@ if(location.hash==='#debug'){
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-79</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -468,7 +468,7 @@ if(location.hash==='#debug'){
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-79</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1870,24 +1870,28 @@ function renderActiveSkills(){
     });
     if(curFieldIds.size>_prevFieldIds.size) fieldRow.scrollLeft=fieldRow.scrollWidth;
 
-    // ── 队列行：全量重建，保证顺序与 pendingQueue 一致 ──
+    // ── 队列行：uid签名比对，只在内容变化时重建 ──
     const pendingRow=ql.querySelector('.pending-row');if(!pendingRow)return;
     const curPendingCount=pendingQueue.length;
-    pendingRow.innerHTML='';
-    pendingQueue.forEach(item=>{
-      const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
-      const wrap=document.createElement('div');wrap.className='qi-chip-wrap';
-      const chip=document.createElement('div');chip.className='qi-chip pending';
-      chip.dataset.uid=item.uid;
-      chip.title=`${def.name}（点击操作）`;
-      chip.innerHTML=`${def.icon}`;
-      chip.addEventListener('click', e=>{
-        e.stopPropagation();
-        window._showQiMenu(chip.getBoundingClientRect(), item.uid);
+    const newSig=pendingQueue.map(i=>i.uid).join(',');
+    if(pendingRow.dataset.sig!==newSig){
+      pendingRow.innerHTML='';
+      pendingQueue.forEach(item=>{
+        const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
+        const wrap=document.createElement('div');wrap.className='qi-chip-wrap';
+        const chip=document.createElement('div');chip.className='qi-chip pending';
+        chip.dataset.uid=item.uid;
+        chip.title=`${def.name}（点击操作）`;
+        chip.innerHTML=`${def.icon}`;
+        chip.addEventListener('click', e=>{
+          e.stopPropagation();
+          window._showQiMenu(chip.getBoundingClientRect(), item.uid);
+        });
+        wrap.appendChild(chip);pendingRow.appendChild(wrap);
       });
-      wrap.appendChild(chip);pendingRow.appendChild(wrap);
-    });
-    if(curPendingCount>_prevPendingCount) pendingRow.scrollLeft=pendingRow.scrollWidth;
+      if(curPendingCount>_prevPendingCount) pendingRow.scrollLeft=pendingRow.scrollWidth;
+      pendingRow.dataset.sig=newSig;
+    }
   });
 
   _prevFieldIds=curFieldIds;
