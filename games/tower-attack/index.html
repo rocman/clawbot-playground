@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-65">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -386,7 +386,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-65</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -456,7 +456,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-65</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1786,7 +1786,16 @@ function renderActiveSkills(){
       chip.dataset.uid=item.uid;
       chip.title=`${def.name}（点击操作）`;
       chip.innerHTML=`${def.icon}`;
-      chip.addEventListener('click',e=>{ e.stopPropagation(); window._showQiMenu(e.clientX,e.clientY+4,item.uid); });
+      const _showMenu=e=>{
+        e.stopPropagation();
+        const r=chip.getBoundingClientRect();
+        window._showQiMenu(r.left, r.bottom+4, item.uid);
+      };
+      let _tcMoved=false;
+      chip.addEventListener('touchstart',()=>{_tcMoved=false;},{passive:true});
+      chip.addEventListener('touchmove', ()=>{_tcMoved=true; },{passive:true});
+      chip.addEventListener('touchend',  e=>{if(!_tcMoved){e.preventDefault();e.stopPropagation();_showMenu(e);}});
+      chip.addEventListener('click',     e=>{_showMenu(e);});
       wrap.appendChild(chip);pendingRow.appendChild(wrap);
     });
     if(curPendingCount>_prevPendingCount) pendingRow.scrollLeft=pendingRow.scrollWidth;
@@ -2209,21 +2218,30 @@ var sl; // suppress lint
   }
   document.addEventListener('click',e=>{if(!menu.contains(e.target))hideMenu();},{capture:true});
   document.addEventListener('touchstart',e=>{if(!menu.contains(e.target))hideMenu();},{passive:true,capture:true});
-  document.getElementById('qi-ctx-front').onclick=()=>{
+  function bindMenuBtn(id, action){
+    const btn=document.getElementById(id);
+    const run=e=>{e.stopPropagation();action();};
+    let _bMoved=false;
+    btn.addEventListener('touchstart',()=>{_bMoved=false;},{passive:true});
+    btn.addEventListener('touchmove', ()=>{_bMoved=true; },{passive:true});
+    btn.addEventListener('touchend',  e=>{if(!_bMoved){e.preventDefault();run(e);}});
+    btn.addEventListener('click',     e=>{run(e);});
+  }
+  bindMenuBtn('qi-ctx-front',()=>{
     const i=pendingQueue.findIndex(p=>p.uid===_uid);
     if(i>0){pendingQueue.unshift(pendingQueue.splice(i,1)[0]);}
     hideMenu();updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
-  };
-  document.getElementById('qi-ctx-back').onclick=()=>{
+  });
+  bindMenuBtn('qi-ctx-back',()=>{
     const i=pendingQueue.findIndex(p=>p.uid===_uid);
     if(i>=0&&i<pendingQueue.length-1){pendingQueue.push(pendingQueue.splice(i,1)[0]);}
     hideMenu();updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
-  };
-  document.getElementById('qi-ctx-del').onclick=()=>{
+  });
+  bindMenuBtn('qi-ctx-del',()=>{
     const i=pendingQueue.findIndex(p=>p.uid===_uid);
     if(i>=0){pendingQueue.splice(i,1);}
     hideMenu();updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
-  };
+  });
   // 暴露给 chip 调用
   window._showQiMenu=showMenu;
   }
