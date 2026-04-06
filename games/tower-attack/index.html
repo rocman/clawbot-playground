@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-16">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -366,7 +366,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-16</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -436,7 +436,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-16</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1607,6 +1607,27 @@ function flushQueue(){
 // ═══════════════════════════════════════════════
 //  ACTIVE SKILLS + PENDING QUEUE PANEL
 // ═══════════════════════════════════════════════
+function updateSendBtn(){
+  const fieldClearNow=spawnQueue.length===0&&enemies.every(e=>e.dead||e.reached)&&waveActive&&quotaUsed<waveQuota;
+  const showEndWave=fieldClearNow&&pendingQueue.length===0;
+  const deploying=spawnQueue.length>0;
+  ['btn-send','btn-send-pt'].forEach(id=>{
+    const b=document.getElementById(id);if(!b)return;
+    if(showEndWave){
+      b.textContent='⏭ 结束本波';
+      b.style.background='#00b894';b.style.color='#fff';
+      b.disabled=false;
+      b.onclick=()=>confirmEndWave();
+    } else {
+      b.textContent=deploying?'发兵中…':'发兵';
+      b.style.background='';b.style.color='';
+      b.disabled=!queueMode||pendingQueue.length===0||deploying;
+      b.onclick=()=>sendWave();
+    }
+    // 非队列模式且非结束本波时隐藏按钮
+    b.style.display=(queueMode||showEndWave)?'block':'none';
+  });
+}
 let _prevFieldIds=new Set(), _prevPendingCount=0;
 function renderActiveSkills(){
   const curFieldCount=onFieldUnits.size+Object.keys(activeSkillTimers).length;
@@ -1661,39 +1682,14 @@ function renderActiveSkills(){
     });
     pendingWrap.appendChild(pendingLbl);pendingWrap.appendChild(pendingRow);
     // 发兵 / 结束本波 按钮内联渲染
-    const fieldClearNow=spawnQueue.length===0&&enemies.every(e=>e.dead||e.reached)&&waveActive&&quotaUsed<waveQuota;
-    if(fieldClearNow&&pendingQueue.length===0){
-      // 场上清空且配额未用完：显示"结束本波"（不论单发/队列模式）
-      const btn=document.createElement('button');
-      btn.className='btn-send-inline';
-      btn.style.cssText='display:block;background:#00b894;color:#fff;';
-      btn.textContent='⏭ 结束本波';
-      btn.disabled=false;
-      const _doEndWave=()=>confirmEndWave();
-      btn.addEventListener('touchstart',()=>{},{passive:true});
-      btn.addEventListener('touchend',e=>{e.preventDefault();_doEndWave();});
-      btn.addEventListener('click',_doEndWave);
-      pendingWrap.appendChild(btn);
-    } else if(queueMode){
-      // 队列模式：显示发兵按钮
-      const btn=document.createElement('button');
-      btn.className='btn-send-inline';
-      btn.style.display='block';
-      const deploying=spawnQueue.length>0;
-      btn.textContent=deploying?'发兵中…':'发兵';
-      btn.disabled=pendingQueue.length===0||deploying;
-      const _doSend=()=>{if(!btn.disabled)sendWave();};
-      btn.addEventListener('touchstart',()=>{},{passive:true});
-      btn.addEventListener('touchend',e=>{e.preventDefault();_doSend();});
-      btn.addEventListener('click',_doSend);
-      pendingWrap.appendChild(btn);
-    }
+    // 发兵/结束本波按钮由 updateSendBtn() 管理（固定 DOM，不在此处创建）
     ql.appendChild(pendingWrap);
     if(curPendingCount>_prevPendingCount) pendingRow.scrollLeft=pendingRow.scrollWidth;
   });
 
   _prevFieldIds=curFieldIds||new Set();
   _prevPendingCount=curPendingCount;
+  updateSendBtn();
 }
 
 // ═══════════════════════════════════════════════
@@ -2001,7 +1997,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '0406-16') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '__BUILD_VERSION__') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
