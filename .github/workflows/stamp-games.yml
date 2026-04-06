@@ -22,10 +22,18 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Generate build version (human-friendly timestamp)
+      - name: Generate build version (MMDD-N)
         id: ver
         run: |
-          VERSION=$(TZ='Asia/Shanghai' date '+%Y%m%d%H%M')
+          # 当前上海日期，格式 MMDD
+          TODAY=$(TZ='Asia/Shanghai' date '+%m%d')
+
+          # 统计今天已有多少个 stamp commit（含本次之前的），序号 = count + 1
+          COUNT=$(git log --oneline --after="$(TZ='Asia/Shanghai' date '+%Y-%m-%d')T00:00:00+08:00" \
+                    --grep="chore: stamp build version" | wc -l | tr -d ' ')
+          SEQ=$((COUNT + 1))
+
+          VERSION="${TODAY}-${SEQ}"
           COMMIT="${{ github.sha }}"
           SHORT_COMMIT="${COMMIT:0:7}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
