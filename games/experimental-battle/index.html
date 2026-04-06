@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="format-detection" content="telephone=no">
+<title>联机实验室</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1b2e;color:#eee;font-family:system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px;gap:16px}
+h1{font-size:1.3rem;color:#74b9ff;margin-top:8px}
+.card{background:#1a2d4a;border-radius:12px;padding:16px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:10px}
+.card h2{font-size:1rem;color:#a29bfe}
+button{padding:10px 18px;border:none;border-radius:8px;font-size:0.95rem;cursor:pointer;font-weight:600;transition:opacity .15s}
+button:disabled{opacity:.4;cursor:not-allowed}
+.btn-host{background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff}
+.btn-send{background:linear-gradient(135deg,#00b894,#00cec9);color:#fff}
+.status{font-size:0.82rem;padding:8px 10px;border-radius:6px;background:#162040;color:#81ecec;word-break:break-all}
+.status.err{color:#ff7675;background:#2d1a1a}
+.status.ok{color:#55efc4;background:#0d2e1e}
+#qr-wrap{display:none;flex-direction:column;align-items:center;gap:8px}
+#qr-wrap canvas{border-radius:8px;background:#fff;padding:8px}
+#qr-wrap .room-id{font-size:0.75rem;color:#636e72;word-break:break-all;text-align:center}
+#chat{height:180px;overflow-y:auto;background:#0a1525;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px;font-size:0.82rem}
+.msg{padding:4px 8px;border-radius:5px;max-width:90%}
+.msg.me{background:#2d3e6b;align-self:flex-end;color:#dfe6e9}
+.msg.peer{background:#1a3a2a;align-self:flex-start;color:#b2bec3}
+.msg.sys{background:transparent;color:#636e72;align-self:center;font-style:italic}
+#input-row{display:flex;gap:8px}
+#msg-input{flex:1;padding:8px 10px;border-radius:7px;border:1px solid #2d4a6e;background:#0d1b2e;color:#eee;font-size:0.9rem}
+#msg-input:focus{outline:none;border-color:#6c5ce7}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:0.7rem;font-weight:700;vertical-align:middle;margin-left:6px}
+.badge.host{background:#6c5ce7;color:#fff}
+.badge.guest{background:#00b894;color:#fff}
+</style>
+</head>
+<body>
+<h1>🧪 联机实验室</h1>
+
+<div class="card">
+  <h2>连接状态 <span id="role-badge"></span></h2>
+  <div id="status" class="status">未连接</div>
+  <div id="qr-wrap">
+    <canvas id="qr-canvas"></canvas>
+    <div class="room-id" id="room-id-text"></div>
+    <div style="font-size:0.75rem;color:#a29bfe">扫码或分享链接邀请对方加入</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn-host" id="btn-host">📡 建立主机</button>
+    <button class="btn-host" id="btn-copy" style="background:linear-gradient(135deg,#0984e3,#74b9ff);display:none">📋 复制链接</button>
+  </div>
+</div>
+
+<div class="card" id="chat-card" style="display:none">
+  <h2>消息广播</h2>
+  <div id="chat"></div>
+  <div id="input-row">
+    <input id="msg-input" type="text" placeholder="输入消息…" maxlength="200">
+    <button class="btn-send" id="btn-send">发送</button>
+  </div>
+</div>
+
+<!-- PeerJS CDN -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<!-- QRCode CDN -->
+<script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const roomParam = params.get('room');
+let peer, conn, myRole='';
+const chatEl = document.getElementById('chat');
+const statusEl = document.getElementById('status');
+const qrWrap = document.getElementById('qr-wrap');
+const chatCard = document.getElementById('chat-card');
+const roleBadge = document.getElementById('role-badge');
+
+function setStatus(msg, type=''){
+  statusEl.textContent = msg;
+  statusEl.className = 'status' + (type ? ' '+type : '');
+}
+
+function addMsg(text, type='sys'){
+  const d = document.createElement('div');
+  d.className = 'msg ' + type;
+  d.textContent = text;
+  chatEl.appendChild(d);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function showChat(){
+  chatCard.style.display = 'flex';
+}
+
+function setupConn(c){
+  conn = c;
+  conn.on('open', ()=>{
+    setStatus('✅ 已连接 — ' + (myRole==='host'?'对方已加入':'成功连接主机'), 'ok');
+    showChat();
+    addMsg('连接建立，可以开始通信');
+  });
+  conn.on('data', data=>{
+    addMsg(data, 'peer');
+  });
+  conn.on('close', ()=>{
+    setStatus('连接已断开', 'err');
+    addMsg('连接断开');
+  });
+  conn.on('error', e=>{
+    setStatus('连接错误: '+e, 'err');
+  });
+}
+
+function createHost(){
+  myRole = 'host';
+  roleBadge.innerHTML = '<span class="badge host">主机</span>';
+  setStatus('正在初始化…');
+  document.getElementById('btn-host').disabled = true;
+
+  const roomId = Math.random().toString(36).slice(2,10);
+  peer = new Peer('room-' + roomId, {
+    host: '0.peerjs.com', port: 443, path: '/', secure: true,
+    config: {iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]}
+  });
+
+  peer.on('open', id=>{
+    setStatus('📡 主机已就绪，等待对方加入…', 'ok');
+    const joinUrl = location.origin + location.pathname + '?room=' + roomId;
+    document.getElementById('room-id-text').textContent = joinUrl;
+    qrWrap.style.display = 'flex';
+    document.getElementById('btn-copy').style.display = 'inline-block';
+    document.getElementById('btn-copy').onclick = ()=>{
+      navigator.clipboard.writeText(joinUrl).then(()=>addMsg('链接已复制到剪贴板'));
+    };
+    QRCode.toCanvas(document.getElementById('qr-canvas'), joinUrl, {width:200,margin:1}, err=>{
+      if(err) console.error(err);
+    });
+  });
+
+  peer.on('connection', c=>{
+    setupConn(c);
+  });
+
+  peer.on('error', e=>{
+    setStatus('PeerJS错误: '+e.type, 'err');
+    document.getElementById('btn-host').disabled = false;
+  });
+}
+
+function joinAsGuest(roomId){
+  myRole = 'guest';
+  roleBadge.innerHTML = '<span class="badge guest">访客</span>';
+  setStatus('正在连接主机…');
+  document.getElementById('btn-host').style.display = 'none';
+
+  peer = new Peer({
+    host: '0.peerjs.com', port: 443, path: '/', secure: true,
+    config: {iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]}
+  });
+
+  peer.on('open', myId=>{
+    setStatus('正在连接房间 ' + roomId + '…');
+    const c = peer.connect('room-' + roomId, {reliable:true});
+    setupConn(c);
+  });
+
+  peer.on('error', e=>{
+    setStatus('连接失败: '+e.type, 'err');
+  });
+}
+
+// 发送消息
+function sendMsg(){
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if(!text || !conn || !conn.open) return;
+  conn.send(text);
+  addMsg(text, 'me');
+  input.value = '';
+}
+
+document.getElementById('btn-host').onclick = createHost;
+document.getElementById('btn-send').onclick = sendMsg;
+document.getElementById('msg-input').addEventListener('keydown', e=>{
+  if(e.key==='Enter') sendMsg();
+});
+
+// 自动以 Guest 加入
+if(roomParam){
+  joinAsGuest(roomParam);
+}
+</script>
+</body>
+</html>
