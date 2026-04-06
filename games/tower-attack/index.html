@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-45">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -372,7 +372,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-45</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -442,7 +442,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-45</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1849,20 +1849,8 @@ function updateWave(dt){
     const nextTier=nextW<=4?0:nextW<=8?1:nextW<=12?2:3;
     if(nextTier>0&&(nextW===5||nextW===9||nextW===13)) log(`⚠️ 第${nextW}波起守方炮塔升级为${tierNames[nextTier]}！`);
     enemies=[];
-    // 守方波间维修：被摧毁的塔免费重建（半血），残血塔恢复30%
-    const _destroyed1=FAKE_TURRETS.filter(t=>!t.active);
-    _destroyed1.forEach(t=>t.active=true);   // 先激活以便 scaleTurrets 更新 maxHp
+    // 守方波间：scaleTurrets更新属性，被摧毁的塔保持摧毁状态，靠赏金重建
     scaleTurrets(waveNum+1);
-    _destroyed1.forEach(t=>{
-      t.hp=t.maxHp*0.5;  // 重建后半血（刚修好，比较脆）
-    });
-    // 残血塔每波恢复 30% maxHp
-    FAKE_TURRETS.forEach(t=>{
-      if(t.active && t.hp < t.maxHp){
-        t.hp=Math.min(t.maxHp, t.hp+t.maxHp*0.3);
-      }
-    });
-    if(_destroyed1.length>0) log(`🔧 守方重建 ${_destroyed1.length} 座炮台（半血），花费💰${_destroyed1.reduce((s,t)=>s+t.buildCost,0)}`);
     if(waveNum>=15){endGame();return;}
     pendingQueue=[];
     setQueueMode(true);
@@ -1905,19 +1893,8 @@ function updateWave(dt){
     const nextTier=nextW<=4?0:nextW<=8?1:nextW<=12?2:3;
     if(nextTier>0&&(nextW===5||nextW===9||nextW===13)) log(`⚠️ 第${nextW}波起守方炮塔升级为${tierNames[nextTier]}！`);
     enemies=[];
-    // 守方波间维修：被摧毁的塔免费重建（半血），残血塔恢复30%
-    const _destroyed2=FAKE_TURRETS.filter(t=>!t.active);
-    _destroyed2.forEach(t=>t.active=true);
+    // 守方波间：scaleTurrets更新属性，被摧毁的塔保持摧毁状态，靠赏金重建
     scaleTurrets(waveNum+1);
-    _destroyed2.forEach(t=>{
-      t.hp=t.maxHp*0.5;  // 重建后半血
-    });
-    FAKE_TURRETS.forEach(t=>{
-      if(t.active && t.hp < t.maxHp){
-        t.hp=Math.min(t.maxHp, t.hp+t.maxHp*0.3);
-      }
-    });
-    if(_destroyed2.length>0) log(`🔧 守方重建 ${_destroyed2.length} 座炮台（半血），花费💰${_destroyed2.reduce((s,t)=>s+t.buildCost,0)}`);
     if(waveNum>=15){endGame();return;}
     pendingQueue=[];
     setQueueMode(true);
