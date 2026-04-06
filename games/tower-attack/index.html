@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-21">
+<meta name="build-version" content="0406-22">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -369,7 +369,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-21</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-22</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -439,7 +439,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-21</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-22</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1480,7 +1480,7 @@ function enqueue(kind,key,targetIdx){
         showToast(`📦 本波战力配额已满！(${usedWeight.toFixed(1)}/${nextQuota.toFixed(1)}⚡)`,'warn');return;
       }
     }
-    pendingQueue.push({kind,key,cost:def.cost,targetIdx});
+    pendingQueue.push({kind,key,cost:def.cost,targetIdx,uid:Math.random().toString(36).slice(2)});
     log(`📋 ${def.icon}${def.name} 列队${targetIdx!=null?' → 炮台#'+(targetIdx+1):''}（+${unitWeight>0?unitWeight+'⚡':''}）`);
     updateHUD();buildUnitCards();buildSkillCards();
     renderActiveSkills();
@@ -1697,31 +1697,35 @@ function renderActiveSkills(){
     });
     if(curFieldIds.size>_prevFieldIds.size) fieldRow.scrollLeft=fieldRow.scrollWidth;
 
-    // ── 队列行：增量更新 ──
+    // ── 队列行：按 uid 增量更新，只增删不重建 ──
     const pendingRow=ql.querySelector('.pending-row');if(!pendingRow)return;
     const curPendingCount=pendingQueue.length;
-    // 队列变化时重建（队列 chip 有 idx 绑定的 doRemove，增量更新复杂度不值得）
-    // 但只在长度或内容变化时重建，而不是每帧
-    const pendingKey=pendingQueue.map(i=>i.kind+i.key).join(',');
-    if(pendingRow.dataset.pendingKey!==pendingKey){
-      pendingRow.innerHTML='';
-      pendingQueue.forEach((item,idx)=>{
-        const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
-        const chip=document.createElement('div');chip.className='qi-chip pending';
-        if(curPendingCount>_prevPendingCount && idx===pendingQueue.length-1) chip.classList.add('new');
-        chip.title=`${def.name}（点击移除）`;
-        chip.innerHTML=`${def.icon}<span class="qi-rm-hint">✕</span>`;
-        const doRemove=()=>{pendingQueue.splice(idx,1);updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();};
-        let touchMoved=false;
-        chip.addEventListener('touchstart',()=>{touchMoved=false;},{passive:true});
-        chip.addEventListener('touchmove', ()=>{touchMoved=true;},{passive:true});
-        chip.addEventListener('touchend',  e=>{if(!touchMoved){e.preventDefault();doRemove();}});
-        chip.addEventListener('click',doRemove);
-        pendingRow.appendChild(chip);
-      });
-      pendingRow.dataset.pendingKey=pendingKey;
-      if(curPendingCount>_prevPendingCount) pendingRow.scrollLeft=pendingRow.scrollWidth;
-    }
+    const curUids=new Set(pendingQueue.map(i=>i.uid));
+    // 删除已移出队列的 chip
+    [...pendingRow.querySelectorAll('.qi-chip')].forEach(el=>{
+      if(!curUids.has(el.dataset.uid)) el.remove();
+    });
+    // 新增不存在的 chip（append 到末尾，保持顺序）
+    const existingUids=new Set([...pendingRow.querySelectorAll('.qi-chip')].map(el=>el.dataset.uid));
+    pendingQueue.forEach(item=>{
+      if(existingUids.has(item.uid)) return; // 已存在，不动
+      const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
+      const chip=document.createElement('div');chip.className='qi-chip pending new';
+      chip.dataset.uid=item.uid;
+      chip.title=`${def.name}（点击移除）`;
+      chip.innerHTML=`${def.icon}<span class="qi-rm-hint">✕</span>`;
+      const doRemove=()=>{
+        const i=pendingQueue.findIndex(p=>p.uid===item.uid);
+        if(i>=0){pendingQueue.splice(i,1);updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();}
+      };
+      let touchMoved=false;
+      chip.addEventListener('touchstart',()=>{touchMoved=false;},{passive:true});
+      chip.addEventListener('touchmove', ()=>{touchMoved=true;},{passive:true});
+      chip.addEventListener('touchend',  e=>{if(!touchMoved){e.preventDefault();doRemove();}});
+      chip.addEventListener('click',doRemove);
+      pendingRow.appendChild(chip);
+    });
+    if(curPendingCount>_prevPendingCount) pendingRow.scrollLeft=pendingRow.scrollWidth;
   });
 
   _prevFieldIds=curFieldIds;
