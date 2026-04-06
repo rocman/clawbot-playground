@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-6">
+<meta name="build-version" content="0406-7">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -253,7 +253,7 @@ canvas{display:block;width:100%;height:100%;}
   display:flex;flex-direction:column;gap:2px;
   min-width:0;overflow:hidden;
 }
-.qi-row-wrap{display:flex;align-items:center;gap:4px;overflow:hidden;height:40px;flex-shrink:0;}
+.qi-row-wrap{display:flex;align-items:center;gap:4px;height:40px;flex-shrink:0;min-width:0;overflow-y:hidden;}
 .qi-row-label{
   writing-mode:vertical-rl;text-orientation:mixed;
   font-size:0.58rem;color:#666;letter-spacing:1px;
@@ -366,7 +366,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-6</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-7</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -436,7 +436,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-6</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-7</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1219,7 +1219,7 @@ function updateHUD(){
   const fmt=v=>Number.isInteger(v)?v:v.toFixed(1);
   const baseQuota=waveActive
     ? `${fmt(Math.max(0,waveQuota-quotaUsed-qWeight))}/${fmt(waveQuota)}`
-    : `${fmt(Math.max(0,calcQuota(waveNum+1)-qWeight))}`;
+    : '—';
 
   const goldStr=`${dispGold}`;
   const quotaStr=baseQuota;
@@ -1606,34 +1606,36 @@ function flushQueue(){
 // ═══════════════════════════════════════════════
 //  ACTIVE SKILLS + PENDING QUEUE PANEL
 // ═══════════════════════════════════════════════
-let _prevFieldCount=0, _prevPendingCount=0;
+let _prevFieldIds=new Set(), _prevPendingCount=0;
 function renderActiveSkills(){
   const curFieldCount=onFieldUnits.size+Object.keys(activeSkillTimers).length;
   const curPendingCount=pendingQueue.length;
+  // 计算当前场上 id set（在循环外，供 _prevFieldIds 更新使用）
+  const _curFieldChips=[];
+  onFieldUnits.forEach(({icon,name},id)=>_curFieldChips.push({icon,badge:name,id:'u'+id}));
+  Object.keys(activeSkillTimers).forEach(key=>{
+    const def=SKILL_DEFS[key],t=activeSkillTimers[key];
+    _curFieldChips.push({icon:def.icon,badge:t>=9999?(def.type==='next'?'次波':'中'):Math.ceil(t)+'s',id:'s'+key});
+  });
+  const curFieldIds=new Set(_curFieldChips.map(c=>c.id));
 
   ['queue-list','queue-list-pt'].forEach(id=>{
     const ql=document.getElementById(id); if(!ql) return;
     ql.innerHTML='';
 
     // ── 场上行（蓝色，始终渲染）──
-    const fieldChips=[];
-    onFieldUnits.forEach(({icon,name})=>fieldChips.push({icon,badge:name}));
-    Object.keys(activeSkillTimers).forEach(key=>{
-      const def=SKILL_DEFS[key],t=activeSkillTimers[key];
-      fieldChips.push({icon:def.icon,badge:t>=9999?(def.type==='next'?'次波':'中'):Math.ceil(t)+'s'});
-    });
     const fieldWrap=document.createElement('div');fieldWrap.className='qi-row-wrap';
     const fieldLbl=document.createElement('div');fieldLbl.className='qi-row-label';fieldLbl.textContent='场上';
     const fieldRow=document.createElement('div');fieldRow.className='qi-row';
-    fieldChips.forEach(({icon,badge},i)=>{
+    _curFieldChips.forEach(({icon,badge,id})=>{
       const chip=document.createElement('div');chip.className='qi-chip field';
-      if(curFieldCount>_prevFieldCount && i===fieldChips.length-1) chip.classList.add('new');
+      if(!_prevFieldIds.has(id)) chip.classList.add('new');
       chip.innerHTML=`${icon}<span class="qi-badge">${badge}</span>`;
       fieldRow.appendChild(chip);
     });
     fieldWrap.appendChild(fieldLbl);fieldWrap.appendChild(fieldRow);
     ql.appendChild(fieldWrap);
-    if(curFieldCount>_prevFieldCount) fieldRow.scrollLeft=fieldRow.scrollWidth;
+    if(curFieldIds.size>_prevFieldIds.size) fieldRow.scrollLeft=fieldRow.scrollWidth;
 
     // ── 队列行（绿色，始终渲染，点击移除）──
     const pendingWrap=document.createElement('div');pendingWrap.className='qi-row-wrap';
@@ -1682,7 +1684,7 @@ function renderActiveSkills(){
     if(curPendingCount>_prevPendingCount) pendingRow.scrollLeft=pendingRow.scrollWidth;
   });
 
-  _prevFieldCount=curFieldCount;
+  _prevFieldIds=curFieldIds||new Set();
   _prevPendingCount=curPendingCount;
 }
 
@@ -1990,7 +1992,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '0406-6') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '0406-7') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
