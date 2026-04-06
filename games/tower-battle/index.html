@@ -200,6 +200,40 @@ canvas{display:block;width:100%;height:100%;}
 .tab-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding:6px;}
 .tab-body.hidden{display:none!important;}
 
+/* tech panel wrapper: tree scrolls, confirm bar fixed at bottom */
+.tech-panel-wrap{padding:0;gap:0;display:flex;flex-direction:column;}
+.tech-tree-wrap{flex:1;min-height:0;min-width:0;overflow-y:auto;overflow-x:auto;padding:8px 6px 4px;}
+.tech-confirm-bar{flex-shrink:0;padding:6px 8px;border-top:1px solid #0f3460;background:#16213e;}
+.tech-confirm-btn{
+  width:100%;padding:8px;border:none;border-radius:6px;cursor:pointer;
+  font-size:0.8rem;font-weight:bold;
+  background:#444;color:#888;transition:background .2s,color .2s;
+}
+.tech-confirm-btn:not(:disabled){background:#6c5ce7;color:#fff;}
+.tech-confirm-btn:not(:disabled):hover{background:#5541d1;}
+.tech-tier{display:flex;flex-direction:row;gap:6px;justify-content:center;margin-bottom:4px;}
+.tech-connectors{display:flex;flex-direction:row;gap:6px;justify-content:center;height:18px;margin-bottom:0;}
+.tech-connector-col{flex:0 0 72px;display:flex;justify-content:center;align-items:center;}
+.tech-connector-col svg{display:block;}
+.tech-node{
+  flex:0 0 72px;width:72px;height:116px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#1a2a4a;border:1px solid transparent;border-radius:8px;
+  padding:6px 4px;gap:3px;cursor:pointer;transition:background .15s,outline-color .15s;
+  position:relative;box-sizing:border-box;
+  outline:2px solid transparent;outline-offset:-1px;
+}
+.tech-node:hover:not(.locked):not(.maxed){background:#1e3260;}
+.tech-node.locked{opacity:0.45;cursor:not-allowed;}
+.tech-node.maxed{outline-color:#fdcb6e;background:#2a2010;}
+.tech-node.affordable{outline-color:#00b894;}
+.tech-node.selected{outline-color:#e94560;background:#2a1525;}
+.tech-node .tn-icon{font-size:1.5rem;line-height:1;}
+.tech-node .tn-name{font-size:0.6rem;color:#ccc;text-align:center;line-height:1.2;word-break:keep-all;}
+.tech-node .tn-lvl{font-size:0.55rem;color:#fdcb6e;font-weight:bold;}
+.tech-node .tn-cost{font-size:0.52rem;color:#aaa;}
+.tech-node .tn-desc{font-size:0.48rem;color:#888;text-align:center;line-height:1.2;}
+
 /* ── Unit cards ── */
 .unit-card{background:#1a2a4a;border:1px solid #0f3460;border-radius:6px;
   padding:5px 8px;cursor:pointer;transition:background .15s;
@@ -439,9 +473,16 @@ canvas{display:block;width:100%;height:100%;}
         <div class="panel-tabs">
           <button class="ptab active" id="tab-units-pt" data-tab="units" onclick="switchTab('units')">🪖 兵种</button>
           <button class="ptab" id="tab-skills-pt" data-tab="skills" onclick="switchTab('skills')">✨ 技能</button>
+          <button class="ptab" id="tab-tech-pt" onclick="switchTab('tech')">🔬 科技</button>
         </div>
         <div id="unit-list-pt" class="tab-body"></div>
         <div id="skill-list-pt" class="tab-body hidden"></div>
+        <div id="tech-panel-pt" class="tab-body hidden tech-panel-wrap">
+          <div id="tech-tree-pt" class="tech-tree-wrap"></div>
+          <div class="tech-confirm-bar" id="tech-confirm-pt">
+            <button class="tech-confirm-btn" id="btn-tech-confirm-pt" disabled onclick="confirmTech()">投入研究 💰0</button>
+          </div>
+        </div>
       </div>
       <!-- right: log+queue stacked -->
       <div id="panel-right-pt">
@@ -479,6 +520,7 @@ canvas{display:block;width:100%;height:100%;}
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
         <span class="hud-item" id="hud-quota-wrap-l">⚡<span id="hud-quota-l">—</span></span>
+        <span class="hud-item">💥<span id="hud-breach-l">0</span></span>
       </div>
     </div>
     <div id="panel-scroll">
@@ -486,9 +528,16 @@ canvas{display:block;width:100%;height:100%;}
         <div class="panel-tabs">
           <button class="ptab active" id="tab-units" data-tab="units" onclick="switchTab('units')">🪖 兵种</button>
           <button class="ptab" id="tab-skills" data-tab="skills" onclick="switchTab('skills')">✨ 技能</button>
+          <button class="ptab" id="tab-tech" onclick="switchTab('tech')">🔬 科技</button>
         </div>
         <div id="unit-list" class="tab-body"></div>
         <div id="skill-list" class="tab-body hidden"></div>
+        <div id="tech-panel" class="tab-body hidden tech-panel-wrap">
+          <div id="tech-tree" class="tech-tree-wrap"></div>
+          <div class="tech-confirm-bar" id="tech-confirm">
+            <button class="tech-confirm-btn" id="btn-tech-confirm" disabled onclick="confirmTech()">投入研究 💰0</button>
+          </div>
+        </div>
       </div>
 
       <div class="panel" id="queue-panel" style="flex:0 0 auto;">
@@ -620,6 +669,198 @@ let activeSkills={}, nextSkills={}, activeSkillTimers={}, waveSkillsUsed=new Set
 let unlockedSkills=new Set(['rush','income','rocket','missile']);
 let _enemyIdCounter=0;
 let reachedMilestones=new Set();
+
+// ═══════════════════════════════════════════════
+//  TECH TREE
+// ═══════════════════════════════════════════════
+const TECH_DEFS=[
+  // ── Tier 1 (no prerequisites) ──────────────
+  {id:'t_warrior', tier:1, req:null,       icon:'⚔️', name:'战士强化',  costs:[80,150,250],
+   desc:['兵种HP+10%','兵种HP+25%','兵种HP+40%'],
+   effect:(lv,p)=>{p.hpMult=1+[0.10,0.25,0.40][lv-1];}},
+  {id:'t_logistic',tier:1, req:null,       icon:'💰', name:'资金流转',  costs:[60,120,200],
+   desc:['每波收入+15%','每波收入+30%','每波收入+50%'],
+   effect:(lv,p)=>{p.incomeBonus=1+[0.15,0.30,0.50][lv-1];}},
+  {id:'t_rush',    tier:1, req:null,       icon:'🏃', name:'急行纵队',  costs:[70,130,220],
+   desc:['兵种速度+10%','兵种速度+20%','兵种速度+35%'],
+   effect:(lv,p)=>{p.speedMult=1+[0.10,0.20,0.35][lv-1];}},
+  {id:'t_armor',   tier:1, req:null,       icon:'🛡️', name:'钢铁护甲',  costs:[80,160,260],
+   desc:['50%概率免疫一次伤害','75%概率免疫','所有兵获得护盾'],
+   effect:(lv,p)=>{p.shieldChance=[0.5,0.75,1.0][lv-1];}},
+
+  // ── Tier 2 (each requires one tier-1) ──────
+  {id:'t_pierce',  tier:2, req:'t_warrior',icon:'💥', name:'破甲锋刃',  costs:[100,180,300],
+   desc:['造成额外10%伤害','额外20%伤害','额外30%伤害(穿甲)'],
+   effect:(lv,p)=>{p.dmgBonus=1+[0.10,0.20,0.30][lv-1];}},
+  {id:'t_compound',tier:2, req:'t_logistic',icon:'📈',name:'复利经济',  costs:[90,170,280],
+   desc:['累积金额利息+5%/波','利息+10%/波','利息+15%/波'],
+   effect:(lv,p)=>{p.interestRate=[0.05,0.10,0.15][lv-1];}},
+  {id:'t_wind',    tier:2, req:'t_rush',   icon:'🌪️', name:'疾风步伐',  costs:[100,180,300],
+   desc:['兵种无视减速效果','速度再+15%','冲刺：入场加速2秒'],
+   effect:(lv,p)=>{p.speedMult=(p.speedMult||1)+[0.05,0.15,0.25][lv-1];}},
+  {id:'t_regen',   tier:2, req:'t_armor',  icon:'🧬', name:'再生血脉',  costs:[110,200,320],
+   desc:['每秒回复1%最大HP','每秒回复2%','每秒回复3%'],
+   effect:(lv,p)=>{p.regenRate=[0.01,0.02,0.03][lv-1];}},
+
+  // ── Tier 3 (each requires one tier-2) ──────
+  {id:'t_death',   tier:3, req:'t_pierce', icon:'☠️', name:'死亡凝视',  costs:[150,250,400],
+   desc:['击杀时溅射范围伤害','溅射伤害+50%','溅射范围扩大'],
+   effect:(lv,p)=>{p.splashOnKill=lv;}},
+  {id:'t_bond',    tier:3, req:'t_compound',icon:'🏦',name:'战争债券',  costs:[140,240,380],
+   desc:['每波开始额外+50金','额外+100金','额外+150金'],
+   effect:(lv,p)=>{p.waveBonus=[50,100,150][lv-1];}},
+  {id:'t_thunder', tier:3, req:'t_wind',   icon:'⚡', name:'雷霆突击',  costs:[150,260,420],
+   desc:['兵种入场时使附近炮塔眩晕1s','眩晕2s','眩晕3s且AOE'],
+   effect:(lv,p)=>{p.stunOnEntry=[1,2,3][lv-1];}},
+  {id:'t_undying', tier:3, req:'t_regen',  icon:'💊', name:'不死之躯',  costs:[160,270,440],
+   desc:['HP低于20%时免疫1次致死','免疫2次','永久+50%最大HP'],
+   effect:(lv,p)=>{p.undying=lv;}},
+
+  // ── Tier 4 (each requires one tier-3) ──────
+  {id:'t_god',     tier:4, req:'t_death',  icon:'👑', name:'无双战神',  costs:[220,360,550],
+   desc:['所有兵攻击+20%','攻击+35%','攻击+50%且AOE'],
+   effect:(lv,p)=>{p.dmgBonus=(p.dmgBonus||1)+[0.20,0.35,0.50][lv-1];}},
+  {id:'t_empire',  tier:4, req:'t_bond',   icon:'🌟', name:'黄金帝国',  costs:[200,340,520],
+   desc:['游戏开始+200金','开局+400金','每波收入×2'],
+   effect:(lv,p)=>{p.startGoldBonus=[200,400,0][lv-1];if(lv===3)p.incomeBonus=(p.incomeBonus||1)*2;}},
+  {id:'t_legion',  tier:4, req:'t_thunder',icon:'🔱', name:'神速军团',  costs:[210,350,540],
+   desc:['同时出兵上限+2','上限+4','无出兵间隔'],
+   effect:(lv,p)=>{p.spawnCapBonus=[2,4,99][lv-1];}},
+  {id:'t_eternal', tier:4, req:'t_undying',icon:'💎', name:'永恒传承',  costs:[230,380,580],
+   desc:['上波阵亡兵下波以50%HP复活','复活HP 75%','复活HP 100%'],
+   effect:(lv,p)=>{p.reviveRate=[0.5,0.75,1.0][lv-1];}},
+];
+
+// tech state: {nodeId: currentLevel (0=locked,1-3)}
+let techLevels={};
+// persistent perms built from tech levels
+let techPerms={};
+
+function rebuildTechPerms(){
+  techPerms={};
+  for(const def of TECH_DEFS){
+    const lv=techLevels[def.id]||0;
+    if(lv>0) def.effect(lv,techPerms);
+  }
+}
+
+function canUnlockTech(def){
+  if(!def.req) return true;
+  return (techLevels[def.req]||0)>=1;
+}
+
+// pending selections: Set of tech ids queued but not yet paid
+let techPending=new Set();
+
+function techPendingCost(){
+  let total=0; for(const id of techPending){
+    const def=TECH_DEFS.find(d=>d.id===id);
+    const lv=(techLevels[id]||0);
+    total+=def.costs[lv];
+  }
+  return total;
+}
+
+function toggleTechPending(id){
+  const def=TECH_DEFS.find(d=>d.id===id);
+  if(!def) return;
+  if(techPending.has(id)){
+    techPending.delete(id);
+    for(const d of TECH_DEFS){
+      if(d.req===id && techPending.has(d.id) && (techLevels[id]||0)<1){
+        techPending.delete(d.id);
+      }
+    }
+  } else {
+    const lv=techLevels[id]||0;
+    if(lv>=3) return;
+    const reqMet=!def.req||(techLevels[def.req]||0)>=1||techPending.has(def.req);
+    if(!reqMet) return;
+    techPending.add(id);
+  }
+  buildTechTree();
+  updateTechConfirmBar();
+}
+
+function updateTechConfirmBar(){
+  const cost=techPendingCost();
+  const canAfford=cost<=gold;
+  ['btn-tech-confirm','btn-tech-confirm-pt'].forEach(id=>{
+    const b=document.getElementById(id);if(!b)return;
+    b.disabled=cost===0;
+    b.textContent=cost>0?`投入研究 💰${cost}`:'投入研究';
+    b.style.background=cost>0?(canAfford?'#6c5ce7':'#c0392b'):'';
+    b.style.color=cost>0?'#fff':'';
+  });
+}
+
+function confirmTech(){
+  const cost=techPendingCost();
+  if(cost>gold){showToast('💸 金币不足！','warn');return;}
+  gold-=cost;
+  const names=[];
+  for(const id of techPending){
+    const def=TECH_DEFS.find(d=>d.id===id);
+    techLevels[id]=(techLevels[id]||0)+1;
+    names.push(`${def.icon}${def.name}Lv${techLevels[id]}`);
+  }
+  techPending.clear();
+  rebuildTechPerms();
+  log(`🔬 研究完成：${names.join(' · ')}`);
+  updateHUD();buildTechTree();buildUnitCards();updateTechConfirmBar();
+}
+
+function buildTechTree(){
+  ['tech-tree','tech-tree-pt'].forEach(containerId=>{
+    const wrap=document.getElementById(containerId);if(!wrap)return;
+    wrap.innerHTML='';
+    for(let tier=1;tier<=4;tier++){
+      const nodes=TECH_DEFS.filter(d=>d.tier===tier);
+      if(tier>1){
+        const connRow=document.createElement('div');connRow.className='tech-connectors';
+        nodes.forEach(()=>{
+          const col=document.createElement('div');col.className='tech-connector-col';
+          col.innerHTML=`<svg width="2" height="18"><line x1="1" y1="0" x2="1" y2="18" stroke="#0f3460" stroke-width="2"/></svg>`;
+          connRow.appendChild(col);
+        });
+        wrap.appendChild(connRow);
+      }
+      const row=document.createElement('div');row.className='tech-tier';
+      nodes.forEach(def=>{
+        const lv=techLevels[def.id]||0;
+        const pending=techPending.has(def.id);
+        const reqUnlocked=!def.req||(techLevels[def.req]||0)>=1||techPending.has(def.req);
+        const cost=lv<3?def.costs[lv]:0;
+        const affordable=reqUnlocked&&lv<3&&!pending;
+        const maxed=lv>=3;
+        const node=document.createElement('div');
+        let cls='tech-node';
+        if(maxed) cls+=' maxed';
+        else if(pending) cls+=' selected';
+        else if(!reqUnlocked) cls+=' locked';
+        else if(affordable) cls+=' affordable';
+        node.className=cls;
+        const dispLv=pending?lv+1:lv;
+        const desc=dispLv>0?def.desc[dispLv-1]:def.desc[0];
+        const stars='⭐'.repeat(lv)+(pending?'🔸':'')+'○'.repeat(Math.max(0,3-lv-(pending?1:0)));
+        node.innerHTML=`
+          <div class="tn-icon">${def.icon}</div>
+          <div class="tn-name">${def.name}</div>
+          <div class="tn-lvl">${stars}</div>
+          ${maxed?'<div class="tn-cost" style="color:#fdcb6e">满级</div>'
+                 :pending?`<div class="tn-cost" style="color:#e94560">-💰${cost}</div>`
+                         :`<div class="tn-cost">💰${cost}</div>`}
+          <div class="tn-desc">${desc}</div>`;
+        if(!maxed&&reqUnlocked){
+          node.addEventListener('click',()=>toggleTechPending(def.id));
+        }
+        row.appendChild(node);
+      });
+      wrap.appendChild(row);
+    }
+  });
+}
+
 const MILESTONES=[
   {at:1,label:'首次突破',gold:150,unlock:null,desc:'首次突破！'},
   {at:3,label:'3次突破', gold:200,unlock:'double',desc:'3次突破！解锁增兵令'},
@@ -904,6 +1145,7 @@ function updateHUD(){
   document.getElementById('hud-wave').textContent=wv;
   if(document.getElementById('hud-gold-l')) document.getElementById('hud-gold-l').textContent=dispGold;
   if(document.getElementById('hud-wave-l')) document.getElementById('hud-wave-l').textContent=wv;
+  if(document.getElementById('hud-breach-l')) document.getElementById('hud-breach-l').textContent=breachCount;
   const qw=document.getElementById('hud-quota-wrap');
   const qwl=document.getElementById('hud-quota-wrap-l');
   if(role==='host'){
@@ -1029,22 +1271,22 @@ function renderIntel(){
 function switchTab(tab){
   currentTab=tab;
   // landscape build-panel
-  ['unit-list','skill-list'].forEach(id=>{
+  ['unit-list','skill-list','tech-panel'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
-    el.classList.toggle('hidden',!id.startsWith(tab==='units'?'unit':'skill'));
+    el.classList.toggle('hidden',!(tab==='units'&&id.startsWith('unit')||tab==='skills'&&id.startsWith('skill')||tab==='tech'&&id.startsWith('tech')));
   });
-  ['tab-units','tab-skills'].forEach(id=>{
+  ['tab-units','tab-skills','tab-tech'].forEach(id=>{
     const b=document.getElementById(id);if(!b)return;
-    b.classList.toggle('active',id.includes(tab==='units'?'units':'skills'));
+    b.classList.toggle('active',id.includes(tab==='units'?'units':tab==='skills'?'skills':'tech'));
   });
   // portrait build-panel-pt
-  ['unit-list-pt','skill-list-pt'].forEach(id=>{
+  ['unit-list-pt','skill-list-pt','tech-panel-pt'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
-    el.classList.toggle('hidden',!id.startsWith(tab==='units'?'unit':'skill'));
+    el.classList.toggle('hidden',!(tab==='units'&&id.startsWith('unit')||tab==='skills'&&id.startsWith('skill')||tab==='tech'&&id.startsWith('tech')));
   });
-  ['tab-units-pt','tab-skills-pt'].forEach(id=>{
+  ['tab-units-pt','tab-skills-pt','tab-tech-pt'].forEach(id=>{
     const b=document.getElementById(id);if(!b)return;
-    b.classList.toggle('active',id.includes(tab==='units'?'units':'skills'));
+    b.classList.toggle('active',id.includes(tab==='units'?'units':tab==='skills'?'skills':'tech'));
   });
 }
 
@@ -1342,7 +1584,7 @@ function applyInstantSkill(key,targetIdx){
     const alive=enemies.filter(e=>!e.dead&&!e.reached);
     if(!alive.length){log('⚡ 无场上兵员可翻倍');return;}
     if(!waveActive){waveNum++;waveActive=true;spawnTimer=0;log(`🌊 第${waveNum}波！`);}
-    const mods={...activeSkills};
+    const mods={...techPerms,...activeSkills};
     const lastQueueDelay=spawnQueue.length?Math.max(...spawnQueue.map(i=>i.delay)):spawnTimer;
     let delay=Math.max(lastQueueDelay,spawnTimer)+0.5;
     alive.forEach(e=>{
@@ -1384,7 +1626,7 @@ function enqueue(kind,key,targetIdx){
         enablePauseBtn(true);
       }
       quotaUsed+=unitWeight;
-      spawnQueue.push({type:key,delay:0,mods:{...activeSkills}});
+      spawnQueue.push({type:key,delay:0,mods:{...techPerms,...activeSkills}});
       log(`⚔️ 派遣 ${def.icon}${def.name}`);
     } else if(def.type==='instant'||def.type==='targeted'){
       applyInstantSkill(key,targetIdx);
@@ -1422,7 +1664,7 @@ function flushQueue(){
     log(`🌊 第${waveNum}波！战力配额 ${waveQuota.toFixed(1)}⚡`);
     enablePauseBtn(true);
   }
-  const mods={...activeSkills};
+  const mods={...techPerms,...activeSkills};
   const lastQueueDelay=spawnQueue.length?Math.max(...spawnQueue.map(i=>i.delay)):spawnTimer;
   let delay=Math.max(lastQueueDelay,spawnTimer);
   const snapshot=[...pendingQueue];
@@ -1485,7 +1727,10 @@ function _endWave(reason){
   activeSkills={};activeSkillTimers={};waveSkillsUsed=new Set();
   let income=waveGold(waveNum+1);
   const incomeBonus=Object.values(nextSkills).reduce((a,e)=>a+(e.incomeBonus??0),0);
-  income=Math.round(income*(1+incomeBonus));
+  const techIncomeMult=techPerms.incomeBonus||1;
+  const techInterest=Math.floor(gold*(techPerms.interestRate||0));
+  const techWaveBonus=techPerms.waveBonus||0;
+  income=Math.round(income*(1+incomeBonus)*techIncomeMult)+techInterest+techWaveBonus;
   gold+=income;nextSkills={};
   log(`✅ 第${waveNum}波结束 突破${survived} 阵亡${died} | 攻方+💰${income}`);
   // Defender wave income
@@ -1972,6 +2217,7 @@ function startGame(){
   defenderGold=160;
   unlockedSkills=new Set(['rush','income','rocket','missile']);
   reachedMilestones=new Set();
+  techLevels={};techPending=new Set();rebuildTechPerms();
   gameSpeed=SPEED_STEPS[speedIdx];gameState='playing';
   queueMode=true;pendingQueue=[];
   for(const t of FAKE_TURRETS){t.cd=0;t.active=false;t.hp=undefined;t.maxHp=undefined;}
@@ -1982,7 +2228,7 @@ function startGame(){
   document.getElementById('role-title').textContent='⚔️ 攻方控制台';
   switchTab('units');
   setQueueMode(true);
-  buildUnitCards();buildSkillCards();renderActiveSkills();
+  buildUnitCards();buildSkillCards();buildTechTree();updateTechConfirmBar();renderActiveSkills();
   log(`⚔️ 开始！首波资金💰${gold}，共15波，突破防线！`);
 
   if(animId)cancelAnimationFrame(animId);
