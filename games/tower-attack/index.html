@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-92">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -240,6 +240,7 @@ canvas{display:block;width:100%;height:100%;}
 .skill-card.pressed{background:#162040;}
 .skill-card.disabled{opacity:.4;cursor:not-allowed;}
 .skill-card.locked{opacity:.35;cursor:not-allowed;filter:grayscale(.6);}
+.skill-inline-tag{font-size:0.62rem;margin-left:5px;opacity:.85;vertical-align:middle;}
 .skill-icon{font-size:1.3rem;flex-shrink:0;}
 .skill-info{flex:1;min-width:0;}
 .skill-name{font-size:0.76rem;font-weight:bold;}
@@ -394,7 +395,7 @@ if(location.hash==='#debug' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAg
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-92</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -468,7 +469,7 @@ if(location.hash==='#debug' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAg
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-92</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1505,13 +1506,13 @@ function buildSkillCards(){
       card.setAttribute('tabindex','-1');
       const lockTag=unlocked?'':
         `<div class="skill-lock-tag">🔒 需突破${def.unlockAt??0}次解锁</div>`;
-      const activeTag=alreadyOn?`<div class="skill-lock-tag" style="color:#00b894">✅ 已激活</div>`
-                     :usedThisWave?`<div class="skill-lock-tag" style="color:#636e72">⏳ 本波已用</div>`:'';
+      const activeTag=alreadyOn?`<span class="skill-inline-tag" style="color:#00b894">✅ 已激活</span>`
+                     :usedThisWave?`<span class="skill-inline-tag" style="color:#636e72">⏳ 本波已用</span>`:'';
       const weightTag=unlocked&&w>0?`<div style="font-size:0.6rem;color:#74b9ff;margin-top:2px">⚡${w}</div>`:'';
       card.innerHTML=`<div class="skill-icon">${def.icon}</div>
         <div class="skill-info">
-          <div class="skill-name">${def.name}</div>
-          <div class="skill-desc">${def.desc}</div>${lockTag}${activeTag}
+          <div class="skill-name">${def.name}${activeTag}</div>
+          <div class="skill-desc">${def.desc}</div>${lockTag}
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0">
           <div class="skill-cost">${unlocked?'💰'+def.cost:'🔒'}</div>${weightTag}
