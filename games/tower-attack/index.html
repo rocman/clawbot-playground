@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-14">
+<meta name="build-version" content="0406-15">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -366,7 +366,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-14</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-15</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -436,7 +436,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-14</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-15</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1184,6 +1184,7 @@ function both(id,fn){
 // ═══════════════════════════════════════════════
 function showToast(msg,kind='breach'){
   const tc=document.getElementById('toast-container');
+  if(!tc){console.warn('showToast: toast-container not found',msg);return;}
   const d=document.createElement('div');
   d.className=`toast ${kind}`;d.textContent=msg;
   tc.appendChild(d);setTimeout(()=>d.remove(),2800);
@@ -1523,23 +1524,24 @@ function clearCardFocus(){
 }
 
 function flushQueue(){
-  if(!pendingQueue.length){showToast('📋 队列为空，请先添加兵种','info');return;}
+  const _fail=(msg,kind='warn')=>{showToast(msg,kind);log('⚠️ 发兵失败：'+msg.replace(/\n/g,' '));};
+  if(!pendingQueue.length){_fail('📋 队列为空，请先添加兵种','info');return;}
   // 发兵时统一扣钱，先检查总费用
   const totalCost=pendingQueue.reduce((s,i)=>s+i.cost,0);
-  if(totalCost>gold){showToast('💸 金币不足，无法发兵！','warn');return;}
+  if(totalCost>gold){_fail(`💸 金币不足！需 💰${totalCost}，现有 💰${gold}`);return;}
   // 波进行中检查战力配额是否够用
   if(waveActive){
     const neededWeight=calcQueueWeight(pendingQueue);
     const remaining=waveQuota-quotaUsed;
     if(neededWeight>remaining){
-      showToast(`📦 战力超配！\n队列需 ${neededWeight.toFixed(1)}⚡，剩余 ${remaining.toFixed(1)}⚡\n请移除部分兵种再发兵`,'warn');return;
+      _fail(`📦 战力超配！队列需 ${neededWeight.toFixed(1)}⚡，剩余 ${remaining.toFixed(1)}⚡`);return;
     }
   } else {
-    // 波未开始：检查队列战力是否超出下一波配额（兜底，正常不应触发）
+    // 波未开始：检查队列战力是否超出下一波配额
     const neededWeight=calcQueueWeight(pendingQueue);
-    const nextQuota=calcQuota(waveNum+1);
+    const nextQuota=calcQuota(waveNum+1)+_bonusQuota;
     if(neededWeight>nextQuota){
-      showToast(`📦 战力超配！\n队列需 ${neededWeight.toFixed(1)}⚡，本波上限 ${nextQuota.toFixed(1)}⚡\n请移除部分兵种再发兵`,'warn');return;
+      _fail(`📦 战力超配！队列需 ${neededWeight.toFixed(1)}⚡，本波上限 ${nextQuota.toFixed(1)}⚡`);return;
     }
   }
   gold-=totalCost;
@@ -1692,7 +1694,7 @@ function renderActiveSkills(){
 //  WAVE
 // ═══════════════════════════════════════════════
 function sendWave(){
-  if(!queueMode){showToast('💡 切换到队列模式后再发兵','info');return;}
+  // 内联发兵按钮始终调用 flushQueue（不论当前是单发还是队列模式）
   flushQueue();
 }
 
@@ -1993,7 +1995,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '0406-14') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '0406-15') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
