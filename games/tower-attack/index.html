@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-50">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -372,7 +372,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-50</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -442,7 +442,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-50</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1391,7 +1391,7 @@ function buildSkillCards(){
       const canAfford=def.cost<=dispGold;
       const active=state==='playing'||state==='paused';
       const alreadyOn=key in activeSkillTimers;
-      const usedThisWave=waveSkillsUsed.has(key);
+      const usedThisWave=(def.type==='wave'||def.type==='timed'||def.type==='next')&&waveSkillsUsed.has(key);
       const w=def.weight??0;
       const hasQuota=w===0||usedWeight+w<=quota;
       const card=document.createElement('div');
@@ -1502,7 +1502,7 @@ function enqueue(kind,key,targetIdx){
   const def=kind==='unit'?UNIT_DEFS[key]:SKILL_DEFS[key];
   if(!def||def.cost>gold) return;
   if(kind==='skill'&&(key in activeSkillTimers)) return;
-  if(kind==='skill'&&waveSkillsUsed.has(key)){showToast('⏳ 本波已使用过该技能！','warn');return;}
+  if(kind==='skill'&&(def.type==='wave'||def.type==='timed'||def.type==='next')&&waveSkillsUsed.has(key)){showToast('⏳ 本波已使用过该技能！','warn');return;}
   // 配额检查（战力点）：单发模式下波进行中才检查
   const unitWeight = def.weight ?? (kind==='unit' ? 1 : 0);
   if(!queueMode&&waveActive&&unitWeight>0&&quotaUsed+unitWeight>waveQuota){
@@ -1538,7 +1538,7 @@ function enqueue(kind,key,targetIdx){
       log(`⚔️ 派遣 ${def.icon}${def.name}（已用 ${quotaUsed.toFixed(1)}/${waveQuota.toFixed(1)}⚡）`);
     } else if(def.type==='instant'||def.type==='targeted'){
       applyInstantSkill(key,targetIdx);
-      waveSkillsUsed.add(key);
+      // instant/targeted 不限次，不加 waveSkillsUsed
     } else {
       if(waveActive) quotaUsed += unitWeight;
       const ef={};def.apply(ef);
@@ -1622,7 +1622,7 @@ function flushQueue(){
         const def=SKILL_DEFS[skillKey];
         if(def.type==='instant'||def.type==='targeted'){
           applyInstantSkill(skillKey,item.targetIdx);
-          waveSkillsUsed.add(skillKey);
+          // instant/targeted 不限次，不加 waveSkillsUsed
         } else {
           const ef={};def.apply(ef);
           if(def.type==='wave'||def.type==='timed'){
