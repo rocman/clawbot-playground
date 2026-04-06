@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-27">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -274,11 +274,15 @@ canvas{display:block;width:100%;height:100%;}
 .qi-row::-webkit-scrollbar-thumb{background:#444;border-radius:2px;}
 @keyframes chipIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
 @keyframes chipFade{from{opacity:1}to{opacity:0}}
-@keyframes chipCollapse{from{width:30px;margin-right:6px;padding:0;border-width:1.5px}to{width:0;margin-right:0;padding:0;border-width:0;overflow:hidden}}
+@keyframes chipCollapse{
+  from{max-width:36px;margin-right:6px;}
+  to{max-width:0;margin-right:0;}
+}
+.qi-chip-wrap{display:inline-flex;overflow:hidden;max-width:36px;margin-right:6px;flex-shrink:0;vertical-align:top;}
+.qi-chip-wrap.leaving{animation:chipFade .2s ease forwards, chipCollapse .25s ease .2s forwards;pointer-events:none;}
 .qi-chip.new{animation:chipIn .2s ease forwards;}
-.qi-chip.leaving{animation:chipFade .2s ease forwards, chipCollapse .25s ease .2s forwards;pointer-events:none;}
 .qi-chip{overflow:hidden;
-  width:30px;height:30px;margin-right:6px;
+  width:30px;height:30px;margin-right:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   border-radius:6px;border:1.5px solid;
   font-size:1rem;line-height:1;
@@ -372,7 +376,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-27</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -442,7 +446,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-27</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1638,12 +1642,14 @@ function updateSendBtn(){
 // ── queue-list 面板的固定结构，首次调用时初始化，之后只更新内容 ──
 // 带离场动画的 chip 删除：先淡出+收缩，animationend 后再移除 DOM
 function removeChip(el){
-  if(el.classList.contains('leaving')) return;
+  // el 可能是 chip 本身或其 wrapper
+  const wrap=el.closest('.qi-chip-wrap')||el;
+  if(wrap.classList.contains('leaving')) return;
   el.classList.remove('new');
-  el.classList.add('leaving');
-  el.addEventListener('animationend', ()=>el.remove(), {once:true});
-  // 保底：500ms 后强制删除（防止动画未触发）
-  setTimeout(()=>{if(el.parentNode)el.remove();}, 500);
+  wrap.classList.add('leaving');
+  wrap.addEventListener('animationend', ()=>wrap.remove(), {once:true});
+  // 保底：600ms 后强制删除
+  setTimeout(()=>{if(wrap.parentNode)wrap.remove();}, 600);
 }
 
 let _qlInited=false;
@@ -1693,19 +1699,20 @@ function renderActiveSkills(){
     [...fieldRow.querySelectorAll('.qi-chip')].forEach(el=>{
       if(!curFieldIds.has(el.dataset.chipId)) removeChip(el);
     });
-    // 更新 badge（技能倒计时）+ 新增
-    const existingIds=new Set([...fieldRow.querySelectorAll('.qi-chip')].map(el=>el.dataset.chipId));
+    // 更新 badge（技能倒计时）+ 新增（跳过 leaving 中的节点）
+    const existingIds=new Set([...fieldRow.querySelectorAll('.qi-chip-wrap:not(.leaving) .qi-chip')].map(el=>el.dataset.chipId));
     curChips.forEach(({icon,badge,id})=>{
-      const existing=fieldRow.querySelector(`[data-chip-id="${id}"]`);
+      const existing=fieldRow.querySelector(`.qi-chip[data-chip-id="${id}"]`);
       if(existing){
         // 只更新 badge 文字，不重建节点
         const b=existing.querySelector('.qi-badge');if(b)b.textContent=badge;
       } else {
+        const wrap=document.createElement('div');wrap.className='qi-chip-wrap';
         const chip=document.createElement('div');chip.className='qi-chip field';
         chip.dataset.chipId=id;
         chip.innerHTML=`${icon}<span class="qi-badge">${badge}</span>`;
         if(!_prevFieldIds.has(id)) chip.classList.add('new');
-        fieldRow.appendChild(chip);
+        wrap.appendChild(chip);fieldRow.appendChild(wrap);
       }
     });
     if(curFieldIds.size>_prevFieldIds.size) fieldRow.scrollLeft=fieldRow.scrollWidth;
@@ -1718,12 +1725,12 @@ function renderActiveSkills(){
     [...pendingRow.querySelectorAll('.qi-chip')].forEach(el=>{
       if(!curUids.has(el.dataset.uid)) removeChip(el);
     });
-    // 新增不存在的 chip（append 到末尾，保持顺序）
-    const existingUids=new Set([...pendingRow.querySelectorAll('.qi-chip')].map(el=>el.dataset.uid));
-    // 跳过正在播放离场动画的节点（uid 仍在 DOM 中但已标记 leaving）
+    // 新增不存在的 chip（跳过 leaving 中的节点）
+    const existingUids=new Set([...pendingRow.querySelectorAll('.qi-chip-wrap:not(.leaving) .qi-chip')].map(el=>el.dataset.uid));
     pendingQueue.forEach(item=>{
       if(existingUids.has(item.uid)) return; // 已存在，不动
       const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
+      const wrap=document.createElement('div');wrap.className='qi-chip-wrap';
       const chip=document.createElement('div');chip.className='qi-chip pending new';
       chip.dataset.uid=item.uid;
       chip.title=`${def.name}（点击移除）`;
@@ -1737,7 +1744,7 @@ function renderActiveSkills(){
       chip.addEventListener('touchmove', ()=>{touchMoved=true;},{passive:true});
       chip.addEventListener('touchend',  e=>{if(!touchMoved){e.preventDefault();doRemove();}});
       chip.addEventListener('click',doRemove);
-      pendingRow.appendChild(chip);
+      wrap.appendChild(chip);pendingRow.appendChild(wrap);
     });
     if(curPendingCount>_prevPendingCount) pendingRow.scrollLeft=pendingRow.scrollWidth;
   });
