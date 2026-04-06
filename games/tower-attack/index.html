@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-66">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -386,7 +386,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-66</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -456,7 +456,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-66</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1788,8 +1788,7 @@ function renderActiveSkills(){
       chip.innerHTML=`${def.icon}`;
       const _showMenu=e=>{
         e.stopPropagation();
-        const r=chip.getBoundingClientRect();
-        window._showQiMenu(r.left, r.bottom+4, item.uid);
+        window._showQiMenu(chip.getBoundingClientRect(), item.uid);
       };
       let _tcMoved=false;
       chip.addEventListener('touchstart',()=>{_tcMoved=false;},{passive:true});
@@ -2210,10 +2209,18 @@ var sl; // suppress lint
   if(!menu){console.error('qi-ctx-menu not found');return;}
   let _uid=null;
   function hideMenu(){menu.classList.remove('show');}
-  function showMenu(x,y,uid){
+  function showMenu(rect,uid){
     _uid=uid;
-    menu.style.left=Math.min(x,window.innerWidth-130)+'px';
-    menu.style.top =Math.min(y,window.innerHeight-110)+'px';
+    menu.style.display='block'; // 先显示才能拿到尺寸
+    const mw=menu.offsetWidth||120, mh=menu.offsetHeight||110;
+    // 右边缘对齐chip右边缘，下边缘贴chip上边缘
+    let left=rect.right-mw;
+    let top=rect.top-mh-4;
+    // 防止超出屏幕
+    if(left<4) left=4;
+    if(top<4) top=rect.bottom+4; // 上方放不下就改为下方
+    menu.style.left=left+'px';
+    menu.style.top =top+'px';
     menu.classList.add('show');
   }
   document.addEventListener('click',e=>{if(!menu.contains(e.target))hideMenu();},{capture:true});
