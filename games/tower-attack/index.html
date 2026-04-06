@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-30">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -372,7 +372,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-30</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -442,7 +442,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-30</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -891,6 +891,7 @@ const TURRET_KINDS={
 
 const FAKE_TURRETS=[
   // kind 决定战斗风格；baseDmg/baseRate/baseRange 作为该类型的基础值
+  // 前10座：中期建完
   {c:1, r:1,  kind:'gatling',baseDmg:8,  baseRate:2.5, baseRange:2.0, cd:0, buildCost:40},
   {c:9, r:1,  kind:'basic',  baseDmg:15, baseRate:1.0, baseRange:2.2, cd:0, buildCost:40},
   {c:4, r:5,  kind:'slow',   baseDmg:8,  baseRate:0.9, baseRange:2.3, cd:0, buildCost:55},
@@ -901,13 +902,19 @@ const FAKE_TURRETS=[
   {c:1, r:8,  kind:'sniper', baseDmg:55, baseRate:0.35,baseRange:4.5, cd:0, buildCost:100},
   {c:10,r:8,  kind:'slow',   baseDmg:10, baseRate:0.8, baseRange:2.8, cd:0, buildCost:120},
   {c:3, r:11, kind:'splash', baseDmg:18, baseRate:0.5, baseRange:2.5, cd:0, buildCost:150},
+  // 后5座：高价后期炮台，分散到第6-15波陆续建成
+  {c:7, r:3,  kind:'basic',  baseDmg:18, baseRate:1.0, baseRange:2.5, cd:0, buildCost:220},
+  {c:3, r:7,  kind:'sniper', baseDmg:50, baseRate:0.4, baseRange:4.5, cd:0, buildCost:280},
+  {c:8, r:6,  kind:'gatling',baseDmg:12, baseRate:2.5, baseRange:2.2, cd:0, buildCost:320},
+  {c:2, r:9,  kind:'splash', baseDmg:22, baseRate:0.6, baseRange:2.8, cd:0, buildCost:380},
+  {c:6, r:11, kind:'sniper', baseDmg:70, baseRate:0.28,baseRange:5.0, cd:0, buildCost:450},
 ];
 // Computed live stats, rebuilt each wave
 function scaleTurrets(wave){
   const w=Math.max(1,wave);
   // 缩放放缓：伤害每波+5%（原10%），射速每波+3%（原6%），射程增幅不变
-  const dmgMult  = 1 + (w-1)*0.05;
-  const rateMult = 1 + (w-1)*0.03;
+  const dmgMult  = 1 + (w-1)*0.03;   // 放缓：原0.05
+  const rateMult = 1 + (w-1)*0.015;  // 放缓：原0.03
   const rangeBon = Math.floor((w-1)/5)*0.30;
   for(const t of FAKE_TURRETS){
     // active 只由 defenderGold 购买决定，scaleTurrets 只更新战斗属性
@@ -1145,7 +1152,7 @@ let _bonusQuota=0;             // 上波剩余配额×0.5 叠加到本波
 
 // 配额公式（战力点）：8 + wave*1.5，第1波9.5点，逐波线性增加
 // 各兵种 weight：swarm=0.5, grunt=1, runner=1.5, sapper=2, phantom=3, tank=3, boss=8
-function calcQuota(wave){ return 8 + wave * 1.5; }
+function calcQuota(wave){ return 8 + wave*2.0 + wave*wave*0.05; }
 // 计算队列中已用战力点（仅计兵种，技能不占配额）
 function calcQueueWeight(queue){
   return queue.reduce((s,i)=>{
@@ -1162,7 +1169,7 @@ let unlockedSkills=new Set(['rush','income']);
 let lastTime=0,animId=null;
 const reachedMilestones=new Set();
 // defender economy
-let defenderGold=50; // 起始资金，勉强建1座基础塔
+let defenderGold=150; // 起始资金，第1波能建3座塔
 
 function waveGold(n){
   const base=100+(n-1)*30;
