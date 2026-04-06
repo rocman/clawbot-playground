@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-59">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -372,7 +372,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-59</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -442,7 +442,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-59</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -599,8 +599,8 @@ const SKILL_DEFS={
   boost:   {name:'强化血脉',icon:'🧬',cost:90, weight:3, desc:'本波所有兵HP+30%',    unlockAt:10, type:'wave',  duration:0, apply:s=>{s.hpMult=1.3;}},
   interest:{name:'利滚利', icon:'📈',cost:150,weight:0, desc:'未用资金下波额外+20%',  unlockAt:20, type:'next',  duration:0, apply:s=>{s.interest=0.2;}},
   double:  {name:'增兵令', icon:'⚡',cost:180,weight:6, desc:'场上所有兵员立即翻倍',   unlockAt:3,  type:'instant',duration:0,apply:s=>{}},
-  rocket:  {name:'火箭弹', icon:'🚀',cost:120,weight:5, desc:'立即打击HP最低炮塔，造成重伤', unlockAt:null,type:'instant', duration:0,apply:s=>{}},
-  missile: {name:'导弹',   icon:'🎯',cost:200,weight:8, desc:'定点打击，一击摧毁指定炮塔',   unlockAt:null,type:'targeted',duration:0,apply:s=>{}},
+  rocket:  {name:'火箭弹', icon:'🚀',cost:500,weight:5, desc:'立即打击HP最低炮塔，造成重伤', unlockAt:null,type:'instant', duration:0,apply:s=>{}},
+  missile: {name:'导弹',   icon:'🎯',cost:800,weight:8, desc:'定点打击，一击摧毁指定炮塔',   unlockAt:null,type:'targeted',duration:0,apply:s=>{}},
 };
 
 // ═══════════════════════════════════════════════
