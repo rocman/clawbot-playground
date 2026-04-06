@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-74">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -395,7 +395,7 @@ if(location.hash==='#debug'){
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-74</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -469,7 +469,7 @@ if(location.hash==='#debug'){
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-74</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1884,9 +1884,11 @@ function renderActiveSkills(){
       chip.innerHTML=`${def.icon}`;
       chip.addEventListener('click', e=>{
         e.stopPropagation();
-        window._showQiMenu({right:e.clientX+15,top:e.clientY,bottom:e.clientY+30}, item.uid);
+        // rAF 确保chip已渲染，getBoundingClientRect 拿到真实坐标
+        requestAnimationFrame(()=>{
+          window._showQiMenu(chip.getBoundingClientRect(), item.uid);
+        });
       });
-      chip.addEventListener('click',     e=>{_showMenu(e);});
       wrap.appendChild(chip);pendingRow.appendChild(wrap);
     });
     if(curPendingCount>_prevPendingCount) pendingRow.scrollLeft=pendingRow.scrollWidth;
@@ -2307,7 +2309,7 @@ var sl; // suppress lint
   function showMenu(rect, uid){
     _uid=uid;
     const mw=menu.offsetWidth||120, mh=menu.offsetHeight||112;
-    let left=rect.right-mw, top=rect.top-mh-6;
+    let left=rect.right-mw, top=rect.top-mh-4;  // 下边缘贴chip上边缘，留4px间隙
     if(left<4) left=4;
     if(top<4) top=rect.bottom+4;
     console.log('[menu] rect=',JSON.stringify(rect),'mw=',mw,'mh=',mh,'→left=',left,'top=',top);
