@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-89">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -394,7 +394,7 @@ if(location.hash==='#debug' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAg
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-89</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -468,7 +468,7 @@ if(location.hash==='#debug' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAg
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-89</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -2094,7 +2094,15 @@ function gameLoop(ts){
     for(const e of enemies) e.draw();
     if(_logTab==='intel'&&Math.floor(elapsed*10)%10===0) renderIntel();
     // 守方收益：仅靠杀敌赏金（在 takeDamage 中结算），无时间自然收益
-    // 有钱就建塔，但有残血塔时必须先修好才能建新塔
+    // 持续决策：先修残血塔，再建新塔
+    { const toRepair=FAKE_TURRETS.filter(t=>t.active&&t.hp!=null&&t.maxHp&&t.hp<t.maxHp)
+        .sort((a,b)=>a.buildCost-b.buildCost);
+      for(const t of toRepair){
+        const cost=Math.ceil((1-t.hp/t.maxHp)*t.buildCost*2);
+        if(defenderGold>=cost){ defenderGold-=cost; t.hp=t.maxHp;
+          log(`🔧 守方修复${TURRET_KINDS[t.kind??'basic']?.label??'炮台'}，花费💰${cost}`); }
+      }
+    }
     const hasDamagedTurret=FAKE_TURRETS.some(t=>t.active&&t.hp!=null&&t.maxHp&&t.hp<t.maxHp);
     if(!hasDamagedTurret){
       const affordable = FAKE_TURRETS
