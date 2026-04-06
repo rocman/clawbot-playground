@@ -40,13 +40,26 @@ jobs:
           echo "short_commit=$SHORT_COMMIT" >> "$GITHUB_OUTPUT"
           echo "Build version: $VERSION ($SHORT_COMMIT)"
 
-      - name: Stamp __BUILD_VERSION__ and write version.json for each game
+      - name: Stamp __BUILD_VERSION__ and write version.json for changed games only
         run: |
           VERSION="${{ steps.ver.outputs.version }}"
           SHORT_COMMIT="${{ steps.ver.outputs.short_commit }}"
 
-          for GAME_DIR in games/*/; do
-            GAME=$(basename "$GAME_DIR")
+          # 只处理本次 commit 实际改动的游戏目录
+          CHANGED_GAMES=$(git diff --name-only HEAD~1 HEAD | grep '^games/' | cut -d/ -f2 | sort -u)
+
+          if [ -z "$CHANGED_GAMES" ]; then
+            echo "No game directories changed, skipping."
+            exit 0
+          fi
+
+          for GAME in $CHANGED_GAMES; do
+            GAME_DIR="games/$GAME"
+            if [ ! -d "$GAME_DIR" ]; then
+              echo "Directory $GAME_DIR not found, skipping."
+              continue
+            fi
+
             HTML="$GAME_DIR/index.html"
 
             # 1. 替换 HTML 占位符
@@ -55,7 +68,7 @@ jobs:
               echo "Stamped HTML: $HTML"
             fi
 
-            # 2. 写 version.json（无论 HTML 有没有占位符，只要目录存在就写）
+            # 2. 写 version.json
             VERSION_FILE="$GAME_DIR/version.json"
             UPDATED_AT=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
             printf '{\n  "game": "%s",\n  "version": "%s",\n  "commit": "%s",\n  "updatedAt": "%s"\n}\n' \
