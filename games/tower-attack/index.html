@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-75">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -395,7 +395,7 @@ if(location.hash==='#debug'){
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-75</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -469,7 +469,7 @@ if(location.hash==='#debug'){
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-75</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1884,10 +1884,7 @@ function renderActiveSkills(){
       chip.innerHTML=`${def.icon}`;
       chip.addEventListener('click', e=>{
         e.stopPropagation();
-        // rAF 确保chip已渲染，getBoundingClientRect 拿到真实坐标
-        requestAnimationFrame(()=>{
-          window._showQiMenu(chip.getBoundingClientRect(), item.uid);
-        });
+        window._showQiMenu(chip.getBoundingClientRect(), item.uid);
       });
       wrap.appendChild(chip);pendingRow.appendChild(wrap);
     });
@@ -2317,9 +2314,9 @@ var sl; // suppress lint
     menu.style.top=top+'px';
     menu.classList.add('show');
   }
-  // chip click 里已 stopPropagation，所以 document click 只在菜单外触发
-  document.addEventListener('click', ()=>hideMenu());
-  document.addEventListener('touchend', ()=>hideMenu(), {passive:true});
+  // setTimeout(0) 保证菜单按钮的 handler 先于 document hideMenu 执行
+  document.addEventListener('click', ()=>setTimeout(hideMenu, 0));
+  document.addEventListener('touchend', ()=>setTimeout(hideMenu, 0), {passive:true});
   // 菜单按钮：stopPropagation 防止触发上面的 document hideMenu
   function bindBtn(id, fn){
     document.getElementById(id).addEventListener('click', e=>{
