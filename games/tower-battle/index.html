@@ -34,7 +34,7 @@ body{display:flex;flex-direction:column;}
   background:#1a2d4a;border:1px solid #0f3460;border-radius:10px;
   padding:12px;box-shadow:0 6px 24px rgba(0,0,0,.6);
   flex-direction:column;align-items:center;gap:8px;
-  top:42px;left:50%;transform:translateX(-50%);
+  top:42px;left:50%;
 }
 #conn-qr-popup.open{display:flex;}
 #conn-qr-popup .qr-inner{background:#fff;padding:8px;border-radius:6px;display:inline-block;}
@@ -1838,9 +1838,15 @@ function setQueueMode(on){
 // ═══════════════════════════════════════════════
 function serializeState(){
   return {
-    enemies: enemies.map(e=>({id:e.id,x:e.x,y:e.y,hp:e.hp,maxHp:e.maxHp,type:e.type,reached:e.reached,dead:e.dead,hasShield:e.hasShield,progress:e.progress})),
+    enemies: enemies.map(e=>{
+      // 逻辑坐标：wpIdx + 段内插值比例，不依赖本地 TILE/px
+      const wpA=PATH_WP[e.wpIdx],wpB=PATH_WP[e.wpIdx+1];
+      let tFrac=0;
+      if(wpA&&wpB){const seg=Math.hypot(wpB.x-wpA.x,wpB.y-wpA.y);tFrac=seg>0?Math.hypot(e.x-wpA.x,e.y-wpA.y)/seg:0;}
+      return {id:e.id,wpIdx:e.wpIdx,tFrac,hp:e.hp,maxHp:e.maxHp,type:e.type,reached:e.reached,dead:e.dead,hasShield:e.hasShield,progress:e.progress};
+    }),
     turrets: FAKE_TURRETS.map(t=>({c:t.c,r:t.r,kind:t.kind,hp:t.hp??0,maxHp:t.maxHp??0,active:!!t.active})),
-    blasts: blasts.map(b=>({x:b.x,y:b.y,life:b.life,r:b.r,vx:b.vx,vy:b.vy})),
+    blasts: blasts.map(b=>({nx:b.x/canvas.width,ny:b.y/canvas.height,life:b.life,nr:b.r/TILE,nvx:b.vx/TILE,nvy:b.vy/TILE})),
     wave:waveNum, waveActive, defenderGold, attackerGold:gold, attackerQuota:waveQuota, quotaUsed,
     breachCount, gameState,
   };
@@ -1869,14 +1875,30 @@ function applyRemoteState(data){
     if(gameState==='over')showEndOverlay();
   }
   if(role==='guest') buildTurretCards();
-  // Reconstruct enemies for rendering
+  // Reconstruct enemies for rendering（逻辑坐标→本地px）
+  if(!PATH_WP.length)rebuildWP();
   enemies=data.enemies.map(es=>{
     const e=Object.create(Enemy.prototype);
-    Object.assign(e,es);e.def=UNIT_DEFS[es.type]||UNIT_DEFS.grunt;
+    Object.assign(e,es);
+    e.def=UNIT_DEFS[es.type]||UNIT_DEFS.grunt;
+    // 用本地 PATH_WP 把 wpIdx+tFrac 还原成本地 px 坐标
+    const wpA=PATH_WP[es.wpIdx],wpB=PATH_WP[(es.wpIdx??0)+1];
+    if(wpA&&wpB){
+      const t=Math.max(0,Math.min(1,es.tFrac??0));
+      e.x=wpA.x+(wpB.x-wpA.x)*t;
+      e.y=wpA.y+(wpB.y-wpA.y)*t;
+    } else if(wpA){
+      e.x=wpA.x;e.y=wpA.y;
+    }
     return e;
   });
-  // Blasts
-  blasts.length=0;data.blasts.forEach(b=>blasts.push({...b}));
+  // Blasts（归一化坐标→本地px）
+  blasts.length=0;
+  data.blasts.forEach(b=>blasts.push({
+    x:b.nx*canvas.width, y:b.ny*canvas.height,
+    life:b.life, r:b.nr*TILE,
+    vx:b.nvx*TILE, vy:b.nvy*TILE,
+  }));
   updateHUD();buildTurretCards();
 }
 
@@ -1901,8 +1923,9 @@ function startHost(){
       updateConnBadge('connected','🟢 已连接');
       log('🎮 守方已加入！游戏开始！');
       closeOverlay();
-      // Hide QR overlay if any
-      document.querySelectorAll('.qr-overlay').forEach(el=>el.remove());
+      // 收起二维码弹出框
+      const pop=document.getElementById('conn-qr-popup');
+      if(pop) pop.classList.remove('open');
       startGame();
     });
     c.on('data',msg=>{
@@ -1992,7 +2015,20 @@ function showHostQR(peerId){
     badge.classList.add('host');
     badge.onclick=()=>{
       const pop=document.getElementById('conn-qr-popup');
-      if(pop) pop.classList.toggle('open');
+      if(!pop)return;
+      const wasOpen=pop.classList.contains('open');
+      pop.classList.remove('open');
+      if(!wasOpen){
+        // 定位到 badge 正下方居中
+        const br=badge.getBoundingClientRect();
+        const pw=pop.offsetWidth||220;
+        let left=br.left+br.width/2-pw/2;
+        left=Math.max(8,Math.min(left,window.innerWidth-pw-8));
+        pop.style.left=left+'px';
+        pop.style.top=(br.bottom+6)+'px';
+        pop.style.transform='none';
+        pop.classList.add('open');
+      }
     };
   });
   // 首次自动展开
