@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-22">
+<meta name="build-version" content="0406-23">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -273,8 +273,11 @@ canvas{display:block;width:100%;height:100%;}
 .qi-row::-webkit-scrollbar{height:3px;}
 .qi-row::-webkit-scrollbar-thumb{background:#444;border-radius:2px;}
 @keyframes chipIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
-.qi-chip.new{animation:chipIn .4s ease forwards;}
-.qi-chip{
+@keyframes chipFade{from{opacity:1}to{opacity:0}}
+@keyframes chipCollapse{from{max-width:60px;margin-right:4px;padding:0 6px}to{max-width:0;margin-right:0;padding:0;border-width:0}}
+.qi-chip.new{animation:chipIn .2s ease forwards;}
+.qi-chip.leaving{animation:chipFade .2s ease forwards, chipCollapse .2s ease .2s forwards;pointer-events:none;}
+.qi-chip{overflow:hidden;max-width:60px;
   width:30px;height:30px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   border-radius:6px;border:1.5px solid;
@@ -369,7 +372,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-22</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-23</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -439,7 +442,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-22</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-23</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1633,6 +1636,16 @@ function updateSendBtn(){
   });
 }
 // ── queue-list 面板的固定结构，首次调用时初始化，之后只更新内容 ──
+// 带离场动画的 chip 删除：先淡出+收缩，animationend 后再移除 DOM
+function removeChip(el){
+  if(el.classList.contains('leaving')) return;
+  el.classList.remove('new');
+  el.classList.add('leaving');
+  el.addEventListener('animationend', ()=>el.remove(), {once:true});
+  // 保底：300ms 后强制删除（防止动画未触发）
+  setTimeout(()=>{if(el.parentNode)el.remove();}, 400);
+}
+
 let _qlInited=false;
 function _initQueuePanels(){
   const pairs=[['queue-list','btn-send'],['queue-list-pt','btn-send-pt']];
@@ -1676,9 +1689,9 @@ function renderActiveSkills(){
 
     // ── 场上行：增量更新 ──
     const fieldRow=ql.querySelector('.field-row');if(!fieldRow)return;
-    // 删除已离场的 chip
+    // 删除已离场的 chip（带离场动画）
     [...fieldRow.querySelectorAll('.qi-chip')].forEach(el=>{
-      if(!curFieldIds.has(el.dataset.chipId)) el.remove();
+      if(!curFieldIds.has(el.dataset.chipId)) removeChip(el);
     });
     // 更新 badge（技能倒计时）+ 新增
     const existingIds=new Set([...fieldRow.querySelectorAll('.qi-chip')].map(el=>el.dataset.chipId));
@@ -1701,12 +1714,13 @@ function renderActiveSkills(){
     const pendingRow=ql.querySelector('.pending-row');if(!pendingRow)return;
     const curPendingCount=pendingQueue.length;
     const curUids=new Set(pendingQueue.map(i=>i.uid));
-    // 删除已移出队列的 chip
+    // 删除已移出队列的 chip（带离场动画）
     [...pendingRow.querySelectorAll('.qi-chip')].forEach(el=>{
-      if(!curUids.has(el.dataset.uid)) el.remove();
+      if(!curUids.has(el.dataset.uid)) removeChip(el);
     });
     // 新增不存在的 chip（append 到末尾，保持顺序）
     const existingUids=new Set([...pendingRow.querySelectorAll('.qi-chip')].map(el=>el.dataset.uid));
+    // 跳过正在播放离场动画的节点（uid 仍在 DOM 中但已标记 leaving）
     pendingQueue.forEach(item=>{
       if(existingUids.has(item.uid)) return; // 已存在，不动
       const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
