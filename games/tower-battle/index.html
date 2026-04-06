@@ -27,6 +27,19 @@ body{display:flex;flex-direction:column;}
 .conn-badge.waiting{background:#444;color:#aaa;}
 .conn-badge.connected{background:#00b894;color:#fff;}
 .conn-badge.disconnected{background:#e94560;color:#fff;}
+.conn-badge.host{cursor:pointer;user-select:none;}
+.conn-badge.host:active{opacity:.8;}
+#conn-qr-popup{
+  display:none;position:fixed;z-index:999;
+  background:#1a2d4a;border:1px solid #0f3460;border-radius:10px;
+  padding:12px;box-shadow:0 6px 24px rgba(0,0,0,.6);
+  flex-direction:column;align-items:center;gap:8px;
+  top:42px;left:50%;transform:translateX(-50%);
+}
+#conn-qr-popup.open{display:flex;}
+#conn-qr-popup .qr-inner{background:#fff;padding:8px;border-radius:6px;display:inline-block;}
+#conn-qr-popup .qr-url{font-size:0.62rem;color:#636e72;max-width:220px;word-break:break-all;text-align:center;}
+#conn-qr-popup .qr-copy{font-size:0.72rem;padding:4px 12px;border-radius:6px;border:none;background:#0984e3;color:#fff;cursor:pointer;}
 
 /* ── Content ── */
 #content{flex:1;min-height:0;display:flex;overflow:hidden;}
@@ -334,6 +347,12 @@ canvas{display:block;width:100%;height:100%;}
     <span class="hud-item" id="hud-quota-wrap">⚡<span id="hud-quota">—</span></span>
   </div>
 </header>
+<!-- QR popup anchored below conn-badge -->
+<div id="conn-qr-popup">
+  <div class="qr-inner" id="conn-qr-inner"></div>
+  <div class="qr-url" id="conn-qr-url"></div>
+  <button class="qr-copy" id="conn-qr-copy">📋 复制链接</button>
+</div>
 
 <div id="content">
   <!-- Map -->
@@ -1594,31 +1613,42 @@ function updateConnBadge(cls,text){
   b.textContent=text;
 }
 
+// 点击外部关闭 QR popup
+document.addEventListener('click', e=>{
+  const pop=document.getElementById('conn-qr-popup');
+  const badge=document.getElementById('conn-badge');
+  if(pop&&pop.classList.contains('open')&&!pop.contains(e.target)&&e.target!==badge){
+    pop.classList.remove('open');
+  }
+});
+
 function closeOverlay(){
   document.getElementById('overlay').classList.add('hidden');
 }
 
 function showHostQR(peerId){
-  // Build join URL with peer id fragment
   const joinUrl=`${location.origin}${location.pathname}#join=${peerId}`;
-  // Create QR overlay
-  const ov=document.getElementById('overlay');
-  ov.classList.remove('hidden');
-  ov.innerHTML=`
-    <h2>🏠 主机就绪</h2>
-    <p style="font-size:0.8rem;color:#aaa;">请守方扫描下方二维码加入</p>
-    <div id="qr-wrap" style="background:#fff;padding:10px;border-radius:8px;display:inline-block;"></div>
-    <p class="join-url" style="font-size:0.66rem;">${joinUrl}</p>
-    <button class="btn gray" onclick="copyJoinUrl('${joinUrl}')">📋 复制链接</button>
-    <p style="font-size:0.72rem;color:#636e72;">等待守方连接后游戏自动开始</p>
-  `;
-  // Generate QR
+  // 填充 popup
+  const inner=document.getElementById('conn-qr-inner');
+  const urlEl=document.getElementById('conn-qr-url');
+  const copyBtn=document.getElementById('conn-qr-copy');
+  if(inner){ inner.innerHTML=''; if(window.QRCode) new QRCode(inner,{text:joinUrl,width:180,height:180,colorDark:'#000',colorLight:'#fff'}); }
+  if(urlEl) urlEl.textContent=joinUrl;
+  if(copyBtn) copyBtn.onclick=()=>copyJoinUrl(joinUrl);
+  // 给 conn-badge 加 host 样式 + toggle 点击
+  const badge=document.getElementById('conn-badge');
+  if(badge){
+    badge.classList.add('host');
+    badge.onclick=()=>{
+      const pop=document.getElementById('conn-qr-popup');
+      if(pop) pop.classList.toggle('open');
+    };
+  }
+  // 首次自动展开
   setTimeout(()=>{
-    const qrWrap=document.getElementById('qr-wrap');
-    if(qrWrap&&window.QRCode){
-      new QRCode(qrWrap,{text:joinUrl,width:200,height:200,colorDark:'#000',colorLight:'#fff'});
-    }
-  },100);
+    const pop=document.getElementById('conn-qr-popup');
+    if(pop) pop.classList.add('open');
+  },150);
 }
 
 function copyJoinUrl(url){
