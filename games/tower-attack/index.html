@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="202604060823">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -366,7 +366,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.55rem;color:#fff;font-weight:normal;letter-spacing:0">202604060823</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.55rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -436,7 +436,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.55rem;color:#fff;font-weight:normal;letter-spacing:0">202604060823</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.55rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1133,7 +1133,8 @@ let state='idle';
 let gold=0,waveNum=0,breachCount=0,gameSpeed=1,speedIdx=1;
 const SPEED_STEPS=[0.5,1,2,3,4];
 let enemies=[],spawnQueue=[],spawnTimer=0,waveActive=false;
-let waveQuota=0,quotaUsed=0;  // 本波配额(战力点) & 已用战力点
+let waveQuota=0,quotaUsed=0;   // 本波配额(战力点) & 已用战力点
+let _waveForceEnd=false;       // 玩家手动点"结束本波"
 
 // 配额公式（战力点）：8 + wave*1.5，第1波9.5点，逐波线性增加
 // 各兵种 weight：swarm=0.5, grunt=1, runner=1.5, sapper=2, phantom=3, tank=3, boss=8
@@ -1482,10 +1483,10 @@ function enqueue(kind,key,targetIdx){
     gold-=def.cost;
     if(kind==='unit'){
       if(!waveActive){
-        waveNum++;waveActive=true;spawnTimer=0;
+        waveNum++;waveActive=true;spawnTimer=0;_waveForceEnd=false;
         waveQuota=calcQuota(waveNum);quotaUsed=0;
         log(`🌊 第${waveNum}波！战力配额 ${waveQuota.toFixed(1)}⚡`);
-        ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
+        ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=false;b.style.background='';b.style.color='';}});
       }
       quotaUsed += unitWeight;
       const mods={...techPerms,...activeSkills};
@@ -1542,10 +1543,10 @@ function flushQueue(){
   }
   gold-=totalCost;
   if(!waveActive){
-    waveNum++;waveActive=true;spawnTimer=0;
+    waveNum++;waveActive=true;spawnTimer=0;_waveForceEnd=false;
     waveQuota=calcQuota(waveNum);quotaUsed=0;
     log(`🌊 第${waveNum}波！战力配额 ${waveQuota.toFixed(1)}⚡`);
-    ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
+    ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=false;b.style.background='';b.style.color='';}});
   }
   const mods={...techPerms,...activeSkills};
   let delay=0;
@@ -1697,23 +1698,38 @@ function updateWave(dt){
 
   const fieldClear=!spawnQueue.length&&enemies.every(e=>e.dead||e.reached);
 
-  // ── 破产检测：配额未用完，场上清空，且买不起任何东西 ──
-  if(fieldClear&&quotaUsed<waveQuota&&enemies.length>0){
-    // 检查剩余战力是否还够派一只最轻的兵
+  // ── 场上清空但配额未用完：更新暂停按钮为"结束本波" ──
+  if(fieldClear&&quotaUsed<waveQuota&&spawnQueue.length===0&&enemies.length>0){
     const minWeight=Math.min(...Object.values(UNIT_DEFS).map(d=>d.weight??1));
-    const canSendMore = (waveQuota-quotaUsed) >= minWeight;
+    const canSendMore=(waveQuota-quotaUsed)>=minWeight;
     const cheapest=Math.min(...Object.values(UNIT_DEFS).map(d=>d.cost),
                              ...Object.entries(SKILL_DEFS).filter(([k])=>unlockedSkills.has(k)).map(([,d])=>d.cost));
-    if(!canSendMore || gold<cheapest){
+    if(!canSendMore||gold<cheapest){
+      // 真破产：无法再派兵，直接判负
       defeatGame();return;
     }
+    // 还能派兵，但场上已清空：把暂停按钮变为"结束本波"提示玩家
+    ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{
+      const b=document.getElementById(id);if(!b)return;
+      if(b.textContent!=='⏭ 结束本波'){
+        b.textContent='⏭ 结束本波';
+        b.style.background='#00b894';b.style.color='#fff';
+        b.disabled=false;
+      }
+    });
+    return;
   }
 
   // ── 正常波结束：配额用完 + 场上清空 ──
-  if(fieldClear&&quotaUsed>=waveQuota&&enemies.length>0){
+  if(fieldClear&&(quotaUsed>=waveQuota||_waveForceEnd)&&enemies.length>0){
     const survived=enemies.filter(e=>e.reached).length;
     const died=enemies.filter(e=>e.dead).length;
-    waveActive=false;
+    waveActive=false;_waveForceEnd=false;
+    // 恢复暂停按钮样式（可能是绿色的"结束本波"）
+    ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{
+      const b=document.getElementById(id);if(!b)return;
+      b.textContent='⏸ 暂停';b.style.background='';b.style.color='';b.disabled=true;
+    });
     activeSkills={};activeSkillTimers={};waveSkillsUsed=new Set();  // clear all skill effects
     const incomeBonus=Object.values(nextSkills).reduce((a,e)=>a+(e.incomeBonus??0),0);
     const interest=Object.values(nextSkills).reduce((a,e)=>a+(e.interest??0),0);
@@ -1749,6 +1765,17 @@ function updateSpeedDisplay(){
 }
 
 function togglePause(){
+  // 若当前是"结束本波"模式，点击直接强制结束本波
+  const anyEndBtn=document.getElementById('btn-pause-atk');
+  if(anyEndBtn&&anyEndBtn.textContent==='⏭ 结束本波'){
+    _waveForceEnd=true;
+    // 恢复按钮样式为暂停
+    ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{
+      const b=document.getElementById(id);if(!b)return;
+      b.textContent='⏸ 暂停';b.style.background='';b.style.color='';
+    });
+    return;
+  }
   if(state==='playing'){
     state='paused';
     ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.textContent='▶ 继续';});
@@ -1835,7 +1862,7 @@ function startGame(){
   rebuildTechPerms();
   const startBonus=techPerms.startGoldBonus||0;
   gold=waveGold(1)+startBonus;waveNum=0;breachCount=0;
-  enemies=[];spawnQueue=[];waveActive=false;waveQuota=0;quotaUsed=0;onFieldUnits=new Map();
+  enemies=[];spawnQueue=[];waveActive=false;waveQuota=0;quotaUsed=0;_waveForceEnd=false;onFieldUnits=new Map();
   activeSkills={};nextSkills={};activeSkillTimers={};waveSkillsUsed=new Set();
   defenderGold=50;
   unlockedSkills=new Set(['rush','income']);
@@ -1932,7 +1959,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '202604060823') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '__BUILD_VERSION__') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
