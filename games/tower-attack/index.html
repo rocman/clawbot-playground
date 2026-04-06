@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-67">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -386,7 +386,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-67</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -431,8 +431,12 @@ canvas{display:block;width:100%;height:100%;}
     </div>
     <div id="panel-right-pt">
       <div class="panel" id="log-panel-pt">
-        <div class="panel-title">📡 战报</div>
-        <div id="log-pt"></div>
+        <div class="panel-tabs" style="border-bottom:1px solid #0f3460;">
+          <button class="ptab active" id="log-tab-log-pt" onclick="switchLogTab('log')">📡 战报</button>
+          <button class="ptab" id="log-tab-intel-pt" onclick="switchLogTab('intel')">🕵️ 敌情</button>
+        </div>
+        <div id="log-pt" class="tab-body" style="padding:4px 6px;"></div>
+        <div id="intel-pt" class="tab-body hidden"></div>
       </div>
       <div class="panel" id="queue-panel-pt">
         <div class="panel-title">⚔️ 场上兵员/技能</div>
@@ -456,7 +460,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-67</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -490,8 +494,12 @@ canvas{display:block;width:100%;height:100%;}
       </div>
 
       <div class="panel" id="log-panel">
-        <div class="panel-title">📡 战报</div>
-        <div id="log"></div>
+        <div class="panel-tabs" style="border-bottom:1px solid #0f3460;">
+          <button class="ptab active" id="log-tab-log" onclick="switchLogTab('log')">📡 战报</button>
+          <button class="ptab" id="log-tab-intel" onclick="switchLogTab('intel')">🕵️ 敌情</button>
+        </div>
+        <div id="log" class="tab-body" style="padding:4px 6px;"></div>
+        <div id="intel" class="tab-body hidden"></div>
       </div>
     </div>
 
@@ -1316,6 +1324,85 @@ function onBreach(enemy){
 // ═══════════════════════════════════════════════
 //  TAB SWITCH
 // ═══════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════
+//  敌情面板
+// ═══════════════════════════════════════════════
+let _logTab='log'; // 'log' | 'intel'
+function switchLogTab(tab){
+  _logTab=tab;
+  ['log','log-pt'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('hidden', tab!=='log');
+  });
+  ['intel','intel-pt'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('hidden', tab!=='intel');
+  });
+  ['log-tab-log','log-tab-log-pt'].forEach(id=>{
+    const b=document.getElementById(id);
+    if(b) b.classList.toggle('active', tab==='log');
+  });
+  ['log-tab-intel','log-tab-intel-pt'].forEach(id=>{
+    const b=document.getElementById(id);
+    if(b) b.classList.toggle('active', tab==='intel');
+  });
+  if(tab==='intel') renderIntel();
+}
+
+function renderIntel(){
+  const activeTurrets=FAKE_TURRETS.filter(t=>t.active);
+  const inactiveTurrets=FAKE_TURRETS.filter(t=>!t.active);
+
+  let html=`<div style="font-size:0.78rem;line-height:1.7;color:#ccc;">`;
+
+  // 守方资金
+  html+=`<div style="margin-bottom:6px;">
+    <span style="color:#fdcb6e;font-weight:bold;">💰 守方资金</span>
+    <span style="float:right;color:#fff;font-weight:bold;">${Math.floor(defenderGold)}</span>
+  </div>`;
+
+  // 在线炮台
+  html+=`<div style="color:#74b9ff;font-weight:bold;margin-bottom:2px;">🏰 活跃炮台（${activeTurrets.length}座）</div>`;
+  if(activeTurrets.length===0){
+    html+=`<div style="color:#636e72;font-size:0.72rem;margin-bottom:6px;">— 无 —</div>`;
+  } else {
+    activeTurrets.forEach(t=>{
+      const kdef=TURRET_KINDS[t.kind??'basic'];
+      const hpPct=Math.round((t.hp??t.maxHp??1)/(t.maxHp??1)*100);
+      const hpColor=hpPct>60?'#00b894':hpPct>30?'#fdcb6e':'#e17055';
+      const tier=t.tier??0;
+      const tierStr=tier>0?` Lv${tier+1}`:'';
+      html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+        <span>${kdef?.icon??'🏰'}${kdef?.label??'炮台'}${tierStr}</span>
+        <span style="color:${hpColor};">HP ${hpPct}%</span>
+      </div>`;
+    });
+    html+=`<div style="margin-bottom:6px;"></div>`;
+  }
+
+  // 已摧毁/未建炮台
+  if(inactiveTurrets.length>0){
+    html+=`<div style="color:#636e72;font-weight:bold;margin-bottom:2px;">💀 已摧毁/未建（${inactiveTurrets.length}座）</div>`;
+    inactiveTurrets.forEach(t=>{
+      const kdef=TURRET_KINDS[t.kind??'basic'];
+      html+=`<div style="color:#636e72;font-size:0.72rem;margin-bottom:1px;">${kdef?.icon??'🏰'}${kdef?.label??'炮台'} 重建需💰${t.buildCost}</div>`;
+    });
+    html+=`<div style="margin-bottom:6px;"></div>`;
+  }
+
+  // 当前波次信息
+  html+=`<div style="color:#a29bfe;font-weight:bold;margin-bottom:2px;">📊 当前波次</div>`;
+  html+=`<div style="display:flex;justify-content:space-between;"><span>波次</span><span style="color:#fff;">第 ${waveNum} 波</span></div>`;
+  html+=`<div style="display:flex;justify-content:space-between;"><span>下波守方收入</span><span style="color:#fdcb6e;">+${Math.floor(waveGold(waveNum+1)*0.7)}</span></div>`;
+
+  html+=`</div>`;
+
+  ['intel','intel-pt'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.innerHTML=html;
+  });
+}
 function switchTab(tab){
   ['unit-list','skill-list','tech-panel','tab-units','tab-skills','tab-tech'].forEach(id=>{
     both(id,el=>{
@@ -1998,6 +2085,7 @@ function gameLoop(ts){
     drawMap();drawFakeTurrets();updateFakeTurrets(dt);updateBlasts(dt);drawBlasts();
     for(const e of enemies) e.update(dt);
     for(const e of enemies) e.draw();
+    if(_logTab==='intel'&&Math.floor(elapsed*10)%10===0) renderIntel();
     // 守方收益：仅靠杀敌赏金（在 takeDamage 中结算），无时间自然收益
     // 有钱就建塔，但有残血塔时必须先修好才能建新塔
     const hasDamagedTurret=FAKE_TURRETS.some(t=>t.active&&t.hp!=null&&t.maxHp&&t.hp<t.maxHp);
