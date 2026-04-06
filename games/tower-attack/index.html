@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-33">
+<meta name="build-version" content="0406-34">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -372,7 +372,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-33</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-34</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -442,7 +442,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-33</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-34</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -892,23 +892,23 @@ const TURRET_KINDS={
 const FAKE_TURRETS=[
   // kind 决定战斗风格；baseDmg/baseRate/baseRange 作为该类型的基础值
   // 初期塔（buildCost 20-45）：守方第1波就能建4座
-  {c:1, r:1,  kind:'gatling',baseDmg:9.6,  baseRate:2.64, baseRange:1.8, cd:0, buildCost:20},
-  {c:9, r:1,  kind:'basic',  baseDmg:16.0, baseRate:1.8, baseRange:2.0, cd:0, buildCost:25},
-  {c:4, r:5,  kind:'slow',   baseDmg:11.2,  baseRate:0.96, baseRange:2.2, cd:0, buildCost:30},
-  {c:9, r:4,  kind:'sniper', baseDmg:56.0, baseRate:0.42,baseRange:3.5, cd:0, buildCost:45},
+  {c:1, r:1,  kind:'gatling',baseDmg:17.3,  baseRate:2.64, baseRange:1.8, cd:0, buildCost:20},
+  {c:9, r:1,  kind:'basic',  baseDmg:28.8, baseRate:1.8, baseRange:2.0, cd:0, buildCost:25},
+  {c:4, r:5,  kind:'slow',   baseDmg:20.2,  baseRate:0.96, baseRange:2.2, cd:0, buildCost:30},
+  {c:9, r:4,  kind:'sniper', baseDmg:100.8, baseRate:0.42,baseRange:3.5, cd:0, buildCost:45},
   // 中期塔（75-190）：波3-10陆续建成
-  {c:5, r:1,  kind:'basic',  baseDmg:20.8, baseRate:1.2, baseRange:2.2, cd:0, buildCost:75},
-  {c:1, r:4,  kind:'splash', baseDmg:16.0, baseRate:0.72, baseRange:2.3, cd:0, buildCost:90},
-  {c:6, r:8,  kind:'gatling',baseDmg:14.4,  baseRate:3.12, baseRange:2.0, cd:0, buildCost:110},
-  {c:1, r:8,  kind:'sniper', baseDmg:76.8, baseRate:0.42,baseRange:4.5, cd:0, buildCost:135},
-  {c:10,r:8,  kind:'slow',   baseDmg:16.0, baseRate:0.96, baseRange:2.8, cd:0, buildCost:160},
-  {c:3, r:11, kind:'splash', baseDmg:25.6, baseRate:0.6, baseRange:2.5, cd:0, buildCost:190},
+  {c:5, r:1,  kind:'basic',  baseDmg:37.4, baseRate:1.2, baseRange:2.2, cd:0, buildCost:75},
+  {c:1, r:4,  kind:'splash', baseDmg:28.8, baseRate:0.72, baseRange:2.3, cd:0, buildCost:90},
+  {c:6, r:8,  kind:'gatling',baseDmg:25.9,  baseRate:3.12, baseRange:2.0, cd:0, buildCost:110},
+  {c:1, r:8,  kind:'sniper', baseDmg:138.2, baseRate:0.42,baseRange:4.5, cd:0, buildCost:135},
+  {c:10,r:8,  kind:'slow',   baseDmg:28.8, baseRate:0.96, baseRange:2.8, cd:0, buildCost:160},
+  {c:3, r:11, kind:'splash', baseDmg:46.1, baseRate:0.6, baseRange:2.5, cd:0, buildCost:190},
   // 后期塔（240-470）：波6-15分散建成，守方金币持续有出处
-  {c:7, r:3,  kind:'basic',  baseDmg:25.6, baseRate:1.2, baseRange:2.5, cd:0, buildCost:240},
-  {c:3, r:7,  kind:'sniper', baseDmg:70.4, baseRate:0.48, baseRange:4.5, cd:0, buildCost:295},
-  {c:8, r:6,  kind:'gatling',baseDmg:17.6, baseRate:3.0, baseRange:2.2, cd:0, buildCost:345},
-  {c:2, r:9,  kind:'splash', baseDmg:32.0, baseRate:0.72, baseRange:2.8, cd:0, buildCost:405},
-  {c:6, r:11, kind:'sniper', baseDmg:99.2, baseRate:0.34,baseRange:5.0, cd:0, buildCost:470},
+  {c:7, r:3,  kind:'basic',  baseDmg:46.1, baseRate:1.2, baseRange:2.5, cd:0, buildCost:240},
+  {c:3, r:7,  kind:'sniper', baseDmg:126.7, baseRate:0.48, baseRange:4.5, cd:0, buildCost:295},
+  {c:8, r:6,  kind:'gatling',baseDmg:31.7, baseRate:3.0, baseRange:2.2, cd:0, buildCost:345},
+  {c:2, r:9,  kind:'splash', baseDmg:57.6, baseRate:0.72, baseRange:2.8, cd:0, buildCost:405},
+  {c:6, r:11, kind:'sniper', baseDmg:178.6, baseRate:0.34,baseRange:5.0, cd:0, buildCost:470},
 ];
 // Computed live stats, rebuilt each wave
 function scaleTurrets(wave){
@@ -1173,7 +1173,7 @@ const reachedMilestones=new Set();
 let defenderGold=120; // 起始资金，第1波能建4座初期塔
 
 function waveGold(n){
-  const base=100+(n-1)*30;
+  const base=160+(n-1)*40;
   const mult=techPerms.incomeBonus||1;
   const bonus=techPerms.waveBonus||0;
   const interest=Math.floor((gold||0)*(techPerms.interestRate||0));
