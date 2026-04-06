@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-29">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -372,7 +372,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-29</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -442,7 +442,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-29</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1329,11 +1329,15 @@ function buildUnitCards(){
     const ul=document.getElementById(id); if(!ul) return;
     ul.innerHTML='';
     const dispGold=gold-pendingQueue.reduce((s,i)=>s+i.cost,0);
+    const usedWeight=calcQueueWeight(pendingQueue);
+    const quota=waveActive ? waveQuota-quotaUsed : calcQuota(waveNum+1)+_bonusQuota;
     Object.entries(UNIT_DEFS).forEach(([key,def])=>{
       const canAfford=def.cost<=dispGold;
+      const hasQuota=(def.weight??1)+usedWeight<=quota;
       const active=state==='playing'||state==='paused';
+      const ok=canAfford&&hasQuota&&active;
       const card=document.createElement('div');
-      card.className='unit-card'+((canAfford&&active)?'':' disabled');
+      card.className='unit-card'+(ok?'':' disabled');
       card.setAttribute('tabindex','-1');
       card.innerHTML=`<div class="unit-icon">${def.icon}</div>
         <div class="unit-info"><div class="unit-name">${def.name}</div><div class="unit-desc">${def.desc}</div></div>
@@ -1341,7 +1345,7 @@ function buildUnitCards(){
           <div class="unit-cost">💰${def.cost}</div>
           <div style="font-size:0.6rem;color:#74b9ff">⚡${def.weight??1}</div>
         </div>`;
-      bindCardEvents(card, !(canAfford&&active), ()=>enqueue('unit',key));
+      bindCardEvents(card, !ok, ()=>enqueue('unit',key));
       ul.appendChild(card);
     });
   });
