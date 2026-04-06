@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-13">
+<meta name="build-version" content="0406-14">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -366,7 +366,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-13</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-14</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -436,7 +436,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-13</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-14</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1523,7 +1523,7 @@ function clearCardFocus(){
 }
 
 function flushQueue(){
-  if(!pendingQueue.length) return;
+  if(!pendingQueue.length){showToast('📋 队列为空，请先添加兵种','info');return;}
   // 发兵时统一扣钱，先检查总费用
   const totalCost=pendingQueue.reduce((s,i)=>s+i.cost,0);
   if(totalCost>gold){showToast('💸 金币不足，无法发兵！','warn');return;}
@@ -1692,8 +1692,8 @@ function renderActiveSkills(){
 //  WAVE
 // ═══════════════════════════════════════════════
 function sendWave(){
-  // 主按钮：列队模式=发兵，直接模式=无意义（卡片直接上场）
-  if(queueMode) flushQueue();
+  if(!queueMode){showToast('💡 切换到队列模式后再发兵','info');return;}
+  flushQueue();
 }
 
 function toggleDeployMode(){
@@ -1993,7 +1993,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '0406-13') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '0406-14') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
