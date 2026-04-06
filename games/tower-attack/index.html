@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-17">
+<meta name="build-version" content="0406-18">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -366,7 +366,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-17</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-18</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -436,7 +436,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-17</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-18</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1628,67 +1628,94 @@ function updateSendBtn(){
     b.style.display=(queueMode||showEndWave)?'block':'none';
   });
 }
+// ── queue-list 面板的固定结构，首次调用时初始化，之后只更新内容 ──
+let _qlInited=false;
+function _initQueuePanels(){
+  ['queue-list','queue-list-pt'].forEach(id=>{
+    const ql=document.getElementById(id);if(!ql)return;
+    ql.innerHTML='';
+    // 场上行
+    const fw=document.createElement('div');fw.className='qi-row-wrap';
+    const fl=document.createElement('div');fl.className='qi-row-label';fl.textContent='场上';
+    const fr=document.createElement('div');fr.className='qi-row field-row';
+    fw.appendChild(fl);fw.appendChild(fr);ql.appendChild(fw);
+    // 队列行
+    const pw=document.createElement('div');pw.className='qi-row-wrap';
+    const pl=document.createElement('div');pl.className='qi-row-label';pl.textContent='队列';
+    const pr=document.createElement('div');pr.className='qi-row pending-row';
+    pw.appendChild(pl);pw.appendChild(pr);ql.appendChild(pw);
+  });
+  _qlInited=true;
+}
+
 let _prevFieldIds=new Set(), _prevPendingCount=0;
 function renderActiveSkills(){
-  const curFieldCount=onFieldUnits.size+Object.keys(activeSkillTimers).length;
-  const curPendingCount=pendingQueue.length;
-  // 计算当前场上 id set（在循环外，供 _prevFieldIds 更新使用）
-  const _curFieldChips=[];
-  onFieldUnits.forEach(({icon,name},id)=>_curFieldChips.push({icon,badge:name,id:'u'+id}));
+  if(!_qlInited) _initQueuePanels();
+
+  // ── 计算当前场上 chips ──
+  const curChips=[];
+  onFieldUnits.forEach(({icon,name},uid)=>curChips.push({icon,badge:name,id:'u'+uid}));
   Object.keys(activeSkillTimers).forEach(key=>{
     const def=SKILL_DEFS[key],t=activeSkillTimers[key];
-    _curFieldChips.push({icon:def.icon,badge:t>=9999?(def.type==='next'?'次波':'中'):Math.ceil(t)+'s',id:'s'+key});
+    curChips.push({icon:def.icon,badge:t>=9999?(def.type==='next'?'次波':'中'):Math.ceil(t)+'s',id:'s'+key});
   });
-  const curFieldIds=new Set(_curFieldChips.map(c=>c.id));
+  const curFieldIds=new Set(curChips.map(c=>c.id));
 
-  ['queue-list','queue-list-pt'].forEach(id=>{
-    const ql=document.getElementById(id); if(!ql) return;
-    ql.innerHTML='';
+  ['queue-list','queue-list-pt'].forEach(qlId=>{
+    const ql=document.getElementById(qlId);if(!ql)return;
 
-    // ── 场上行（蓝色，始终渲染）──
-    const fieldWrap=document.createElement('div');fieldWrap.className='qi-row-wrap';
-    const fieldLbl=document.createElement('div');fieldLbl.className='qi-row-label';fieldLbl.textContent='场上';
-    const fieldRow=document.createElement('div');fieldRow.className='qi-row';
-    _curFieldChips.forEach(({icon,badge,id})=>{
-      const chip=document.createElement('div');chip.className='qi-chip field';
-      if(!_prevFieldIds.has(id)) chip.classList.add('new');
-      chip.innerHTML=`${icon}<span class="qi-badge">${badge}</span>`;
-      fieldRow.appendChild(chip);
+    // ── 场上行：增量更新 ──
+    const fieldRow=ql.querySelector('.field-row');if(!fieldRow)return;
+    // 删除已离场的 chip
+    [...fieldRow.querySelectorAll('.qi-chip')].forEach(el=>{
+      if(!curFieldIds.has(el.dataset.chipId)) el.remove();
     });
-    fieldWrap.appendChild(fieldLbl);fieldWrap.appendChild(fieldRow);
-    ql.appendChild(fieldWrap);
+    // 更新 badge（技能倒计时）+ 新增
+    const existingIds=new Set([...fieldRow.querySelectorAll('.qi-chip')].map(el=>el.dataset.chipId));
+    curChips.forEach(({icon,badge,id})=>{
+      const existing=fieldRow.querySelector(`[data-chip-id="${id}"]`);
+      if(existing){
+        // 只更新 badge 文字，不重建节点
+        const b=existing.querySelector('.qi-badge');if(b)b.textContent=badge;
+      } else {
+        const chip=document.createElement('div');chip.className='qi-chip field';
+        chip.dataset.chipId=id;
+        chip.innerHTML=`${icon}<span class="qi-badge">${badge}</span>`;
+        if(!_prevFieldIds.has(id)) chip.classList.add('new');
+        fieldRow.appendChild(chip);
+      }
+    });
     if(curFieldIds.size>_prevFieldIds.size) fieldRow.scrollLeft=fieldRow.scrollWidth;
 
-    // ── 队列行（绿色，始终渲染，点击移除）──
-    const pendingWrap=document.createElement('div');pendingWrap.className='qi-row-wrap';
-    const pendingLbl=document.createElement('div');pendingLbl.className='qi-row-label';pendingLbl.textContent='队列';
-    const pendingRow=document.createElement('div');pendingRow.className='qi-row';
-    pendingQueue.forEach((item,idx)=>{
-      const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
-      const chip=document.createElement('div');chip.className='qi-chip pending';
-      if(curPendingCount>_prevPendingCount && idx===pendingQueue.length-1) chip.classList.add('new');
-      chip.title=`${def.name}（点击移除）`;
-      chip.innerHTML=`${def.icon}<span class="qi-rm-hint">✕</span>`;
-      const doRemove=()=>{
-        pendingQueue.splice(idx,1);
-        updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
-      };
-      let touchMoved=false;
-      chip.addEventListener('touchstart',()=>{touchMoved=false;},{passive:true});
-      chip.addEventListener('touchmove', ()=>{touchMoved=true; },{passive:true});
-      chip.addEventListener('touchend',  e=>{if(!touchMoved){e.preventDefault();doRemove();}});
-      chip.addEventListener('click',doRemove);
-      pendingRow.appendChild(chip);
-    });
-    pendingWrap.appendChild(pendingLbl);pendingWrap.appendChild(pendingRow);
-    // 发兵 / 结束本波 按钮内联渲染
-    // 发兵/结束本波按钮由 updateSendBtn() 管理（固定 DOM，不在此处创建）
-    ql.appendChild(pendingWrap);
-    if(curPendingCount>_prevPendingCount) pendingRow.scrollLeft=pendingRow.scrollWidth;
+    // ── 队列行：增量更新 ──
+    const pendingRow=ql.querySelector('.pending-row');if(!pendingRow)return;
+    const curPendingCount=pendingQueue.length;
+    // 队列变化时重建（队列 chip 有 idx 绑定的 doRemove，增量更新复杂度不值得）
+    // 但只在长度或内容变化时重建，而不是每帧
+    const pendingKey=pendingQueue.map(i=>i.kind+i.key).join(',');
+    if(pendingRow.dataset.pendingKey!==pendingKey){
+      pendingRow.innerHTML='';
+      pendingQueue.forEach((item,idx)=>{
+        const def=item.kind==='unit'?UNIT_DEFS[item.key]:SKILL_DEFS[item.key];
+        const chip=document.createElement('div');chip.className='qi-chip pending';
+        if(curPendingCount>_prevPendingCount && idx===pendingQueue.length-1) chip.classList.add('new');
+        chip.title=`${def.name}（点击移除）`;
+        chip.innerHTML=`${def.icon}<span class="qi-rm-hint">✕</span>`;
+        const doRemove=()=>{pendingQueue.splice(idx,1);updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();};
+        let touchMoved=false;
+        chip.addEventListener('touchstart',()=>{touchMoved=false;},{passive:true});
+        chip.addEventListener('touchmove', ()=>{touchMoved=true;},{passive:true});
+        chip.addEventListener('touchend',  e=>{if(!touchMoved){e.preventDefault();doRemove();}});
+        chip.addEventListener('click',doRemove);
+        pendingRow.appendChild(chip);
+      });
+      pendingRow.dataset.pendingKey=pendingKey;
+      if(curPendingCount>_prevPendingCount) pendingRow.scrollLeft=pendingRow.scrollWidth;
+    }
   });
 
-  _prevFieldIds=curFieldIds||new Set();
-  _prevPendingCount=curPendingCount;
+  _prevFieldIds=curFieldIds;
+  _prevPendingCount=pendingQueue.length;
   updateSendBtn();
 }
 
@@ -1901,6 +1928,7 @@ function startGame(){
   const startBonus=techPerms.startGoldBonus||0;
   gold=waveGold(1)+startBonus;waveNum=0;breachCount=0;
   enemies=[];spawnQueue=[];waveActive=false;waveQuota=0;quotaUsed=0;_waveForceEnd=false;_bonusQuota=0;onFieldUnits=new Map();
+  _qlInited=false;_prevFieldIds=new Set();_prevPendingCount=0;
   activeSkills={};nextSkills={};activeSkillTimers={};waveSkillsUsed=new Set();
   defenderGold=50;
   unlockedSkills=new Set(['rush','income']);
@@ -1997,7 +2025,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '0406-17') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '0406-18') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
