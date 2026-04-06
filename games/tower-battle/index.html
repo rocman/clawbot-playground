@@ -142,11 +142,43 @@ canvas{display:block;width:100%;height:100%;}
   display:none;flex-direction:column;overflow:hidden;
   padding:0;gap:0;box-sizing:border-box;
 }
+#panel-cols-pt{
+  flex:1;min-height:0;width:100%;
+  display:flex;flex-direction:row;
+  padding:4px 8px;gap:6px;overflow:hidden;
+  align-items:stretch;box-sizing:border-box;
+}
+#build-panel-pt{flex:0 0 calc(50% - 3px);min-width:0;min-height:0;max-height:100%;overflow:hidden;}
+#panel-right-pt{
+  flex:1;min-width:0;max-width:50%;min-height:0;max-height:100%;
+  display:flex;flex-direction:column;gap:6px;overflow:hidden;
+}
+#queue-panel-pt{flex:0 0 auto;min-width:0;overflow:hidden;}
+#log-panel-pt{flex:1 1 0;min-height:0;min-width:0;}
 #wave-bar-pt{
   display:flex;flex-shrink:0;width:100%;
   flex-direction:row;align-items:stretch;
-  gap:5px;padding:6px 8px;background:#16213e;border-top:1px solid #0f3460;
+  gap:5px;padding:7px 8px;background:#16213e;border-top:1px solid #0f3460;
 }
+#speed-group-atk-pt{flex:1;display:flex;flex-direction:row;align-items:stretch;height:40px;}
+#speed-display-atk-pt{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  font-size:1.05rem;font-weight:bold;color:#0f3460;background:#fff;
+  padding:0;cursor:default;user-select:none;
+}
+#btn-mode-pt{
+  flex:0 0 calc(25% - 10px);min-width:0;padding:0;
+  font-size:0.76rem;height:40px;
+  background:#6c5ce7;color:#fff;
+}
+#btn-mode-pt:hover{background:#5541d1;}
+#btn-pause-atk-pt{
+  flex:0 0 calc(25% - 10px);min-width:0;padding:0;
+  font-size:0.76rem;height:40px;
+  background:#fdcb6e;color:#2d3436;
+}
+#btn-pause-atk-pt:hover:not(:disabled){background:#e6b655;}
+#btn-pause-atk-pt:disabled{background:#444;color:#888;}
 
 /* ── Panels ── */
 .panel{
@@ -228,7 +260,7 @@ canvas{display:block;width:100%;height:100%;}
 .tbt:disabled{background:#444;color:#666;cursor:not-allowed;}
 
 /* ── Queue ── */
-#queue-list{
+#queue-list,#queue-list-pt{
   padding:4px 6px;
   display:flex;flex-direction:column;gap:2px;
   min-width:0;overflow:hidden;
@@ -271,7 +303,7 @@ canvas{display:block;width:100%;height:100%;}
 .queue-empty-msg{color:#555;font-size:0.72rem;padding:8px;text-align:center;}
 
 /* ── Wave bar ── */
-.wave-bar{
+#wave-bar,#wave-bar-pt{
   flex-shrink:0;display:flex;flex-direction:row;align-items:stretch;
   gap:5px;padding:7px 8px;background:#16213e;border-top:1px solid #0f3460;
 }
@@ -282,7 +314,7 @@ canvas{display:block;width:100%;height:100%;}
 }
 .wave-btn:disabled{background:#444;color:#888;cursor:not-allowed;}
 .btn-send-inline{
-  flex-shrink:0;
+  display:none;flex-shrink:0;
   height:30px;padding:0 8px;
   background:#e94560;color:#fff;
   border:none;border-radius:6px;
@@ -291,25 +323,43 @@ canvas{display:block;width:100%;height:100%;}
 }
 .btn-send-inline:hover:not(:disabled){background:#c0392b;}
 .btn-send-inline:disabled{background:#555;color:#888;cursor:not-allowed;}
-.speed-group{flex:1;display:flex;flex-direction:row;align-items:stretch;height:44px;}
-.speed-adj{
-  flex:0 0 40px;width:40px;
-  padding:0;font-size:1.2rem;font-weight:bold;text-align:center;
+#queue-panel,#queue-panel-pt{
+  display:flex!important;flex-direction:column!important;align-items:stretch;position:relative;
+}
+#queue-panel .panel-title,#queue-panel-pt .panel-title{display:none;}
+/* speed group — tower-attack style */
+#speed-group-atk,#speed-group-atk-pt{flex:1;display:flex;flex-direction:row;align-items:stretch;height:44px;}
+.speed-adj-atk{
+  flex:0 0 40px!important;width:40px!important;min-width:40px;max-width:40px;
+  padding:0!important;font-size:1.2rem;font-weight:bold;text-align:center;
+  border-radius:0!important;
   background:#0f3460;color:#fff;border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
 }
-.speed-adj:hover:not(:disabled){background:#1a4a8a;}
-.speed-adj:disabled{color:#555;cursor:not-allowed;}
-#btn-speed-dn{border-radius:6px 0 0 6px;}
-#btn-speed-up{border-radius:0 6px 6px 0;}
-#speed-display{
+.speed-adj-atk:hover:not(:disabled){background:#1a4a8a;}
+.speed-adj-atk:disabled{color:#555;cursor:not-allowed;}
+#btn-speed-dn-atk{border-radius:6px 0 0 6px!important;}
+#btn-speed-up-atk{border-radius:0 6px 6px 0!important;}
+#btn-speed-dn-atk-pt{border-radius:6px 0 0 6px!important;}
+#btn-speed-up-atk-pt{border-radius:0 6px 6px 0!important;}
+#speed-display-atk,#speed-display-atk-pt{
   flex:1;display:flex;align-items:center;justify-content:center;
   font-size:1rem;font-weight:bold;color:#0f3460;background:#fff;
 }
+#btn-pause-atk{flex:0 0 25%;background:#fdcb6e;color:#2d3436;}
+#btn-pause-atk:hover:not(:disabled){background:#e6b655;}
+#btn-pause-atk:disabled{background:#444;color:#888;}
+#btn-mode{flex:0 0 25%;background:#6c5ce7;color:#fff;}
+#btn-mode:hover{background:#5541d1;}
+#btn-pause-atk-pt{flex:0 0 25%;background:#fdcb6e;color:#2d3436;}
+#btn-pause-atk-pt:hover:not(:disabled){background:#e6b655;}
+#btn-pause-atk-pt:disabled{background:#444;color:#888;}
+#btn-mode-pt{flex:0 0 25%;background:#6c5ce7;color:#fff;}
+#btn-mode-pt:hover{background:#5541d1;}
 
 /* ── Log ── */
-#log{flex:1;min-height:0;overflow-y:auto;padding:6px 8px;font-size:0.68rem;color:#aaa;line-height:1.6;}
-#log p{margin-bottom:2px;}
+#log,#log-pt{flex:1;min-height:0;overflow-y:auto;padding:6px 8px;font-size:0.68rem;color:#aaa;line-height:1.6;}
+#log p,#log-pt p{margin-bottom:2px;}
 
 /* ── Overlay ── */
 #overlay{
@@ -330,6 +380,15 @@ canvas{display:block;width:100%;height:100%;}
 #qr-wrap{background:#fff;padding:10px;border-radius:8px;display:inline-block;}
 #qr-wrap canvas{display:block;}
 .join-url{font-size:0.72rem;color:#74b9ff;word-break:break-all;text-align:center;max-width:320px;}
+
+/* ── Guest-specific layout ── */
+#guest-turret-panel{flex:2 1 0;min-height:0;}
+#guest-intel-panel{flex:1 1 0;min-height:60px;}
+.guest-intel-row{display:flex;justify-content:space-between;align-items:center;
+  padding:3px 0;font-size:0.78rem;border-bottom:1px solid #0f3460;}
+.guest-intel-row:last-child{border-bottom:none;}
+.guest-intel-label{color:#aaa;}
+.guest-intel-val{color:#fdcb6e;font-weight:bold;}
 
 /* ── Peer info corner ── */
 
@@ -374,41 +433,41 @@ canvas{display:block;width:100%;height:100%;}
 
   <!-- Portrait scroll -->
   <div id="panel-scroll-pt">
-    <div style="flex:1;min-height:0;display:flex;flex-direction:row;padding:4px 8px;gap:6px;overflow:hidden;" id="pt-cols">
-      <!-- left panel -->
-      <div class="panel" id="left-panel-pt" style="flex:0 0 calc(50% - 3px);min-width:0;overflow:hidden;">
-        <div class="panel-tabs" id="tab-row-pt">
-          <button class="ptab active" data-tab="units" onclick="switchTab('units')">🪖 兵种</button>
-          <button class="ptab" data-tab="skills" onclick="switchTab('skills')">✨ 技能</button>
-          <button class="ptab" data-tab="turrets" onclick="switchTab('turrets')" id="tab-turrets-pt" style="display:none">🏰 炮台</button>
-          <button class="ptab" data-tab="intel" onclick="switchTab('intel')" id="tab-intel-pt">📡 敌情</button>
+    <div id="panel-cols-pt">
+      <!-- left: build panel -->
+      <div class="panel" id="build-panel-pt">
+        <div class="panel-tabs">
+          <button class="ptab active" id="tab-units-pt" data-tab="units" onclick="switchTab('units')">🪖 兵种</button>
+          <button class="ptab" id="tab-skills-pt" data-tab="skills" onclick="switchTab('skills')">✨ 技能</button>
         </div>
         <div id="unit-list-pt" class="tab-body"></div>
         <div id="skill-list-pt" class="tab-body hidden"></div>
-        <div id="turret-list-pt" class="tab-body hidden"></div>
-        <div id="intel-pt" class="tab-body hidden"></div>
       </div>
-      <!-- right panel: queue + log -->
-      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;overflow:hidden;">
-        <div class="panel" style="flex:0 0 auto;">
-          <div class="panel-title">⚔️ 队列</div>
-          <div id="queue-list-pt"><div class="queue-empty-msg">暂无</div></div>
-          <button class="btn-send-inline" id="btn-send-pt" disabled>发兵</button>
+      <!-- right: log+queue stacked -->
+      <div id="panel-right-pt">
+        <div class="panel" id="log-panel-pt">
+          <div class="panel-tabs" style="border-bottom:1px solid #0f3460;">
+            <button class="ptab active" id="log-tab-log-pt" onclick="switchLogTab('log')">📡 战报</button>
+            <button class="ptab" id="log-tab-intel-pt" onclick="switchLogTab('intel')">🕵️ 敌情</button>
+          </div>
+          <div id="log-pt" class="tab-body" style="padding:4px 6px;"></div>
+          <div id="intel-pt" class="tab-body hidden"></div>
         </div>
-        <div class="panel" style="flex:1 1 0;min-height:0;">
-          <div class="panel-title">📡 战报</div>
-          <div id="log-pt" style="flex:1;min-height:0;overflow-y:auto;padding:4px 6px;font-size:0.62rem;color:#aaa;line-height:1.5;"></div>
+        <div class="panel" id="queue-panel-pt">
+          <div class="panel-title">⚔️ 场上兵员/技能</div>
+          <div id="queue-list-pt"><div class="queue-empty-msg">暂无激活技能</div></div>
+          <button class="btn-send-inline" id="btn-send-pt" disabled onclick="sendWave()">发兵</button>
         </div>
       </div>
     </div>
-    <div class="wave-bar" id="wave-bar-pt">
-      <button class="wave-btn" id="btn-mode-pt" style="flex:0 0 25%;background:#6c5ce7;color:#fff;">单发 ↓</button>
-      <div class="speed-group">
-        <button class="speed-adj" id="btn-speed-dn-pt">−</button>
-        <div id="speed-display-pt" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:bold;color:#0f3460;background:#fff;">1×</div>
-        <button class="speed-adj" id="btn-speed-up-pt">+</button>
+    <div id="wave-bar-pt">
+      <button class="wave-btn" id="btn-mode-pt">单发 ↓</button>
+      <div id="speed-group-atk-pt">
+        <button class="speed-adj-atk" id="btn-speed-dn-atk-pt">−</button>
+        <div id="speed-display-atk-pt">1×</div>
+        <button class="speed-adj-atk" id="btn-speed-up-atk-pt">+</button>
       </div>
-      <button class="wave-btn" id="btn-pause-pt" disabled style="flex:0 0 25%;background:#fdcb6e;color:#2d3436;">⏸ 暂停</button>
+      <button class="wave-btn" id="btn-pause-atk-pt" disabled>⏸ 暂停</button>
     </div>
   </div>
 
@@ -423,36 +482,38 @@ canvas{display:block;width:100%;height:100%;}
       </div>
     </div>
     <div id="panel-scroll">
-      <div class="panel" id="left-panel" style="flex:2 1 0;">
-        <div class="panel-tabs" id="tab-row">
-          <button class="ptab active" data-tab="units" onclick="switchTab('units')">🪖 兵种</button>
-          <button class="ptab" data-tab="skills" onclick="switchTab('skills')">✨ 技能</button>
-          <button class="ptab" data-tab="turrets" onclick="switchTab('turrets')" id="tab-turrets" style="display:none">🏰 炮台</button>
-          <button class="ptab" data-tab="intel" onclick="switchTab('intel')" id="tab-intel">📡 敌情</button>
+      <div class="panel" id="build-panel" style="flex:2 1 0;">
+        <div class="panel-tabs">
+          <button class="ptab active" id="tab-units" data-tab="units" onclick="switchTab('units')">🪖 兵种</button>
+          <button class="ptab" id="tab-skills" data-tab="skills" onclick="switchTab('skills')">✨ 技能</button>
         </div>
         <div id="unit-list" class="tab-body"></div>
         <div id="skill-list" class="tab-body hidden"></div>
-        <div id="turret-list" class="tab-body hidden"></div>
+      </div>
+
+      <div class="panel" id="queue-panel" style="flex:0 0 auto;">
+        <div class="panel-title">⚔️ 场上兵员/技能</div>
+        <div id="queue-list"><div class="queue-empty-msg">暂无激活技能</div></div>
+        <button class="btn-send-inline" id="btn-send" disabled onclick="sendWave()">发兵</button>
+      </div>
+
+      <div class="panel" id="log-panel" style="flex:1 1 0;min-height:60px;">
+        <div class="panel-tabs" style="border-bottom:1px solid #0f3460;">
+          <button class="ptab active" id="log-tab-log" onclick="switchLogTab('log')">📡 战报</button>
+          <button class="ptab" id="log-tab-intel" onclick="switchLogTab('intel')">🕵️ 敌情</button>
+        </div>
+        <div id="log" class="tab-body" style="padding:4px 6px;"></div>
         <div id="intel" class="tab-body hidden"></div>
       </div>
-      <div class="panel" id="queue-panel" style="flex:0 0 auto;">
-        <div class="panel-title">⚔️ 场上/队列</div>
-        <div id="queue-list"><div class="queue-empty-msg">暂无</div></div>
-        <button class="btn-send-inline" id="btn-send" disabled>发兵</button>
-      </div>
-      <div class="panel" id="log-panel" style="flex:1 1 0;min-height:60px;">
-        <div class="panel-title">📡 战报</div>
-        <div id="log"></div>
-      </div>
     </div>
-    <div class="wave-bar" id="wave-bar">
-      <button class="wave-btn" id="btn-mode" style="flex:0 0 25%;background:#6c5ce7;color:#fff;">单发 ↓</button>
-      <div class="speed-group">
-        <button class="speed-adj" id="btn-speed-dn">−</button>
-        <div id="speed-display">1×</div>
-        <button class="speed-adj" id="btn-speed-up">+</button>
+    <div id="wave-bar">
+      <button class="wave-btn" id="btn-mode">单发 ↓</button>
+      <div id="speed-group-atk">
+        <button class="speed-adj-atk" id="btn-speed-dn-atk">−</button>
+        <div id="speed-display-atk">1×</div>
+        <button class="speed-adj-atk" id="btn-speed-up-atk">+</button>
       </div>
-      <button class="wave-btn" id="btn-pause" disabled style="flex:0 0 25%;background:#fdcb6e;color:#2d3436;">⏸ 暂停</button>
+      <button class="wave-btn" id="btn-pause-atk" disabled>⏸ 暂停</button>
     </div>
   </div>
 </div>
@@ -804,7 +865,11 @@ function showToast(msg,kind='breach'){
 }
 
 function log(msg){
-  ['log','log-pt'].forEach(id=>{
+  // For guest: write to guest-specific log panels; for host: use standard ids
+  const targets=_guestLogActive
+    ? ['guest-log-body','guest-log-body-pt']
+    : ['log','log-pt'];
+  targets.forEach(id=>{
     const div=document.getElementById(id);if(!div)return;
     const p=document.createElement('p');p.textContent=msg;
     div.appendChild(p);div.scrollTop=div.scrollHeight;
@@ -901,15 +966,32 @@ function checkMilestones(){
 }
 
 // ═══════════════════════════════════════════════
-//  TAB SWITCH
+//  LOG TAB SWITCH (战报 / 敌情)
+// ═══════════════════════════════════════════════
+let currentLogTab='log';
+function switchLogTab(tab){
+  currentLogTab=tab;
+  ['log','intel'].forEach(t=>{
+    // landscape
+    const el=document.getElementById(t);if(el)el.classList.toggle('hidden',t!==tab);
+    const btn=document.getElementById('log-tab-'+t);if(btn)btn.classList.toggle('active',t===tab);
+    // portrait
+    const elPt=document.getElementById(t+'-pt');if(elPt)elPt.classList.toggle('hidden',t!==tab);
+    const btnPt=document.getElementById('log-tab-'+t+'-pt');if(btnPt)btnPt.classList.toggle('active',t===tab);
+  });
+  if(tab==='intel')renderIntel();
+}
+
+// ═══════════════════════════════════════════════
+//  TAB SWITCH (兵种 / 技能)
 // ═══════════════════════════════════════════════
 let currentTab='units';
 function renderIntel(){
   if(role!=='host') return;
   const activeTurrets=FAKE_TURRETS.filter(t=>t.active);
   const inactiveTurrets=FAKE_TURRETS.filter(t=>!t.active);
-  const connOk=typeof netConn!=='undefined'&&netConn&&netConn.open;
-  let html=`<div style="font-size:0.78rem;line-height:1.7;color:#ccc;">`;
+  const connOk=conn&&conn.open;
+  let html=`<div style="font-size:0.78rem;line-height:1.7;color:#ccc;padding:4px 2px;">`;
   html+=`<div style="margin-bottom:6px;padding:5px 8px;border-radius:6px;background:${connOk?'#0d2e1e':'#2a1a1a'};">
     <span style="color:${connOk?'#55efc4':'#ff7675'};font-weight:bold;">${connOk?'✅ 守方已连线':'⏳ 等待守方加入'}</span>
   </div>`;
@@ -940,24 +1022,30 @@ function renderIntel(){
     });
   }
   html+=`</div>`;
+  // write to intel tab bodies (both landscape + portrait)
   ['intel','intel-pt'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=html;});
 }
 
 function switchTab(tab){
   currentTab=tab;
-  const tabMap={'units':'unit-list','skills':'skill-list','turrets':'turret-list','intel':'intel'};
-  ['units','skills','turrets','intel'].forEach(t=>{
-    const prefix=tabMap[t];
-    [prefix, prefix+'-pt'].forEach(id=>{
-      const el=document.getElementById(id);if(!el)return;
-      el.classList.toggle('hidden',t!==tab);
-    });
-    ['tab-row','tab-row-pt'].forEach(rowId=>{
-      const row=document.getElementById(rowId);if(!row)return;
-      row.querySelectorAll(`.ptab[data-tab="${t}"]`).forEach(b=>b.classList.toggle('active',t===tab));
-    });
+  // landscape build-panel
+  ['unit-list','skill-list'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.classList.toggle('hidden',!id.startsWith(tab==='units'?'unit':'skill'));
   });
-  if(tab==='intel') renderIntel();
+  ['tab-units','tab-skills'].forEach(id=>{
+    const b=document.getElementById(id);if(!b)return;
+    b.classList.toggle('active',id.includes(tab==='units'?'units':'skills'));
+  });
+  // portrait build-panel-pt
+  ['unit-list-pt','skill-list-pt'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.classList.toggle('hidden',!id.startsWith(tab==='units'?'unit':'skill'));
+  });
+  ['tab-units-pt','tab-skills-pt'].forEach(id=>{
+    const b=document.getElementById(id);if(!b)return;
+    b.classList.toggle('active',id.includes(tab==='units'?'units':'skills'));
+  });
 }
 
 // ═══════════════════════════════════════════════
@@ -1059,7 +1147,8 @@ function buildSkillCards(){
 // ═══════════════════════════════════════════════
 function buildTurretCards(){
   if(role!=='guest')return;
-  ['turret-list','turret-list-pt'].forEach(id=>{
+  // landscape: guest-turret-list; portrait: guest-turret-body-pt
+  ['guest-turret-list','guest-turret-body-pt'].forEach(id=>{
     const tl=document.getElementById(id);if(!tl)return;
     tl.innerHTML='';
     FAKE_TURRETS.forEach((t,i)=>{
@@ -1455,18 +1544,27 @@ function execDefenderCmd(cmd){
 function updateSpeedDisplay(){
   gameSpeed=SPEED_STEPS[speedIdx];
   const txt=gameSpeed+'×';
-  ['speed-display','speed-display-pt'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
-  ['btn-speed-dn','btn-speed-dn-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=speedIdx===0;});
-  ['btn-speed-up','btn-speed-up-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=speedIdx===SPEED_STEPS.length-1;});
+  ['speed-display-atk','speed-display-atk-pt'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
+  ['btn-speed-dn-atk','btn-speed-dn-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=speedIdx===0;});
+  ['btn-speed-up-atk','btn-speed-up-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=speedIdx===SPEED_STEPS.length-1;});
+  // guest layout speed displays
+  ['guest-speed-display','guest-speed-display-pt'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
+  ['guest-btn-speed-dn','guest-btn-speed-dn-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=speedIdx===0;});
+  ['guest-btn-speed-up','guest-btn-speed-up-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=speedIdx===SPEED_STEPS.length-1;});
 }
 
 function togglePause(){
   if(role!=='host')return;
-  if(gameState==='playing'){gameState='paused';['btn-pause','btn-pause-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.textContent='▶ 继续';});}
-  else if(gameState==='paused'){gameState='playing';['btn-pause','btn-pause-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.textContent='⏸ 暂停';});}
+  if(gameState==='playing'){
+    gameState='paused';
+    ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.textContent='▶ 继续';});
+  } else if(gameState==='paused'){
+    gameState='playing';
+    ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.textContent='⏸ 暂停';});
+  }
 }
 function enablePauseBtn(on){
-  ['btn-pause','btn-pause-pt'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=!on;b.textContent='⏸ 暂停';}});
+  ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=!on;b.textContent='⏸ 暂停';}});
 }
 
 function setQueueMode(on){
@@ -1475,15 +1573,15 @@ function setQueueMode(on){
   buildUnitCards();buildSkillCards();
 }
 
-['btn-speed-dn','btn-speed-dn-pt'].forEach(id=>{
+['btn-speed-dn-atk','btn-speed-dn-atk-pt'].forEach(id=>{
   const b=document.getElementById(id);
   if(b)b.addEventListener('click',()=>{if(speedIdx>0){speedIdx--;updateSpeedDisplay();}});
 });
-['btn-speed-up','btn-speed-up-pt'].forEach(id=>{
+['btn-speed-up-atk','btn-speed-up-atk-pt'].forEach(id=>{
   const b=document.getElementById(id);
   if(b)b.addEventListener('click',()=>{if(speedIdx<SPEED_STEPS.length-1){speedIdx++;updateSpeedDisplay();}});
 });
-['btn-pause','btn-pause-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',togglePause);});
+['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',togglePause);});
 ['btn-mode','btn-mode-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',()=>{setQueueMode(!queueMode);});});
 
 // ═══════════════════════════════════════════════
@@ -1704,24 +1802,160 @@ function showLobby(){
   `;
 }
 
-function setupGuestMode(){
-  // Show defender UI, hide attacker UI
-  document.getElementById('role-title').textContent='🏰 守方控制台';
-  // show turrets tab, hide units/skills
-  ['tab-turrets','tab-turrets-pt'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
-  ['tab-row','tab-row-pt'].forEach(rowId=>{
-    const row=document.getElementById(rowId);if(!row)return;
-    row.querySelectorAll('.ptab[data-tab="units"],.ptab[data-tab="skills"]').forEach(b=>b.style.display='none');
+// ═══════════════════════════════════════════════
+//  GUEST LAYOUT — switchToGuestLayout()
+// ═══════════════════════════════════════════════
+
+/** Render attacker intel inside the guest intel tab bodies */
+function renderGuestIntel(){
+  if(role!=='guest')return;
+  const fmt=v=>Number.isInteger(v)?v:v.toFixed(1);
+  const quotaFmt=waveActive?`${fmt(quotaUsed)}/${fmt(waveQuota)}`:'—';
+  const html=`<div style="padding:4px 2px;">
+    <div class="guest-intel-row"><span class="guest-intel-label">🌊 当前波次</span><span class="guest-intel-val">${waveNum}/15</span></div>
+    <div class="guest-intel-row"><span class="guest-intel-label">⚡ 本波配额</span><span class="guest-intel-val">${quotaFmt}</span></div>
+    <div class="guest-intel-row"><span class="guest-intel-label">💥 累计突破</span><span class="guest-intel-val">${breachCount}</span></div>
+    <div class="guest-intel-row"><span class="guest-intel-label">💰 攻方资金</span><span class="guest-intel-val">${Math.floor(gold)}</span></div>
+  </div>`;
+  ['guest-intel-body','guest-intel-body-pt'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.innerHTML=html;
   });
-  switchTab('turrets');
-  // hide attacker wave controls (speed, mode, pause) — guest just watches
-  ['wave-bar','wave-bar-pt'].forEach(id=>{
-    const bar=document.getElementById(id);if(!bar)return;
-    bar.querySelectorAll('button:not(#btn-send):not(#btn-send-pt)').forEach(b=>b.style.display='none');
+}
+
+/** Switch to portrait guest tab in panel-scroll-pt */
+function switchGuestTab(tab){
+  ['guest-turret-body-pt','guest-log-body-pt','guest-intel-body-pt'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    const panel=id.replace('-body-pt','');
+    el.classList.toggle('hidden',!id.startsWith('guest-'+tab));
   });
+  document.querySelectorAll('.guest-ptab-pt').forEach(b=>{
+    b.classList.toggle('active',b.dataset.tab===tab);
+  });
+  if(tab==='intel')renderGuestIntel();
+}
+
+function switchToGuestLayout(){
+  // ── 1. Landscape sidebar ──
+  const sidebar=document.getElementById('sidebar');
+  if(sidebar){
+    sidebar.innerHTML=`
+      <div id="sidebar-header" style="flex-shrink:0;padding:8px 12px;border-bottom:1px solid #0f3460;
+        display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <h2 style="font-size:0.9rem;color:#00b894;letter-spacing:1px;white-space:nowrap;">🏰 守方控制台</h2>
+        <div class="hud-row">
+          <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
+          <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
+        </div>
+      </div>
+      <div id="panel-scroll" style="flex:1;min-height:0;display:flex;flex-direction:column;
+        padding:6px 8px 8px;gap:6px;overflow:hidden;">
+        <div class="panel" id="guest-turret-panel" style="flex:2 1 0;">
+          <div class="panel-title">🏰 炮台管理</div>
+          <div id="guest-turret-list" class="tab-body"></div>
+        </div>
+        <div class="panel" id="guest-intel-panel" style="flex:1 1 0;min-height:60px;">
+          <div class="panel-tabs">
+            <button class="ptab active" data-tab="log" onclick="switchGuestSidebarTab('log')">📡 战报</button>
+            <button class="ptab" data-tab="intel" onclick="switchGuestSidebarTab('intel')">🕵️ 敌情</button>
+          </div>
+          <div id="guest-log-body" class="tab-body"></div>
+          <div id="guest-intel-body" class="tab-body hidden"></div>
+        </div>
+      </div>
+      <div id="wave-bar" style="flex-shrink:0;display:flex;flex-direction:row;align-items:stretch;
+        gap:5px;padding:7px 8px;background:#16213e;border-top:1px solid #0f3460;">
+        <div id="speed-group-atk" style="flex:1;display:flex;flex-direction:row;align-items:stretch;height:44px;">
+          <button class="speed-adj-atk" id="btn-speed-dn-atk" style="border-radius:6px 0 0 6px;">−</button>
+          <div id="speed-display-atk" style="flex:1;display:flex;align-items:center;justify-content:center;
+            font-size:1rem;font-weight:bold;color:#0f3460;background:#fff;">1×</div>
+          <button class="speed-adj-atk" id="btn-speed-up-atk" style="border-radius:0 6px 6px 0;">+</button>
+        </div>
+        <button class="wave-btn" id="btn-pause-atk" disabled
+          style="flex:0 0 30%;background:#fdcb6e;color:#2d3436;">⏸ 暂停</button>
+      </div>
+    `;
+  }
+
+  // ── 2. Portrait panel ──
+  const ptScroll=document.getElementById('panel-scroll-pt');
+  if(ptScroll){
+    ptScroll.innerHTML=`
+      <div id="panel-cols-pt" style="flex:1;min-height:0;display:flex;flex-direction:row;
+        padding:4px 8px;gap:6px;overflow:hidden;align-items:stretch;box-sizing:border-box;">
+        <div class="panel" style="flex:0 0 calc(50% - 3px);min-width:0;overflow:hidden;">
+          <div class="panel-tabs">
+            <button class="ptab guest-ptab-pt active" data-tab="turrets"
+              onclick="switchGuestTab('turrets')">🏰 炮台</button>
+            <button class="ptab guest-ptab-pt" data-tab="intel"
+              onclick="switchGuestTab('intel')">🕵️ 敌情</button>
+          </div>
+          <div id="guest-turret-body-pt" class="tab-body"></div>
+          <div id="guest-intel-body-pt" class="tab-body hidden"></div>
+        </div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;overflow:hidden;">
+          <div class="panel" style="flex:1 1 0;min-height:0;">
+            <div class="panel-title">📡 战报</div>
+            <div id="guest-log-body-pt" class="tab-body"></div>
+          </div>
+        </div>
+      </div>
+      <div id="wave-bar-pt" style="display:flex;flex-shrink:0;width:100%;flex-direction:row;
+        align-items:stretch;gap:5px;padding:7px 8px;background:#16213e;border-top:1px solid #0f3460;">
+        <div id="speed-group-atk-pt" style="flex:1;display:flex;flex-direction:row;align-items:stretch;height:40px;">
+          <button class="speed-adj-atk" id="btn-speed-dn-atk-pt" style="border-radius:6px 0 0 6px;">−</button>
+          <div id="speed-display-atk-pt" style="flex:1;display:flex;align-items:center;justify-content:center;
+            font-size:1rem;font-weight:bold;color:#0f3460;background:#fff;">1×</div>
+          <button class="speed-adj-atk" id="btn-speed-up-atk-pt" style="border-radius:0 6px 6px 0;">+</button>
+        </div>
+        <button class="wave-btn" id="btn-pause-atk-pt" disabled
+          style="flex:0 0 30%;background:#fdcb6e;color:#2d3436;">⏸ 暂停</button>
+      </div>
+    `;
+  }
+
+  // ── 3. Re-bind speed/pause buttons (injected by innerHTML) ──
+  ['btn-speed-dn-atk','btn-speed-dn-atk-pt'].forEach(id=>{
+    const b=document.getElementById(id);
+    if(b)b.addEventListener('click',()=>{if(speedIdx>0){speedIdx--;updateSpeedDisplay();}});
+  });
+  ['btn-speed-up-atk','btn-speed-up-atk-pt'].forEach(id=>{
+    const b=document.getElementById(id);
+    if(b)b.addEventListener('click',()=>{if(speedIdx<SPEED_STEPS.length-1){speedIdx++;updateSpeedDisplay();}});
+  });
+  ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{
+    const b=document.getElementById(id);if(b)b.addEventListener('click',togglePause);
+  });
+
+  updateHUD();
+  updateSpeedDisplay();
+  _guestLogActive=true;
   gameState='playing';
-  // Show render loop for guest
   startGuestRenderLoop();
+}
+
+/** Switch sidebar landscape tab (log / intel) */
+function switchGuestSidebarTab(tab){
+  ['guest-log-body','guest-intel-body'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.classList.toggle('hidden',!id.endsWith(tab.replace('log','log-body').replace('intel','intel-body').split('-').pop()+'-body'||id.includes(tab)));
+  });
+  // simpler toggle:
+  const logEl=document.getElementById('guest-log-body');
+  const intelEl=document.getElementById('guest-intel-body');
+  if(logEl)logEl.classList.toggle('hidden',tab!=='log');
+  if(intelEl)intelEl.classList.toggle('hidden',tab!=='intel');
+  // update active tab btn
+  document.querySelectorAll('#guest-intel-panel .ptab').forEach(b=>{
+    b.classList.toggle('active',b.dataset.tab===tab);
+  });
+  if(tab==='intel')renderGuestIntel();
+}
+
+let _guestLogActive=false;
+
+function setupGuestMode(){
+  switchToGuestLayout();
 }
 
 // ═══════════════════════════════════════════════
@@ -1746,11 +1980,6 @@ function startGame(){
   updateSpeedDisplay();updateHUD();
   // Setup UI for host
   document.getElementById('role-title').textContent='⚔️ 攻方控制台';
-  ['tab-turrets','tab-turrets-pt'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
-  ['tab-row','tab-row-pt'].forEach(rowId=>{
-    const row=document.getElementById(rowId);if(!row)return;
-    row.querySelectorAll('.ptab[data-tab="units"],.ptab[data-tab="skills"]').forEach(b=>b.style.display='');
-  });
   switchTab('units');
   setQueueMode(true);
   buildUnitCards();buildSkillCards();renderActiveSkills();
