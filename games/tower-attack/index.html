@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-18">
+<meta name="build-version" content="0406-19">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -254,6 +254,9 @@ canvas{display:block;width:100%;height:100%;}
   min-width:0;overflow:hidden;
 }
 .qi-row-wrap{display:flex;align-items:center;gap:4px;height:40px;flex-shrink:0;min-width:0;overflow-y:hidden;}
+.queue-bottom-bar{display:flex;align-items:center;gap:4px;min-width:0;}
+.queue-bottom-bar .qi-row-wrap{flex:1;min-width:0;}
+.queue-bottom-bar .btn-send-inline{flex-shrink:0;}
 .qi-row-label{
   writing-mode:vertical-rl;text-orientation:mixed;
   font-size:0.58rem;color:#666;letter-spacing:1px;
@@ -366,7 +369,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-18</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-19</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -436,7 +439,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-18</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-19</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1631,19 +1634,25 @@ function updateSendBtn(){
 // ── queue-list 面板的固定结构，首次调用时初始化，之后只更新内容 ──
 let _qlInited=false;
 function _initQueuePanels(){
-  ['queue-list','queue-list-pt'].forEach(id=>{
-    const ql=document.getElementById(id);if(!ql)return;
+  const pairs=[['queue-list','btn-send'],['queue-list-pt','btn-send-pt']];
+  pairs.forEach(([listId,btnId])=>{
+    const ql=document.getElementById(listId);if(!ql)return;
     ql.innerHTML='';
-    // 场上行
+    // 场上行（独占一行）
     const fw=document.createElement('div');fw.className='qi-row-wrap';
     const fl=document.createElement('div');fl.className='qi-row-label';fl.textContent='场上';
     const fr=document.createElement('div');fr.className='qi-row field-row';
     fw.appendChild(fl);fw.appendChild(fr);ql.appendChild(fw);
-    // 队列行
+    // 底部 bar：队列行 + 发兵按钮同行
+    const bar=document.createElement('div');bar.className='queue-bottom-bar';
     const pw=document.createElement('div');pw.className='qi-row-wrap';
     const pl=document.createElement('div');pl.className='qi-row-label';pl.textContent='队列';
     const pr=document.createElement('div');pr.className='qi-row pending-row';
-    pw.appendChild(pl);pw.appendChild(pr);ql.appendChild(pw);
+    pw.appendChild(pl);pw.appendChild(pr);bar.appendChild(pw);
+    // 把固定发兵按钮挪进 bar
+    const btn=document.getElementById(btnId);
+    if(btn){btn.style.display='none';bar.appendChild(btn);}
+    ql.appendChild(bar);
   });
   _qlInited=true;
 }
@@ -2025,7 +2034,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '0406-18') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '0406-19') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
