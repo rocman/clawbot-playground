@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-61">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -377,10 +377,16 @@ canvas{display:block;width:100%;height:100%;}
 </style>
 </head>
 <body>
+<div id="qi-ctx-menu">
+  <button id="qi-ctx-front">⬆️ 移到队首</button>
+  <button id="qi-ctx-back">⬇️ 移到队末</button>
+  <hr>
+  <button id="qi-ctx-del" style="color:#e17055">✕ 删除</button>
+</div>
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-61</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -450,7 +456,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-61</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -2209,7 +2215,9 @@ var sl; // suppress lint
 
 // ── 队列 chip 右键/长按菜单 ──
 (function(){
+  function initQiMenu(){
   const menu=document.getElementById('qi-ctx-menu');
+  if(!menu){console.error('qi-ctx-menu not found');return;}
   let _uid=null;
   function hideMenu(){menu.classList.remove('show');}
   function showMenu(x,y,uid){
@@ -2237,13 +2245,10 @@ var sl; // suppress lint
   };
   // 暴露给 chip 调用
   window._showQiMenu=showMenu;
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initQiMenu);
+  else initQiMenu();
 })();
 </script>
-<div id="qi-ctx-menu">
-  <button id="qi-ctx-front">⬆️ 移到队首</button>
-  <button id="qi-ctx-back">⬇️ 移到队末</button>
-  <hr>
-  <button id="qi-ctx-del" style="color:#e17055">✕ 删除</button>
-</div>
 </body>
 </html>
