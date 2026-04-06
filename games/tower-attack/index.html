@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-56">
+<meta name="build-version" content="0406-57">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -372,7 +372,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-56</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-57</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -442,7 +442,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-56</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-57</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1384,18 +1384,20 @@ function buildSkillCards(){
       const active=state==='playing'||state==='paused';
       const alreadyOn=key in activeSkillTimers;
       const usedThisWave=(def.type==='wave'||def.type==='timed'||def.type==='next')&&waveSkillsUsed.has(key);
+      const usesLeft=def.maxUses?(def.maxUses-(waveSkillUses[key]??0)):null;
+      const usesExhausted=usesLeft!==null&&usesLeft<=0;
       const w=def.weight??0;
       const hasQuota=w===0||usedWeight+w<=quota;
       const card=document.createElement('div');
       let cls='skill-card';
       if(!unlocked) cls+=' locked';
-      else if(!canAfford||alreadyOn||usedThisWave||!hasQuota) cls+=' disabled';
+      else if(!canAfford||alreadyOn||usedThisWave||usesExhausted||!hasQuota) cls+=' disabled';
       card.className=cls;
       card.setAttribute('tabindex','-1');
       const lockTag=unlocked?'':
         `<div class="skill-lock-tag">🔒 需突破${def.unlockAt??0}次解锁</div>`;
       const activeTag=alreadyOn?`<div class="skill-lock-tag" style="color:#00b894">✅ 已激活</div>`
-                     :usedThisWave?`<div class="skill-lock-tag" style="color:#636e72">⏳ 本波已用</div>`:'';
+                     :usedThisWave?`<div class="skill-lock-tag" style="color:#636e72">⏳ 本波已用</div>`:usesExhausted?`<div class="skill-lock-tag" style="color:#636e72">⏳ 次数已尽</div>`:usesLeft?`<div class="skill-lock-tag" style="color:#00b894">剩${usesLeft}次</div>`:'';
       const weightTag=unlocked&&w>0?`<div style="font-size:0.6rem;color:#74b9ff;margin-top:2px">⚡${w}</div>`:'';
       card.innerHTML=`<div class="skill-icon">${def.icon}</div>
         <div class="skill-info">
@@ -1405,7 +1407,7 @@ function buildSkillCards(){
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0">
           <div class="skill-cost">${unlocked?'💰'+def.cost:'🔒'}</div>${weightTag}
         </div>`;
-      bindCardEvents(card, !(unlocked&&canAfford&&active&&!alreadyOn&&!usedThisWave), ()=>{
+      bindCardEvents(card, !(unlocked&&canAfford&&active&&!alreadyOn&&!usedThisWave&&!usesExhausted), ()=>{
         if(def.type==='targeted') openTargetOverlay(key);
         else enqueue('skill',key);
       });
