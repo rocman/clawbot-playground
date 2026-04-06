@@ -1912,7 +1912,18 @@ function generatePeerId(){
 function startHost(){
   role='host';
   const peerId=generatePeerId();
-  peer=new Peer(peerId,{debug:0});
+  peer=new Peer(peerId,{
+    debug: 0,
+    config: {
+      iceServers: [
+        {urls: 'stun:stun.l.google.com:19302'},
+        {urls: 'stun:stun1.l.google.com:19302'},
+        {urls: 'stun:stun.cloudflare.com:3478'},
+        {urls: 'stun:global.stun.twilio.com:3478'},
+      ],
+      iceTransportPolicy: 'all',
+    }
+  });
   peer.on('open',id=>{
     log('🏠 主机已建立，等待对手加入...');
     showHostQR(id);
@@ -1937,13 +1948,28 @@ function startHost(){
     });
     c.on('error',e=>console.error('conn err',e));
   });
-  peer.on('error',e=>{log('❌ PeerJS错误: '+e.type);});
+  peer.on('error',e=>{
+    log('❌ PeerJS错误: '+e.type);
+    const tips={'network':'网络不通，请检查是否同网络','peer-unavailable':'主机不存在或已离线','server-error':'信令服务器异常'};
+    showToast('连接失败: '+(tips[e.type]||e.type),'warn');
+  });
 }
 
 function joinAsGuest(hostId){
   role='guest';
   const peerId=generatePeerId();
-  peer=new Peer(peerId,{debug:0});
+  peer=new Peer(peerId,{
+    debug: 0,
+    config: {
+      iceServers: [
+        {urls: 'stun:stun.l.google.com:19302'},
+        {urls: 'stun:stun1.l.google.com:19302'},
+        {urls: 'stun:stun.cloudflare.com:3478'},
+        {urls: 'stun:global.stun.twilio.com:3478'},
+      ],
+      iceTransportPolicy: 'all',
+    }
+  });
   peer.on('open',()=>{
     log('📱 正在连接主机...');
     conn=peer.connect(hostId,{reliable:true});
@@ -1962,7 +1988,11 @@ function joinAsGuest(hostId){
     });
     conn.on('error',e=>console.error('conn err',e));
   });
-  peer.on('error',e=>{log('❌ PeerJS错误: '+e.type);showToast('连接失败: '+e.type,'warn');});
+  peer.on('error',e=>{
+    log('❌ PeerJS错误: '+e.type);
+    const tips={'network':'网络不通，请检查是否同网络','peer-unavailable':'主机不存在或已离线','server-error':'信令服务器异常'};
+    showToast('连接失败: '+(tips[e.type]||e.type),'warn');
+  });
 }
 
 function sendCmd(cmd){
