@@ -2399,11 +2399,10 @@ document.getElementById('btn-join-ui').addEventListener('click',showJoinDialog);
 (function(){
   const hash=location.hash;
   if(hash.startsWith('#join=')){
-    const id=hash.slice(6);
-    // Auto-show join dialog pre-filled
-    setTimeout(()=>{
-      showJoinDialog();
-    },300);
+    const id=hash.slice(6).split('&')[0];  // 去掉多余参数
+    if(id){
+      setTimeout(()=>joinAsGuest(id),300);
+    }
   }
 })();
 
