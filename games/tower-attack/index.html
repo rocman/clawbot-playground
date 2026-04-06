@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-10">
+<meta name="build-version" content="0406-11">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -366,7 +366,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-10</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-11</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -436,7 +436,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-10</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-11</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1218,8 +1218,8 @@ function updateHUD(){
   // 配额改为战力点显示（保留1位小数）
   const fmt=v=>Number.isInteger(v)?v:v.toFixed(1);
   const baseQuota=waveActive
-    ? `${fmt(Math.max(0,waveQuota-quotaUsed-qWeight))}/${fmt(waveQuota)}`
-    : `${fmt(Math.max(0,calcQuota(waveNum+1)+_bonusQuota-qWeight))}/${fmt(calcQuota(waveNum+1)+_bonusQuota)}`;
+    ? `${fmt(Math.max(0,waveQuota-quotaUsed-qWeight))}`
+    : `${fmt(Math.max(0,calcQuota(waveNum+1)+_bonusQuota-qWeight))}`;
 
   const goldStr=`${dispGold}`;
   const quotaStr=baseQuota;
@@ -1994,7 +1994,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '0406-10') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '0406-11') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
