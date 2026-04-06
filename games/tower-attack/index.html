@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-5">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -366,7 +366,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-5</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -436,7 +436,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-5</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -1658,23 +1658,24 @@ function renderActiveSkills(){
     });
     pendingWrap.appendChild(pendingLbl);pendingWrap.appendChild(pendingRow);
     // 发兵 / 结束本波 按钮内联渲染
-    if(queueMode){
-      const fieldClearNow=spawnQueue.length===0&&enemies.every(e=>e.dead||e.reached)&&waveActive;
-      const showEndWave=fieldClearNow&&pendingQueue.length===0;
+    const fieldClearNow=spawnQueue.length===0&&enemies.every(e=>e.dead||e.reached)&&waveActive&&quotaUsed<waveQuota;
+    if(fieldClearNow&&pendingQueue.length===0){
+      // 场上清空且配额未用完：显示"结束本波"（不论单发/队列模式）
+      const btn=document.createElement('button');
+      btn.className='btn-send-inline';
+      btn.style.cssText='display:block;background:#00b894;color:#fff;';
+      btn.textContent='⏭ 结束本波';
+      btn.disabled=false;
+      btn.onclick=()=>confirmEndWave();
+      pendingWrap.appendChild(btn);
+    } else if(queueMode){
+      // 队列模式：显示发兵按钮
       const btn=document.createElement('button');
       btn.className='btn-send-inline';
       btn.style.display='block';
-      if(showEndWave){
-        btn.textContent='⏭ 结束本波';
-        btn.style.background='#00b894';btn.style.color='#fff';
-        btn.disabled=false;
-        btn.onclick=()=>confirmEndWave();
-      } else {
-        btn.textContent='发兵';
-        btn.style.background='';btn.style.color='';
-        btn.disabled=pendingQueue.length===0;
-        btn.onclick=()=>sendWave();
-      }
+      btn.textContent='发兵';
+      btn.disabled=pendingQueue.length===0;
+      btn.onclick=()=>sendWave();
       pendingWrap.appendChild(btn);
     }
     ql.appendChild(pendingWrap);
@@ -1709,8 +1710,38 @@ function updateWave(dt){
 
   const fieldClear=!spawnQueue.length&&enemies.every(e=>e.dead||e.reached);
 
-  // ── 场上清空但配额未用完：更新队列按钮为"结束本波"；破产则判负 ──
-  if(fieldClear&&quotaUsed<waveQuota&&spawnQueue.length===0&&enemies.length>0){
+  // ── 玩家主动结束本波（_waveForceEnd） ──
+  if(_waveForceEnd){
+    const survived=enemies.filter(e=>e.reached).length;
+    const died=enemies.filter(e=>e.dead).length;
+    const leftover=Math.max(0,waveQuota-quotaUsed);
+    _bonusQuota=Math.round(leftover*0.5);
+    waveActive=false;_waveForceEnd=false;
+    activeSkills={};activeSkillTimers={};waveSkillsUsed=new Set();
+    const incomeBonus=Object.values(nextSkills).reduce((a,e)=>a+(e.incomeBonus??0),0);
+    const interest=Object.values(nextSkills).reduce((a,e)=>a+(e.interest??0),0);
+    let income=waveGold(waveNum+1);
+    income=Math.round(income*(1+incomeBonus));
+    const interestBonus=Math.round(gold*interest);
+    gold+=income+interestBonus;
+    nextSkills={};
+    log(`✅ 第${waveNum}波结束（提前）突破${survived} 阵亡${died} | +💰${income}${interestBonus>0?' 利息+💰'+interestBonus:''}${_bonusQuota>0?' 配额结转+'+_bonusQuota+'⚡':''}`);
+    const nextW=waveNum+1;
+    const tierNames=['普通','🟠加强','🔴精英','💜恶魔'];
+    const nextTier=nextW<=4?0:nextW<=8?1:nextW<=12?2:3;
+    if(nextTier>0&&(nextW===5||nextW===9||nextW===13)) log(`⚠️ 第${nextW}波起守方炮塔升级为${tierNames[nextTier]}！`);
+    enemies=[];
+    scaleTurrets(waveNum+1);
+    if(waveNum>=15){endGame();return;}
+    pendingQueue=[];
+    setQueueMode(true);
+    ['btn-pause-atk','btn-pause-atk-pt'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true;});
+    updateHUD();buildUnitCards();buildSkillCards();renderActiveSkills();
+    return;
+  }
+
+  // ── 场上清空但配额未用完：破产检测 + 刷新按钮 ──
+  if(fieldClear&&quotaUsed<waveQuota&&enemies.length>0){
     const minWeight=Math.min(...Object.values(UNIT_DEFS).map(d=>d.weight??1));
     const canSendMore=(waveQuota-quotaUsed)>=minWeight;
     const cheapest=Math.min(...Object.values(UNIT_DEFS).map(d=>d.cost),
@@ -1718,13 +1749,11 @@ function updateWave(dt){
     if(!canSendMore&&gold<cheapest){
       defeatGame();return;
     }
-    // 触发 renderActiveSkills 刷新按钮（会自动显示"结束本波"）
-    renderActiveSkills();
-    return;
+    return; // 等玩家点结束本波（按钮由 renderActiveSkills 每帧刷新）
   }
 
   // ── 正常波结束：配额用完 + 场上清空 ──
-  if(fieldClear&&(quotaUsed>=waveQuota||_waveForceEnd)&&(enemies.length>0||_waveForceEnd)){
+  if(fieldClear&&quotaUsed>=waveQuota&&enemies.length>0){
     const survived=enemies.filter(e=>e.reached).length;
     const died=enemies.filter(e=>e.dead).length;
     // 剩余配额减半，叠加到下一波（四舍五入）
@@ -1845,7 +1874,7 @@ function gameLoop(ts){
       }
     }
     if(skillsChanged){buildSkillCards();renderActiveSkills();}
-    else if(waveActive) renderActiveSkills(); // refresh timer display each frame (throttle below)
+    else if(waveActive) renderActiveSkills(); // refresh timer display + 结束本波按钮 each frame
     updateWave(dt);
   }
   animId=requestAnimationFrame(gameLoop);
@@ -1961,7 +1990,7 @@ var sl; // suppress lint
 (function(){
   // 从 meta 标签读取当前页面版本
   const currentVersion = (document.querySelector('meta[name="build-version"]') || {}).content || '';
-  if(!currentVersion || currentVersion === '0406-5') return; // 本地开发不启动
+  if(!currentVersion || currentVersion === '__BUILD_VERSION__') return; // 本地开发不启动
 
   let dismissed = false;
   let checkTimer = null;
