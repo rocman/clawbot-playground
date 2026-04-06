@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Tower Attack — 进攻方</title>
-<meta name="build-version" content="0406-71">
+<meta name="build-version" content="__BUILD_VERSION__">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -376,6 +376,8 @@ canvas{display:block;width:100%;height:100%;}
 .btn{padding:10px 24px;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:bold;}
 .btn.red{background:#e94560;color:#fff;}
 </style>
+<script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+<script>var vc=new VConsole();</script>
 </head>
 <body>
 <div id="qi-ctx-menu">
@@ -387,7 +389,7 @@ canvas{display:block;width:100%;height:100%;}
 
 <!-- Portrait top bar -->
 <header id="header-portrait">
-  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-71</span></h1>
+  <h1>⚔️ Tower Attack <span id="ver-pt" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
   <div class="stat-row">
     <span class="hud-item">💰<span id="hud-gold-p">0</span></span>
     <span class="hud-item">🌊<span id="hud-wave-p">0/15</span></span>
@@ -461,7 +463,7 @@ canvas{display:block;width:100%;height:100%;}
   <!-- Sidebar (landscape only) -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">0406-71</span></h1>
+      <h1>⚔️ Tower Attack <span id="ver-l" style="font-size:0.78rem;color:#fff;font-weight:normal;letter-spacing:0">__BUILD_VERSION__</span></h1>
       <div class="stat-row">
         <span class="hud-item">💰<span id="hud-gold-l">0</span></span>
         <span class="hud-item">🌊<span id="hud-wave-l">0/15</span></span>
@@ -2296,11 +2298,11 @@ var sl; // suppress lint
   function hideMenu(){ menu.classList.remove('show'); }
   function showMenu(rect, uid){
     _uid=uid;
-    // CSS 已用 visibility:hidden，offsetWidth 可正常量
     const mw=menu.offsetWidth||120, mh=menu.offsetHeight||112;
     let left=rect.right-mw, top=rect.top-mh-6;
     if(left<4) left=4;
     if(top<4) top=rect.bottom+4;
+    console.log('[menu] rect=',JSON.stringify(rect),'mw=',mw,'mh=',mh,'→left=',left,'top=',top);
     menu.style.left=left+'px';
     menu.style.top=top+'px';
     menu.classList.add('show');
