@@ -255,6 +255,17 @@ input.addEventListener('keydown', e => {
 
 // ── Boot ─────────────────────────────────────────────────────
 connectSignal();
+
+// 每 6 秒检查一次，若信令已注册但 RTC 还没连上，重发 OFFER
+setInterval(() => {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;         // 信令未就绪
+  if (dc && dc.readyState === 'open') return;                  // 已连上，不重试
+  if (pc && (pc.connectionState === 'connecting' ||
+             pc.signalingState  === 'have-local-offer')) return; // 握手进行中，再等等
+  addMsg('No connection yet, retrying…', 'sys');
+  clearTimeout(retryTimer);
+  startRTC();
+}, 6000);
 </script>
 </body>
 </html>
