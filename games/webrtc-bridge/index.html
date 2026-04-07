@@ -109,33 +109,43 @@ if (!TARGET_ID) {
 
   peer.on('open', (myId) => {
     addMsg('My ID: ' + myId, 'sys');
-    conn = peer.connect(TARGET_ID, { reliable: true });
 
-    conn.on('open', () => {
-      setStatus('connected', 'Connected');
-      addMsg('Connected to AI bridge ✓', 'sys');
-      input.disabled = false;
-      sendBtn.disabled = false;
-      input.focus();
-    });
+    function tryConnect() {
+      conn = peer.connect(TARGET_ID, { reliable: true });
+      addMsg('Connecting to ' + TARGET_ID + '…', 'sys');
 
-    conn.on('data', (data) => {
-      try {
-        const obj = typeof data === 'string' ? JSON.parse(data) : data;
-        if (obj.type === 'from-ai') addMsg(obj.text, 'ai');
-        else if (obj.type === 'hello') addMsg('Handshake OK ✓', 'sys');
-        else addMsg(JSON.stringify(obj), 'ai');
-      } catch(_) { addMsg(String(data), 'ai'); }
-    });
+      conn.on('open', () => {
+        setStatus('connected', 'Connected');
+        addMsg('Connected ✓', 'sys');
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
+      });
 
-    conn.on('close', () => {
-      setStatus('', 'Disconnected');
-      addMsg('Connection closed', 'sys');
-      input.disabled = true;
-      sendBtn.disabled = true;
-    });
+      conn.on('data', (data) => {
+        try {
+          const obj = typeof data === 'string' ? JSON.parse(data) : data;
+          if (obj.type === 'from-ai') addMsg(obj.text, 'ai');
+          else if (obj.type === 'hello') addMsg('Handshake OK ✓', 'sys');
+          else addMsg(JSON.stringify(obj), 'ai');
+        } catch(_) { addMsg(String(data), 'ai'); }
+      });
 
-    conn.on('error', (e) => addMsg('Error: ' + e.message, 'sys'));
+      conn.on('close', () => {
+        setStatus('', 'Disconnected');
+        addMsg('Connection closed, retrying in 3s…', 'sys');
+        input.disabled = true;
+        sendBtn.disabled = true;
+        setTimeout(tryConnect, 3000);
+      });
+
+      conn.on('error', (e) => {
+        addMsg('Error: ' + e.message + ', retrying in 3s…', 'sys');
+        setTimeout(tryConnect, 3000);
+      });
+    }
+
+    tryConnect();
   });
 
   peer.on('error', (e) => {
