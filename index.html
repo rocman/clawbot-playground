@@ -20,8 +20,8 @@ body { font-family: "Segoe UI", system-ui, "PingFang SC", sans-serif; background
 .report-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #06d6d6; opacity: 0; transition: opacity 0.2s; }
 .report-card:hover { border-color: #06d6d6; background: #243247; }
 .report-card:hover::before { opacity: 1; }
-.card-emoji { font-size: 28px; line-height: 1; margin-bottom: 10px; }
-.card-name { font-size: 17px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+.card-emoji { font-size: 28px; line-height: 1; }
+.card-name { font-size: 17px; font-weight: 700; color: #f1f5f9; margin: 10px 0 6px; }
 .card-desc { font-size: 13px; color: #64748b; }
 .card-files { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
 .file-tag { font-size: 11px; padding: 3px 9px; border-radius: 5px; background: #0f172a; color: #475569; border: 1px solid #1e3a5f; }
@@ -40,25 +40,24 @@ body { font-family: "Segoe UI", system-ui, "PingFang SC", sans-serif; background
     <p>AI、3DGS 及相关领域的持续跟踪研究</p>
     <div class="quick-links">
       <a class="quick-link" href="manifesto.html">📄 Web Wide World 宣言 →</a>
-      <a class="quick-link" href="report.html">📊 领域资讯跟进报告 →</a>
+<a class="quick-link" href="report.html">📊 领域资讯跟进报告 →</a>
+
     </div>
   </div>
   <div class="section-title">报告目录</div>
   <div class="reports-grid">
     <a class="report-card" href="reports/new-species-human-response-2026/report.md">
-      <div class="card-emoji">📊</div>
+      <div class="card-top"><span class="card-emoji">📊</span></div>
       <div class="card-name">New Species Human Response (2026)</div>
       <div class="card-desc">new-species-human-response-2026</div>
       
     </a>
-
     <a class="report-card" href="reports/3dgs-consumer-2026/report.html">
-      <div class="card-emoji">🛍️</div>
+      <div class="card-top"><span class="card-emoji">🛍️</span></div>
       <div class="card-name">3DGS 消费应用 (2026)</div>
       <div class="card-desc">3dgs-consumer-2026</div>
-      <div class="card-files"><span class="file-tag html">report.html</span><span class="file-tag md">report.md</span><span class="file-tag md">executive-summary.md</span></div>
-    </a>
-  </div>
+      <div class='card-files'><span class="file-tag html">report.html</span><span class="file-tag md">report.md</span><span class="file-tag md">executive-summary.md</span></div>
+    </a></div>
   <div class="footer">
     <span>rocman/clawbot-playground · pages 分支</span>
     <a href="https://github.com/rocman/clawbot-playground/tree/pages" target="_blank">查看源码 →</a>
