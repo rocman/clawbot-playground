@@ -2,29 +2,40 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>假设地球出现新智慧生物——人类的反应机制与互动模式预测</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
 <style>
-@font-face {
-  font-family: 'NotoSC';
-  src: url('/usr/local/share/fonts/noto/NotoSansSC-Regular.otf');
-  font-weight: 400;
-}
-@font-face {
-  font-family: 'NotoSC';
-  src: url('/usr/local/share/fonts/noto/NotoSansSC-Bold.otf');
-  font-weight: 700;
-}
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'NotoSC', sans-serif;
-  font-size: 14px;
+  font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 15px;
   line-height: 1.9;
   color: #1a1a2e;
+  background: #f7f8fc;
+  padding: 40px 20px 80px;
+}
+
+.page {
+  max-width: 860px;
+  margin: 0 auto;
   background: #fff;
-  width: 860px;
-  padding: 60px 80px 80px 80px;
+  border-radius: 12px;
+  padding: 60px 72px 72px;
+  box-shadow: 0 2px 24px rgba(0,0,0,0.07);
+}
+
+@media (max-width: 700px) {
+  body { padding: 0 0 60px; }
+  .page { padding: 32px 18px 48px; border-radius: 0; box-shadow: none; }
+  .cover { padding: 40px 20px !important; }
+  .cover h1 { font-size: 20px !important; }
+  .cover-meta { font-size: 11px !important; }
+  table { font-size: 12px !important; }
+  thead th, tbody td { padding: 7px 8px !important; }
 }
 
 /* ── Cover ── */
@@ -150,7 +161,8 @@ p { margin-bottom: 14px; text-align: justify; }
 .callout strong { display: block; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; opacity: 0.65; }
 
 /* ── Table ── */
-table { width: 100%; border-collapse: collapse; margin: 16px 0 28px; font-size: 12.5px; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 16px 0 28px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
 thead tr { background: #302b63; color: white; }
 thead th { padding: 9px 13px; text-align: left; font-weight: 700; }
 tbody tr:nth-child(even) { background: #f5f6ff; }
@@ -202,6 +214,7 @@ ul li { margin-bottom: 6px; line-height: 1.9; font-size: 13px; }
 </style>
 </head>
 <body>
+<div class="page">
 
 <!-- Cover -->
 <div class="cover">
@@ -261,7 +274,7 @@ ul li { margin-bottom: 6px; line-height: 1.9; font-size: 13px; }
   <h3>2.1 智人与尼安德特人的共存实验</h3>
   <p>这是人类历史上唯一一次与另一智慧物种的真实接触记录，具有不可替代的参考价值。</p>
 
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>证据来源</th><th>关键发现</th><th>意义</th></tr></thead>
     <tbody>
       <tr>
@@ -280,7 +293,7 @@ ul li { margin-bottom: 6px; line-height: 1.9; font-size: 13px; }
         <td>文化渗透早于政治和解</td>
       </tr>
     </tbody>
-  </table>
+  </table></div>
 
   <div class="callout red">
     <strong>核心教训</strong>
@@ -296,7 +309,7 @@ ul li { margin-bottom: 6px; line-height: 1.9; font-size: 13px; }
   <h3>3.1 唯一大规模实证研究</h3>
   <p><strong>Haqq-Misra et al.（2018，《心理学前沿》）</strong> 进行了迄今最系统的实证研究，覆盖 <strong>N=757</strong> 名受访者，使用语言学分析工具（LIWC）和情绪测量。</p>
 
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>研究维度</th><th>核心数据</th></tr></thead>
     <tbody>
       <tr><td>正面 vs. 负面反应</td><td>正面显著高于负面，效应量 <strong>g = 0.98</strong>（大效应）</td></tr>
@@ -304,7 +317,7 @@ ul li { margin-bottom: 6px; line-height: 1.9; font-size: 13px; }
       <tr><td>自身 vs. 全人类预测</td><td>个体对自身反应的预测比对全人类的预测<strong>更乐观</strong></td></tr>
       <tr><td>外星生命 vs. 合成生命</td><td>对外星发现的正面反应高于对人造生命发现的反应</td></tr>
     </tbody>
-  </table>
+  </table></div>
 
   <div class="callout">
     <strong>⚠ 重要局限</strong>
@@ -334,7 +347,7 @@ ul li { margin-bottom: 6px; line-height: 1.9; font-size: 13px; }
   <p><strong>IAA SETI 委员会</strong> 已制定系列接触后协议（1989年版，2010年修订），内容涵盖探测信号的核实程序、联合国及科学团体的通报机制，以及回复协议（至今仍有重大争议）。然而，这一框架的根本缺陷在于：它假设外星智慧在"外太空"，而非地球上。<strong>没有任何协议处理"物种在地球上共存"的情景。</strong></p>
 
   <h3>4.2 历史类比分析</h3>
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>维度</th><th>历史案例：欧洲人 × 美洲原住民（15–19世纪）</th><th>新智慧生物场景映射</th></tr></thead>
     <tbody>
       <tr><td>初期反应</td><td>好奇 + 武力准备</td><td>科学考察 + 军事戒备</td></tr>
@@ -342,21 +355,21 @@ ul li { margin-bottom: 6px; line-height: 1.9; font-size: 13px; }
       <tr><td>制度响应</td><td>条约（多次违约）→ 保留地</td><td>国际协议 → 隔离区？</td></tr>
       <tr><td>最终结果</td><td>原住民文化被边缘化/消亡</td><td>取决于对方是否具有对等力量</td></tr>
     </tbody>
-  </table>
+  </table></div>
   <div class="callout red">
     <strong>关键差异</strong>
     新智慧生物如果具有对等或更强的认知能力，人类无法复制殖民模式——这是本情景与所有历史先例的根本性差异，也是最重要的变量。
   </div>
 
   <h3>4.3 社会分裂的预测</h3>
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>阵营</th><th>核心立场</th><th>主要构成</th></tr></thead>
     <tbody>
       <tr><td>🕊️ 共存派</td><td>"我们不是唯一，共同繁荣才是出路"</td><td>科学家、哲学家、部分宗教人士</td></tr>
       <tr><td>⚔️ 排斥/控制派</td><td>"资源有限，智慧物种的竞争将威胁人类主导权"</td><td>民族主义者、军事强硬派、部分政客</td></tr>
       <tr><td>🔬 利用派</td><td>"研究、学习，提取有价值的技术或知识"</td><td>跨国企业、技术资本</td></tr>
     </tbody>
-  </table>
+  </table></div>
 </div>
 
 <!-- Ch5 -->
@@ -430,7 +443,7 @@ ul li { margin-bottom: 6px; line-height: 1.9; font-size: 13px; }
     "人类应对新智慧生物的方式，不是由该生物决定的——而是由人类如何叙述它决定的。"
   </div>
 
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>研究领域</th><th>核心结论</th></tr></thead>
     <tbody>
       <tr><td>神经科学</td><td>大脑的默认设置是防御外群，媒体框架决定激活阈值</td></tr>
@@ -439,7 +452,7 @@ ul li { margin-bottom: 6px; line-height: 1.9; font-size: 13px; }
       <tr><td>接触理论</td><td>接触能减少偏见，前提是平等、合作、有制度支撑</td></tr>
       <tr><td>伦理哲学</td><td>道德圆圈可以扩展，但需要主动设计，默认走向是收缩</td></tr>
     </tbody>
-  </table>
+  </table></div>
 
   <p>本报告建议，在任何接触发生之前，人类社会应提前建立：（1）跨国协调的接触协议；（2）媒体叙事的伦理规范；（3）基于道德圆圈扩展理论的教育干预；（4）具有法律约束力的"跨物种权利"框架雏形。</p>
 </div>
@@ -461,5 +474,6 @@ ul li { margin-bottom: 6px; line-height: 1.9; font-size: 13px; }
 
 <div class="footer">本报告由 OpenClaw AI 研究助手综合公开学术文献生成 · 2026年4月8日 · 仅供研究参考</div>
 
+</div><!-- /.page -->
 </body>
 </html>
