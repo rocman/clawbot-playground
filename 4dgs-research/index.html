@@ -111,14 +111,15 @@
     <span>Total: <span id="stat-total">—</span> splats</span>
     <span><span class="dot dot-fps"></span> <span id="stat-fps">—</span> FPS</span>
     <span>Delta size: <span id="stat-delta-size">—</span></span>
+    <span>Compressed size: <span id="stat-compressed-size">—</span></span>
   </div>
 </div>
 
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.174.0/three.module.js",
-    "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.8/spark.module.js"
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.178.0/three.module.js",
+    "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.10/spark.module.js"
   }
 }
 </script>
@@ -169,7 +170,7 @@ function setLoading(pct, text) {
 // ============================================================
 async function loadManifest() {
   setLoading(5, 'Loading manifest...');
-  const resp = await fetch('data/manifest.json');
+  const resp = await fetch('data/manifest.json?t=' + Date.now());
   manifest = await resp.json();
   document.getElementById('stat-total').textContent = manifest.n_gaussians.toLocaleString();
   document.getElementById('stat-dynamic').textContent = manifest.n_dynamic.toLocaleString();
@@ -177,10 +178,53 @@ async function loadManifest() {
   timeline.max = manifest.p_frames.length; // 0 = I-frame, 1..N = P-frames
 }
 
+// Decompress gzipped data using DecompressionStream API
+async function decompressGzip(compressedBuffer) {
+  const ds = new DecompressionStream('gzip');
+  const blob = new Blob([compressedBuffer]);
+  const decompressedStream = blob.stream().pipeThrough(ds);
+  const decompressedBlob = await new Response(decompressedStream).blob();
+  return await decompressedBlob.arrayBuffer();
+}
+
+// Convert Float16 (Uint16 view) to Float32
+function float16ToFloat32(f16array) {
+  const f32 = new Float32Array(f16array.length);
+  const u16 = new Uint16Array(f16array.buffer, f16array.byteOffset, f16array.length);
+  for (let i = 0; i < u16.length; i++) {
+    const h = u16[i];
+    const sign = (h >> 15) & 0x1;
+    const exponent = (h >> 10) & 0x1f;
+    const mantissa = h & 0x3ff;
+    
+    if (exponent === 0) {
+      // Subnormal or zero
+      if (mantissa === 0) {
+        f32[i] = sign ? -0 : 0;
+      } else {
+        // Subnormal float16
+        f32[i] = (sign ? -1 : 1) * Math.pow(2, -14) * (mantissa / 1024);
+      }
+    } else if (exponent === 31) {
+      // Inf or NaN
+      f32[i] = mantissa === 0 ? (sign ? -Infinity : Infinity) : NaN;
+    } else {
+      // Normal
+      f32[i] = (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + mantissa / 1024);
+    }
+  }
+  return f32;
+}
+
 async function loadDynamicMask() {
   setLoading(10, 'Loading dynamic mask...');
-  const resp = await fetch('data/' + manifest.dynamic_mask);
-  const buf = await resp.arrayBuffer();
+  const maskFile = manifest.dynamic_mask?.file || manifest.dynamic_mask;
+  const resp = await fetch('data/' + maskFile);
+  const compressedBuf = await resp.arrayBuffer();
+  // Decompress gzip if filename ends with .gz
+  const buf = maskFile.endsWith('.gz')
+    ? await decompressGzip(compressedBuf)
+    : compressedBuf;
   dynamicMask = new Uint8Array(buf);
 }
 
@@ -190,49 +234,19 @@ async function loadPFrames() {
     const pf = manifest.p_frames[i];
     setLoading(15 + (i / manifest.p_frames.length) * 50, `Loading P-frame ${i + 1}/${manifest.p_frames.length}...`);
     const resp = await fetch('data/' + pf.file);
-    const buf = await resp.arrayBuffer();
-    pFrameDeltas.push(new Float32Array(buf));
+    const compressedBuf = await resp.arrayBuffer();
+    
+    if (pf.file.endsWith('.gz')) {
+      // Decompress gzip, then convert float16 → float32
+      const rawBuf = await decompressGzip(compressedBuf);
+      const f16view = new Uint16Array(rawBuf);
+      const f32data = float16ToFloat32(f16view);
+      pFrameDeltas.push(f32data);
+    } else {
+      // Legacy uncompressed float32
+      pFrameDeltas.push(new Float32Array(compressedBuf));
+    }
   }
-}
-
-/**
- * Load I-frame PLY.
- * If i_frame_release_url is set in manifest, fetch it and return as fileBytes.
- * Otherwise fall back to local file or split parts.
- */
-async function loadSplitPly() {
-  // Prefer Release URL for large files
-  if (manifest.i_frame_release_url) {
-    setLoading(70, 'Downloading I-frame PLY from release...');
-    const resp = await fetch(manifest.i_frame_release_url);
-    if (!resp.ok) throw new Error(`Failed to fetch PLY: ${resp.status}`);
-    const buf = await resp.arrayBuffer();
-    setLoading(85, `PLY downloaded (${(buf.byteLength / 1024 / 1024).toFixed(0)} MB)...`);
-    return { url: null, fileBytes: new Uint8Array(buf) };
-  }
-  const parts = manifest.i_frame_parts || null;
-  if (!parts || parts.length === 0) {
-    return { url: 'data/' + manifest.i_frame_ply, fileBytes: null };
-  }
-  // Split parts: download and merge into ArrayBuffer
-  const buffers = [];
-  let totalBytes = 0;
-  for (let i = 0; i < parts.length; i++) {
-    setLoading(70 + (i / parts.length) * 15,
-      `Downloading PLY part ${i + 1}/${parts.length}...`);
-    const resp = await fetch('data/' + parts[i]);
-    const buf = await resp.arrayBuffer();
-    buffers.push(new Uint8Array(buf));
-    totalBytes += buf.byteLength;
-  }
-  setLoading(85, `Assembling PLY (${(totalBytes / 1024 / 1024).toFixed(0)} MB)...`);
-  const merged = new Uint8Array(totalBytes);
-  let offset = 0;
-  for (const buf of buffers) {
-    merged.set(buf, offset);
-    offset += buf.byteLength;
-  }
-  return { url: null, fileBytes: merged };
 }
 
 // ============================================================
@@ -380,10 +394,7 @@ async function init() {
   const maskTexWidth = maskInfo.width;
   const maskTexHeight = maskInfo.height;
   
-  // 2.5. Load I-frame PLY (may be split into parts for GitHub Pages)
-  const plyData = await loadSplitPly();
-  
-  setLoading(88, 'Loading I-frame splats (1.2M gaussians, may take a moment)...');
+  setLoading(80, 'Loading I-frame splats (1.2M gaussians, may take a moment)...');
   
   // 3. Create Dyno uniforms
   uFrameIndex = dyno.dynoInt(0);       // 0 = I-frame (no delta), >0 = apply delta
@@ -391,11 +402,11 @@ async function init() {
   deltaSampler = dyno.dynoSampler2D(deltaTexture);
   maskSampler = dyno.dynoSampler2D(maskTexture);
   
-  // 4. Create SplatMesh with I-frame PLY
-  const splatOpts = plyData.fileBytes
-    ? { fileBytes: plyData.fileBytes }
-    : { url: plyData.url };
-  splatMesh = new SplatMesh(splatOpts);
+  // 4. Create SplatMesh — load I-frame SPZ or PLY via fileBytes
+  const iFrameFile = manifest.i_frame?.file || manifest.i_frame_ply || 'i_frame.ply';
+  const iFrameResp = await fetch('data/' + iFrameFile + '?t=' + Date.now());
+  const iFrameBytes = new Uint8Array(await iFrameResp.arrayBuffer());
+  splatMesh = new SplatMesh({ fileBytes: iFrameBytes });
   
   // 5. Set objectModifier — the core of our 4DGS delta system
   splatMesh.objectModifier = dyno.dynoBlock(
@@ -497,15 +508,16 @@ async function init() {
     }
   );
   
-  // Position the scene — N3V coffee_martini scene
-  splatMesh.quaternion.set(1, 0, 0, 0);
+  // Position the scene — SPZ data is in original RDF (COLMAP) space
+  // Identity quaternion: no coordinate transform needed
+  splatMesh.quaternion.set(0, 0, 0, 1);
   splatMesh.position.set(0, 0, 0);
   scene.add(splatMesh);
   
-  // Position camera at cam05's world position, looking into the scene
-  // cam05: pos=(1.54, 1.08, -0.45), forward=(0.055, 0, -0.999)
-  camera.position.set(1.54, 1.08, -0.45);
-  camera.lookAt(1.54, 1.08, -5);
+  // Camera position from COLMAP cam05 (in RDF world coords)
+  // cam05: pos=(1.522, -1.080, -0.498), lookAt toward z=-10 (scene forward)
+  camera.position.set(1.522, -1.080, -0.498);
+  camera.lookAt(1.797, -1.035, -10.494);
   
   setLoading(95, 'Starting renderer...');
   
@@ -581,7 +593,10 @@ function updateFrame(frameIdx) {
     uFrameIndex.value = frameIdx;
     const pf = manifest.p_frames[pIdx];
     frameLabel.textContent = `P-Frame ${pIdx + 1}/${manifest.p_frames.length} (t=${pf.time.toFixed(3)})`;
-    document.getElementById('stat-delta-size').textContent = pf.size_kb.toFixed(0) + ' KB';
+    const rawKb = pf.raw_size_kb || pf.size_kb || 0;
+    const compKb = pf.compressed_size_kb || rawKb;
+    document.getElementById('stat-delta-size').textContent = rawKb.toFixed(0) + ' KB';
+    document.getElementById('stat-compressed-size').textContent = compKb.toFixed(0) + ' KB';
   }
 }
 
