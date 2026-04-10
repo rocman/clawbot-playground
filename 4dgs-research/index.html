@@ -479,15 +479,15 @@ async function init() {
     }
   );
   
-  // Position the scene — N3V coffee_martini scene center is roughly at (0, -1, -6.4)
-  // Move scene so its center aligns near origin for easier orbit controls
+  // Position the scene — N3V coffee_martini scene
   splatMesh.quaternion.set(1, 0, 0, 0);
   splatMesh.position.set(0, 0, 0);
   scene.add(splatMesh);
   
-  // Position camera to look at the scene center from a reasonable distance
-  camera.position.set(0, -1, 5);
-  camera.lookAt(0, -1, -6);
+  // Position camera at cam05's world position, looking into the scene
+  // cam05: pos=(1.54, 1.08, -0.45), forward=(0.055, 0, -0.999)
+  camera.position.set(1.54, 1.08, -0.45);
+  camera.lookAt(1.54, 1.08, -5);
   
   setLoading(95, 'Starting renderer...');
   
