@@ -118,7 +118,7 @@
 {
   "imports": {
     "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.174.0/three.module.js",
-    "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.6/spark.module.js"
+    "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.8/spark.module.js"
   }
 }
 </script>
@@ -197,13 +197,14 @@ async function loadPFrames() {
 
 /**
  * Load I-frame PLY that has been split into multiple parts.
- * Downloads all parts, concatenates them, and returns a Blob URL.
+ * Downloads all parts, concatenates them into a single ArrayBuffer.
+ * Returns { url, fileBytes } — one or the other will be set.
  */
 async function loadSplitPly() {
   const parts = manifest.i_frame_parts || null;
   if (!parts || parts.length === 0) {
-    // No split, use original single file
-    return 'data/' + manifest.i_frame_ply;
+    // No split, use original single file URL
+    return { url: 'data/' + manifest.i_frame_ply, fileBytes: null };
   }
   const buffers = [];
   let totalBytes = 0;
@@ -212,12 +213,18 @@ async function loadSplitPly() {
       `Downloading PLY part ${i + 1}/${parts.length}...`);
     const resp = await fetch('data/' + parts[i]);
     const buf = await resp.arrayBuffer();
-    buffers.push(buf);
+    buffers.push(new Uint8Array(buf));
     totalBytes += buf.byteLength;
   }
   setLoading(85, `Assembling PLY (${(totalBytes / 1024 / 1024).toFixed(0)} MB)...`);
-  const blob = new Blob(buffers, { type: 'application/octet-stream' });
-  return URL.createObjectURL(blob);
+  // Concatenate into a single Uint8Array
+  const merged = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const buf of buffers) {
+    merged.set(buf, offset);
+    offset += buf.byteLength;
+  }
+  return { url: null, fileBytes: merged };
 }
 
 // ============================================================
@@ -366,7 +373,7 @@ async function init() {
   const maskTexHeight = maskInfo.height;
   
   // 2.5. Load I-frame PLY (may be split into parts for GitHub Pages)
-  const plyUrl = await loadSplitPly();
+  const plyData = await loadSplitPly();
   
   setLoading(88, 'Loading I-frame splats (1.2M gaussians, may take a moment)...');
   
@@ -377,10 +384,12 @@ async function init() {
   maskSampler = dyno.dynoSampler2D(maskTexture);
   
   // 4. Create SplatMesh with I-frame PLY
-  splatMesh = new SplatMesh({ url: plyUrl });
+  const splatOpts = plyData.fileBytes
+    ? { fileBytes: plyData.fileBytes }
+    : { url: plyData.url };
+  splatMesh = new SplatMesh(splatOpts);
   
-  // 5. Set objectModifier — TEMPORARILY DISABLED for debugging
-  if (false) {
+  // 5. Set objectModifier — the core of our 4DGS delta system
   splatMesh.objectModifier = dyno.dynoBlock(
     { gsplat: dyno.Gsplat },
     { gsplat: dyno.Gsplat },
@@ -479,7 +488,6 @@ async function init() {
       return { gsplat };
     }
   );
-  } // end if(false)
   
   // Position the scene — N3V coffee_martini scene
   splatMesh.quaternion.set(1, 0, 0, 0);
