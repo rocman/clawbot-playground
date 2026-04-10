@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>4DGS I-Frame Viewer — Coffee Martini · GaussianSplats3D (mkkellogg)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  canvas { display: block; }
+  #overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.85); z-index: 100; transition: opacity 0.6s;
+  }
+  #overlay.hidden { opacity: 0; pointer-events: none; }
+  .loader-box {
+    text-align: center; color: #fff;
+  }
+  .loader-box h2 { font-size: 20px; margin-bottom: 16px; font-weight: 400; }
+  .loader-box .engine { color: #6cf; font-size: 13px; margin-bottom: 20px; }
+  .progress-bar { width: 300px; height: 4px; background: #333; border-radius: 2px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #4fc3f7, #81d4fa); width: 0%; transition: width 0.3s; }
+  .loader-box .status { margin-top: 12px; font-size: 13px; color: #aaa; }
+  #info {
+    position: fixed; bottom: 16px; left: 16px; color: #fff; font-size: 12px; z-index: 10;
+    background: rgba(0,0,0,0.6); padding: 8px 14px; border-radius: 8px;
+    backdrop-filter: blur(8px); line-height: 1.6;
+  }
+  #info a { color: #6cf; text-decoration: none; }
+  #info a:hover { text-decoration: underline; }
+  #badge {
+    position: fixed; top: 12px; right: 16px; z-index: 10;
+    background: rgba(0,0,0,0.5); color: #888; font-size: 11px;
+    padding: 4px 10px; border-radius: 6px; backdrop-filter: blur(8px);
+  }
+</style>
+</head>
+<body>
+<div id="overlay">
+  <div class="loader-box">
+    <h2>4DGS I-Frame Viewer — Coffee Martini</h2>
+    <div class="engine">Powered by GaussianSplats3D (mkkellogg)</div>
+    <div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
+    <div class="status" id="loadStatus">Initializing...</div>
+  </div>
+</div>
+<div id="info">
+  🖱 Drag to orbit · Scroll to zoom · Right-drag to pan<br>
+  <a href="index.html">← Back to Spark.js Animated Viewer</a>
+</div>
+<div id="badge">GaussianSplats3D · ksplat · 16-bit</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+    "@mkkellogg/gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.min.js"
+  }
+}
+</script>
+<script type="module">
+import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
+
+const overlay = document.getElementById('overlay');
+const progressFill = document.getElementById('progressFill');
+const loadStatus = document.getElementById('loadStatus');
+
+loadStatus.textContent = 'Creating viewer...';
+
+const viewer = new GaussianSplats3D.Viewer({
+  'cameraUp': [0, 1, 0],
+  'initialCameraPosition': [1.522, -1.080, -0.498],
+  'initialCameraLookAt': [0, -1, -8],
+  'dynamicScene': false,
+  'sceneRevealMode': GaussianSplats3D.SceneRevealMode.Instant,
+  'sphericalHarmonicsDegree': 0,
+  'gpuAcceleratedSort': false,
+  'sharedMemoryForWorkers': false,
+  'enableSIMDInSort': false,
+  'antialiased': false,
+  'logLevel': GaussianSplats3D.LogLevel.Info
+});
+
+loadStatus.textContent = 'Downloading ksplat (28 MB)...';
+
+// Monitor download progress
+let downloadStarted = false;
+const progressInterval = setInterval(() => {
+  if (!downloadStarted) {
+    downloadStarted = true;
+  }
+}, 500);
+
+viewer.addSplatScene('data/i_frame.ksplat', {
+  'showLoadingUI': false,
+  'progressiveLoad': false,
+  'splatAlphaRemovalThreshold': 1,
+  'onProgress': (percent, msg, stage) => {
+    const p = Math.min(percent, 100);
+    progressFill.style.width = p + '%';
+    if (stage === 0) {
+      loadStatus.textContent = `Downloading... ${p.toFixed(0)}%`;
+    } else if (stage === 1) {
+      loadStatus.textContent = `Processing splats... ${p.toFixed(0)}%`;
+    } else {
+      loadStatus.textContent = `Loading... ${p.toFixed(0)}%`;
+    }
+  }
+})
+.then(() => {
+  clearInterval(progressInterval);
+  progressFill.style.width = '100%';
+  loadStatus.textContent = 'Sorting splats...';
+  
+  const splatCount = viewer.splatMesh ? viewer.splatMesh.getSplatCount() : 0;
+  console.log('Loaded splat count:', splatCount);
+  
+  viewer.start();
+  
+  // Fade out overlay
+  setTimeout(() => {
+    loadStatus.textContent = `Ready! ${splatCount.toLocaleString()} splats`;
+    setTimeout(() => overlay.classList.add('hidden'), 800);
+  }, 500);
+})
+.catch(err => {
+  clearInterval(progressInterval);
+  loadStatus.textContent = 'Error: ' + err.message;
+  console.error('Load error:', err);
+});
+</script>
+</body>
+</html>
