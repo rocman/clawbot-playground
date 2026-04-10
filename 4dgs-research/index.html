@@ -197,13 +197,18 @@ async function loadPFrames() {
 
 /**
  * Load I-frame PLY.
- * If i_frame_release_url is set in manifest, use that (for large files hosted on GitHub Releases).
+ * If i_frame_release_url is set in manifest, fetch it and return as fileBytes.
  * Otherwise fall back to local file or split parts.
  */
 async function loadSplitPly() {
   // Prefer Release URL for large files
   if (manifest.i_frame_release_url) {
-    return { url: manifest.i_frame_release_url, fileBytes: null };
+    setLoading(70, 'Downloading I-frame PLY from release...');
+    const resp = await fetch(manifest.i_frame_release_url);
+    if (!resp.ok) throw new Error(`Failed to fetch PLY: ${resp.status}`);
+    const buf = await resp.arrayBuffer();
+    setLoading(85, `PLY downloaded (${(buf.byteLength / 1024 / 1024).toFixed(0)} MB)...`);
+    return { url: null, fileBytes: new Uint8Array(buf) };
   }
   const parts = manifest.i_frame_parts || null;
   if (!parts || parts.length === 0) {
