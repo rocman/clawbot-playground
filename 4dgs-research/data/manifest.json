@@ -1,0 +1,130 @@
+{
+  "dataset": "N3V coffee_martini",
+  "n_gaussians": 1220978,
+  "n_dynamic": 89313,
+  "floats_per_splat": 14,
+  "delta_space": "post_activation",
+  "i_frame_ply": "i_frame.ply",
+  "dynamic_mask": "dynamic_mask.bin",
+  "p_frames": [
+    {
+      "frame_idx": 1,
+      "time": 0.05,
+      "file": "p_frame_001.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 2,
+      "time": 0.1,
+      "file": "p_frame_002.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 3,
+      "time": 0.15,
+      "file": "p_frame_003.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 4,
+      "time": 0.2,
+      "file": "p_frame_004.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 5,
+      "time": 0.25,
+      "file": "p_frame_005.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 6,
+      "time": 0.3,
+      "file": "p_frame_006.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 7,
+      "time": 0.35,
+      "file": "p_frame_007.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 8,
+      "time": 0.4,
+      "file": "p_frame_008.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 9,
+      "time": 0.45,
+      "file": "p_frame_009.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 10,
+      "time": 0.5,
+      "file": "p_frame_010.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 11,
+      "time": 0.55,
+      "file": "p_frame_011.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 12,
+      "time": 0.6,
+      "file": "p_frame_012.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 13,
+      "time": 0.65,
+      "file": "p_frame_013.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 14,
+      "time": 0.7,
+      "file": "p_frame_014.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 15,
+      "time": 0.75,
+      "file": "p_frame_015.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 16,
+      "time": 0.8,
+      "file": "p_frame_016.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 17,
+      "time": 0.85,
+      "file": "p_frame_017.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 18,
+      "time": 0.9,
+      "file": "p_frame_018.bin",
+      "size_kb": 4884.3
+    },
+    {
+      "frame_idx": 19,
+      "time": 0.95,
+      "file": "p_frame_019.bin",
+      "size_kb": 4884.3
+    }
+  ],
+  "i_frame_parts": [
+    "i_frame.ply.part0",
+    "i_frame.ply.part1",
+    "i_frame.ply.part2"
+  ]
+}

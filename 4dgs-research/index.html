@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>4DGS Delta Viewer — Coffee Martini · Spark.js</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+  canvas { touch-action: none; display: block; }
+
+  /* Loading overlay */
+  #loading-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: #0a0a0fee;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.5s;
+  }
+  #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  #loading-title { font-size: 24px; font-weight: 300; letter-spacing: 2px; margin-bottom: 24px; color: #7ecfff; }
+  #loading-bar-bg { width: 300px; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+  #loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3a8bff, #7ecfff); transition: width 0.3s; }
+  #loading-text { margin-top: 12px; font-size: 13px; color: #888; }
+
+  /* Control panel */
+  #controls {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: linear-gradient(transparent, #0a0a0fcc 30%, #0a0a0fee);
+    padding: 16px 24px 20px;
+  }
+  #timeline-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  #play-btn {
+    width: 36px; height: 36px; border: none; border-radius: 50%;
+    background: #3a8bff; color: #fff; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  #play-btn:hover { background: #5aa0ff; }
+  #timeline {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 6px; background: #333; border-radius: 3px; outline: none; cursor: pointer;
+  }
+  #timeline::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    background: #7ecfff; border-radius: 50%; cursor: grab;
+  }
+  #frame-label { font-size: 13px; color: #aaa; min-width: 80px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Info bar */
+  #info-bar { display: flex; gap: 24px; font-size: 12px; color: #666; }
+  #info-bar span { display: flex; align-items: center; gap: 4px; }
+  #info-bar .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-static { background: #4a9; }
+  .dot-dynamic { background: #f74; }
+  .dot-fps { background: #7ecfff; }
+
+  /* Mode toggle */
+  #mode-bar {
+    position: fixed; top: 16px; left: 16px; z-index: 100;
+    display: flex; gap: 8px;
+  }
+  .mode-btn {
+    padding: 6px 14px; border: 1px solid #444; border-radius: 16px;
+    background: transparent; color: #aaa; font-size: 12px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mode-btn.active { background: #3a8bff33; border-color: #3a8bff; color: #7ecfff; }
+  .mode-btn:hover { border-color: #666; }
+
+  /* Title */
+  #title-bar {
+    position: fixed; top: 16px; right: 16px; z-index: 100;
+    text-align: right;
+  }
+  #title-bar h1 { font-size: 16px; font-weight: 400; color: #7ecfff; letter-spacing: 1px; }
+  #title-bar p { font-size: 11px; color: #666; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading-overlay">
+  <div id="loading-title">4DGS DELTA VIEWER</div>
+  <div id="loading-bar-bg"><div id="loading-bar"></div></div>
+  <div id="loading-text">Initializing...</div>
+</div>
+
+<!-- Title -->
+<div id="title-bar">
+  <h1>4DGS Delta Viewer · Coffee Martini</h1>
+  <p>N3V Multi-Camera · I-Frame + P-Frame Delta Encoding · Spark.js</p>
+</div>
+
+<!-- View mode buttons -->
+<div id="mode-bar">
+  <button class="mode-btn active" data-mode="animated" title="Play animated sequence">▶ Animated</button>
+  <button class="mode-btn" data-mode="i-frame" title="View I-frame only">◼ I-Frame</button>
+  <button class="mode-btn" data-mode="highlight" title="Highlight dynamic vs static">◑ Dynamic/Static</button>
+</div>
+
+<!-- Playback controls -->
+<div id="controls">
+  <div id="timeline-row">
+    <button id="play-btn" title="Play/Pause">▶</button>
+    <input type="range" id="timeline" min="0" max="19" step="1" value="0">
+    <span id="frame-label">Frame 0 / 20</span>
+  </div>
+  <div id="info-bar">
+    <span><span class="dot dot-static"></span> Static: <span id="stat-static">—</span></span>
+    <span><span class="dot dot-dynamic"></span> Dynamic: <span id="stat-dynamic">—</span></span>
+    <span>Total: <span id="stat-total">—</span> splats</span>
+    <span><span class="dot dot-fps"></span> <span id="stat-fps">—</span> FPS</span>
+    <span>Delta size: <span id="stat-delta-size">—</span></span>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.174.0/three.module.js",
+    "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.6/spark.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { SparkControls, SplatMesh, dyno } from "@sparkjsdev/spark";
+
+// ============================================================
+// State
+// ============================================================
+let manifest = null;
+let dynamicMask = null;       // Uint8Array (n_gaussians)
+let pFrameDeltas = [];        // Array of Float32Array, each (n_dynamic * 14)
+let splatMesh = null;
+let currentFrame = 0;         // 0 = I-frame, 1..19 = P-frames
+let isPlaying = false;
+let viewMode = 'animated';    // 'animated' | 'i-frame' | 'highlight'
+let playbackSpeed = 150;      // ms per frame
+
+// Dyno uniforms (will be created after manifest loads)
+let uFrameIndex = null;       // int: which P-frame (0 = none/I-frame, 1-19)
+let uViewMode = null;         // int: 0=animated, 1=i-frame, 2=highlight
+let deltaSampler = null;      // sampler2D for delta data
+let maskSampler = null;       // sampler2D for dynamic mask
+
+// THREE.js DataTextures
+let deltaTexture = null;      // holds current frame's delta data
+let maskTexture = null;       // holds dynamic mask
+
+// ============================================================
+// DOM elements
+// ============================================================
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingBar = document.getElementById('loading-bar');
+const loadingText = document.getElementById('loading-text');
+const playBtn = document.getElementById('play-btn');
+const timeline = document.getElementById('timeline');
+const frameLabel = document.getElementById('frame-label');
+
+function setLoading(pct, text) {
+  loadingBar.style.width = pct + '%';
+  if (text) loadingText.textContent = text;
+}
+
+// ============================================================
+// Data loading
+// ============================================================
+async function loadManifest() {
+  setLoading(5, 'Loading manifest...');
+  const resp = await fetch('data/manifest.json');
+  manifest = await resp.json();
+  document.getElementById('stat-total').textContent = manifest.n_gaussians.toLocaleString();
+  document.getElementById('stat-dynamic').textContent = manifest.n_dynamic.toLocaleString();
+  document.getElementById('stat-static').textContent = (manifest.n_gaussians - manifest.n_dynamic).toLocaleString();
+  timeline.max = manifest.p_frames.length; // 0 = I-frame, 1..N = P-frames
+}
+
+async function loadDynamicMask() {
+  setLoading(10, 'Loading dynamic mask...');
+  const resp = await fetch('data/' + manifest.dynamic_mask);
+  const buf = await resp.arrayBuffer();
+  dynamicMask = new Uint8Array(buf);
+}
+
+async function loadPFrames() {
+  pFrameDeltas = [];
+  for (let i = 0; i < manifest.p_frames.length; i++) {
+    const pf = manifest.p_frames[i];
+    setLoading(15 + (i / manifest.p_frames.length) * 50, `Loading P-frame ${i + 1}/${manifest.p_frames.length}...`);
+    const resp = await fetch('data/' + pf.file);
+    const buf = await resp.arrayBuffer();
+    pFrameDeltas.push(new Float32Array(buf));
+  }
+}
+
+/**
+ * Load I-frame PLY that has been split into multiple parts.
+ * Downloads all parts, concatenates them, and returns a Blob URL.
+ */
+async function loadSplitPly() {
+  const parts = manifest.i_frame_parts || null;
+  if (!parts || parts.length === 0) {
+    // No split, use original single file
+    return 'data/' + manifest.i_frame_ply;
+  }
+  const buffers = [];
+  let totalBytes = 0;
+  for (let i = 0; i < parts.length; i++) {
+    setLoading(70 + (i / parts.length) * 15,
+      `Downloading PLY part ${i + 1}/${parts.length}...`);
+    const resp = await fetch('data/' + parts[i]);
+    const buf = await resp.arrayBuffer();
+    buffers.push(buf);
+    totalBytes += buf.byteLength;
+  }
+  setLoading(85, `Assembling PLY (${(totalBytes / 1024 / 1024).toFixed(0)} MB)...`);
+  const blob = new Blob(buffers, { type: 'application/octet-stream' });
+  return URL.createObjectURL(blob);
+}
+
+// ============================================================
+// Texture creation
+// ============================================================
+
+/**
+ * Pack delta data for one P-frame into a 2D DataTexture.
+ * 
+ * Each dynamic splat needs 4 RGBA texels (14 floats + 2 padding = 16 channels).
+ * We tile K splats per row (each occupying 4 texels wide), so:
+ *   texWidth = K * 4
+ *   texHeight = ceil(n_dynamic / K)
+ * 
+ * For n_dynamic=65466: K=256 → width=1024, height=ceil(65466/256)=256 → fits in any GPU.
+ * 
+ * For splat at delta index i:
+ *   splatRow = i / K (integer division)
+ *   splatCol = (i % K) * 4
+ *   texel j = texelFetch(tex, ivec2(splatCol + j, splatRow), 0)
+ */
+const DELTA_SPLATS_PER_ROW = 256; // K
+let deltaTexWidth = 0;
+let deltaTexHeight = 0;
+
+function createDeltaTexture(deltaData) {
+  const n = manifest.n_dynamic;
+  const K = DELTA_SPLATS_PER_ROW;
+  deltaTexWidth = K * 4;   // 1024
+  deltaTexHeight = Math.ceil(n / K);  // ~256
+  const totalTexels = deltaTexWidth * deltaTexHeight;
+  const texData = new Float32Array(totalTexels * 4);  // all zeros initially
+  
+  fillDeltaTexData(texData, deltaData, n, K, deltaTexWidth);
+  
+  const tex = new THREE.DataTexture(texData, deltaTexWidth, deltaTexHeight, THREE.RGBAFormat, THREE.FloatType);
+  tex.needsUpdate = true;
+  tex.minFilter = THREE.NearestFilter;
+  tex.magFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  return tex;
+}
+
+function fillDeltaTexData(texData, deltaData, n, K, texW) {
+  for (let i = 0; i < n; i++) {
+    const srcOff = i * 14;
+    const splatRow = Math.floor(i / K);
+    const splatCol = (i % K) * 4;
+    
+    // 4 texels per splat, each texel = 4 floats (RGBA)
+    for (let t = 0; t < 4; t++) {
+      const texelX = splatCol + t;
+      const dstOff = (splatRow * texW + texelX) * 4;
+      const s = srcOff + t * 4;
+      // Copy up to 4 floats (last texel only has 2 valid)
+      const count = (t < 3) ? 4 : 2;
+      for (let c = 0; c < count; c++) {
+        texData[dstOff + c] = deltaData[s + c] || 0;
+      }
+    }
+  }
+}
+
+/**
+ * Create dynamic mask texture.
+ * We need each splat to know its "dynamic index" (position in the delta array).
+ * Layout: 1D-ish texture, width = ceil(sqrt(n_gaussians)), height = matching
+ * Each texel stores: (isDynamic, dynamicIndex_low, dynamicIndex_high, 0) as floats
+ * 
+ * But simpler: use a 1D RGBA float texture where:
+ * - Width = ceil(n_gaussians / texHeight) for suitable texHeight
+ * - Each texel R channel = isDynamic (0 or 1)
+ * - Each texel G channel = dynamicIndex (cumulative sum index) as float
+ */
+function createMaskTexture() {
+  // Compute cumulative dynamic index
+  const n = manifest.n_gaussians;
+  // Pick texture dimensions
+  const texWidth = Math.ceil(Math.sqrt(n));
+  const texHeight = Math.ceil(n / texWidth);
+  const totalTexels = texWidth * texHeight;
+  const texData = new Float32Array(totalTexels * 4);
+  
+  let dynIdx = 0;
+  for (let i = 0; i < n; i++) {
+    const off = i * 4;
+    const isDyn = dynamicMask[i];
+    texData[off + 0] = isDyn;           // R: isDynamic
+    texData[off + 1] = isDyn ? dynIdx : -1;  // G: index into delta array
+    texData[off + 2] = 0;
+    texData[off + 3] = 0;
+    if (isDyn) dynIdx++;
+  }
+  // Fill remaining texels with -1
+  for (let i = n; i < totalTexels; i++) {
+    const off = i * 4;
+    texData[off + 0] = 0;
+    texData[off + 1] = -1;
+    texData[off + 2] = 0;
+    texData[off + 3] = 0;
+  }
+  
+  const tex = new THREE.DataTexture(texData, texWidth, texHeight, THREE.RGBAFormat, THREE.FloatType);
+  tex.needsUpdate = true;
+  tex.minFilter = THREE.NearestFilter;
+  tex.magFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  return { texture: tex, width: texWidth, height: texHeight };
+}
+
+// ============================================================
+// Scene setup
+// ============================================================
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ============================================================
+// Main initialization
+// ============================================================
+async function init() {
+  // 1. Load data
+  await loadManifest();
+  await loadDynamicMask();
+  await loadPFrames();
+  
+  setLoading(70, 'Creating textures...');
+  
+  // 2. Create textures
+  // Initialize with first P-frame delta (or zeros for I-frame view)
+  const zeroDelta = new Float32Array(manifest.n_dynamic * 14);
+  deltaTexture = createDeltaTexture(zeroDelta);
+  
+  const maskInfo = createMaskTexture();
+  maskTexture = maskInfo.texture;
+  const maskTexWidth = maskInfo.width;
+  const maskTexHeight = maskInfo.height;
+  
+  // 2.5. Load I-frame PLY (may be split into parts for GitHub Pages)
+  const plyUrl = await loadSplitPly();
+  
+  setLoading(88, 'Loading I-frame splats (1.2M gaussians, may take a moment)...');
+  
+  // 3. Create Dyno uniforms
+  uFrameIndex = dyno.dynoInt(0);       // 0 = I-frame (no delta), >0 = apply delta
+  uViewMode = dyno.dynoInt(0);         // 0 = animated, 1 = i-frame only, 2 = highlight
+  deltaSampler = dyno.dynoSampler2D(deltaTexture);
+  maskSampler = dyno.dynoSampler2D(maskTexture);
+  
+  // 4. Create SplatMesh with I-frame PLY
+  splatMesh = new SplatMesh({ url: plyUrl });
+  
+  // 5. Set objectModifier — the core of our 4DGS delta system
+  splatMesh.objectModifier = dyno.dynoBlock(
+    { gsplat: dyno.Gsplat },
+    { gsplat: dyno.Gsplat },
+    ({ gsplat }) => {
+      const d = new dyno.Dyno({
+        inTypes: {
+          gsplat: dyno.Gsplat,
+          frameIdx: "int",
+          mode: "int",
+          deltaTex: "sampler2D",
+          maskTex: "sampler2D",
+          maskW: "int",
+          deltaK: "int",
+        },
+        outTypes: { gsplat: dyno.Gsplat },
+        globals: () => [
+          dyno.unindent(`
+            // Look up dynamic info for splat at global index
+            vec2 lookupMask(sampler2D maskTex, int splatIndex, int maskW) {
+              int row = splatIndex / maskW;
+              int col = splatIndex - row * maskW;
+              return texelFetch(maskTex, ivec2(col, row), 0).rg;
+            }
+            
+            // Fetch delta for a dynamic splat at deltaIndex
+            // Delta texture is tiled: K splats per row, each splat = 4 texels wide
+            // texWidth = K * 4
+            // For splat at deltaIdx:
+            //   splatRow = deltaIdx / K
+            //   splatCol = (deltaIdx % K) * 4
+            void fetchDelta(sampler2D deltaTex, int deltaIdx, int K,
+                            out vec3 dPos, out vec3 dDC, out float dOpacity,
+                            out vec3 dScale, out vec4 dRot) {
+              int splatRow = deltaIdx / K;
+              int splatCol = (deltaIdx - splatRow * K) * 4;
+              vec4 t0 = texelFetch(deltaTex, ivec2(splatCol + 0, splatRow), 0);
+              vec4 t1 = texelFetch(deltaTex, ivec2(splatCol + 1, splatRow), 0);
+              vec4 t2 = texelFetch(deltaTex, ivec2(splatCol + 2, splatRow), 0);
+              vec4 t3 = texelFetch(deltaTex, ivec2(splatCol + 3, splatRow), 0);
+              dPos = t0.xyz;
+              dDC = vec3(t0.w, t1.x, t1.y);
+              dOpacity = t1.z;
+              dScale = vec3(t1.w, t2.x, t2.y);
+              dRot = vec4(t2.z, t2.w, t3.x, t3.y);
+            }
+          `)
+        ],
+        statements: ({ inputs, outputs }) => dyno.unindentLines(`
+          ${outputs.gsplat} = ${inputs.gsplat};
+          
+          int splatIdx = ${inputs.gsplat}.index;
+          vec2 maskData = lookupMask(${inputs.maskTex}, splatIdx, ${inputs.maskW});
+          float isDynamic = maskData.r;
+          int deltaIdx = int(maskData.g);
+          
+          // Mode 2: Highlight dynamic vs static
+          if (${inputs.mode} == 2) {
+            if (isDynamic > 0.5) {
+              // Dynamic splats: tint orange
+              ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(1.0, 0.5, 0.2), 0.6);
+            } else {
+              // Static splats: tint teal
+              ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(0.2, 0.7, 0.6), 0.4);
+            }
+          }
+          
+          // Mode 0 (animated): Apply delta if frame > 0 and splat is dynamic
+          if (${inputs.mode} == 0 && ${inputs.frameIdx} > 0 && isDynamic > 0.5 && deltaIdx >= 0) {
+            vec3 dPos, dDC, dScale;
+            float dOpacity;
+            vec4 dRot;
+            fetchDelta(${inputs.deltaTex}, deltaIdx, ${inputs.deltaK}, dPos, dDC, dOpacity, dScale, dRot);
+            
+            ${outputs.gsplat}.center += dPos;
+            ${outputs.gsplat}.rgba.rgb += dDC;
+            ${outputs.gsplat}.rgba.a += dOpacity;
+            ${outputs.gsplat}.scales += dScale;
+            vec4 newQuat = ${outputs.gsplat}.quaternion + dRot;
+            ${outputs.gsplat}.quaternion = normalize(newQuat);
+          }
+          
+          // Mode 1 (I-frame only): no delta applied, just show as-is
+        `)
+      });
+      
+      gsplat = d.apply({
+        gsplat,
+        frameIdx: uFrameIndex,
+        mode: uViewMode,
+        deltaTex: deltaSampler,
+        maskTex: maskSampler,
+        maskW: dyno.dynoInt(maskTexWidth),
+        deltaK: dyno.dynoInt(DELTA_SPLATS_PER_ROW),
+      }).gsplat;
+      
+      return { gsplat };
+    }
+  );
+  
+  // Position the scene
+  splatMesh.quaternion.set(1, 0, 0, 0);
+  splatMesh.position.set(0, 0, -3);
+  scene.add(splatMesh);
+  
+  setLoading(95, 'Starting renderer...');
+  
+  // 6. Controls
+  const controls = new SparkControls({ canvas: renderer.domElement });
+  
+  // 7. FPS counter
+  let frameCount = 0;
+  let lastFpsTime = performance.now();
+  
+  // 8. Animation loop
+  let lastFrameSwitch = performance.now();
+  
+  renderer.setAnimationLoop(function animate(time) {
+    // Auto-play
+    if (isPlaying && viewMode === 'animated') {
+      const now = performance.now();
+      if (now - lastFrameSwitch > playbackSpeed) {
+        lastFrameSwitch = now;
+        currentFrame = (currentFrame + 1) % (manifest.p_frames.length + 1);
+        updateFrame(currentFrame);
+      }
+    }
+    
+    splatMesh.updateVersion();
+    controls.update(camera);
+    renderer.render(scene, camera);
+    
+    // FPS
+    frameCount++;
+    const now = performance.now();
+    if (now - lastFpsTime > 500) {
+      const fps = Math.round(frameCount / ((now - lastFpsTime) / 1000));
+      document.getElementById('stat-fps').textContent = fps;
+      frameCount = 0;
+      lastFpsTime = now;
+    }
+  });
+  
+  // Hide loading
+  setTimeout(() => {
+    loadingOverlay.classList.add('hidden');
+    splatMesh.updateGenerator();
+  }, 500);
+  setLoading(100, 'Ready!');
+}
+
+// ============================================================
+// Frame management
+// ============================================================
+function updateFrame(frameIdx) {
+  currentFrame = frameIdx;
+  timeline.value = frameIdx;
+  
+  if (frameIdx === 0) {
+    // I-frame: zero delta
+    uFrameIndex.value = 0;
+    frameLabel.textContent = `I-Frame (base)`;
+    document.getElementById('stat-delta-size').textContent = '—';
+  } else {
+    // P-frame: load delta into texture
+    const pIdx = frameIdx - 1;
+    const deltaData = pFrameDeltas[pIdx];
+    
+    // Update delta texture data using tiled layout
+    const n = manifest.n_dynamic;
+    const texData = deltaTexture.image.data;
+    // Clear the texture first (since not all texels may be overwritten)
+    texData.fill(0);
+    fillDeltaTexData(texData, deltaData, n, DELTA_SPLATS_PER_ROW, deltaTexWidth);
+    deltaTexture.needsUpdate = true;
+    
+    uFrameIndex.value = frameIdx;
+    const pf = manifest.p_frames[pIdx];
+    frameLabel.textContent = `P-Frame ${pIdx + 1}/${manifest.p_frames.length} (t=${pf.time.toFixed(3)})`;
+    document.getElementById('stat-delta-size').textContent = pf.size_kb.toFixed(0) + ' KB';
+  }
+}
+
+// ============================================================
+// UI event handlers
+// ============================================================
+playBtn.addEventListener('click', () => {
+  isPlaying = !isPlaying;
+  playBtn.textContent = isPlaying ? '⏸' : '▶';
+});
+
+timeline.addEventListener('input', (e) => {
+  const val = parseInt(e.target.value);
+  isPlaying = false;
+  playBtn.textContent = '▶';
+  updateFrame(val);
+});
+
+// Mode buttons
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    viewMode = btn.dataset.mode;
+    
+    if (viewMode === 'animated') {
+      uViewMode.value = 0;
+    } else if (viewMode === 'i-frame') {
+      uViewMode.value = 1;
+      uFrameIndex.value = 0;
+      currentFrame = 0;
+      timeline.value = 0;
+      frameLabel.textContent = 'I-Frame (base)';
+      isPlaying = false;
+      playBtn.textContent = '▶';
+    } else if (viewMode === 'highlight') {
+      uViewMode.value = 2;
+      uFrameIndex.value = 0;  // Don't apply delta in highlight mode
+      isPlaying = false;
+      playBtn.textContent = '▶';
+    }
+    splatMesh.updateGenerator();
+  });
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ') {
+    e.preventDefault();
+    playBtn.click();
+  } else if (e.key === 'ArrowRight') {
+    const next = Math.min(currentFrame + 1, manifest.p_frames.length);
+    updateFrame(next);
+  } else if (e.key === 'ArrowLeft') {
+    const prev = Math.max(currentFrame - 1, 0);
+    updateFrame(prev);
+  }
+});
+
+// Start!
+init().catch(err => {
+  console.error('Init failed:', err);
+  loadingText.textContent = 'Error: ' + err.message;
+});
+</script>
+</body>
+</html>
