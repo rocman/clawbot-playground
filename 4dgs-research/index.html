@@ -196,16 +196,20 @@ async function loadPFrames() {
 }
 
 /**
- * Load I-frame PLY that has been split into multiple parts.
- * Downloads all parts, concatenates them into a single ArrayBuffer.
- * Returns { url, fileBytes } — one or the other will be set.
+ * Load I-frame PLY.
+ * If i_frame_release_url is set in manifest, use that (for large files hosted on GitHub Releases).
+ * Otherwise fall back to local file or split parts.
  */
 async function loadSplitPly() {
+  // Prefer Release URL for large files
+  if (manifest.i_frame_release_url) {
+    return { url: manifest.i_frame_release_url, fileBytes: null };
+  }
   const parts = manifest.i_frame_parts || null;
   if (!parts || parts.length === 0) {
-    // No split, use original single file URL
     return { url: 'data/' + manifest.i_frame_ply, fileBytes: null };
   }
+  // Split parts: download and merge into ArrayBuffer
   const buffers = [];
   let totalBytes = 0;
   for (let i = 0; i < parts.length; i++) {
@@ -217,7 +221,6 @@ async function loadSplitPly() {
     totalBytes += buf.byteLength;
   }
   setLoading(85, `Assembling PLY (${(totalBytes / 1024 / 1024).toFixed(0)} MB)...`);
-  // Concatenate into a single Uint8Array
   const merged = new Uint8Array(totalBytes);
   let offset = 0;
   for (const buf of buffers) {

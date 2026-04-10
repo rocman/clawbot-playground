@@ -126,5 +126,6 @@
     "i_frame.ply.part0",
     "i_frame.ply.part1",
     "i_frame.ply.part2"
-  ]
+  ],
+  "i_frame_release_url": "https://github.com/rocman/clawbot-playground/releases/download/v4dgs-data-v1/i_frame.ply"
 }
