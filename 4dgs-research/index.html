@@ -379,7 +379,8 @@ async function init() {
   // 4. Create SplatMesh with I-frame PLY
   splatMesh = new SplatMesh({ url: plyUrl });
   
-  // 5. Set objectModifier — the core of our 4DGS delta system
+  // 5. Set objectModifier — TEMPORARILY DISABLED for debugging
+  if (false) {
   splatMesh.objectModifier = dyno.dynoBlock(
     { gsplat: dyno.Gsplat },
     { gsplat: dyno.Gsplat },
@@ -478,6 +479,7 @@ async function init() {
       return { gsplat };
     }
   );
+  } // end if(false)
   
   // Position the scene — N3V coffee_martini scene
   splatMesh.quaternion.set(1, 0, 0, 0);
