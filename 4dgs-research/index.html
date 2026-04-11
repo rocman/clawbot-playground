@@ -140,7 +140,7 @@ let splatMesh = null;
 let currentFrame = 0;         // 0 = I-frame, 1..19 = P-frames
 let isPlaying = false;
 let viewMode = 'animated';    // 'animated' | 'i-frame' | 'highlight'
-let playbackSpeed = 150;      // ms per frame
+let playbackSpeed = 333;      // ms per frame (~0.33s real-time interval)
 
 // Dyno uniforms (will be created after manifest loads)
 let uFrameIndex = null;       // int: which P-frame (0 = none/I-frame, 1-19)
@@ -674,7 +674,7 @@ function updateFrame(frameIdx) {
     
     uFrameIndex.value = frameIdx;
     const pf = manifest.p_frames[pIdx];
-    frameLabel.textContent = `P-Frame ${pIdx + 1}/${manifest.p_frames.length} (t=${pf.time.toFixed(3)})`;
+    frameLabel.textContent = `P-Frame ${pIdx + 1}/${manifest.p_frames.length} (t=${pf.time.toFixed(2)}s)`;
     const rawKb = pf.raw_size_kb || pf.size_kb || 0;
     const compKb = pf.compressed_size_kb || rawKb;
     document.getElementById('stat-delta-size').textContent = rawKb.toFixed(0) + ' KB';
