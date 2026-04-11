@@ -96,7 +96,6 @@
   <button class="mode-btn active" data-mode="animated" title="Play animated sequence">▶ Animated</button>
   <button class="mode-btn" data-mode="i-frame" title="View I-frame only">◼ I-Frame</button>
   <button class="mode-btn" data-mode="highlight" title="Highlight dynamic vs static">◑ Dynamic/Static</button>
-  <a href="mkk.html" class="mode-btn" style="text-decoration:none;background:#1a3a2a;border-color:#4a9" title="Open HD static viewer (GaussianSplats3D / mkkellogg engine)">🔬 HD Static</a>
 </div>
 
 <!-- Playback controls -->
@@ -120,6 +119,7 @@
 {
   "imports": {
     "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.178.0/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/",
     "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.10/spark.module.js"
   }
 }
@@ -127,7 +127,8 @@
 
 <script type="module">
 import * as THREE from "three";
-import { SparkControls, SplatMesh, dyno } from "@sparkjsdev/spark";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SplatMesh, dyno } from "@sparkjsdev/spark";
 
 // ============================================================
 // State
@@ -362,7 +363,7 @@ function createMaskTexture() {
 // Scene setup
 // ============================================================
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 500);
 const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -509,21 +510,29 @@ async function init() {
     }
   );
   
-  // Position the scene — SPZ data is in original RDF (COLMAP) space
+  // Position the scene — SPZ data stays in original COLMAP RDF space
   // Identity quaternion: no coordinate transform needed
+  // (Verified: this configuration renders correctly with correct orientation)
   splatMesh.quaternion.set(0, 0, 0, 1);
   splatMesh.position.set(0, 0, 0);
   scene.add(splatMesh);
   
-  // Camera position from COLMAP cam05 (in RDF world coords)
-  // cam05: pos=(1.522, -1.080, -0.498), lookAt toward z=-10 (scene forward)
+  // Camera position from COLMAP cam05 (original RDF world coords)
+  // cam05: pos=(1.522, -1.080, -0.498), lookAt toward (1.797, -1.035, -10.494)
   camera.position.set(1.522, -1.080, -0.498);
-  camera.lookAt(1.797, -1.035, -10.494);
   
   setLoading(95, 'Starting renderer...');
   
-  // 6. Controls
-  const controls = new SparkControls({ canvas: renderer.domElement });
+  // 6. OrbitControls — orbit around scene center for intuitive navigation
+  const controls = new OrbitControls(camera, renderer.domElement);
+  // Scene center in original COLMAP RDF coords: (-0.118, -0.916, -6.410)
+  controls.target.set(-0.118, -0.916, -6.410);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.1;
+  controls.screenSpacePanning = true;
+  controls.minDistance = 0.5;
+  controls.maxDistance = 100;
+  controls.update();
   
   // 7. FPS counter
   let frameCount = 0;
@@ -544,7 +553,7 @@ async function init() {
     }
     
     splatMesh.updateVersion();
-    controls.update(camera);
+    controls.update();
     renderer.render(scene, camera);
     
     // FPS
@@ -664,4 +673,4 @@ init().catch(err => {
 });
 </script>
 </body>
-</html>
+</html>
