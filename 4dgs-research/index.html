@@ -510,23 +510,22 @@ async function init() {
     }
   );
   
-  // Position the scene — SPZ data stays in original COLMAP RDF space
-  // Identity quaternion: no coordinate transform needed
-  // (Verified: this configuration renders correctly with correct orientation)
-  splatMesh.quaternion.set(0, 0, 0, 1);
+  // Position the scene — v5 COLMAP data in original coordinates
+  // X-axis 180° rotation in splatMesh to convert RDF→Y-up for THREE.js
+  // This way P-frame deltas remain in the same coordinate space as I-frame
+  splatMesh.quaternion.set(1, 0, 0, 0);  // 180° around X: flips Y and Z visually
   splatMesh.position.set(0, 0, 0);
   scene.add(splatMesh);
   
-  // Camera position from COLMAP cam05 (original RDF world coords)
-  // cam05: pos=(1.522, -1.080, -0.498), lookAt toward (1.797, -1.035, -10.494)
-  camera.position.set(1.522, -1.080, -0.498);
+  // Camera position from COLMAP cam05 (Y/Z flipped for display)
+  camera.position.set(1.522, 1.080, 0.498);
   
   setLoading(95, 'Starting renderer...');
   
   // 6. OrbitControls — orbit around scene center for intuitive navigation
   const controls = new OrbitControls(camera, renderer.domElement);
-  // Scene center in original COLMAP RDF coords: (-0.118, -0.916, -6.410)
-  controls.target.set(-0.118, -0.916, -6.410);
+  // Scene center (Y/Z flipped): original (1.638, 0.527, 3.867) → display (1.638, -0.527, -3.867)
+  controls.target.set(1.638, -0.527, -3.867);
   controls.enableDamping = true;
   controls.dampingFactor = 0.1;
   controls.screenSpacePanning = true;
@@ -566,6 +565,79 @@ async function init() {
       lastFpsTime = now;
     }
   });
+  
+  // 9. WebSocket control channel
+  const wsUrl = 'ws://' + location.host + '/';
+  let ws = null;
+  function connectWS() {
+    try {
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => console.log('[WS] Connected');
+      ws.onclose = () => { console.log('[WS] Disconnected, retrying...'); setTimeout(connectWS, 2000); };
+      ws.onerror = () => {};
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg.type === 'setCamera') {
+            if (msg.position) camera.position.fromArray(msg.position);
+            if (msg.target) controls.target.fromArray(msg.target);
+            controls.update();
+            reportCameraState();
+          } else if (msg.type === 'rotateCamera') {
+            // Rotate around target by azimuth/elevation in degrees
+            const az = (msg.azimuth || 0) * Math.PI / 180;
+            const el = (msg.elevation || 0) * Math.PI / 180;
+            const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+            const r = offset.length();
+            // Spherical: theta = polar angle from Y, phi = azimuth around Y
+            let theta = Math.acos(Math.max(-1, Math.min(1, offset.y / r)));
+            let phi = Math.atan2(offset.x, offset.z);
+            phi += az;
+            theta = Math.max(0.01, Math.min(Math.PI - 0.01, theta + el));
+            offset.set(r * Math.sin(theta) * Math.sin(phi), r * Math.cos(theta), r * Math.sin(theta) * Math.cos(phi));
+            camera.position.copy(controls.target).add(offset);
+            controls.update();
+            reportCameraState();
+          } else if (msg.type === 'setFrame') {
+            updateFrame(msg.frame || 0);
+          } else if (msg.type === 'requestScreenshot') {
+            // viewctl 截图请求：渲染一帧后将 Canvas 转为 Base64 PNG 发回
+            try {
+              renderer.render(scene, camera);
+              const dataUrl = renderer.domElement.toDataURL('image/png');
+              ws.send(JSON.stringify({
+                type: 'screenshotResult',
+                dataUrl,
+                width: renderer.domElement.width,
+                height: renderer.domElement.height,
+                camera: { position: camera.position.toArray(), target: controls.target.toArray() },
+              }));
+              console.log('[viewctl] Screenshot sent');
+            } catch (screenshotErr) {
+              ws.send(JSON.stringify({ type: 'screenshotResult', error: screenshotErr.message }));
+            }
+          }
+        } catch (e) { console.error('[WS] Parse error:', e); }
+      };
+    } catch (e) { setTimeout(connectWS, 2000); }
+  }
+  
+  function reportCameraState() {
+    if (ws && ws.readyState === 1) {
+      ws.send(JSON.stringify({
+        type: 'cameraState',
+        position: camera.position.toArray(),
+        target: controls.target.toArray(),
+        up: camera.up.toArray(),
+      }));
+    }
+  }
+  
+  // Report camera state periodically and on user interaction
+  setInterval(reportCameraState, 1000);
+  renderer.domElement.addEventListener('pointerup', () => setTimeout(reportCameraState, 100));
+  
+  connectWS();
   
   // Hide loading
   setTimeout(() => {
