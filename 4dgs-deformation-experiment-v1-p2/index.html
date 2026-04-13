@@ -470,8 +470,11 @@ async function init() {
             vec3 dp, ddc, dsc; float dop; vec4 dr;
             fetchDelta(${inputs.deltaTex}, dIdx, ${inputs.deltaK}, dp, ddc, dop, dsc, dr);
             // E3: absolute post-activation values — replace, not add
+            // SH DC to RGB conversion: Spark.js stores rgba.rgb in RGB space
+            // P-frame exports raw SH DC coefficients, need SH_C0 * dc + 0.5
+            float SH_C0 = 0.28209479177;
             ${outputs.gsplat}.center = dp;
-            ${outputs.gsplat}.rgba.rgb = ddc;
+            ${outputs.gsplat}.rgba.rgb = SH_C0 * ddc + 0.5;
             ${outputs.gsplat}.rgba.a = dop;
             ${outputs.gsplat}.scales = dsc;
             ${outputs.gsplat}.quaternion = dr;
@@ -495,12 +498,12 @@ async function init() {
   splatMesh.position.set(0, 0, 0);
   scene.add(splatMesh);
 
-  camera.position.set(0.878, 1.442, -0.516);
+  camera.position.set(0.878, -1.442, 0.516);
 
   setLoading(90, 'Starting renderer...');
 
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(0.313, 0.089, 0.107);
+  controls.target.set(2.435, -0.647, -15.003);
   controls.enableDamping = true;
   controls.dampingFactor = 0.1;
   controls.screenSpacePanning = true;
