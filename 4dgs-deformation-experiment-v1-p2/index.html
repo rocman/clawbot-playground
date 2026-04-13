@@ -234,7 +234,8 @@ async function loadSinglePFrame(pIdx) {
   const version = headerView.getUint32(4, true);
   const dynCount = headerView.getUint32(8, true);
 
-  let offset = 20;
+  // Header: magic(4) + version(4) + dynCount(4) + frameIdx(4) = 16 bytes
+  let offset = 16;
   if (version >= 2) {
     dynamicIndices = new Uint32Array(raw, offset, dynCount);
     offset += dynCount * 4;
