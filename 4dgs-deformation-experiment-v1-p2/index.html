@@ -495,12 +495,12 @@ async function init() {
   splatMesh.position.set(0, 0, 0);
   scene.add(splatMesh);
 
-  camera.position.set(0.441, 1.316, 0.203);
+  camera.position.set(0.878, 1.442, -0.516);
 
   setLoading(90, 'Starting renderer...');
 
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(2.435, -0.647, -15.004);
+  controls.target.set(0.313, 0.089, 0.107);
   controls.enableDamping = true;
   controls.dampingFactor = 0.1;
   controls.screenSpacePanning = true;
@@ -661,4 +661,4 @@ document.addEventListener('keydown', (e) => {
 init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
 </script>
 </body>
-</html>
+</html>
