@@ -1,0 +1,69 @@
+{
+  "dataset": "cut_roasted_beef",
+  "method": "4DGaussians (HexPlane + MLP deformation)",
+  "total_gaussians": 128062,
+  "dynamic_gaussians": 128062,
+  "i_frame": "i_frame.spz",
+  "dynamic_mask": "dynamic_mask.bin.gz",
+  "p_frames": [
+    "p_frame_015.bin.gz",
+    "p_frame_030.bin.gz",
+    "p_frame_045.bin.gz",
+    "p_frame_060.bin.gz",
+    "p_frame_075.bin.gz",
+    "p_frame_090.bin.gz",
+    "p_frame_105.bin.gz",
+    "p_frame_120.bin.gz",
+    "p_frame_135.bin.gz",
+    "p_frame_150.bin.gz",
+    "p_frame_165.bin.gz",
+    "p_frame_180.bin.gz",
+    "p_frame_195.bin.gz",
+    "p_frame_210.bin.gz",
+    "p_frame_225.bin.gz",
+    "p_frame_240.bin.gz",
+    "p_frame_255.bin.gz",
+    "p_frame_270.bin.gz",
+    "p_frame_285.bin.gz"
+  ],
+  "frame_indices": [
+    15,
+    30,
+    45,
+    60,
+    75,
+    90,
+    105,
+    120,
+    135,
+    150,
+    165,
+    180,
+    195,
+    210,
+    225,
+    240,
+    255,
+    270,
+    285
+  ],
+  "total_source_frames": 300,
+  "metrics": {
+    "train_psnr": 35.02,
+    "test_psnr": 32.26,
+    "ssim": 0.936
+  },
+  "camera_info": {
+    "count": 20,
+    "scene_center": [
+      0.313,
+      0.089,
+      0.107
+    ],
+    "near": 9.37,
+    "far": 26.8
+  },
+  "p_frame_version": 2,
+  "delta_threshold": 0.001,
+  "delta_includes_shs": "dc_only"
+}
