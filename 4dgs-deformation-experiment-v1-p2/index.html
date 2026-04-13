@@ -82,6 +82,20 @@
     overflow: hidden; margin-top: 4px; margin-left: auto;
   }
   #pframe-progress .bar { height: 100%; width: 0%; background: #f74; transition: width 0.3s; }
+
+  /* Waiting/buffering indicator */
+  #waiting-indicator {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    z-index: 200; display: none; text-align: center;
+  }
+  #waiting-indicator.show { display: block; }
+  #waiting-indicator .spinner {
+    width: 40px; height: 40px; margin: 0 auto 12px;
+    border: 3px solid #333; border-top: 3px solid #7ecfff;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #waiting-indicator .text { font-size: 13px; color: #aaa; }
 </style>
 </head>
 <body>
@@ -101,6 +115,12 @@
 <div id="pframe-progress">
   <span id="pframe-status">P-frames: waiting...</span>
   <div class="bar-bg"><div class="bar" id="pframe-bar"></div></div>
+</div>
+
+<!-- Waiting/buffering overlay -->
+<div id="waiting-indicator">
+  <div class="spinner"></div>
+  <div class="text" id="waiting-text">Buffering P-frame...</div>
 </div>
 
 <div id="mode-bar">
@@ -152,6 +172,7 @@ let currentFrame = 0;
 let isPlaying = false;
 let viewMode = 'animated';
 let playbackSpeed = 400;
+let waitingForFrame = -1;  // -1 = not waiting; >=0 = waiting for this P-frame index
 
 let uFrameIndex = null;
 let uViewMode = null;
@@ -169,6 +190,8 @@ const frameLabel = document.getElementById('frame-label');
 const pframeStatus = document.getElementById('pframe-status');
 const pframeBar = document.getElementById('pframe-bar');
 const pframeProgress = document.getElementById('pframe-progress');
+const waitingIndicator = document.getElementById('waiting-indicator');
+const waitingText = document.getElementById('waiting-text');
 
 function setLoading(pct, text) {
   loadingBar.style.width = pct + '%';
@@ -276,10 +299,22 @@ async function loadPFramesStreaming() {
       timeline.max = pFrameLoadedCount;
 
       console.log(`[E1] P-frame ${i + 1}/${manifest.p_frames.length} loaded`);
+
+      // Auto-resume if we were waiting for this frame
+      if (waitingForFrame === i) {
+        waitingForFrame = -1;
+        waitingIndicator.classList.remove('show');
+        updateFrame(i + 1);  // i+1 because frame 0 = I-frame, P-frame i → frame i+1
+      }
     } catch (err) {
       console.error(`Failed to load P-frame ${i}:`, err);
       pFrameDeltas[i] = null;
       pFrameLoadedCount = i + 1;
+      // If waiting for this failed frame, skip it
+      if (waitingForFrame === i) {
+        waitingForFrame = -1;
+        waitingIndicator.classList.remove('show');
+      }
     }
   }
 
@@ -401,14 +436,16 @@ async function init() {
   const maskTexWidth = maskInfo.width;
 
   // Step 4: Load I-frame FIRST (E1 key change!)
-  setLoading(30, `Loading I-frame (${manifest.total_gaussians.toLocaleString()} gaussians)...`);
+  // Use PLY instead of SPZ for float32 precision (fixes blur from SPZ 8-bit quantization)
+  const iFrameFile = manifest.i_frame_ply || manifest.i_frame.replace('.spz', '.ply');
+  setLoading(30, `Loading I-frame PLY (${manifest.total_gaussians.toLocaleString()} gaussians)...`);
 
   uFrameIndex = dyno.dynoInt(0);
   uViewMode = dyno.dynoInt(0);
   deltaSampler = dyno.dynoSampler2D(deltaTexture);
   maskSampler = dyno.dynoSampler2D(maskTexture);
 
-  const iFrameResp = await fetch('data/' + manifest.i_frame + '?t=' + Date.now());
+  const iFrameResp = await fetch('data/' + iFrameFile + '?t=' + Date.now());
   const iFrameBytes = new Uint8Array(await iFrameResp.arrayBuffer());
   splatMesh = new SplatMesh({ fileBytes: iFrameBytes });
 
@@ -469,15 +506,12 @@ async function init() {
           if (${inputs.mode} == 0 && ${inputs.frameIdx} > 0 && isDyn > 0.5 && dIdx >= 0) {
             vec3 dp, ddc, dsc; float dop; vec4 dr;
             fetchDelta(${inputs.deltaTex}, dIdx, ${inputs.deltaK}, dp, ddc, dop, dsc, dr);
-            // E3: absolute post-activation values — replace, not add
-            // SH DC to RGB conversion: Spark.js stores rgba.rgb in RGB space
-            // P-frame exports raw SH DC coefficients, need SH_C0 * dc + 0.5
+            // Only replace color + opacity to maintain sort & shape consistency.
+            // Scale/rotation/center preserved from I-frame to avoid ghosting from
+            // float16 precision loss and sort-position mismatch.
             float SH_C0 = 0.28209479177;
-            ${outputs.gsplat}.center = dp;
             ${outputs.gsplat}.rgba.rgb = SH_C0 * ddc + 0.5;
             ${outputs.gsplat}.rgba.a = dop;
-            ${outputs.gsplat}.scales = dsc;
-            ${outputs.gsplat}.quaternion = dr;
           }
         `)
       });
@@ -519,6 +553,9 @@ async function init() {
   setTimeout(() => {
     loadingOverlay.classList.add('hidden');
     splatMesh.updateGenerator();
+    // Auto-play: start playback automatically
+    isPlaying = true;
+    playBtn.textContent = '⏸';
   }, 300);
 
   // E1: Start P-frame streaming in background (non-blocking!)
@@ -531,15 +568,29 @@ async function init() {
   let lastFrameSwitch = performance.now();
 
   renderer.setAnimationLoop(function animate() {
-    if (isPlaying && viewMode === 'animated') {
+    if (isPlaying && viewMode === 'animated' && waitingForFrame < 0) {
       const now = performance.now();
       if (now - lastFrameSwitch > playbackSpeed) {
         lastFrameSwitch = now;
-        // E1: Only cycle through loaded frames
-        const maxFrame = pFrameLoadedCount;
-        if (maxFrame > 0) {
-          currentFrame = (currentFrame + 1) % (maxFrame + 1);
-          updateFrame(currentFrame);
+        const maxFrame = manifest.p_frames.length;
+        const nextFrame = (currentFrame + 1) % (maxFrame + 1);
+        
+        // Check if next P-frame is loaded
+        if (nextFrame > 0) {
+          const pIdx = nextFrame - 1;
+          if (!pFrameDeltas[pIdx]) {
+            // P-frame not yet loaded — wait
+            waitingForFrame = pIdx;
+            waitingIndicator.classList.add('show');
+            waitingText.textContent = `Buffering P-frame ${pIdx + 1}/${manifest.p_frames.length}...`;
+            frameLabel.textContent = `Waiting for P-Frame ${pIdx + 1}...`;
+            console.log(`[Autoplay] Waiting for P-frame ${pIdx + 1}`);
+            // Don't advance frame — stay on current
+          } else {
+            updateFrame(nextFrame);
+          }
+        } else {
+          updateFrame(nextFrame);
         }
       }
     }
@@ -660,6 +711,9 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'ArrowRight') updateFrame(Math.min(currentFrame + 1, pFrameLoadedCount));
   else if (e.key === 'ArrowLeft') updateFrame(Math.max(currentFrame - 1, 0));
 });
+
+// Expose for external testing
+window._viewer = { updateFrame: (f) => updateFrame(f), getFrame: () => currentFrame };
 
 init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
 </script>

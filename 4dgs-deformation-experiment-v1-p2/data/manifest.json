@@ -4,6 +4,7 @@
   "total_gaussians": 128062,
   "dynamic_gaussians": 128062,
   "i_frame": "i_frame.spz",
+  "i_frame_ply": "i_frame.ply",
   "dynamic_mask": "dynamic_mask.bin.gz",
   "p_frames": [
     "p_frame_015.bin.gz",
