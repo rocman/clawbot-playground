@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Debug</title></head>
+<body>
+<pre id="log"></pre>
+<script>
+const log = document.getElementById('log');
+function l(msg) { log.textContent += new Date().toISOString().slice(11,19) + ' ' + msg + '\n'; console.log(msg); }
+
+l('1. Starting...');
+try {
+  const ws = new WebSocket('ws://' + location.host + '/');
+  ws.onopen = () => l('2. WS connected!');
+  ws.onerror = (e) => l('WS error: ' + e);
+  ws.onclose = () => l('WS closed');
+} catch(e) { l('WS exception: ' + e); }
+
+l('3. Fetching manifest...');
+fetch('data/manifest.json').then(r => r.json()).then(m => {
+  l('4. Manifest loaded: ' + m.total_gaussians + ' gaussians');
+  l('5. Fetching SPZ...');
+  return fetch('data/' + m.i_frame);
+}).then(r => r.arrayBuffer()).then(buf => {
+  l('6. SPZ loaded: ' + (buf.byteLength/1024/1024).toFixed(1) + ' MB');
+  l('7. Loading Spark.js...');
+  
+  // Test import
+  const script = document.createElement('script');
+  script.type = 'module';
+  script.textContent = `
+    import { SplatMesh } from "https://sparkjs.dev/releases/spark/0.1.10/spark.module.js";
+    document.getElementById('log').textContent += new Date().toISOString().slice(11,19) + ' 8. Spark.js loaded! SplatMesh=' + typeof SplatMesh + '\\n';
+  `;
+  document.body.appendChild(script);
+}).catch(e => l('ERROR: ' + e));
+</script>
+</body>
+</html>
