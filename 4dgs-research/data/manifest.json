@@ -1,13 +1,15 @@
 {
   "version": 3,
   "dataset": "N3V coffee_martini",
-  "training": "v6 I-frame (30K iter, PSNR 40.73dB) + wide-range P-frames (stride=10, 6.3s span)",
+  "training": "v6 I-frame (30K iter, PSNR 40.73dB) + P3b P-frames (500 iter, xyz_lr=5x, stride=10, 6.3s)",
+  "experiment": "P1b_adaptive_iter",
   "frame_sampling": {
     "source_fps": 30,
     "stride": 10,
     "frame_interval_ms": 333,
     "time_span_s": 6.33,
-    "n_p_frames": 19
+    "n_p_frames": 19,
+    "iterations_per_frame": 500
   },
   "compression": {
     "i_frame": "spz_v2_gzip (gaussforge)",
@@ -33,133 +35,133 @@
       "frame_idx": 10,
       "time": 0.3333,
       "file": "p_frame_010.bin.gz",
-      "compressed_size_kb": 1771.2,
+      "compressed_size_kb": 1770.5,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 20,
       "time": 0.6667,
       "file": "p_frame_020.bin.gz",
-      "compressed_size_kb": 1771.4,
+      "compressed_size_kb": 1771.3,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 30,
       "time": 1.0,
       "file": "p_frame_030.bin.gz",
-      "compressed_size_kb": 1771.4,
+      "compressed_size_kb": 1771.3,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 40,
       "time": 1.3333,
       "file": "p_frame_040.bin.gz",
-      "compressed_size_kb": 1771.5,
+      "compressed_size_kb": 1771.3,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 50,
       "time": 1.6667,
       "file": "p_frame_050.bin.gz",
-      "compressed_size_kb": 1771.8,
+      "compressed_size_kb": 1778.3,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 60,
       "time": 2.0,
       "file": "p_frame_060.bin.gz",
-      "compressed_size_kb": 1772.3,
+      "compressed_size_kb": 1778.4,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 70,
       "time": 2.3333,
       "file": "p_frame_070.bin.gz",
-      "compressed_size_kb": 1772.1,
+      "compressed_size_kb": 1778.7,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 80,
       "time": 2.6667,
       "file": "p_frame_080.bin.gz",
-      "compressed_size_kb": 1771.8,
+      "compressed_size_kb": 1778.6,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 90,
       "time": 3.0,
       "file": "p_frame_090.bin.gz",
-      "compressed_size_kb": 1772.0,
+      "compressed_size_kb": 1778.7,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 100,
       "time": 3.3333,
       "file": "p_frame_100.bin.gz",
-      "compressed_size_kb": 1771.7,
+      "compressed_size_kb": 1778.5,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 110,
       "time": 3.6667,
       "file": "p_frame_110.bin.gz",
-      "compressed_size_kb": 1771.9,
+      "compressed_size_kb": 1777.2,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 120,
       "time": 4.0,
       "file": "p_frame_120.bin.gz",
-      "compressed_size_kb": 1772.0,
+      "compressed_size_kb": 1777.1,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 130,
       "time": 4.3333,
       "file": "p_frame_130.bin.gz",
-      "compressed_size_kb": 1772.1,
+      "compressed_size_kb": 1777.6,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 140,
       "time": 4.6667,
       "file": "p_frame_140.bin.gz",
-      "compressed_size_kb": 1771.9,
+      "compressed_size_kb": 1777.6,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 150,
       "time": 5.0,
       "file": "p_frame_150.bin.gz",
-      "compressed_size_kb": 1772.2,
+      "compressed_size_kb": 1778.2,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 160,
       "time": 5.3333,
       "file": "p_frame_160.bin.gz",
-      "compressed_size_kb": 1772.1,
+      "compressed_size_kb": 1777.8,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 170,
       "time": 5.6667,
       "file": "p_frame_170.bin.gz",
-      "compressed_size_kb": 1772.2,
+      "compressed_size_kb": 1777.8,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 180,
       "time": 6.0,
       "file": "p_frame_180.bin.gz",
-      "compressed_size_kb": 1772.4,
+      "compressed_size_kb": 1777.9,
       "raw_size_kb": 1983.9
     },
     {
       "frame_idx": 190,
       "time": 6.3333,
       "file": "p_frame_190.bin.gz",
-      "compressed_size_kb": 1772.4,
+      "compressed_size_kb": 1778.0,
       "raw_size_kb": 1983.9
     }
   ]
