@@ -126,5 +126,12 @@
     ],
     "dc_delta_clip_count": 0,
     "op_delta_clip_count": 337
+  },
+  "i_frame_compressed": "i_frame_trimmed.ply.gz",
+  "i_frame_trimmed": "i_frame_trimmed.ply",
+  "i_frame_sizes": {
+    "original_ply": 31760907,
+    "trimmed_ply": 8708632,
+    "trimmed_ply_gz": 6900083
   }
 }

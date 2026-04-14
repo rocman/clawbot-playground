@@ -582,8 +582,11 @@ async function init() {
   maskTexture = maskInfo.texture;
   const maskTexWidth = maskInfo.width;
 
-  const iFrameFile = manifest.i_frame_ply || manifest.i_frame.replace('.spz', '.ply');
-  setLoading(30, `Loading I-frame PLY...`);
+  // Phase 3: Support compressed I-frame (trimmed PLY + gzip)
+  const iFrameCompressed = manifest.i_frame_compressed;  // e.g. "i_frame_trimmed.ply.gz"
+  const iFrameFile = iFrameCompressed || manifest.i_frame_ply || manifest.i_frame.replace('.spz', '.ply');
+  const isGzipped = iFrameFile.endsWith('.gz');
+  setLoading(30, `Loading I-frame ${isGzipped ? '(compressed)' : 'PLY'}...`);
 
   uFrameIndex = dyno.dynoInt(0);
   uViewMode = dyno.dynoInt(0);
@@ -591,7 +594,17 @@ async function init() {
   maskSampler = dyno.dynoSampler2D(maskTexture);
 
   const iFrameResp = await fetch('data_v2/' + iFrameFile + '?t=' + Date.now());
-  const iFrameBytes = new Uint8Array(await iFrameResp.arrayBuffer());
+  const iFrameRaw = await iFrameResp.arrayBuffer();
+  let iFrameBytes;
+  if (isGzipped) {
+    console.log(`[V2] Decompressing I-frame (${(iFrameRaw.byteLength/1024/1024).toFixed(2)} MB compressed)...`);
+    setLoading(40, 'Decompressing I-frame...');
+    const decompressed = await decompressGzip(iFrameRaw);
+    iFrameBytes = new Uint8Array(decompressed);
+    console.log(`[V2] I-frame decompressed: ${(iFrameRaw.byteLength/1024/1024).toFixed(2)} MB → ${(decompressed.byteLength/1024/1024).toFixed(2)} MB`);
+  } else {
+    iFrameBytes = new Uint8Array(iFrameRaw);
+  }
   iFrameCenters = parsePLYCenters(iFrameBytes);
 
   splatMesh = new SplatMesh({ fileBytes: iFrameBytes });
