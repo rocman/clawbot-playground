@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V3c — Cut Roasted Beef</title>
+<title>4DGS Deformation Viewer V3c 鈥?Cut Roasted Beef</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -98,7 +98,7 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V3c — 30Hz (precise per-frame)</div>
+  <div id="loading-title">4DGS VIEWER V3c 鈥?30Hz (precise per-frame)</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
@@ -162,7 +162,7 @@ import { SplatMesh, dyno } from "@sparkjsdev/spark";
 // ============================================================
 let manifest = null;
 let dynamicMask = null;
-let decodedFrames = [];       // [i] = {xyz, shs_dc, opacity} absolute values
+let decodedFrames = [];       // [i] = {xyzQ, dcQ, opQ} uint8 quantized absolute values (memory-optimized)
 let bundleLoaded = false;
 let splatMesh = null;
 let currentFrame = 0;         // 0 = I-frame, 1~299 = P-frames
@@ -178,6 +178,11 @@ let maskSampler = null;
 let deltaTexture = null;
 let maskTexture = null;
 let spzBaselineXyz = null;    // V3: SPZ decoded baseline (Float32Array)
+
+// V3c memory optimization: global quantization params for runtime dequantization in packDeltaToTexture
+let qXyzDMin = null, qXyzDMax = null, qXyzDScale = null;
+let qDcMin = null, qDcMax = null;
+let qOpMin = 0, qOpMax = 0;
 
 const TOTAL_DURATION = 10.0;  // seconds
 
@@ -274,14 +279,17 @@ async function loadAndDecodePFrameBundle() {
 
   pframeStatus.textContent = 'Bundle: decompressing...';
 
-  const compressedBuf = new Uint8Array(received);
+  // Merge chunks into single buffer, then release chunks to reduce peak memory
+  let compressedBuf = new Uint8Array(received);
   let offset = 0;
   for (const chunk of chunks) {
     compressedBuf.set(chunk, offset);
     offset += chunk.length;
   }
+  chunks.length = 0; // Release chunk references to reduce peak memory
 
   const raw = await decompressGzip(compressedBuf.buffer);
+  compressedBuf = null; // Release compressed buffer to reduce peak memory
   const rawView = new DataView(raw);
   const rawBytes = new Uint8Array(raw);
 
@@ -298,7 +306,7 @@ async function loadAndDecodePFrameBundle() {
 
   console.log(`[V3c] Bundle: magic=${magic} ver=${version} frames=${numFrames} gaussians=${numGaussians} fps=${bundleFPS} qmode=${quantMode}`);
 
-  // Parse frame index table (N × 12B)
+  // Parse frame index table (N 脳 12B)
   let pos = 28;
   const frameTable = [];
   for (let i = 0; i < numFrames; i++) {
@@ -327,6 +335,11 @@ async function loadAndDecodePFrameBundle() {
     (xyzDMax[2] - xyzDMin[2]) / 255.0,
   ];
 
+  // Store quantization params at module level for use in packDeltaToTexture
+  qDcMin = dcMin; qDcMax = dcMax;
+  qOpMin = opMin; qOpMax = opMax;
+  qXyzDMin = xyzDMin; qXyzDMax = xyzDMax; qXyzDScale = xyzDScale;
+
   // Parse SPZ baseline xyz (float16)
   const spzBaselineSize = rawView.getUint32(pos, true);
   pos += 4;
@@ -343,7 +356,7 @@ async function loadAndDecodePFrameBundle() {
   const opBytes = N;
 
   // V3c: xyz uint8 quantization/dequantization helpers
-  // Quantize float32 abs delta → uint8 [0,255]
+  // Quantize float32 abs delta 鈫?uint8 [0,255]
   function quantizeXyzToU8(absDelta, n) {
     const result = new Uint8Array(n * 3);
     for (let c = 0; c < 3; c++) {
@@ -355,7 +368,7 @@ async function loadAndDecodePFrameBundle() {
     }
     return result;
   }
-  // Dequantize uint8 → float32 abs delta
+  // Dequantize uint8 鈫?float32 abs delta
   function dequantXyzFromU8(u8Arr, n) {
     const result = new Float32Array(n * 3);
     for (let c = 0; c < 3; c++) {
@@ -371,6 +384,7 @@ async function loadAndDecodePFrameBundle() {
   // Decode all frames
   // V3c key insight: maintain uint8 quantized state for xyz (not float32),
   // so diff decoding produces exact quantized absolute values with NO cumulative error
+  // MEMORY OPT: only store uint8 quantized data per frame, dequantize on-the-fly during playback
   const t0 = performance.now();
   let prevXyzQ = null;   // Uint8Array — quantized xyz absolute delta
   let prevDcQ = null;
@@ -387,10 +401,8 @@ async function loadAndDecodePFrameBundle() {
     const isBaseFrame = ft.flag === 1;     // 只有frame 0是绝对编码(xyz float16)
     const isRefresh = ft.flag === 2;       // refresh帧：int8差量编码，参考base帧
 
+    // MEMORY OPT: only allocate uint8 arrays, no float32 pre-computation
     const frame = {
-      xyz: new Float32Array(N * 3),
-      shs_dc: new Float32Array(N * 3),
-      opacity: new Float32Array(N),
       xyzQ: new Uint8Array(N * 3),   // V3c: quantized xyz abs delta (uint8)
       dcQ: new Uint8Array(N * 3),
       opQ: new Uint8Array(N),
@@ -406,28 +418,11 @@ async function loadAndDecodePFrameBundle() {
       fStart += dcBytes;
       const fOpU8 = new Uint8Array(raw, fStart, N);
 
-      // Reconstruct float xyz from SPZ baseline + float16 delta
-      for (let i = 0; i < N * 3; i++) {
-        frame.xyz[i] = spzBaselineXyz[i] + fXyzDelta[i];
-      }
       frame.dcQ.set(fDcU8);
       frame.opQ.set(fOpU8);
 
-      // V3c: also quantize base xyz to uint8 for subsequent diff decoding
+      // V3c: quantize base xyz to uint8 for subsequent diff decoding
       frame.xyzQ = quantizeXyzToU8(fXyzDelta, N);
-
-      for (let c = 0; c < 3; c++) {
-        const scale = (dcMax[c] - dcMin[c]) / 255.0;
-        for (let i = 0; i < N; i++) {
-          frame.shs_dc[i * 3 + c] = fDcU8[i * 3 + c] * scale + dcMin[c];
-        }
-      }
-      {
-        const scale = (opMax - opMin) / 255.0;
-        for (let i = 0; i < N; i++) {
-          frame.opacity[i] = fOpU8[i] * scale + opMin;
-        }
-      }
 
       // 保存base帧的量化状态作为refresh帧的参考基准
       baseXyzQ = frame.xyzQ;
@@ -461,26 +456,6 @@ async function loadAndDecodePFrameBundle() {
         let q = refOpQ[i] + fOpI8[i];
         frame.opQ[i] = q < 0 ? 0 : (q > 255 ? 255 : q);
       }
-
-      // Dequantize uint8 xyz → float32 position
-      const xyzAbsDelta = dequantXyzFromU8(frame.xyzQ, N);
-      for (let i = 0; i < N * 3; i++) {
-        frame.xyz[i] = spzBaselineXyz[i] + xyzAbsDelta[i];
-      }
-
-      // Dequantize dc and opacity
-      for (let c = 0; c < 3; c++) {
-        const scale = (dcMax[c] - dcMin[c]) / 255.0;
-        for (let i = 0; i < N; i++) {
-          frame.shs_dc[i * 3 + c] = frame.dcQ[i * 3 + c] * scale + dcMin[c];
-        }
-      }
-      {
-        const scale = (opMax - opMin) / 255.0;
-        for (let i = 0; i < N; i++) {
-          frame.opacity[i] = frame.opQ[i] * scale + opMin;
-        }
-      }
     }
 
     decodedFrames[fi] = frame;
@@ -493,11 +468,15 @@ async function loadAndDecodePFrameBundle() {
       pframeBar.style.width = pct + '%';
       pframeStatus.textContent = `Bundle: decoded ${fi + 1}/${numFrames} frames`;
       document.getElementById('stat-decoded').textContent = `${fi+1}/${numFrames}`;
+      // Yield to browser to avoid blocking UI and allow GC between batches
+      await new Promise(r => setTimeout(r, 0));
     }
   }
 
   const decodeTime = ((performance.now() - t0) / 1000).toFixed(2);
-  console.log(`[V3c] All ${numFrames} frames decoded in ${decodeTime}s`);
+  console.log(`[V3c] All ${numFrames} frames decoded in ${decodeTime}s (memory-optimized: uint8 only)`);
+  const memEstMB = (numFrames * N * 7 / 1024 / 1024).toFixed(1); // xyzQ(3) + dcQ(3) + opQ(1) = 7 bytes/point
+  console.log(`[V3c] Estimated frame data memory: ~${memEstMB} MB (was ~${(numFrames * N * 35 / 1024 / 1024).toFixed(1)} MB before optimization`);
 
   bundleLoaded = true;
   pframeProgress.classList.add('loaded');
@@ -506,31 +485,46 @@ async function loadAndDecodePFrameBundle() {
 }
 
 // ============================================================
-// V3: Delta texture (same V2 layout — 2 pixels per gaussian)
+// V3: Delta texture (same V2 layout 鈥?2 pixels per gaussian)
 // ============================================================
 const DELTA_K = 256;
 let deltaTexW = 0, deltaTexH = 0;
 
 function packDeltaToTexture(texData, frame, nDyn) {
   texData.fill(0);
+  // MEMORY OPT: dequantize on-the-fly from uint8 data instead of reading pre-computed float32
+  const dcScale0 = (qDcMax[0] - qDcMin[0]) / 255.0;
+  const dcScale1 = (qDcMax[1] - qDcMin[1]) / 255.0;
+  const dcScale2 = (qDcMax[2] - qDcMin[2]) / 255.0;
+  const opScale = (qOpMax - qOpMin) / 255.0;
+
   for (let i = 0; i < nDyn; i++) {
     const row = Math.floor(i / DELTA_K);
     const col = (i % DELTA_K) * 2;
 
-    const dx = frame.xyz[i * 3 + 0] - spzBaselineXyz[i * 3 + 0];
-    const dy = frame.xyz[i * 3 + 1] - spzBaselineXyz[i * 3 + 1];
-    const dz = frame.xyz[i * 3 + 2] - spzBaselineXyz[i * 3 + 2];
+    // Dequantize xyz delta from uint8
+    const dx = frame.xyzQ[i * 3 + 0] * qXyzDScale[0] + qXyzDMin[0];
+    const dy = frame.xyzQ[i * 3 + 1] * qXyzDScale[1] + qXyzDMin[1];
+    const dz = frame.xyzQ[i * 3 + 2] * qXyzDScale[2] + qXyzDMin[2];
+
+    // Dequantize dc from uint8
+    const dc0 = frame.dcQ[i * 3 + 0] * dcScale0 + qDcMin[0];
+    const dc1 = frame.dcQ[i * 3 + 1] * dcScale1 + qDcMin[1];
+    const dc2 = frame.dcQ[i * 3 + 2] * dcScale2 + qDcMin[2];
+
+    // Dequantize opacity from uint8
+    const op = frame.opQ[i] * opScale + qOpMin;
 
     let off = (row * deltaTexW + col) * 4;
     texData[off + 0] = dx;
     texData[off + 1] = dy;
     texData[off + 2] = dz;
-    texData[off + 3] = frame.shs_dc[i * 3 + 0];
+    texData[off + 3] = dc0;
 
     off = (row * deltaTexW + col + 1) * 4;
-    texData[off + 0] = frame.shs_dc[i * 3 + 1];
-    texData[off + 1] = frame.shs_dc[i * 3 + 2];
-    texData[off + 2] = frame.opacity[i];
+    texData[off + 0] = dc1;
+    texData[off + 1] = dc2;
+    texData[off + 2] = op;
     texData[off + 3] = 0;
   }
 }
@@ -619,7 +613,7 @@ async function init() {
   setLoading(50, 'Initializing Spark.js...');
   splatMesh = new SplatMesh({ fileBytes: iFrameBytes });
 
-  // V3 shader (same structure as V2 — displacement + rgba override)
+  // V3 shader (same structure as V2 鈥?displacement + rgba override)
   splatMesh.objectModifier = dyno.dynoBlock(
     { gsplat: dyno.Gsplat },
     { gsplat: dyno.Gsplat },
@@ -695,12 +689,12 @@ async function init() {
   splatMesh.position.set(0, 0, 0);
   scene.add(splatMesh);
 
-  camera.position.set(0.878, -0.5, 4.5);
+  camera.position.set(0.5, 4.5, 15.0);
 
   setLoading(90, 'Starting renderer...');
 
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(2.435, -2.5, -15.003);
+  controls.target.set(2.435, -2.0, -15.003);
   controls.enableDamping = true;
   controls.dampingFactor = 0.1;
   controls.screenSpacePanning = true;
@@ -903,4 +897,4 @@ window._viewer = {
 init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
 </script>
 </body>
-</html>
+</html>
