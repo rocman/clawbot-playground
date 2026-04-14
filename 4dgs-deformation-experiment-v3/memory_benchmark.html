@@ -28,9 +28,9 @@
 
 <h1>🧪 4DGS Viewer Memory Benchmark: V3b vs V3c</h1>
 <div>
-  <button id="btn-v3b" onclick="runBenchmark('v3b')">�?测试 V3b (优化�? float32+uint8)</button>
-  <button id="btn-v3c" onclick="runBenchmark('v3c')">�?测试 V3c (优化�? uint8 only)</button>
-  <button id="btn-both" onclick="runBoth()">�?依次测试两者并对比</button>
+  <button id="btn-v3b" onclick="runBenchmark('v3b')">▶ 测试 V3b (优化前: float32+uint8)</button>
+  <button id="btn-v3c" onclick="runBenchmark('v3c')">▶ 测试 V3c (优化后: uint8 only)</button>
+  <button id="btn-both" onclick="runBoth()">▶ 依次测试两者并对比</button>
 </div>
 <div id="progress"><div id="progress-bar"></div></div>
 
@@ -119,42 +119,42 @@ function logHeap(label) {
 }
 
 // ============================================================
-// V3b: 优化�?�?每帧�?float32 + uint8
+// V3b: 优化前 — 每帧存 float32 + uint8
 // ============================================================
 async function benchmarkV3b(dataDir) {
   log('');
   log('========================================', 'highlight');
-  log('  V3b Benchmark (优化�? float32 + uint8)', 'highlight');
+  log('  V3b Benchmark (优化前: float32 + uint8)', 'highlight');
   log('========================================', 'highlight');
 
   const memSnapshots = {};
 
   // Force GC if available
   if (window.gc) { window.gc(); await new Promise(r => setTimeout(r, 200)); }
-  memSnapshots.baseline = logHeap('Baseline (GC�?');
+  memSnapshots.baseline = logHeap('Baseline (GC后)');
 
   // Load manifest
   log('  加载 manifest...');
-  const manifestResp = await fetch(dataDir + '/manifest.json);
+  const manifestResp = await fetch(dataDir + '/manifest.json');
   const manifest = await manifestResp.json();
   const N = manifest.dynamic_gaussians;
   const numFrames = manifest.p_frame_count;
-  log(`  N=${N.toLocaleString()} 动态高�? ${numFrames} 帧`);
+  log(`  N=${N.toLocaleString()} 动态高斯, ${numFrames} 帧`);
 
   // Download bundle
   log('  下载 bundle...');
   setProgress(10);
-  const resp = await fetch(dataDir + '/' + manifest.p_frame_bundle + ');
+  const resp = await fetch(dataDir + '/' + manifest.p_frame_bundle + '');
   const compressedBuf = await resp.arrayBuffer();
   log(`  Bundle 下载完成: ${formatBytes(compressedBuf.byteLength)}`);
-  memSnapshots.afterDownload = logHeap('下载�?);
+  memSnapshots.afterDownload = logHeap('下载后');
   setProgress(25);
 
   // Decompress
   log('  gzip 解压...');
   const raw = await decompressGzip(compressedBuf);
   log(`  解压完成: ${formatBytes(raw.byteLength)}`);
-  memSnapshots.afterDecompress = logHeap('解压�?(compressed+raw 共存)');
+  memSnapshots.afterDecompress = logHeap('解压后 (compressed+raw 共存)');
   setProgress(40);
 
   // Parse headers
@@ -195,8 +195,8 @@ async function benchmarkV3b(dataDir) {
   const xyzBytesInt8 = N * 3;
   const dcBytes = N * 3;
 
-  // Decode all frames �?V3b style (float32 + uint8)
-  log('  开始解�?(V3b: 每帧�?float32 + uint8)...');
+  // Decode all frames — V3b style (float32 + uint8)
+  log('  开始解码 (V3b: 每帧存 float32 + uint8)...');
   const decodedFrames = [];
   let prevXyz = null, prevDcQ = null, prevOpQ = null;
   let baseXyz = null, baseDcQ = null, baseOpQ = null;
@@ -294,7 +294,7 @@ async function benchmarkV3b(dataDir) {
   log(`    ─────────────────────────────────`);
   log(`    每帧小计:               ${formatBytes(perFrameTotal)} (${(perFrameTotal/1024/1024).toFixed(3)} MB)`);
   log('');
-  log(`  全部帧数�?(${numFramesParsed} �?:`, 'highlight');
+  log(`  全部帧数据 (${numFramesParsed} 帧):`, 'highlight');
   log(`    TypedArray 总量:        ${formatBytes(totalAllocatedBytes)}`, 'warn');
   log(`    其中 float32 部分:      ${formatBytes(perFrameFloat32 * numFramesParsed)}`);
   log(`    其中 uint8 部分:        ${formatBytes(perFrameUint8 * numFramesParsed)}`);
@@ -321,43 +321,43 @@ async function benchmarkV3b(dataDir) {
   // Cleanup
   decodedFrames.length = 0;
   setProgress(100);
-  log('  �?V3b 测试完成\n', 'good');
+  log('  ✅ V3b 测试完成\n', 'good');
 }
 
 // ============================================================
-// V3c: 优化�?�?每帧只存 uint8
+// V3c: 优化后 — 每帧只存 uint8
 // ============================================================
 async function benchmarkV3c(dataDir) {
   log('');
   log('========================================', 'highlight');
-  log('  V3c Benchmark (优化�? uint8 only)', 'highlight');
+  log('  V3c Benchmark (优化后: uint8 only)', 'highlight');
   log('========================================', 'highlight');
 
   const memSnapshots = {};
 
   if (window.gc) { window.gc(); await new Promise(r => setTimeout(r, 200)); }
-  memSnapshots.baseline = logHeap('Baseline (GC�?');
+  memSnapshots.baseline = logHeap('Baseline (GC后)');
 
   log('  加载 manifest...');
-  const manifestResp = await fetch(dataDir + '/manifest.json);
+  const manifestResp = await fetch(dataDir + '/manifest.json');
   const manifest = await manifestResp.json();
   const N = manifest.dynamic_gaussians;
   const numFrames = manifest.p_frame_count;
-  log(`  N=${N.toLocaleString()} 动态高�? ${numFrames} 帧`);
+  log(`  N=${N.toLocaleString()} 动态高斯, ${numFrames} 帧`);
 
   log('  下载 bundle...');
   setProgress(10);
-  const resp = await fetch(dataDir + '/' + manifest.p_frame_bundle + ');
+  const resp = await fetch(dataDir + '/' + manifest.p_frame_bundle + '');
   let compressedBuf = new Uint8Array(await resp.arrayBuffer());
   log(`  Bundle 下载完成: ${formatBytes(compressedBuf.byteLength)}`);
-  memSnapshots.afterDownload = logHeap('下载�?);
+  memSnapshots.afterDownload = logHeap('下载后');
   setProgress(25);
 
   log('  gzip 解压...');
   const raw = await decompressGzip(compressedBuf.buffer);
   compressedBuf = null; // V3c: 立即释放
-  log(`  解压完成: ${formatBytes(raw.byteLength)} (compressedBuf 已释�?`);
-  memSnapshots.afterDecompress = logHeap('解压�?(compressedBuf 已释�?');
+  log(`  解压完成: ${formatBytes(raw.byteLength)} (compressedBuf 已释放)`);
+  memSnapshots.afterDecompress = logHeap('解压后 (compressedBuf 已释放)');
   setProgress(40);
 
   const rawView = new DataView(raw);
@@ -407,8 +407,8 @@ async function benchmarkV3c(dataDir) {
     return result;
   }
 
-  // Decode all frames �?V3c style (uint8 only)
-  log('  开始解�?(V3c: 每帧只存 uint8)...');
+  // Decode all frames — V3c style (uint8 only)
+  log('  开始解码 (V3c: 每帧只存 uint8)...');
   const decodedFrames = [];
   let prevXyzQ = null, prevDcQ = null, prevOpQ = null;
   let baseXyzQ = null, baseDcQ = null, baseOpQ = null;
@@ -482,7 +482,7 @@ async function benchmarkV3c(dataDir) {
   log(`    ─────────────────────────────────`);
   log(`    每帧小计:           ${formatBytes(perFrameTotal)} (${(perFrameTotal/1024/1024).toFixed(3)} MB)`);
   log('');
-  log(`  全部帧数�?(${numFramesParsed} �?:`, 'highlight');
+  log(`  全部帧数据 (${numFramesParsed} 帧):`, 'highlight');
   log(`    TypedArray 总量:    ${formatBytes(totalAllocatedBytes)}`, 'good');
   log(`  raw buffer (解压数据): ${formatBytes(raw.byteLength)}`);
   log(`  spzBaselineXyz:       ${formatBytes(spzBaselineXyz.byteLength)}`);
@@ -506,7 +506,7 @@ async function benchmarkV3c(dataDir) {
 
   decodedFrames.length = 0;
   setProgress(100);
-  log('  �?V3c 测试完成\n', 'good');
+  log('  ✅ V3c 测试完成\n', 'good');
 }
 
 function showComparison() {
@@ -521,25 +521,25 @@ function showComparison() {
   const speedDiff = ((b.decodeTime - a.decodeTime) / a.decodeTime * 100).toFixed(1);
 
   let html = `<table>
-    <tr><th>指标</th><th>V3b (优化�?</th><th>V3c (优化�?</th><th>变化</th></tr>
-    <tr><td class="label">每帧内存</td><td>${formatBytes(a.perFrameBytes)}</td><td>${formatBytes(b.perFrameBytes)}</td><td style="color:#4a9">�?${perFrameRatio}x</td></tr>
-    <tr><td class="label">帧数据总量 (${a.numFrames}�?</td><td>${formatBytes(a.totalFrameDataBytes)}</td><td>${formatBytes(b.totalFrameDataBytes)}</td><td style="color:#4a9">�?${reduction}%</td></tr>
+    <tr><th>指标</th><th>V3b (优化前)</th><th>V3c (优化后)</th><th>变化</th></tr>
+    <tr><td class="label">每帧内存</td><td>${formatBytes(a.perFrameBytes)}</td><td>${formatBytes(b.perFrameBytes)}</td><td style="color:#4a9">↓ ${perFrameRatio}x</td></tr>
+    <tr><td class="label">帧数据总量 (${a.numFrames}帧)</td><td>${formatBytes(a.totalFrameDataBytes)}</td><td>${formatBytes(b.totalFrameDataBytes)}</td><td style="color:#4a9">↓ ${reduction}%</td></tr>
     <tr><td class="label">raw buffer</td><td>${formatBytes(a.rawBufferBytes)}</td><td>${formatBytes(b.rawBufferBytes)}</td><td>相同</td></tr>
     <tr><td class="label">SPZ baseline</td><td>${formatBytes(a.baselineXyzBytes)}</td><td>${formatBytes(b.baselineXyzBytes)}</td><td>相同</td></tr>
-    <tr><td class="label">核心数据总内�?/td><td style="color:#f74">${formatBytes(a.totalDataMem)}</td><td style="color:#4a9">${formatBytes(b.totalDataMem)}</td><td style="color:#4a9">�?${totalReduction}%</td></tr>
+    <tr><td class="label">核心数据总内存</td><td style="color:#f74">${formatBytes(a.totalDataMem)}</td><td style="color:#4a9">${formatBytes(b.totalDataMem)}</td><td style="color:#4a9">↓ ${totalReduction}%</td></tr>
     <tr><td class="label">解码耗时</td><td>${a.decodeTime}s</td><td>${b.decodeTime}s</td><td>${speedDiff > 0 ? '+' : ''}${speedDiff}%</td></tr>`;
 
   if (a.heapUsed && b.heapUsed && a.heapBaseline && b.heapBaseline) {
     const heapDeltaA = a.heapUsed - a.heapBaseline;
     const heapDeltaB = b.heapUsed - b.heapBaseline;
     const heapReduction = ((1 - heapDeltaB / heapDeltaA) * 100).toFixed(1);
-    html += `<tr><td class="label">JS Heap 增量 (实测)</td><td style="color:#f74">${formatBytes(heapDeltaA)}</td><td style="color:#4a9">${formatBytes(heapDeltaB)}</td><td style="color:#4a9">�?${heapReduction}%</td></tr>`;
-    html += `<tr><td class="label">JS Heap 绝对�?(解码�?</td><td>${formatBytes(a.heapUsed)}</td><td>${formatBytes(b.heapUsed)}</td><td></td></tr>`;
+    html += `<tr><td class="label">JS Heap 增量 (实测)</td><td style="color:#f74">${formatBytes(heapDeltaA)}</td><td style="color:#4a9">${formatBytes(heapDeltaB)}</td><td style="color:#4a9">↓ ${heapReduction}%</td></tr>`;
+    html += `<tr><td class="label">JS Heap 绝对值 (解码后)</td><td>${formatBytes(a.heapUsed)}</td><td>${formatBytes(b.heapUsed)}</td><td></td></tr>`;
   }
 
   html += `</table>`;
-  html += `<p style="margin-top:12px;color:#888;font-size:11px">* "核心数据总内�? = 帧数�?+ raw buffer + SPZ baseline (不含 Three.js/Spark.js 等渲染开销)</p>`;
-  html += `<p style="color:#888;font-size:11px">* "JS Heap" 数据来自 performance.memory API (Chrome only，需 --enable-precise-memory-info 更精�?</p>`;
+  html += `<p style="margin-top:12px;color:#888;font-size:11px">* "核心数据总内存" = 帧数据 + raw buffer + SPZ baseline (不含 Three.js/Spark.js 等渲染开销)</p>`;
+  html += `<p style="color:#888;font-size:11px">* "JS Heap" 数据来自 performance.memory API (Chrome only，需 --enable-precise-memory-info 更精确)</p>`;
   html += `<p style="color:#888;font-size:11px">* V3c 稳态内存更低：raw buffer 在函数返回后可被 GC 回收，仅剩帧数据</p>`;
 
   document.getElementById('comparison').innerHTML = html;
@@ -547,15 +547,15 @@ function showComparison() {
   // Also log summary
   log('');
   log('╔══════════════════════════════════════════╗', 'highlight');
-  log('�?       📊 对比总结 (实测数据)             �?, 'highlight');
+  log('║        📊 对比总结 (实测数据)             ║', 'highlight');
   log('╚══════════════════════════════════════════╝', 'highlight');
-  log(`  帧数�? ${formatBytes(a.totalFrameDataBytes)} �?${formatBytes(b.totalFrameDataBytes)} (�?{reduction}%)`, 'good');
-  log(`  核心数据总量: ${formatBytes(a.totalDataMem)} �?${formatBytes(b.totalDataMem)} (�?{totalReduction}%)`, 'good');
-  log(`  每帧: ${formatBytes(a.perFrameBytes)} �?${formatBytes(b.perFrameBytes)} (${perFrameRatio}x 压缩)`, 'good');
+  log(`  帧数据: ${formatBytes(a.totalFrameDataBytes)} → ${formatBytes(b.totalFrameDataBytes)} (↓${reduction}%)`, 'good');
+  log(`  核心数据总量: ${formatBytes(a.totalDataMem)} → ${formatBytes(b.totalDataMem)} (↓${totalReduction}%)`, 'good');
+  log(`  每帧: ${formatBytes(a.perFrameBytes)} → ${formatBytes(b.perFrameBytes)} (${perFrameRatio}x 压缩)`, 'good');
   if (a.heapUsed && b.heapUsed && a.heapBaseline && b.heapBaseline) {
     const heapDeltaA = a.heapUsed - a.heapBaseline;
     const heapDeltaB = b.heapUsed - b.heapBaseline;
-    log(`  JS Heap 增量: ${formatBytes(heapDeltaA)} �?${formatBytes(heapDeltaB)} (�?{((1-heapDeltaB/heapDeltaA)*100).toFixed(1)}%)`, 'good');
+    log(`  JS Heap 增量: ${formatBytes(heapDeltaA)} → ${formatBytes(heapDeltaB)} (↓${((1-heapDeltaB/heapDeltaA)*100).toFixed(1)}%)`, 'good');
   }
 }
 
@@ -564,7 +564,7 @@ async function runBenchmark(version) {
   logEl.innerHTML = '';
   setProgress(0);
 
-  log(`🔬 开始内存基准测�?�?${new Date().toLocaleString()}`, 'highlight');
+  log(`🔬 开始内存基准测试 — ${new Date().toLocaleString()}`, 'highlight');
   log(`  动态高斯数(N): 128,062`);
   log(`  帧数: 299`);
   log(`  performance.memory 可用: ${!!performance.memory}`);
@@ -578,7 +578,7 @@ async function runBenchmark(version) {
       await benchmarkV3c('data_v3c');
     }
   } catch (err) {
-    log(`�?错误: ${err.message}`, 'warn');
+    log(`❌ 错误: ${err.message}`, 'warn');
     console.error(err);
   }
 
@@ -590,7 +590,7 @@ async function runBoth() {
   logEl.innerHTML = '';
   setProgress(0);
 
-  log(`🔬 开�?V3b vs V3c 内存对比基准测试 �?${new Date().toLocaleString()}`, 'highlight');
+  log(`🔬 开始 V3b vs V3c 内存对比基准测试 — ${new Date().toLocaleString()}`, 'highlight');
   log(`  动态高斯数(N): 128,062`);
   log(`  帧数: 299`);
   log(`  performance.memory 可用: ${!!performance.memory}`);
@@ -599,7 +599,7 @@ async function runBoth() {
   try {
     await benchmarkV3b('data_v3c');
     // Wait for GC
-    log('  �?等待 GC (3�?...', 'dim');
+    log('  ⏳ 等待 GC (3秒)...', 'dim');
     if (window.gc) window.gc();
     await new Promise(r => setTimeout(r, 3000));
 
@@ -608,7 +608,7 @@ async function runBoth() {
 
     showComparison();
   } catch (err) {
-    log(`�?错误: ${err.message}`, 'warn');
+    log(`❌ 错误: ${err.message}`, 'warn');
     console.error(err);
   }
 

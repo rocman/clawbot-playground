@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V2 â€?Cut Roasted Beef</title>
+<title>4DGS Deformation Viewer V2 â€” Cut Roasted Beef</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -199,7 +199,7 @@ function setLoading(pct, text) {
 // ============================================================
 async function loadManifest() {
   setLoading(5, 'Loading manifest...');
-  const resp = await fetch('data_v2/manifest.json);
+  const resp = await fetch('data_v2/manifest.json');
   manifest = await resp.json();
   document.getElementById('stat-total').textContent = manifest.total_gaussians.toLocaleString();
   document.getElementById('stat-dynamic').textContent = manifest.dynamic_gaussians.toLocaleString();
@@ -235,7 +235,7 @@ function float16ToFloat32(u16arr) {
 }
 
 async function loadDynamicMask() {
-  const resp = await fetch('data_v2/' + manifest.dynamic_mask + ');
+  const resp = await fetch('data_v2/' + manifest.dynamic_mask + '');
   const compressed = await resp.arrayBuffer();
   const raw = await decompressGzip(compressed);
   const view = new DataView(raw);
@@ -297,7 +297,7 @@ async function loadAndDecodePFrameBundle() {
   const bundleUrl = 'data_v2/' + manifest.p_frame_bundle;
   pframeStatus.textContent = 'Bundle: downloading...';
 
-  const resp = await fetch(bundleUrl + ');
+  const resp = await fetch(bundleUrl + '');
   const contentLength = resp.headers.get('content-length');
   const totalBytes = contentLength ? parseInt(contentLength) : manifest.p_frame_bundle_size;
 
@@ -438,7 +438,7 @@ async function loadAndDecodePFrameBundle() {
       frame.xyz[i] = prevXyz[i] + fXyzDelta[i];
     }
 
-    // dc: prev_quantized + delta_int8 â†?clamp to [0,255] â†?dequantize
+    // dc: prev_quantized + delta_int8 â†’ clamp to [0,255] â†’ dequantize
     for (let i = 0; i < N * 3; i++) {
       let q = prevDcQ[i] + fDcDelta[i];
       q = q < 0 ? 0 : (q > 255 ? 255 : q);
@@ -481,7 +481,7 @@ async function loadAndDecodePFrameBundle() {
 }
 
 // ============================================================
-// V2: Simplified texture â€?no rot/scale
+// V2: Simplified texture â€” no rot/scale
 // ============================================================
 const DELTA_K = 256;
 let deltaTexW = 0, deltaTexH = 0;
@@ -593,7 +593,7 @@ async function init() {
   deltaSampler = dyno.dynoSampler2D(deltaTexture);
   maskSampler = dyno.dynoSampler2D(maskTexture);
 
-  const iFrameResp = await fetch('data_v2/' + iFrameFile + ');
+  const iFrameResp = await fetch('data_v2/' + iFrameFile + '');
   const iFrameRaw = await iFrameResp.arrayBuffer();
   let iFrameBytes;
   if (isGzipped) {
@@ -601,7 +601,7 @@ async function init() {
     setLoading(40, 'Decompressing I-frame...');
     const decompressed = await decompressGzip(iFrameRaw);
     iFrameBytes = new Uint8Array(decompressed);
-    console.log(`[V2] I-frame decompressed: ${(iFrameRaw.byteLength/1024/1024).toFixed(2)} MB â†?${(decompressed.byteLength/1024/1024).toFixed(2)} MB`);
+    console.log(`[V2] I-frame decompressed: ${(iFrameRaw.byteLength/1024/1024).toFixed(2)} MB â†’ ${(decompressed.byteLength/1024/1024).toFixed(2)} MB`);
   } else {
     iFrameBytes = new Uint8Array(iFrameRaw);
   }
