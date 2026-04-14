@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V3c 鈥?Cut Roasted Beef</title>
+<title>4DGS Deformation Viewer V3c — Cut Roasted Beef</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -98,7 +98,7 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V3c 鈥?30Hz (precise per-frame)</div>
+  <div id="loading-title">4DGS VIEWER V3c — 30Hz (precise per-frame)</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
@@ -485,7 +485,7 @@ async function loadAndDecodePFrameBundle() {
 }
 
 // ============================================================
-// V3: Delta texture (same V2 layout 鈥?2 pixels per gaussian)
+// V3: Delta texture (same V2 layout — 2 pixels per gaussian)
 // ============================================================
 const DELTA_K = 256;
 let deltaTexW = 0, deltaTexH = 0;
@@ -613,7 +613,7 @@ async function init() {
   setLoading(50, 'Initializing Spark.js...');
   splatMesh = new SplatMesh({ fileBytes: iFrameBytes });
 
-  // V3 shader (same structure as V2 鈥?displacement + rgba override)
+  // V3 shader (same structure as V2 — displacement + rgba override)
   splatMesh.objectModifier = dyno.dynoBlock(
     { gsplat: dyno.Gsplat },
     { gsplat: dyno.Gsplat },
