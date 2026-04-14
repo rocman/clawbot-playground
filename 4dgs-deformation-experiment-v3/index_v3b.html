@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>4DGS Deformation Viewer V3b — Cut Roasted Beef</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+  canvas { touch-action: none; display: block; }
+
+  #loading-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: #0a0a0fee;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.5s;
+  }
+  #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  #loading-title { font-size: 24px; font-weight: 300; letter-spacing: 2px; margin-bottom: 24px; color: #7ecfff; }
+  #loading-bar-bg { width: 300px; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+  #loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3a8bff, #7ecfff); transition: width 0.3s; }
+  #loading-text { margin-top: 12px; font-size: 13px; color: #888; }
+
+  #controls {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: linear-gradient(transparent, #0a0a0fcc 30%, #0a0a0fee);
+    padding: 16px 24px 20px;
+  }
+  #timeline-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  #play-btn {
+    width: 36px; height: 36px; border: none; border-radius: 50%;
+    background: #3a8bff; color: #fff; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  #play-btn:hover { background: #5aa0ff; }
+  #timeline {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 6px; background: #333; border-radius: 3px; outline: none; cursor: pointer;
+  }
+  #timeline::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    background: #7ecfff; border-radius: 50%; cursor: grab;
+  }
+  #frame-label { font-size: 13px; color: #aaa; min-width: 140px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  #info-bar { display: flex; gap: 20px; font-size: 12px; color: #666; flex-wrap: wrap; }
+  #info-bar span { display: flex; align-items: center; gap: 4px; }
+  #info-bar .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-static { background: #4a9; }
+  .dot-dynamic { background: #f74; }
+  .dot-fps { background: #7ecfff; }
+
+  #mode-bar {
+    position: fixed; top: 16px; left: 16px; z-index: 100;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .mode-btn {
+    padding: 6px 14px; border: 1px solid #444; border-radius: 16px;
+    background: transparent; color: #aaa; font-size: 12px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mode-btn.active { background: #3a8bff33; border-color: #3a8bff; color: #7ecfff; }
+  .mode-btn:hover { border-color: #666; }
+
+  #speed-bar {
+    position: fixed; top: 56px; left: 16px; z-index: 100;
+    display: flex; gap: 6px; align-items: center;
+  }
+  #speed-bar label { font-size: 11px; color: #666; }
+  .speed-btn {
+    padding: 3px 10px; border: 1px solid #333; border-radius: 12px;
+    background: transparent; color: #777; font-size: 11px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .speed-btn.active { background: #3a8bff22; border-color: #3a8bff; color: #7ecfff; }
+
+  #title-bar {
+    position: fixed; top: 16px; right: 16px; z-index: 100;
+    text-align: right;
+  }
+  #title-bar h1 { font-size: 16px; font-weight: 400; color: #7ecfff; letter-spacing: 1px; }
+  #title-bar p { font-size: 11px; color: #666; margin-top: 4px; }
+
+  #pframe-progress {
+    position: fixed; top: 60px; right: 16px; z-index: 100;
+    font-size: 11px; color: #666; text-align: right;
+    transition: opacity 0.5s;
+  }
+  #pframe-progress.loaded { opacity: 0; }
+  #pframe-progress .bar-bg {
+    width: 140px; height: 3px; background: #222; border-radius: 2px;
+    overflow: hidden; margin-top: 4px; margin-left: auto;
+  }
+  #pframe-progress .bar { height: 100%; width: 0%; background: #f74; transition: width 0.3s; }
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div id="loading-title">4DGS VIEWER V3b — 30Hz (xyz int8)</div>
+  <div id="loading-bar-bg"><div id="loading-bar"></div></div>
+  <div id="loading-text">Initializing...</div>
+</div>
+
+<div id="title-bar">
+  <h1>4DGS Viewer V3b - Cut Roasted Beef</h1>
+  <p>V3b: SPZ I-Frame + 30Hz Bundle (xyz int8) + Refresh Frames | PSNR 32.26 dB</p>
+</div>
+
+<div id="pframe-progress">
+  <span id="pframe-status">Bundle: loading...</span>
+  <div class="bar-bg"><div class="bar" id="pframe-bar"></div></div>
+</div>
+
+<div id="mode-bar">
+  <button class="mode-btn active" data-mode="animated" title="Play animated sequence">&#9654; Animated</button>
+  <button class="mode-btn" data-mode="i-frame" title="View I-frame only">&#9724; I-Frame</button>
+  <button class="mode-btn" data-mode="highlight" title="Highlight dynamic regions">&#9681; Dynamic</button>
+</div>
+
+<div id="speed-bar">
+  <label>Speed:</label>
+  <button class="speed-btn" data-speed="0.5">0.5x</button>
+  <button class="speed-btn active" data-speed="1">1x</button>
+  <button class="speed-btn" data-speed="2">2x</button>
+</div>
+
+<div id="controls">
+  <div id="timeline-row">
+    <button id="play-btn" title="Play/Pause">&#9654;</button>
+    <input type="range" id="timeline" min="0" max="299" step="1" value="0">
+    <span id="frame-label">I-Frame (0.0s / 10.0s)</span>
+  </div>
+  <div id="info-bar">
+    <span><span class="dot dot-static"></span> Static: <span id="stat-static">--</span></span>
+    <span><span class="dot dot-dynamic"></span> Dynamic: <span id="stat-dynamic">--</span></span>
+    <span>Total: <span id="stat-total">--</span> splats</span>
+    <span><span class="dot dot-fps"></span> <span id="stat-fps">--</span> FPS</span>
+    <span>Bundle: <span id="stat-bundle-size">--</span></span>
+    <span>Decoded: <span id="stat-decoded">0/0</span></span>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.178.0/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/",
+    "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.10/spark.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SplatMesh, dyno } from "@sparkjsdev/spark";
+
+// ============================================================
+// State
+// ============================================================
+let manifest = null;
+let dynamicMask = null;
+let decodedFrames = [];       // [i] = {xyz, shs_dc, opacity} absolute values
+let bundleLoaded = false;
+let splatMesh = null;
+let currentFrame = 0;         // 0 = I-frame, 1~299 = P-frames
+let isPlaying = false;
+let viewMode = 'animated';
+let playbackSpeedMult = 1.0;  // speed multiplier
+let targetFPS = 30;
+
+let uFrameIndex = null;
+let uViewMode = null;
+let deltaSampler = null;
+let maskSampler = null;
+let deltaTexture = null;
+let maskTexture = null;
+let spzBaselineXyz = null;    // V3: SPZ decoded baseline (Float32Array)
+
+const TOTAL_DURATION = 10.0;  // seconds
+
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingBar = document.getElementById('loading-bar');
+const loadingText = document.getElementById('loading-text');
+const playBtn = document.getElementById('play-btn');
+const timeline = document.getElementById('timeline');
+const frameLabel = document.getElementById('frame-label');
+const pframeStatus = document.getElementById('pframe-status');
+const pframeBar = document.getElementById('pframe-bar');
+const pframeProgress = document.getElementById('pframe-progress');
+
+function setLoading(pct, text) {
+  loadingBar.style.width = pct + '%';
+  if (text) loadingText.textContent = text;
+}
+
+// ============================================================
+// Data Loading
+// ============================================================
+async function loadManifest() {
+  setLoading(5, 'Loading manifest...');
+  const resp = await fetch('data_v3b/manifest.json?t=' + Date.now());
+  manifest = await resp.json();
+  targetFPS = manifest.target_fps || 30;
+  document.getElementById('stat-total').textContent = manifest.total_gaussians.toLocaleString();
+  document.getElementById('stat-dynamic').textContent = manifest.dynamic_gaussians.toLocaleString();
+  document.getElementById('stat-static').textContent =
+    (manifest.total_gaussians - manifest.dynamic_gaussians).toLocaleString();
+  const bundleSizeMB = (manifest.p_frame_bundle_size / 1024 / 1024).toFixed(1);
+  document.getElementById('stat-bundle-size').textContent = bundleSizeMB + ' MB';
+  timeline.max = manifest.p_frame_count;  // 0=I-frame, 1~299=P-frames
+}
+
+async function decompressGzip(buf) {
+  const ds = new DecompressionStream('gzip');
+  const blob = new Blob([buf]);
+  const stream = blob.stream().pipeThrough(ds);
+  return await new Response(stream).blob().then(b => b.arrayBuffer());
+}
+
+function float16ToFloat32(u16arr) {
+  const f32 = new Float32Array(u16arr.length);
+  for (let i = 0; i < u16arr.length; i++) {
+    const h = u16arr[i];
+    const sign = (h >> 15) & 0x1;
+    const exp = (h >> 10) & 0x1f;
+    const mant = h & 0x3ff;
+    if (exp === 0) {
+      f32[i] = mant === 0 ? (sign ? -0 : 0) : (sign ? -1 : 1) * Math.pow(2, -14) * (mant / 1024);
+    } else if (exp === 31) {
+      f32[i] = mant === 0 ? (sign ? -Infinity : Infinity) : NaN;
+    } else {
+      f32[i] = (sign ? -1 : 1) * Math.pow(2, exp - 15) * (1 + mant / 1024);
+    }
+  }
+  return f32;
+}
+
+async function loadDynamicMask() {
+  const resp = await fetch('data_v3b/' + manifest.dynamic_mask + '?t=' + Date.now());
+  const compressed = await resp.arrayBuffer();
+  const raw = await decompressGzip(compressed);
+  const view = new DataView(raw);
+  const totalN = view.getUint32(0, true);
+  dynamicMask = new Uint8Array(raw, 4, totalN);
+}
+
+// ============================================================
+// V3: Bundle v2 Loading & Decoding
+// ============================================================
+async function loadAndDecodePFrameBundle() {
+  const bundleUrl = 'data_v3b/' + manifest.p_frame_bundle;
+  pframeStatus.textContent = 'Bundle: downloading...';
+
+  const resp = await fetch(bundleUrl + '?t=' + Date.now());
+  const contentLength = resp.headers.get('content-length');
+  const totalBytes = contentLength ? parseInt(contentLength) : manifest.p_frame_bundle_size;
+
+  const reader = resp.body.getReader();
+  const chunks = [];
+  let received = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    const pct = Math.round(received / totalBytes * 100);
+    pframeStatus.textContent = `Bundle: ${(received/1024/1024).toFixed(1)}/${(totalBytes/1024/1024).toFixed(1)} MB`;
+    pframeBar.style.width = pct + '%';
+  }
+
+  pframeStatus.textContent = 'Bundle: decompressing...';
+
+  const compressedBuf = new Uint8Array(received);
+  let offset = 0;
+  for (const chunk of chunks) {
+    compressedBuf.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  const raw = await decompressGzip(compressedBuf.buffer);
+  const rawView = new DataView(raw);
+  const rawBytes = new Uint8Array(raw);
+
+  pframeStatus.textContent = 'Bundle: decoding frames...';
+
+  // Parse header (28 bytes for v3)
+  const magic = String.fromCharCode(...rawBytes.slice(0, 4));
+  const version = rawView.getUint32(4, true);
+  const numFrames = rawView.getUint32(8, true);
+  const numGaussians = rawView.getUint32(12, true);
+  const attrsPerPoint = rawView.getUint32(16, true);
+  const quantMode = rawView.getUint32(20, true);
+  const bundleFPS = rawView.getUint32(24, true);
+
+  console.log(`[V3b] Bundle: magic=${magic} ver=${version} frames=${numFrames} gaussians=${numGaussians} fps=${bundleFPS} qmode=${quantMode}`);
+
+  // Parse frame index table (N × 12B)
+  let pos = 28;
+  const frameTable = [];
+  for (let i = 0; i < numFrames; i++) {
+    const srcIdx = rawView.getUint32(pos, true);
+    const dataOffset = rawView.getUint32(pos + 4, true);
+    const flag = rawView.getUint32(pos + 8, true);
+    frameTable.push({ srcIdx, dataOffset, flag });
+    pos += 12;
+  }
+
+  // Parse quantization params (56 bytes for v3: 32B dc/op + 24B xyz delta)
+  const dcMin = [rawView.getFloat32(pos, true), rawView.getFloat32(pos+4, true), rawView.getFloat32(pos+8, true)];
+  const dcMax = [rawView.getFloat32(pos+12, true), rawView.getFloat32(pos+16, true), rawView.getFloat32(pos+20, true)];
+  const opMin = rawView.getFloat32(pos+24, true);
+  const opMax = rawView.getFloat32(pos+28, true);
+  // V3b: xyz delta quantization params
+  const xyzDMin = [rawView.getFloat32(pos+32, true), rawView.getFloat32(pos+36, true), rawView.getFloat32(pos+40, true)];
+  const xyzDMax = [rawView.getFloat32(pos+44, true), rawView.getFloat32(pos+48, true), rawView.getFloat32(pos+52, true)];
+  pos += 56;
+  console.log(`[V3b] xyz delta range: x=[${xyzDMin[0].toFixed(4)},${xyzDMax[0].toFixed(4)}] y=[${xyzDMin[1].toFixed(4)},${xyzDMax[1].toFixed(4)}] z=[${xyzDMin[2].toFixed(4)},${xyzDMax[2].toFixed(4)}]`);
+
+  // Pre-compute xyz delta dequantization scales
+  const xyzDScale = [
+    (xyzDMax[0] - xyzDMin[0]) / 255.0,
+    (xyzDMax[1] - xyzDMin[1]) / 255.0,
+    (xyzDMax[2] - xyzDMin[2]) / 255.0,
+  ];
+
+  // Parse SPZ baseline xyz (float16)
+  const spzBaselineSize = rawView.getUint32(pos, true);
+  pos += 4;
+  const spzXyz16 = new Uint16Array(raw, pos, numGaussians * 3);
+  spzBaselineXyz = float16ToFloat32(spzXyz16);
+  pos += spzBaselineSize;
+  console.log(`[V3b] SPZ baseline loaded: ${numGaussians} points, ${spzBaselineSize} bytes`);
+
+  const dataStart = pos;
+  const N = numGaussians;
+  const xyzBytesBase = N * 3 * 2;  // float16 for base frame only
+  const xyzBytesInt8 = N * 3;      // int8 for inter/refresh frames
+  const dcBytes = N * 3;
+  const opBytes = N;
+
+  // V3b: int8 xyz delta dequantization helper
+  function dequantXyzInt8(int8Arr, n) {
+    const result = new Float32Array(n * 3);
+    for (let c = 0; c < 3; c++) {
+      const scale = xyzDScale[c];
+      const offset = xyzDMin[c];
+      for (let i = 0; i < n; i++) {
+        result[i * 3 + c] = (int8Arr[i * 3 + c] + 128) * scale + offset;
+      }
+    }
+    return result;
+  }
+
+  // Decode all frames
+  const t0 = performance.now();
+  let prevXyz = null;
+  let prevDcQ = null;
+  let prevOpQ = null;
+
+  // base帧(frame 0)的解码结果，供refresh帧作为参考基准
+  let baseXyz = null;
+  let baseDcQ = null;
+  let baseOpQ = null;
+
+  for (let fi = 0; fi < numFrames; fi++) {
+    const ft = frameTable[fi];
+    let fStart = dataStart + ft.dataOffset;
+    const isBaseFrame = ft.flag === 1;     // 只有frame 0是绝对编码(xyz float16)
+    const isRefresh = ft.flag === 2;       // refresh帧：int8差量编码，参考base帧
+
+    // V3b: xyz解码方式取决于帧类型
+    let fXyzDelta;
+    if (isBaseFrame) {
+      // Base frame: xyz delta is float16
+      const fXyz16 = new Uint16Array(raw, fStart, N * 3);
+      fXyzDelta = float16ToFloat32(fXyz16);
+      fStart += xyzBytesBase;
+    } else {
+      // Inter/refresh frames: xyz delta is int8
+      const fXyzI8 = new Int8Array(raw, fStart, N * 3);
+      fXyzDelta = dequantXyzInt8(fXyzI8, N);
+      fStart += xyzBytesInt8;
+    }
+
+    const frame = {
+      xyz: new Float32Array(N * 3),
+      shs_dc: new Float32Array(N * 3),
+      opacity: new Float32Array(N),
+      dcQ: new Uint8Array(N * 3),
+      opQ: new Uint8Array(N),
+    };
+
+    if (isBaseFrame) {
+      // Base frame (frame 0): 绝对delta vs SPZ baseline
+      const fDcU8 = new Uint8Array(raw, fStart, N * 3);
+      fStart += dcBytes;
+      const fOpU8 = new Uint8Array(raw, fStart, N);
+
+      for (let i = 0; i < N * 3; i++) {
+        frame.xyz[i] = spzBaselineXyz[i] + fXyzDelta[i];
+      }
+      frame.dcQ.set(fDcU8);
+      frame.opQ.set(fOpU8);
+
+      for (let c = 0; c < 3; c++) {
+        const scale = (dcMax[c] - dcMin[c]) / 255.0;
+        for (let i = 0; i < N; i++) {
+          frame.shs_dc[i * 3 + c] = fDcU8[i * 3 + c] * scale + dcMin[c];
+        }
+      }
+      {
+        const scale = (opMax - opMin) / 255.0;
+        for (let i = 0; i < N; i++) {
+          frame.opacity[i] = fOpU8[i] * scale + opMin;
+        }
+      }
+
+      // 保存base帧作为refresh帧的参考基准
+      baseXyz = frame.xyz;
+      baseDcQ = frame.dcQ;
+      baseOpQ = frame.opQ;
+    } else {
+      // Refresh帧(flag=2) 和 普通帧间delta(flag=0): 统一差量解码
+      // 区别仅在于参考对象: refresh参考base帧, 普通帧参考前一帧
+      const refXyz = isRefresh ? baseXyz : prevXyz;
+      const refDcQ = isRefresh ? baseDcQ : prevDcQ;
+      const refOpQ = isRefresh ? baseOpQ : prevOpQ;
+
+      const fDcDelta = new Int8Array(raw, fStart, N * 3);
+      fStart += dcBytes;
+      const fOpDelta = new Int8Array(raw, fStart, N);
+
+      for (let i = 0; i < N * 3; i++) {
+        frame.xyz[i] = refXyz[i] + fXyzDelta[i];
+      }
+
+      for (let i = 0; i < N * 3; i++) {
+        let q = refDcQ[i] + fDcDelta[i];
+        q = q < 0 ? 0 : (q > 255 ? 255 : q);
+        frame.dcQ[i] = q;
+      }
+      for (let c = 0; c < 3; c++) {
+        const scale = (dcMax[c] - dcMin[c]) / 255.0;
+        for (let i = 0; i < N; i++) {
+          frame.shs_dc[i * 3 + c] = frame.dcQ[i * 3 + c] * scale + dcMin[c];
+        }
+      }
+
+      for (let i = 0; i < N; i++) {
+        let q = refOpQ[i] + fOpDelta[i];
+        q = q < 0 ? 0 : (q > 255 ? 255 : q);
+        frame.opQ[i] = q;
+      }
+      {
+        const scale = (opMax - opMin) / 255.0;
+        for (let i = 0; i < N; i++) {
+          frame.opacity[i] = frame.opQ[i] * scale + opMin;
+        }
+      }
+    }
+
+    decodedFrames[fi] = frame;
+    prevXyz = frame.xyz;
+    prevDcQ = frame.dcQ;
+    prevOpQ = frame.opQ;
+
+    if (fi % 30 === 0 || fi === numFrames - 1) {
+      const pct = Math.round((fi + 1) / numFrames * 100);
+      pframeBar.style.width = pct + '%';
+      pframeStatus.textContent = `Bundle: decoded ${fi + 1}/${numFrames} frames`;
+      document.getElementById('stat-decoded').textContent = `${fi+1}/${numFrames}`;
+    }
+  }
+
+  const decodeTime = ((performance.now() - t0) / 1000).toFixed(2);
+  console.log(`[V3] All ${numFrames} frames decoded in ${decodeTime}s`);
+
+  bundleLoaded = true;
+  pframeProgress.classList.add('loaded');
+  pframeBar.style.background = '#4a9';
+  document.getElementById('stat-decoded').textContent = `${numFrames}/${numFrames}`;
+}
+
+// ============================================================
+// V3: Delta texture (same V2 layout — 2 pixels per gaussian)
+// ============================================================
+const DELTA_K = 256;
+let deltaTexW = 0, deltaTexH = 0;
+
+function packDeltaToTexture(texData, frame, nDyn) {
+  texData.fill(0);
+  for (let i = 0; i < nDyn; i++) {
+    const row = Math.floor(i / DELTA_K);
+    const col = (i % DELTA_K) * 2;
+
+    const dx = frame.xyz[i * 3 + 0] - spzBaselineXyz[i * 3 + 0];
+    const dy = frame.xyz[i * 3 + 1] - spzBaselineXyz[i * 3 + 1];
+    const dz = frame.xyz[i * 3 + 2] - spzBaselineXyz[i * 3 + 2];
+
+    let off = (row * deltaTexW + col) * 4;
+    texData[off + 0] = dx;
+    texData[off + 1] = dy;
+    texData[off + 2] = dz;
+    texData[off + 3] = frame.shs_dc[i * 3 + 0];
+
+    off = (row * deltaTexW + col + 1) * 4;
+    texData[off + 0] = frame.shs_dc[i * 3 + 1];
+    texData[off + 1] = frame.shs_dc[i * 3 + 2];
+    texData[off + 2] = frame.opacity[i];
+    texData[off + 3] = 0;
+  }
+}
+
+function createDeltaTexture(nDyn) {
+  deltaTexW = DELTA_K * 2;
+  deltaTexH = Math.ceil(nDyn / DELTA_K);
+  const texData = new Float32Array(deltaTexW * deltaTexH * 4);
+  const tex = new THREE.DataTexture(texData, deltaTexW, deltaTexH, THREE.RGBAFormat, THREE.FloatType);
+  tex.needsUpdate = true;
+  tex.minFilter = THREE.NearestFilter;
+  tex.magFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  return tex;
+}
+
+function createMaskTexture() {
+  const N = manifest.total_gaussians;
+  const texW = Math.ceil(Math.sqrt(N));
+  const texH = Math.ceil(N / texW);
+  const texData = new Float32Array(texW * texH * 4);
+  let dynIdx = 0;
+  for (let i = 0; i < N; i++) {
+    const off = i * 4;
+    const isDyn = dynamicMask[i];
+    texData[off + 0] = isDyn;
+    texData[off + 1] = isDyn ? dynIdx : -1;
+    if (isDyn) dynIdx++;
+  }
+  for (let i = N; i < texW * texH; i++) texData[i * 4 + 1] = -1;
+  const tex = new THREE.DataTexture(texData, texW, texH, THREE.RGBAFormat, THREE.FloatType);
+  tex.needsUpdate = true;
+  tex.minFilter = THREE.NearestFilter;
+  tex.magFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  return { texture: tex, width: texW, height: texH };
+}
+
+// ============================================================
+// Scene setup
+// ============================================================
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ============================================================
+// V3 Init
+// ============================================================
+async function init() {
+  const t0 = performance.now();
+
+  await loadManifest();
+
+  setLoading(10, 'Loading dynamic mask...');
+  await loadDynamicMask();
+
+  setLoading(20, 'Creating textures...');
+  const nDyn = manifest.dynamic_gaussians;
+  deltaTexture = createDeltaTexture(nDyn);
+  const maskInfo = createMaskTexture();
+  maskTexture = maskInfo.texture;
+  const maskTexWidth = maskInfo.width;
+
+  // V3: Load SPZ I-frame directly
+  setLoading(30, 'Loading SPZ I-frame...');
+
+  uFrameIndex = dyno.dynoInt(0);
+  uViewMode = dyno.dynoInt(0);
+  deltaSampler = dyno.dynoSampler2D(deltaTexture);
+  maskSampler = dyno.dynoSampler2D(maskTexture);
+
+  const iFrameUrl = 'data_v3b/' + manifest.i_frame + '?t=' + Date.now();
+  const iFrameResp = await fetch(iFrameUrl);
+  const iFrameBytes = new Uint8Array(await iFrameResp.arrayBuffer());
+  console.log(`[V3] SPZ I-frame loaded: ${(iFrameBytes.byteLength/1024/1024).toFixed(2)} MB`);
+
+  setLoading(50, 'Initializing Spark.js...');
+  splatMesh = new SplatMesh({ fileBytes: iFrameBytes });
+
+  // V3 shader (same structure as V2 — displacement + rgba override)
+  splatMesh.objectModifier = dyno.dynoBlock(
+    { gsplat: dyno.Gsplat },
+    { gsplat: dyno.Gsplat },
+    ({ gsplat }) => {
+      const d = new dyno.Dyno({
+        inTypes: {
+          gsplat: dyno.Gsplat,
+          frameIdx: "int",
+          mode: "int",
+          deltaTex: "sampler2D",
+          maskTex: "sampler2D",
+          maskW: "int",
+          deltaK: "int",
+        },
+        outTypes: { gsplat: dyno.Gsplat },
+        globals: () => [
+          dyno.unindent(`
+            vec2 lookupMask(sampler2D mTex, int idx, int mW) {
+              int r = idx / mW;
+              int c = idx - r * mW;
+              return texelFetch(mTex, ivec2(c, r), 0).rg;
+            }
+            void fetchDeltaV3(sampler2D dTex, int dIdx, int K,
+                              out vec3 dPos, out vec3 dDC, out float dOp) {
+              int sr = dIdx / K;
+              int sc = (dIdx - sr * K) * 2;
+              vec4 t0 = texelFetch(dTex, ivec2(sc, sr), 0);
+              vec4 t1 = texelFetch(dTex, ivec2(sc+1, sr), 0);
+              dPos = t0.xyz;
+              dDC  = vec3(t0.w, t1.xy);
+              dOp  = t1.z;
+            }
+          `)
+        ],
+        statements: ({ inputs, outputs }) => dyno.unindentLines(`
+          ${outputs.gsplat} = ${inputs.gsplat};
+          int sIdx = ${inputs.gsplat}.index;
+          vec2 md = lookupMask(${inputs.maskTex}, sIdx, ${inputs.maskW});
+          float isDyn = md.r;
+          int dIdx = int(md.g);
+
+          if (${inputs.mode} == 2) {
+            if (isDyn > 0.5)
+              ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(1.0,0.5,0.2), 0.6);
+            else
+              ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(0.2,0.7,0.6), 0.4);
+          }
+
+          if (${inputs.mode} == 0 && ${inputs.frameIdx} > 0 && isDyn > 0.5 && dIdx >= 0) {
+            vec3 dp, ddc; float dop;
+            fetchDeltaV3(${inputs.deltaTex}, dIdx, ${inputs.deltaK}, dp, ddc, dop);
+            float SH_C0 = 0.28209479177;
+            ${outputs.gsplat}.center += dp;
+            ${outputs.gsplat}.rgba.rgb = SH_C0 * ddc + 0.5;
+            ${outputs.gsplat}.rgba.a = dop;
+          }
+        `)
+      });
+      gsplat = d.apply({
+        gsplat,
+        frameIdx: uFrameIndex,
+        mode: uViewMode,
+        deltaTex: deltaSampler,
+        maskTex: maskSampler,
+        maskW: dyno.dynoInt(maskTexWidth),
+        deltaK: dyno.dynoInt(DELTA_K),
+      }).gsplat;
+      return { gsplat };
+    }
+  );
+
+  splatMesh.quaternion.set(1, 0, 0, 0);
+  splatMesh.position.set(0, 0, 0);
+  scene.add(splatMesh);
+
+  camera.position.set(0.878, -1.442, 0.516);
+
+  setLoading(90, 'Starting renderer...');
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(2.435, -0.647, -15.003);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.1;
+  controls.screenSpacePanning = true;
+  controls.minDistance = 0.5;
+  controls.maxDistance = 100;
+  controls.update();
+
+  setLoading(100, 'SPZ I-frame ready!');
+  const iframeLoadTime = ((performance.now() - t0) / 1000).toFixed(1);
+  console.log(`[V3] SPZ I-frame rendered in ${iframeLoadTime}s`);
+
+  setTimeout(() => {
+    loadingOverlay.classList.add('hidden');
+    splatMesh.updateGenerator();
+    isPlaying = true;
+    playBtn.textContent = '\u23F8';
+  }, 300);
+
+  // Load bundle in background
+  loadAndDecodePFrameBundle().then(() => {
+    console.log(`[V3] Bundle loaded & decoded. Total time: ${((performance.now() - t0) / 1000).toFixed(1)}s`);
+  });
+
+  // ============================================================
+  // 30Hz Animation Loop
+  // ============================================================
+  let frameCount = 0, lastFpsTime = performance.now();
+  let lastFrameTime = performance.now();
+  const FRAME_INTERVAL = 1000 / targetFPS;  // 33.3ms for 30Hz
+
+  renderer.setAnimationLoop(function animate() {
+    const now = performance.now();
+
+    if (isPlaying && viewMode === 'animated' && bundleLoaded) {
+      const adjustedInterval = FRAME_INTERVAL / playbackSpeedMult;
+      if (now - lastFrameTime >= adjustedInterval) {
+        lastFrameTime = now;
+        const maxFrame = manifest.p_frame_count;
+        const nextFrame = (currentFrame + 1) % (maxFrame + 1);
+        updateFrame(nextFrame);
+      }
+    }
+
+    splatMesh.updateVersion();
+    controls.update();
+    renderer.render(scene, camera);
+
+    frameCount++;
+    if (now - lastFpsTime > 500) {
+      document.getElementById('stat-fps').textContent =
+        Math.round(frameCount / ((now - lastFpsTime) / 1000));
+      frameCount = 0;
+      lastFpsTime = now;
+    }
+  });
+
+  // ============================================================
+  // WebSocket for viewctl remote control
+  // ============================================================
+  const wsUrl = 'ws://' + location.host + '/';
+  let ws = null;
+  function connectWS() {
+    try {
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => console.log('[WS] Connected to viewctl');
+      ws.onclose = () => setTimeout(connectWS, 3000);
+      ws.onerror = () => {};
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg.type === 'setCamera') {
+            if (msg.position) camera.position.fromArray(msg.position);
+            if (msg.target) controls.target.fromArray(msg.target);
+            controls.update();
+            reportCamera();
+          } else if (msg.type === 'rotateCamera') {
+            const az = (msg.azimuth || 0) * Math.PI / 180;
+            const el = (msg.elevation || 0) * Math.PI / 180;
+            const off = new THREE.Vector3().subVectors(camera.position, controls.target);
+            const r = off.length();
+            let theta = Math.acos(Math.max(-1, Math.min(1, off.y / r)));
+            let phi = Math.atan2(off.x, off.z);
+            phi += az; theta = Math.max(0.01, Math.min(Math.PI - 0.01, theta + el));
+            off.set(r * Math.sin(theta) * Math.sin(phi), r * Math.cos(theta),
+                    r * Math.sin(theta) * Math.cos(phi));
+            camera.position.copy(controls.target).add(off);
+            controls.update();
+            reportCamera();
+          } else if (msg.type === 'setFrame') {
+            updateFrame(msg.frame || 0);
+          } else if (msg.type === 'requestScreenshot') {
+            renderer.render(scene, camera);
+            const dataUrl = renderer.domElement.toDataURL('image/png');
+            ws.send(JSON.stringify({
+              type: 'screenshotResult', dataUrl,
+              width: renderer.domElement.width, height: renderer.domElement.height,
+              camera: { position: camera.position.toArray(), target: controls.target.toArray() },
+            }));
+          }
+        } catch (e) {}
+      };
+    } catch (e) { setTimeout(connectWS, 3000); }
+  }
+  function reportCamera() {
+    if (ws && ws.readyState === 1)
+      ws.send(JSON.stringify({ type: 'cameraState',
+        position: camera.position.toArray(), target: controls.target.toArray(),
+        up: camera.up.toArray() }));
+  }
+  setInterval(reportCamera, 1000);
+  renderer.domElement.addEventListener('pointerup', () => setTimeout(reportCamera, 100));
+  connectWS();
+}
+
+// ============================================================
+// Frame management
+// ============================================================
+function updateFrame(idx) {
+  currentFrame = idx;
+  timeline.value = idx;
+  const timeSec = (idx / targetFPS).toFixed(1);
+
+  if (idx === 0) {
+    uFrameIndex.value = 0;
+    frameLabel.textContent = `I-Frame (${timeSec}s / ${TOTAL_DURATION}s)`;
+  } else {
+    const pIdx = idx - 1;
+    if (!decodedFrames[pIdx]) {
+      frameLabel.textContent = `P-Frame ${idx}/299 (loading...)`;
+      uFrameIndex.value = 0;
+      return;
+    }
+    const frame = decodedFrames[pIdx];
+    const texData = deltaTexture.image.data;
+    packDeltaToTexture(texData, frame, manifest.dynamic_gaussians);
+    deltaTexture.needsUpdate = true;
+    uFrameIndex.value = idx;
+    frameLabel.textContent = `P-Frame ${idx}/299 (${timeSec}s / ${TOTAL_DURATION}s)`;
+  }
+}
+
+// ============================================================
+// UI: Play/Pause, Timeline, Modes, Speed
+// ============================================================
+playBtn.addEventListener('click', () => {
+  isPlaying = !isPlaying;
+  playBtn.textContent = isPlaying ? '\u23F8' : '\u25B6';
+});
+
+timeline.addEventListener('input', (e) => {
+  isPlaying = false;
+  playBtn.textContent = '\u25B6';
+  updateFrame(parseInt(e.target.value));
+});
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    viewMode = btn.dataset.mode;
+    if (viewMode === 'animated') {
+      uViewMode.value = 0;
+    } else if (viewMode === 'i-frame') {
+      uViewMode.value = 1;
+      uFrameIndex.value = 0;
+      currentFrame = 0;
+      timeline.value = 0;
+      isPlaying = false;
+      playBtn.textContent = '\u25B6';
+    } else if (viewMode === 'highlight') {
+      uViewMode.value = 2;
+      uFrameIndex.value = 0;
+      isPlaying = false;
+      playBtn.textContent = '\u25B6';
+    }
+    splatMesh.updateGenerator();
+  });
+});
+
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    playbackSpeedMult = parseFloat(btn.dataset.speed);
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); playBtn.click(); }
+  else if (e.key === 'ArrowRight') updateFrame(Math.min(currentFrame + 1, manifest.p_frame_count));
+  else if (e.key === 'ArrowLeft') updateFrame(Math.max(currentFrame - 1, 0));
+});
+
+window._viewer = {
+  updateFrame: (f) => updateFrame(f),
+  getFrame: () => currentFrame,
+  setSpeed: (s) => { playbackSpeedMult = s; },
+};
+
+init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
+</script>
+</body>
+</html>

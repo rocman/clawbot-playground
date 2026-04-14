@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V3b — Cut Roasted Beef</title>
+<title>4DGS Deformation Viewer V3c — Cut Roasted Beef</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -98,14 +98,14 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V3b — 30Hz (xyz int8)</div>
+  <div id="loading-title">4DGS VIEWER V3c — 30Hz (precise per-frame)</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
 
 <div id="title-bar">
-  <h1>4DGS Viewer V3b - Cut Roasted Beef</h1>
-  <p>V3b: SPZ I-Frame + 30Hz Bundle (xyz int8) + Refresh Frames | PSNR 32.26 dB</p>
+  <h1>4DGS Viewer V3c - Cut Roasted Beef</h1>
+  <p>V3c: SPZ I-Frame + 30Hz Bundle (precise per-frame, no cumulative error) | PSNR 32.26 dB</p>
 </div>
 
 <div id="pframe-progress">
@@ -201,7 +201,7 @@ function setLoading(pct, text) {
 // ============================================================
 async function loadManifest() {
   setLoading(5, 'Loading manifest...');
-  const resp = await fetch('data_v3b/manifest.json?t=' + Date.now());
+  const resp = await fetch('data_v3c/manifest.json?t=' + Date.now());
   manifest = await resp.json();
   targetFPS = manifest.target_fps || 30;
   document.getElementById('stat-total').textContent = manifest.total_gaussians.toLocaleString();
@@ -239,7 +239,7 @@ function float16ToFloat32(u16arr) {
 }
 
 async function loadDynamicMask() {
-  const resp = await fetch('data_v3b/' + manifest.dynamic_mask + '?t=' + Date.now());
+  const resp = await fetch('data_v3c/' + manifest.dynamic_mask + '?t=' + Date.now());
   const compressed = await resp.arrayBuffer();
   const raw = await decompressGzip(compressed);
   const view = new DataView(raw);
@@ -251,7 +251,7 @@ async function loadDynamicMask() {
 // V3: Bundle v2 Loading & Decoding
 // ============================================================
 async function loadAndDecodePFrameBundle() {
-  const bundleUrl = 'data_v3b/' + manifest.p_frame_bundle;
+  const bundleUrl = 'data_v3c/' + manifest.p_frame_bundle;
   pframeStatus.textContent = 'Bundle: downloading...';
 
   const resp = await fetch(bundleUrl + '?t=' + Date.now());
@@ -296,7 +296,7 @@ async function loadAndDecodePFrameBundle() {
   const quantMode = rawView.getUint32(20, true);
   const bundleFPS = rawView.getUint32(24, true);
 
-  console.log(`[V3b] Bundle: magic=${magic} ver=${version} frames=${numFrames} gaussians=${numGaussians} fps=${bundleFPS} qmode=${quantMode}`);
+  console.log(`[V3c] Bundle: magic=${magic} ver=${version} frames=${numFrames} gaussians=${numGaussians} fps=${bundleFPS} qmode=${quantMode}`);
 
   // Parse frame index table (N × 12B)
   let pos = 28;
@@ -318,7 +318,7 @@ async function loadAndDecodePFrameBundle() {
   const xyzDMin = [rawView.getFloat32(pos+32, true), rawView.getFloat32(pos+36, true), rawView.getFloat32(pos+40, true)];
   const xyzDMax = [rawView.getFloat32(pos+44, true), rawView.getFloat32(pos+48, true), rawView.getFloat32(pos+52, true)];
   pos += 56;
-  console.log(`[V3b] xyz delta range: x=[${xyzDMin[0].toFixed(4)},${xyzDMax[0].toFixed(4)}] y=[${xyzDMin[1].toFixed(4)},${xyzDMax[1].toFixed(4)}] z=[${xyzDMin[2].toFixed(4)},${xyzDMax[2].toFixed(4)}]`);
+  console.log(`[V3c] xyz delta range: x=[${xyzDMin[0].toFixed(4)},${xyzDMax[0].toFixed(4)}] y=[${xyzDMin[1].toFixed(4)},${xyzDMax[1].toFixed(4)}] z=[${xyzDMin[2].toFixed(4)},${xyzDMax[2].toFixed(4)}]`);
 
   // Pre-compute xyz delta dequantization scales
   const xyzDScale = [
@@ -333,7 +333,7 @@ async function loadAndDecodePFrameBundle() {
   const spzXyz16 = new Uint16Array(raw, pos, numGaussians * 3);
   spzBaselineXyz = float16ToFloat32(spzXyz16);
   pos += spzBaselineSize;
-  console.log(`[V3b] SPZ baseline loaded: ${numGaussians} points, ${spzBaselineSize} bytes`);
+  console.log(`[V3c] SPZ baseline loaded: ${numGaussians} points, ${spzBaselineSize} bytes`);
 
   const dataStart = pos;
   const N = numGaussians;
@@ -342,27 +342,42 @@ async function loadAndDecodePFrameBundle() {
   const dcBytes = N * 3;
   const opBytes = N;
 
-  // V3b: int8 xyz delta dequantization helper
-  function dequantXyzInt8(int8Arr, n) {
+  // V3c: xyz uint8 quantization/dequantization helpers
+  // Quantize float32 abs delta → uint8 [0,255]
+  function quantizeXyzToU8(absDelta, n) {
+    const result = new Uint8Array(n * 3);
+    for (let c = 0; c < 3; c++) {
+      const scale = 255.0 / (xyzDMax[c] - xyzDMin[c] + 1e-10);
+      for (let i = 0; i < n; i++) {
+        let q = Math.round((absDelta[i * 3 + c] - xyzDMin[c]) * scale);
+        result[i * 3 + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
+      }
+    }
+    return result;
+  }
+  // Dequantize uint8 → float32 abs delta
+  function dequantXyzFromU8(u8Arr, n) {
     const result = new Float32Array(n * 3);
     for (let c = 0; c < 3; c++) {
       const scale = xyzDScale[c];
       const offset = xyzDMin[c];
       for (let i = 0; i < n; i++) {
-        result[i * 3 + c] = (int8Arr[i * 3 + c] + 128) * scale + offset;
+        result[i * 3 + c] = u8Arr[i * 3 + c] * scale + offset;
       }
     }
     return result;
   }
 
   // Decode all frames
+  // V3c key insight: maintain uint8 quantized state for xyz (not float32),
+  // so diff decoding produces exact quantized absolute values with NO cumulative error
   const t0 = performance.now();
-  let prevXyz = null;
+  let prevXyzQ = null;   // Uint8Array — quantized xyz absolute delta
   let prevDcQ = null;
   let prevOpQ = null;
 
-  // base帧(frame 0)的解码结果，供refresh帧作为参考基准
-  let baseXyz = null;
+  // base帧的量化状态，供refresh帧作为参考基准
+  let baseXyzQ = null;
   let baseDcQ = null;
   let baseOpQ = null;
 
@@ -372,39 +387,34 @@ async function loadAndDecodePFrameBundle() {
     const isBaseFrame = ft.flag === 1;     // 只有frame 0是绝对编码(xyz float16)
     const isRefresh = ft.flag === 2;       // refresh帧：int8差量编码，参考base帧
 
-    // V3b: xyz解码方式取决于帧类型
-    let fXyzDelta;
-    if (isBaseFrame) {
-      // Base frame: xyz delta is float16
-      const fXyz16 = new Uint16Array(raw, fStart, N * 3);
-      fXyzDelta = float16ToFloat32(fXyz16);
-      fStart += xyzBytesBase;
-    } else {
-      // Inter/refresh frames: xyz delta is int8
-      const fXyzI8 = new Int8Array(raw, fStart, N * 3);
-      fXyzDelta = dequantXyzInt8(fXyzI8, N);
-      fStart += xyzBytesInt8;
-    }
-
     const frame = {
       xyz: new Float32Array(N * 3),
       shs_dc: new Float32Array(N * 3),
       opacity: new Float32Array(N),
+      xyzQ: new Uint8Array(N * 3),   // V3c: quantized xyz abs delta (uint8)
       dcQ: new Uint8Array(N * 3),
       opQ: new Uint8Array(N),
     };
 
     if (isBaseFrame) {
-      // Base frame (frame 0): 绝对delta vs SPZ baseline
+      // Base frame (frame 0): xyz delta is float16 (highest precision)
+      const fXyz16 = new Uint16Array(raw, fStart, N * 3);
+      const fXyzDelta = float16ToFloat32(fXyz16);
+      fStart += xyzBytesBase;
+
       const fDcU8 = new Uint8Array(raw, fStart, N * 3);
       fStart += dcBytes;
       const fOpU8 = new Uint8Array(raw, fStart, N);
 
+      // Reconstruct float xyz from SPZ baseline + float16 delta
       for (let i = 0; i < N * 3; i++) {
         frame.xyz[i] = spzBaselineXyz[i] + fXyzDelta[i];
       }
       frame.dcQ.set(fDcU8);
       frame.opQ.set(fOpU8);
+
+      // V3c: also quantize base xyz to uint8 for subsequent diff decoding
+      frame.xyzQ = quantizeXyzToU8(fXyzDelta, N);
 
       for (let c = 0; c < 3; c++) {
         const scale = (dcMax[c] - dcMin[c]) / 255.0;
@@ -419,41 +429,51 @@ async function loadAndDecodePFrameBundle() {
         }
       }
 
-      // 保存base帧作为refresh帧的参考基准
-      baseXyz = frame.xyz;
+      // 保存base帧的量化状态作为refresh帧的参考基准
+      baseXyzQ = frame.xyzQ;
       baseDcQ = frame.dcQ;
       baseOpQ = frame.opQ;
     } else {
-      // Refresh帧(flag=2) 和 普通帧间delta(flag=0): 统一差量解码
-      // 区别仅在于参考对象: refresh参考base帧, 普通帧参考前一帧
-      const refXyz = isRefresh ? baseXyz : prevXyz;
-      const refDcQ = isRefresh ? baseDcQ : prevDcQ;
-      const refOpQ = isRefresh ? baseOpQ : prevOpQ;
+      // V3c: Refresh帧(flag=2) 和 普通帧间delta(flag=0): 统一diff解码
+      // diff = quantized_abs[i] - quantized_abs[ref], 所以叠加后精确恢复量化绝对值
+      const isRefreshFrame = isRefresh;
+      const refXyzQ = isRefreshFrame ? baseXyzQ : prevXyzQ;
+      const refDcQ = isRefreshFrame ? baseDcQ : prevDcQ;
+      const refOpQ = isRefreshFrame ? baseOpQ : prevOpQ;
 
-      const fDcDelta = new Int8Array(raw, fStart, N * 3);
+      // Read int8 diffs
+      const fXyzI8 = new Int8Array(raw, fStart, N * 3);
+      fStart += xyzBytesInt8;
+      const fDcI8 = new Int8Array(raw, fStart, N * 3);
       fStart += dcBytes;
-      const fOpDelta = new Int8Array(raw, fStart, N);
+      const fOpI8 = new Int8Array(raw, fStart, N);
 
+      // Reconstruct uint8 quantized absolute values from diff
       for (let i = 0; i < N * 3; i++) {
-        frame.xyz[i] = refXyz[i] + fXyzDelta[i];
+        let q = refXyzQ[i] + fXyzI8[i];
+        frame.xyzQ[i] = q < 0 ? 0 : (q > 255 ? 255 : q);
+      }
+      for (let i = 0; i < N * 3; i++) {
+        let q = refDcQ[i] + fDcI8[i];
+        frame.dcQ[i] = q < 0 ? 0 : (q > 255 ? 255 : q);
+      }
+      for (let i = 0; i < N; i++) {
+        let q = refOpQ[i] + fOpI8[i];
+        frame.opQ[i] = q < 0 ? 0 : (q > 255 ? 255 : q);
       }
 
+      // Dequantize uint8 xyz → float32 position
+      const xyzAbsDelta = dequantXyzFromU8(frame.xyzQ, N);
       for (let i = 0; i < N * 3; i++) {
-        let q = refDcQ[i] + fDcDelta[i];
-        q = q < 0 ? 0 : (q > 255 ? 255 : q);
-        frame.dcQ[i] = q;
+        frame.xyz[i] = spzBaselineXyz[i] + xyzAbsDelta[i];
       }
+
+      // Dequantize dc and opacity
       for (let c = 0; c < 3; c++) {
         const scale = (dcMax[c] - dcMin[c]) / 255.0;
         for (let i = 0; i < N; i++) {
           frame.shs_dc[i * 3 + c] = frame.dcQ[i * 3 + c] * scale + dcMin[c];
         }
-      }
-
-      for (let i = 0; i < N; i++) {
-        let q = refOpQ[i] + fOpDelta[i];
-        q = q < 0 ? 0 : (q > 255 ? 255 : q);
-        frame.opQ[i] = q;
       }
       {
         const scale = (opMax - opMin) / 255.0;
@@ -464,7 +484,7 @@ async function loadAndDecodePFrameBundle() {
     }
 
     decodedFrames[fi] = frame;
-    prevXyz = frame.xyz;
+    prevXyzQ = frame.xyzQ;
     prevDcQ = frame.dcQ;
     prevOpQ = frame.opQ;
 
@@ -477,7 +497,7 @@ async function loadAndDecodePFrameBundle() {
   }
 
   const decodeTime = ((performance.now() - t0) / 1000).toFixed(2);
-  console.log(`[V3] All ${numFrames} frames decoded in ${decodeTime}s`);
+  console.log(`[V3c] All ${numFrames} frames decoded in ${decodeTime}s`);
 
   bundleLoaded = true;
   pframeProgress.classList.add('loaded');
@@ -591,10 +611,10 @@ async function init() {
   deltaSampler = dyno.dynoSampler2D(deltaTexture);
   maskSampler = dyno.dynoSampler2D(maskTexture);
 
-  const iFrameUrl = 'data_v3b/' + manifest.i_frame + '?t=' + Date.now();
+  const iFrameUrl = 'data_v3c/' + manifest.i_frame + '?t=' + Date.now();
   const iFrameResp = await fetch(iFrameUrl);
   const iFrameBytes = new Uint8Array(await iFrameResp.arrayBuffer());
-  console.log(`[V3] SPZ I-frame loaded: ${(iFrameBytes.byteLength/1024/1024).toFixed(2)} MB`);
+  console.log(`[V3c] SPZ I-frame loaded: ${(iFrameBytes.byteLength/1024/1024).toFixed(2)} MB`);
 
   setLoading(50, 'Initializing Spark.js...');
   splatMesh = new SplatMesh({ fileBytes: iFrameBytes });
@@ -690,7 +710,7 @@ async function init() {
 
   setLoading(100, 'SPZ I-frame ready!');
   const iframeLoadTime = ((performance.now() - t0) / 1000).toFixed(1);
-  console.log(`[V3] SPZ I-frame rendered in ${iframeLoadTime}s`);
+  console.log(`[V3c] SPZ I-frame rendered in ${iframeLoadTime}s`);
 
   setTimeout(() => {
     loadingOverlay.classList.add('hidden');
@@ -701,7 +721,7 @@ async function init() {
 
   // Load bundle in background
   loadAndDecodePFrameBundle().then(() => {
-    console.log(`[V3] Bundle loaded & decoded. Total time: ${((performance.now() - t0) / 1000).toFixed(1)}s`);
+    console.log(`[V3c] Bundle loaded & decoded. Total time: ${((performance.now() - t0) / 1000).toFixed(1)}s`);
   });
 
   // ============================================================
