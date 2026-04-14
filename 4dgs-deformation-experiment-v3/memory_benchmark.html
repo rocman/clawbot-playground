@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>V3b vs V3c Memory Benchmark</title>
+<style>
+  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Consolas', 'Courier New', monospace; padding: 20px; }
+  h1 { color: #7ecfff; font-size: 20px; margin-bottom: 16px; }
+  .section { margin: 12px 0; padding: 12px; background: #151520; border-radius: 8px; border: 1px solid #333; }
+  .section h2 { color: #f74; font-size: 14px; margin-bottom: 8px; }
+  #log { white-space: pre-wrap; font-size: 12px; line-height: 1.6; max-height: 70vh; overflow-y: auto; }
+  .highlight { color: #7ecfff; font-weight: bold; }
+  .good { color: #4a9; }
+  .warn { color: #f74; }
+  .dim { color: #666; }
+  button { padding: 8px 20px; margin: 4px; border: 1px solid #3a8bff; border-radius: 6px; background: #3a8bff33; color: #7ecfff; cursor: pointer; font-size: 13px; }
+  button:hover { background: #3a8bff55; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #progress { margin-top: 8px; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+  #progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3a8bff, #7ecfff); transition: width 0.3s; }
+  table { border-collapse: collapse; margin-top: 12px; width: 100%; }
+  th, td { border: 1px solid #333; padding: 6px 10px; text-align: right; font-size: 12px; }
+  th { background: #1a1a2e; color: #7ecfff; }
+  td.label { text-align: left; color: #aaa; }
+</style>
+</head>
+<body>
+
+<h1>🧪 4DGS Viewer Memory Benchmark: V3b vs V3c</h1>
+<div>
+  <button id="btn-v3b" onclick="runBenchmark('v3b')">▶ 测试 V3b (优化前: float32+uint8)</button>
+  <button id="btn-v3c" onclick="runBenchmark('v3c')">▶ 测试 V3c (优化后: uint8 only)</button>
+  <button id="btn-both" onclick="runBoth()">▶ 依次测试两者并对比</button>
+</div>
+<div id="progress"><div id="progress-bar"></div></div>
+
+<div class="section">
+  <h2>测试日志</h2>
+  <div id="log"></div>
+</div>
+
+<div class="section" id="comparison-section" style="display:none">
+  <h2>对比结果</h2>
+  <div id="comparison"></div>
+</div>
+
+<script>
+const logEl = document.getElementById('log');
+const progressBar = document.getElementById('progress-bar');
+const results = {};
+
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setProgress(pct) {
+  progressBar.style.width = pct + '%';
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+}
+
+function disableButtons(disable) {
+  document.getElementById('btn-v3b').disabled = disable;
+  document.getElementById('btn-v3c').disabled = disable;
+  document.getElementById('btn-both').disabled = disable;
+}
+
+async function decompressGzip(buf) {
+  const ds = new DecompressionStream('gzip');
+  const blob = new Blob([buf]);
+  const stream = blob.stream().pipeThrough(ds);
+  return await new Response(stream).blob().then(b => b.arrayBuffer());
+}
+
+function float16ToFloat32(u16arr) {
+  const f32 = new Float32Array(u16arr.length);
+  for (let i = 0; i < u16arr.length; i++) {
+    const h = u16arr[i];
+    const sign = (h >> 15) & 0x1;
+    const exp = (h >> 10) & 0x1f;
+    const mant = h & 0x3ff;
+    if (exp === 0) {
+      f32[i] = mant === 0 ? (sign ? -0 : 0) : (sign ? -1 : 1) * Math.pow(2, -14) * (mant / 1024);
+    } else if (exp === 31) {
+      f32[i] = mant === 0 ? (sign ? -Infinity : Infinity) : NaN;
+    } else {
+      f32[i] = (sign ? -1 : 1) * Math.pow(2, exp - 15) * (1 + mant / 1024);
+    }
+  }
+  return f32;
+}
+
+function getJSHeap() {
+  if (performance.memory) {
+    return {
+      used: performance.memory.usedJSHeapSize,
+      total: performance.memory.totalJSHeapSize,
+      limit: performance.memory.jsHeapSizeLimit,
+    };
+  }
+  return null;
+}
+
+function logHeap(label) {
+  const h = getJSHeap();
+  if (h) {
+    log(`  [Heap] ${label}: used=${formatBytes(h.used)} total=${formatBytes(h.total)}`, 'dim');
+    return h.used;
+  }
+  return null;
+}
+
+// ============================================================
+// V3b: 优化前 — 每帧存 float32 + uint8
+// ============================================================
+async function benchmarkV3b(dataDir) {
+  log('');
+  log('========================================', 'highlight');
+  log('  V3b Benchmark (优化前: float32 + uint8)', 'highlight');
+  log('========================================', 'highlight');
+
+  const memSnapshots = {};
+
+  // Force GC if available
+  if (window.gc) { window.gc(); await new Promise(r => setTimeout(r, 200)); }
+  memSnapshots.baseline = logHeap('Baseline (GC后)');
+
+  // Load manifest
+  log('  加载 manifest...');
+  const manifestResp = await fetch(dataDir + '/manifest.json?t=' + Date.now());
+  const manifest = await manifestResp.json();
+  const N = manifest.dynamic_gaussians;
+  const numFrames = manifest.p_frame_count;
+  log(`  N=${N.toLocaleString()} 动态高斯, ${numFrames} 帧`);
+
+  // Download bundle
+  log('  下载 bundle...');
+  setProgress(10);
+  const resp = await fetch(dataDir + '/' + manifest.p_frame_bundle + '?t=' + Date.now());
+  const compressedBuf = await resp.arrayBuffer();
+  log(`  Bundle 下载完成: ${formatBytes(compressedBuf.byteLength)}`);
+  memSnapshots.afterDownload = logHeap('下载后');
+  setProgress(25);
+
+  // Decompress
+  log('  gzip 解压...');
+  const raw = await decompressGzip(compressedBuf);
+  log(`  解压完成: ${formatBytes(raw.byteLength)}`);
+  memSnapshots.afterDecompress = logHeap('解压后 (compressed+raw 共存)');
+  setProgress(40);
+
+  // Parse headers
+  const rawView = new DataView(raw);
+  const rawBytes = new Uint8Array(raw);
+  let pos = 28;
+  const frameTable = [];
+  const numFramesParsed = rawView.getUint32(8, true);
+  const numGaussians = rawView.getUint32(12, true);
+  for (let i = 0; i < numFramesParsed; i++) {
+    frameTable.push({
+      srcIdx: rawView.getUint32(pos, true),
+      dataOffset: rawView.getUint32(pos + 4, true),
+      flag: rawView.getUint32(pos + 8, true),
+    });
+    pos += 12;
+  }
+
+  // Parse quant params
+  const dcMin = [rawView.getFloat32(pos, true), rawView.getFloat32(pos+4, true), rawView.getFloat32(pos+8, true)];
+  const dcMax = [rawView.getFloat32(pos+12, true), rawView.getFloat32(pos+16, true), rawView.getFloat32(pos+20, true)];
+  const opMin = rawView.getFloat32(pos+24, true);
+  const opMax = rawView.getFloat32(pos+28, true);
+  const xyzDMin = [rawView.getFloat32(pos+32, true), rawView.getFloat32(pos+36, true), rawView.getFloat32(pos+40, true)];
+  const xyzDMax = [rawView.getFloat32(pos+44, true), rawView.getFloat32(pos+48, true), rawView.getFloat32(pos+52, true)];
+  pos += 56;
+  const xyzDScale = [(xyzDMax[0]-xyzDMin[0])/255, (xyzDMax[1]-xyzDMin[1])/255, (xyzDMax[2]-xyzDMin[2])/255];
+
+  // Parse SPZ baseline
+  const spzBaselineSize = rawView.getUint32(pos, true);
+  pos += 4;
+  const spzXyz16 = new Uint16Array(raw, pos, numGaussians * 3);
+  const spzBaselineXyz = float16ToFloat32(spzXyz16);
+  pos += spzBaselineSize;
+
+  const dataStart = pos;
+  const xyzBytesBase = N * 3 * 2;
+  const xyzBytesInt8 = N * 3;
+  const dcBytes = N * 3;
+
+  // Decode all frames — V3b style (float32 + uint8)
+  log('  开始解码 (V3b: 每帧存 float32 + uint8)...');
+  const decodedFrames = [];
+  let prevXyz = null, prevDcQ = null, prevOpQ = null;
+  let baseXyz = null, baseDcQ = null, baseOpQ = null;
+  let totalAllocatedBytes = 0;
+  const t0 = performance.now();
+
+  for (let fi = 0; fi < numFramesParsed; fi++) {
+    const ft = frameTable[fi];
+    let fStart = dataStart + ft.dataOffset;
+    const isBaseFrame = ft.flag === 1;
+    const isRefresh = ft.flag === 2;
+
+    let fXyzDelta;
+    if (isBaseFrame) {
+      const fXyz16 = new Uint16Array(raw, fStart, N * 3);
+      fXyzDelta = float16ToFloat32(fXyz16);
+      fStart += xyzBytesBase;
+    } else {
+      const fXyzI8 = new Int8Array(raw, fStart, N * 3);
+      fXyzDelta = new Float32Array(N * 3);
+      for (let c = 0; c < 3; c++) {
+        for (let i = 0; i < N; i++) {
+          fXyzDelta[i*3+c] = (fXyzI8[i*3+c]+128)*xyzDScale[c]+xyzDMin[c];
+        }
+      }
+      fStart += xyzBytesInt8;
+    }
+
+    const frame = {
+      xyz: new Float32Array(N * 3),
+      shs_dc: new Float32Array(N * 3),
+      opacity: new Float32Array(N),
+      dcQ: new Uint8Array(N * 3),
+      opQ: new Uint8Array(N),
+    };
+
+    // Track allocated bytes per frame
+    const frameBytes = frame.xyz.byteLength + frame.shs_dc.byteLength + frame.opacity.byteLength
+                     + frame.dcQ.byteLength + frame.opQ.byteLength;
+    totalAllocatedBytes += frameBytes;
+
+    if (isBaseFrame) {
+      const fDcU8 = new Uint8Array(raw, fStart, N * 3); fStart += dcBytes;
+      const fOpU8 = new Uint8Array(raw, fStart, N);
+      for (let i = 0; i < N*3; i++) frame.xyz[i] = spzBaselineXyz[i] + fXyzDelta[i];
+      frame.dcQ.set(fDcU8);
+      frame.opQ.set(fOpU8);
+      for (let c = 0; c < 3; c++) {
+        const s = (dcMax[c]-dcMin[c])/255;
+        for (let i = 0; i < N; i++) frame.shs_dc[i*3+c] = fDcU8[i*3+c]*s+dcMin[c];
+      }
+      { const s = (opMax-opMin)/255; for (let i = 0; i < N; i++) frame.opacity[i] = fOpU8[i]*s+opMin; }
+      baseXyz = frame.xyz; baseDcQ = frame.dcQ; baseOpQ = frame.opQ;
+    } else {
+      const refXyz = isRefresh ? baseXyz : prevXyz;
+      const refDcQ = isRefresh ? baseDcQ : prevDcQ;
+      const refOpQ = isRefresh ? baseOpQ : prevOpQ;
+      const fDcDelta = new Int8Array(raw, fStart, N*3); fStart += dcBytes;
+      const fOpDelta = new Int8Array(raw, fStart, N);
+      for (let i = 0; i < N*3; i++) frame.xyz[i] = refXyz[i] + fXyzDelta[i];
+      for (let i = 0; i < N*3; i++) { let q = refDcQ[i]+fDcDelta[i]; frame.dcQ[i] = q<0?0:(q>255?255:q); }
+      for (let c = 0; c < 3; c++) { const s = (dcMax[c]-dcMin[c])/255; for (let i = 0; i < N; i++) frame.shs_dc[i*3+c]=frame.dcQ[i*3+c]*s+dcMin[c]; }
+      for (let i = 0; i < N; i++) { let q = refOpQ[i]+fOpDelta[i]; frame.opQ[i] = q<0?0:(q>255?255:q); }
+      { const s = (opMax-opMin)/255; for (let i = 0; i < N; i++) frame.opacity[i]=frame.opQ[i]*s+opMin; }
+    }
+
+    decodedFrames[fi] = frame;
+    prevXyz = frame.xyz; prevDcQ = frame.dcQ; prevOpQ = frame.opQ;
+
+    if (fi % 50 === 0 || fi === numFramesParsed - 1) {
+      setProgress(40 + Math.round(fi/numFramesParsed * 55));
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  const decodeTime = ((performance.now() - t0) / 1000).toFixed(2);
+  memSnapshots.afterDecode = logHeap('解码完成 (所有帧 + raw)');
+  setProgress(98);
+
+  // Calculate per-frame breakdown
+  const perFrameFloat32 = (N * 3 * 4) + (N * 3 * 4) + (N * 4); // xyz + shs_dc + opacity
+  const perFrameUint8 = (N * 3) + N; // dcQ + opQ
+  const perFrameTotal = perFrameFloat32 + perFrameUint8;
+
+  log('');
+  log('--- V3b 实测结果 ---', 'warn');
+  log(`  解码耗时: ${decodeTime}s`);
+  log(`  帧数: ${numFramesParsed}`);
+  log(`  每帧 TypedArray 分配:`, 'highlight');
+  log(`    xyz (Float32Array):     ${formatBytes(N * 3 * 4)}`);
+  log(`    shs_dc (Float32Array):  ${formatBytes(N * 3 * 4)}`);
+  log(`    opacity (Float32Array): ${formatBytes(N * 4)}`);
+  log(`    dcQ (Uint8Array):       ${formatBytes(N * 3)}`);
+  log(`    opQ (Uint8Array):       ${formatBytes(N)}`);
+  log(`    ─────────────────────────────────`);
+  log(`    每帧小计:               ${formatBytes(perFrameTotal)} (${(perFrameTotal/1024/1024).toFixed(3)} MB)`);
+  log('');
+  log(`  全部帧数据 (${numFramesParsed} 帧):`, 'highlight');
+  log(`    TypedArray 总量:        ${formatBytes(totalAllocatedBytes)}`, 'warn');
+  log(`    其中 float32 部分:      ${formatBytes(perFrameFloat32 * numFramesParsed)}`);
+  log(`    其中 uint8 部分:        ${formatBytes(perFrameUint8 * numFramesParsed)}`);
+  log(`  raw buffer (解压数据):    ${formatBytes(raw.byteLength)}`);
+  log(`  spzBaselineXyz:           ${formatBytes(spzBaselineXyz.byteLength)}`);
+  log('');
+
+  const totalDataMem = totalAllocatedBytes + raw.byteLength + spzBaselineXyz.byteLength;
+  log(`  📊 核心数据内存总量:      ${formatBytes(totalDataMem)}`, 'highlight');
+
+  results.v3b = {
+    perFrameBytes: perFrameTotal,
+    totalFrameDataBytes: totalAllocatedBytes,
+    rawBufferBytes: raw.byteLength,
+    baselineXyzBytes: spzBaselineXyz.byteLength,
+    totalDataMem,
+    decodeTime: parseFloat(decodeTime),
+    numFrames: numFramesParsed,
+    numGaussians: N,
+    heapUsed: memSnapshots.afterDecode,
+    heapBaseline: memSnapshots.baseline,
+  };
+
+  // Cleanup
+  decodedFrames.length = 0;
+  setProgress(100);
+  log('  ✅ V3b 测试完成\n', 'good');
+}
+
+// ============================================================
+// V3c: 优化后 — 每帧只存 uint8
+// ============================================================
+async function benchmarkV3c(dataDir) {
+  log('');
+  log('========================================', 'highlight');
+  log('  V3c Benchmark (优化后: uint8 only)', 'highlight');
+  log('========================================', 'highlight');
+
+  const memSnapshots = {};
+
+  if (window.gc) { window.gc(); await new Promise(r => setTimeout(r, 200)); }
+  memSnapshots.baseline = logHeap('Baseline (GC后)');
+
+  log('  加载 manifest...');
+  const manifestResp = await fetch(dataDir + '/manifest.json?t=' + Date.now());
+  const manifest = await manifestResp.json();
+  const N = manifest.dynamic_gaussians;
+  const numFrames = manifest.p_frame_count;
+  log(`  N=${N.toLocaleString()} 动态高斯, ${numFrames} 帧`);
+
+  log('  下载 bundle...');
+  setProgress(10);
+  const resp = await fetch(dataDir + '/' + manifest.p_frame_bundle + '?t=' + Date.now());
+  let compressedBuf = new Uint8Array(await resp.arrayBuffer());
+  log(`  Bundle 下载完成: ${formatBytes(compressedBuf.byteLength)}`);
+  memSnapshots.afterDownload = logHeap('下载后');
+  setProgress(25);
+
+  log('  gzip 解压...');
+  const raw = await decompressGzip(compressedBuf.buffer);
+  compressedBuf = null; // V3c: 立即释放
+  log(`  解压完成: ${formatBytes(raw.byteLength)} (compressedBuf 已释放)`);
+  memSnapshots.afterDecompress = logHeap('解压后 (compressedBuf 已释放)');
+  setProgress(40);
+
+  const rawView = new DataView(raw);
+  const rawBytes = new Uint8Array(raw);
+  let pos = 28;
+  const frameTable = [];
+  const numFramesParsed = rawView.getUint32(8, true);
+  const numGaussians = rawView.getUint32(12, true);
+  for (let i = 0; i < numFramesParsed; i++) {
+    frameTable.push({
+      srcIdx: rawView.getUint32(pos, true),
+      dataOffset: rawView.getUint32(pos + 4, true),
+      flag: rawView.getUint32(pos + 8, true),
+    });
+    pos += 12;
+  }
+
+  const dcMin = [rawView.getFloat32(pos, true), rawView.getFloat32(pos+4, true), rawView.getFloat32(pos+8, true)];
+  const dcMax = [rawView.getFloat32(pos+12, true), rawView.getFloat32(pos+16, true), rawView.getFloat32(pos+20, true)];
+  const opMin = rawView.getFloat32(pos+24, true);
+  const opMax = rawView.getFloat32(pos+28, true);
+  const xyzDMin = [rawView.getFloat32(pos+32, true), rawView.getFloat32(pos+36, true), rawView.getFloat32(pos+40, true)];
+  const xyzDMax = [rawView.getFloat32(pos+44, true), rawView.getFloat32(pos+48, true), rawView.getFloat32(pos+52, true)];
+  pos += 56;
+  const xyzDScale = [(xyzDMax[0]-xyzDMin[0])/255, (xyzDMax[1]-xyzDMin[1])/255, (xyzDMax[2]-xyzDMin[2])/255];
+
+  const spzBaselineSize = rawView.getUint32(pos, true);
+  pos += 4;
+  const spzXyz16 = new Uint16Array(raw, pos, numGaussians * 3);
+  const spzBaselineXyz = float16ToFloat32(spzXyz16);
+  pos += spzBaselineSize;
+
+  const dataStart = pos;
+  const xyzBytesBase = N * 3 * 2;
+  const xyzBytesInt8 = N * 3;
+  const dcBytes = N * 3;
+
+  function quantizeXyzToU8(absDelta, n) {
+    const result = new Uint8Array(n * 3);
+    for (let c = 0; c < 3; c++) {
+      const scale = 255.0 / (xyzDMax[c] - xyzDMin[c] + 1e-10);
+      for (let i = 0; i < n; i++) {
+        let q = Math.round((absDelta[i*3+c] - xyzDMin[c]) * scale);
+        result[i*3+c] = q < 0 ? 0 : (q > 255 ? 255 : q);
+      }
+    }
+    return result;
+  }
+
+  // Decode all frames — V3c style (uint8 only)
+  log('  开始解码 (V3c: 每帧只存 uint8)...');
+  const decodedFrames = [];
+  let prevXyzQ = null, prevDcQ = null, prevOpQ = null;
+  let baseXyzQ = null, baseDcQ = null, baseOpQ = null;
+  let totalAllocatedBytes = 0;
+  const t0 = performance.now();
+
+  for (let fi = 0; fi < numFramesParsed; fi++) {
+    const ft = frameTable[fi];
+    let fStart = dataStart + ft.dataOffset;
+    const isBaseFrame = ft.flag === 1;
+    const isRefresh = ft.flag === 2;
+
+    const frame = {
+      xyzQ: new Uint8Array(N * 3),
+      dcQ: new Uint8Array(N * 3),
+      opQ: new Uint8Array(N),
+    };
+
+    const frameBytes = frame.xyzQ.byteLength + frame.dcQ.byteLength + frame.opQ.byteLength;
+    totalAllocatedBytes += frameBytes;
+
+    if (isBaseFrame) {
+      const fXyz16 = new Uint16Array(raw, fStart, N * 3);
+      const fXyzDelta = float16ToFloat32(fXyz16);
+      fStart += xyzBytesBase;
+      const fDcU8 = new Uint8Array(raw, fStart, N * 3); fStart += dcBytes;
+      const fOpU8 = new Uint8Array(raw, fStart, N);
+      frame.dcQ.set(fDcU8);
+      frame.opQ.set(fOpU8);
+      frame.xyzQ = quantizeXyzToU8(fXyzDelta, N);
+      // recalc bytes since xyzQ was replaced
+      totalAllocatedBytes -= N * 3; // remove old
+      totalAllocatedBytes += frame.xyzQ.byteLength; // add new (same size but be explicit)
+      baseXyzQ = frame.xyzQ; baseDcQ = frame.dcQ; baseOpQ = frame.opQ;
+    } else {
+      const refXyzQ = isRefresh ? baseXyzQ : prevXyzQ;
+      const refDcQ = isRefresh ? baseDcQ : prevDcQ;
+      const refOpQ = isRefresh ? baseOpQ : prevOpQ;
+      const fXyzI8 = new Int8Array(raw, fStart, N * 3); fStart += xyzBytesInt8;
+      const fDcI8 = new Int8Array(raw, fStart, N * 3); fStart += dcBytes;
+      const fOpI8 = new Int8Array(raw, fStart, N);
+      for (let i = 0; i < N*3; i++) { let q = refXyzQ[i]+fXyzI8[i]; frame.xyzQ[i] = q<0?0:(q>255?255:q); }
+      for (let i = 0; i < N*3; i++) { let q = refDcQ[i]+fDcI8[i]; frame.dcQ[i] = q<0?0:(q>255?255:q); }
+      for (let i = 0; i < N; i++) { let q = refOpQ[i]+fOpI8[i]; frame.opQ[i] = q<0?0:(q>255?255:q); }
+    }
+
+    decodedFrames[fi] = frame;
+    prevXyzQ = frame.xyzQ; prevDcQ = frame.dcQ; prevOpQ = frame.opQ;
+
+    if (fi % 50 === 0 || fi === numFramesParsed - 1) {
+      setProgress(40 + Math.round(fi/numFramesParsed * 55));
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  const decodeTime = ((performance.now() - t0) / 1000).toFixed(2);
+  memSnapshots.afterDecode = logHeap('解码完成');
+  setProgress(98);
+
+  const perFrameUint8 = (N * 3) + (N * 3) + N; // xyzQ + dcQ + opQ
+  const perFrameTotal = perFrameUint8;
+
+  log('');
+  log('--- V3c 实测结果 ---', 'good');
+  log(`  解码耗时: ${decodeTime}s`);
+  log(`  帧数: ${numFramesParsed}`);
+  log(`  每帧 TypedArray 分配:`, 'highlight');
+  log(`    xyzQ (Uint8Array):  ${formatBytes(N * 3)}`);
+  log(`    dcQ (Uint8Array):   ${formatBytes(N * 3)}`);
+  log(`    opQ (Uint8Array):   ${formatBytes(N)}`);
+  log(`    ─────────────────────────────────`);
+  log(`    每帧小计:           ${formatBytes(perFrameTotal)} (${(perFrameTotal/1024/1024).toFixed(3)} MB)`);
+  log('');
+  log(`  全部帧数据 (${numFramesParsed} 帧):`, 'highlight');
+  log(`    TypedArray 总量:    ${formatBytes(totalAllocatedBytes)}`, 'good');
+  log(`  raw buffer (解压数据): ${formatBytes(raw.byteLength)}`);
+  log(`  spzBaselineXyz:       ${formatBytes(spzBaselineXyz.byteLength)}`);
+  log('');
+
+  const totalDataMem = totalAllocatedBytes + raw.byteLength + spzBaselineXyz.byteLength;
+  log(`  📊 核心数据内存总量:  ${formatBytes(totalDataMem)}`, 'highlight');
+
+  results.v3c = {
+    perFrameBytes: perFrameTotal,
+    totalFrameDataBytes: totalAllocatedBytes,
+    rawBufferBytes: raw.byteLength,
+    baselineXyzBytes: spzBaselineXyz.byteLength,
+    totalDataMem,
+    decodeTime: parseFloat(decodeTime),
+    numFrames: numFramesParsed,
+    numGaussians: N,
+    heapUsed: memSnapshots.afterDecode,
+    heapBaseline: memSnapshots.baseline,
+  };
+
+  decodedFrames.length = 0;
+  setProgress(100);
+  log('  ✅ V3c 测试完成\n', 'good');
+}
+
+function showComparison() {
+  if (!results.v3b || !results.v3c) return;
+  const sec = document.getElementById('comparison-section');
+  sec.style.display = 'block';
+
+  const a = results.v3b, b = results.v3c;
+  const reduction = ((1 - b.totalFrameDataBytes / a.totalFrameDataBytes) * 100).toFixed(1);
+  const totalReduction = ((1 - b.totalDataMem / a.totalDataMem) * 100).toFixed(1);
+  const perFrameRatio = (a.perFrameBytes / b.perFrameBytes).toFixed(1);
+  const speedDiff = ((b.decodeTime - a.decodeTime) / a.decodeTime * 100).toFixed(1);
+
+  let html = `<table>
+    <tr><th>指标</th><th>V3b (优化前)</th><th>V3c (优化后)</th><th>变化</th></tr>
+    <tr><td class="label">每帧内存</td><td>${formatBytes(a.perFrameBytes)}</td><td>${formatBytes(b.perFrameBytes)}</td><td style="color:#4a9">↓ ${perFrameRatio}x</td></tr>
+    <tr><td class="label">帧数据总量 (${a.numFrames}帧)</td><td>${formatBytes(a.totalFrameDataBytes)}</td><td>${formatBytes(b.totalFrameDataBytes)}</td><td style="color:#4a9">↓ ${reduction}%</td></tr>
+    <tr><td class="label">raw buffer</td><td>${formatBytes(a.rawBufferBytes)}</td><td>${formatBytes(b.rawBufferBytes)}</td><td>相同</td></tr>
+    <tr><td class="label">SPZ baseline</td><td>${formatBytes(a.baselineXyzBytes)}</td><td>${formatBytes(b.baselineXyzBytes)}</td><td>相同</td></tr>
+    <tr><td class="label">核心数据总内存</td><td style="color:#f74">${formatBytes(a.totalDataMem)}</td><td style="color:#4a9">${formatBytes(b.totalDataMem)}</td><td style="color:#4a9">↓ ${totalReduction}%</td></tr>
+    <tr><td class="label">解码耗时</td><td>${a.decodeTime}s</td><td>${b.decodeTime}s</td><td>${speedDiff > 0 ? '+' : ''}${speedDiff}%</td></tr>`;
+
+  if (a.heapUsed && b.heapUsed && a.heapBaseline && b.heapBaseline) {
+    const heapDeltaA = a.heapUsed - a.heapBaseline;
+    const heapDeltaB = b.heapUsed - b.heapBaseline;
+    const heapReduction = ((1 - heapDeltaB / heapDeltaA) * 100).toFixed(1);
+    html += `<tr><td class="label">JS Heap 增量 (实测)</td><td style="color:#f74">${formatBytes(heapDeltaA)}</td><td style="color:#4a9">${formatBytes(heapDeltaB)}</td><td style="color:#4a9">↓ ${heapReduction}%</td></tr>`;
+    html += `<tr><td class="label">JS Heap 绝对值 (解码后)</td><td>${formatBytes(a.heapUsed)}</td><td>${formatBytes(b.heapUsed)}</td><td></td></tr>`;
+  }
+
+  html += `</table>`;
+  html += `<p style="margin-top:12px;color:#888;font-size:11px">* "核心数据总内存" = 帧数据 + raw buffer + SPZ baseline (不含 Three.js/Spark.js 等渲染开销)</p>`;
+  html += `<p style="color:#888;font-size:11px">* "JS Heap" 数据来自 performance.memory API (Chrome only，需 --enable-precise-memory-info 更精确)</p>`;
+  html += `<p style="color:#888;font-size:11px">* V3c 稳态内存更低：raw buffer 在函数返回后可被 GC 回收，仅剩帧数据</p>`;
+
+  document.getElementById('comparison').innerHTML = html;
+
+  // Also log summary
+  log('');
+  log('╔══════════════════════════════════════════╗', 'highlight');
+  log('║        📊 对比总结 (实测数据)             ║', 'highlight');
+  log('╚══════════════════════════════════════════╝', 'highlight');
+  log(`  帧数据: ${formatBytes(a.totalFrameDataBytes)} → ${formatBytes(b.totalFrameDataBytes)} (↓${reduction}%)`, 'good');
+  log(`  核心数据总量: ${formatBytes(a.totalDataMem)} → ${formatBytes(b.totalDataMem)} (↓${totalReduction}%)`, 'good');
+  log(`  每帧: ${formatBytes(a.perFrameBytes)} → ${formatBytes(b.perFrameBytes)} (${perFrameRatio}x 压缩)`, 'good');
+  if (a.heapUsed && b.heapUsed && a.heapBaseline && b.heapBaseline) {
+    const heapDeltaA = a.heapUsed - a.heapBaseline;
+    const heapDeltaB = b.heapUsed - b.heapBaseline;
+    log(`  JS Heap 增量: ${formatBytes(heapDeltaA)} → ${formatBytes(heapDeltaB)} (↓${((1-heapDeltaB/heapDeltaA)*100).toFixed(1)}%)`, 'good');
+  }
+}
+
+async function runBenchmark(version) {
+  disableButtons(true);
+  logEl.innerHTML = '';
+  setProgress(0);
+
+  log(`🔬 开始内存基准测试 — ${new Date().toLocaleString()}`, 'highlight');
+  log(`  动态高斯数(N): 128,062`);
+  log(`  帧数: 299`);
+  log(`  performance.memory 可用: ${!!performance.memory}`);
+  log('');
+
+  try {
+    // V3b and V3c share data_v3c since the bundle format is the same
+    if (version === 'v3b') {
+      await benchmarkV3b('data_v3c');
+    } else {
+      await benchmarkV3c('data_v3c');
+    }
+  } catch (err) {
+    log(`❌ 错误: ${err.message}`, 'warn');
+    console.error(err);
+  }
+
+  disableButtons(false);
+}
+
+async function runBoth() {
+  disableButtons(true);
+  logEl.innerHTML = '';
+  setProgress(0);
+
+  log(`🔬 开始 V3b vs V3c 内存对比基准测试 — ${new Date().toLocaleString()}`, 'highlight');
+  log(`  动态高斯数(N): 128,062`);
+  log(`  帧数: 299`);
+  log(`  performance.memory 可用: ${!!performance.memory}`);
+  log('');
+
+  try {
+    await benchmarkV3b('data_v3c');
+    // Wait for GC
+    log('  ⏳ 等待 GC (3秒)...', 'dim');
+    if (window.gc) window.gc();
+    await new Promise(r => setTimeout(r, 3000));
+
+    setProgress(0);
+    await benchmarkV3c('data_v3c');
+
+    showComparison();
+  } catch (err) {
+    log(`❌ 错误: ${err.message}`, 'warn');
+    console.error(err);
+  }
+
+  disableButtons(false);
+}
+</script>
+</body>
+</html>

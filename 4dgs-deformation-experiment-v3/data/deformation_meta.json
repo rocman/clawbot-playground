@@ -1,0 +1,39 @@
+{
+  "type": "4DGaussians_deformation_model",
+  "format": "4DML_v1",
+  "total_gaussians": 128062,
+  "dynamic_gaussians": 2,
+  "grid_scales": 2,
+  "grid_planes_per_scale": 6,
+  "grid_resolutions": [
+    [
+      64,
+      64,
+      64,
+      150
+    ],
+    [
+      128,
+      128,
+      150,
+      128
+    ]
+  ],
+  "feature_dim": 16,
+  "mlp_width": 128,
+  "aabb": [
+    [
+      21.971878051757812,
+      32.45173645019531,
+      50.25956344604492
+    ],
+    [
+      -23.704269409179688,
+      -16.75600814819336,
+      5.2320556640625
+    ]
+  ],
+  "weights_file": "deformation_model.bin.gz",
+  "raw_size_mb": 8.1,
+  "compressed_size_mb": 6.0
+}

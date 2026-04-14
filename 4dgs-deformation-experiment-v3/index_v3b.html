@@ -675,12 +675,12 @@ async function init() {
   splatMesh.position.set(0, 0, 0);
   scene.add(splatMesh);
 
-  camera.position.set(0.878, -1.442, 0.516);
+  camera.position.set(0.5, 4.5, 15.0);
 
   setLoading(90, 'Starting renderer...');
 
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(2.435, -0.647, -15.003);
+  controls.target.set(2.435, -2.0, -15.003);
   controls.enableDamping = true;
   controls.dampingFactor = 0.1;
   controls.screenSpacePanning = true;

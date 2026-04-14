@@ -1,0 +1,137 @@
+{
+  "dataset": "cut_roasted_beef",
+  "method": "4DGaussians (HexPlane + MLP deformation)",
+  "total_gaussians": 128062,
+  "dynamic_gaussians": 128062,
+  "i_frame": "i_frame.spz",
+  "i_frame_ply": "i_frame.ply",
+  "dynamic_mask": "dynamic_mask.bin.gz",
+  "p_frame_format": "bundle_v1",
+  "p_frame_bundle": "p_frames_bundle.bin.gz",
+  "p_frame_bundle_size": 14895456,
+  "quantization": {
+    "mode": "mixed",
+    "xyz": "float16",
+    "shs_dc": "uint8",
+    "opacity": "uint8",
+    "dc_min": [
+      -5.973397731781006,
+      -3.5679116249084473,
+      -2.9152209758758545
+    ],
+    "dc_max": [
+      6.9763383865356445,
+      5.7342915534973145,
+      7.759951114654541
+    ],
+    "opacity_min": -0.009999999776482582,
+    "opacity_max": 1.0099999904632568
+  },
+  "delta_mode": "inter_frame",
+  "delta_description": "frame[0] = abs_values - i_frame; frame[i>0] = abs_values[i] - abs_values[i-1]",
+  "p_frames": [
+    "individual/p_frame_v2_015.bin.gz",
+    "individual/p_frame_v2_030.bin.gz",
+    "individual/p_frame_v2_045.bin.gz",
+    "individual/p_frame_v2_060.bin.gz",
+    "individual/p_frame_v2_075.bin.gz",
+    "individual/p_frame_v2_090.bin.gz",
+    "individual/p_frame_v2_105.bin.gz",
+    "individual/p_frame_v2_120.bin.gz",
+    "individual/p_frame_v2_135.bin.gz",
+    "individual/p_frame_v2_150.bin.gz",
+    "individual/p_frame_v2_165.bin.gz",
+    "individual/p_frame_v2_180.bin.gz",
+    "individual/p_frame_v2_195.bin.gz",
+    "individual/p_frame_v2_210.bin.gz",
+    "individual/p_frame_v2_225.bin.gz",
+    "individual/p_frame_v2_240.bin.gz",
+    "individual/p_frame_v2_255.bin.gz",
+    "individual/p_frame_v2_270.bin.gz",
+    "individual/p_frame_v2_285.bin.gz"
+  ],
+  "frame_indices": [
+    15,
+    30,
+    45,
+    60,
+    75,
+    90,
+    105,
+    120,
+    135,
+    150,
+    165,
+    180,
+    195,
+    210,
+    225,
+    240,
+    255,
+    270,
+    285
+  ],
+  "total_source_frames": 300,
+  "p_frame_version": 5,
+  "p_frame_mode": "inter_frame_delta_quantized",
+  "attrs": [
+    "xyz(3,f16)",
+    "shs_dc(3,u8)",
+    "opacity(1,u8)"
+  ],
+  "attrs_removed": [
+    "rotation(4)",
+    "scale(3)"
+  ],
+  "delta_includes_shs": "dc_only",
+  "metrics": {
+    "train_psnr": 35.02,
+    "test_psnr": 32.26,
+    "ssim": 0.936
+  },
+  "camera_info": {
+    "count": 20,
+    "scene_center": [
+      0.313,
+      0.089,
+      0.107
+    ],
+    "near": 9.37,
+    "far": 26.8
+  },
+  "v2_stats": {
+    "raw_bundle_bytes": 24331988,
+    "gz_bundle_bytes": 14895456,
+    "compression_ratio": 1.6,
+    "per_frame_raw_bytes": [
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620,
+      1280620
+    ],
+    "dc_delta_clip_count": 0,
+    "op_delta_clip_count": 337
+  },
+  "i_frame_compressed": "i_frame_trimmed.ply.gz",
+  "i_frame_trimmed": "i_frame_trimmed.ply",
+  "i_frame_sizes": {
+    "original_ply": 31760907,
+    "trimmed_ply": 8708632,
+    "trimmed_ply_gz": 6900083
+  }
+}

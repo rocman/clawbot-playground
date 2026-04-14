@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>E4: ONNX Deformation Inference Benchmark</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 32px; }
+  h1 { color: #7ecfff; font-weight: 300; }
+  #log { background: #0d0d1a; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 13px; white-space: pre-wrap; line-height: 1.6; max-height: 600px; overflow-y: auto; }
+  .ok { color: #4a9; } .fail { color: #f55; } .info { color: #7ecfff; } .warn { color: #fa0; }
+  button { padding: 10px 20px; background: #3a8bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 8px 4px; }
+  button:hover { background: #5aa0ff; }
+  button:disabled { background: #555; cursor: not-allowed; }
+  #status { margin: 16px 0; font-size: 15px; }
+</style>
+</head>
+<body>
+<h1>E4: ONNX Deformation Inference Benchmark</h1>
+<div id="status">Status: Not started</div>
+<div>
+  <button id="btn-load" onclick="loadModel()">1. Load ONNX Model</button>
+  <button id="btn-bench" onclick="runBenchmark()" disabled>2. Run Benchmark</button>
+  <button id="btn-compare" onclick="compareWithPrebaked()" disabled>3. Compare with Prebaked</button>
+</div>
+<div id="log"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort.min.js"></script>
+<script>
+const logEl = document.getElementById('log');
+const statusEl = document.getElementById('status');
+let session = null;
+let manifest = null;
+let baseXyz = null;
+
+function log(msg, cls = '') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setStatus(s) { statusEl.textContent = 'Status: ' + s; }
+
+async function loadModel() {
+  try {
+    setStatus('Loading ONNX model...');
+    log('Loading manifest...', 'info');
+    const mResp = await fetch('data/manifest.json');
+    manifest = await mResp.json();
+    log(`  Total gaussians: ${manifest.total_gaussians.toLocaleString()}`, 'info');
+
+    log('Loading deformation metadata...', 'info');
+    const metaResp = await fetch('data/deformation_meta.json');
+    const meta = await metaResp.json();
+    log(`  Model: ${meta.compressed_size_mb} MB compressed`, 'info');
+
+    log('Loading deformation_model.bin.gz (base attributes)...', 'info');
+    const binResp = await fetch('data/deformation_model.bin.gz');
+    const binGz = await binResp.arrayBuffer();
+    log(`  Downloaded: ${(binGz.byteLength / 1024 / 1024).toFixed(1)} MB`, 'ok');
+
+    // Decompress
+    const ds = new DecompressionStream('gzip');
+    const blob = new Blob([binGz]);
+    const stream = blob.stream().pipeThrough(ds);
+    const raw = await new Response(stream).arrayBuffer();
+    log(`  Decompressed: ${(raw.byteLength / 1024 / 1024).toFixed(1)} MB`, 'info');
+
+    // Parse 4DML format
+    const view = new DataView(raw);
+    let offset = 0;
+    const magic = String.fromCharCode(...new Uint8Array(raw, 0, 4));
+    const numTensors = view.getUint32(4, true);
+    offset = 8;
+    log(`  Magic: ${magic}, Tensors: ${numTensors}`, 'info');
+
+    const tensors = {};
+    for (let i = 0; i < numTensors; i++) {
+      const nameLen = view.getUint32(offset, true); offset += 4;
+      const name = new TextDecoder().decode(new Uint8Array(raw, offset, nameLen)); offset += nameLen;
+      const ndim = view.getUint32(offset, true); offset += 4;
+      const shape = [];
+      for (let d = 0; d < ndim; d++) { shape.push(view.getUint32(offset, true)); offset += 4; }
+      const dtypeId = view.getUint32(offset, true); offset += 4;
+      const numElements = shape.reduce((a, b) => a * b, 1);
+      const byteSize = numElements * (dtypeId === 0 ? 2 : 4);
+      if (dtypeId === 0) {
+        tensors[name] = { shape, data: new Uint16Array(raw, offset, numElements), dtype: 'float16' };
+      } else {
+        tensors[name] = { shape, data: new Float32Array(raw, offset, numElements), dtype: 'float32' };
+      }
+      offset += byteSize;
+    }
+    log(`  Parsed ${Object.keys(tensors).length} tensors`, 'ok');
+
+    // Extract base xyz for inference
+    if (tensors.base_xyz) {
+      const bx = tensors.base_xyz;
+      baseXyz = float16ToFloat32(bx.data);
+      log(`  Base xyz: [${bx.shape.join(',')}]`, 'info');
+    }
+
+    // Load ONNX session
+    log('\nLoading ONNX inference session...', 'info');
+    const onnxUrl = 'data/deformation.onnx';
+    const t0 = performance.now();
+    ort.env.wasm.numThreads = navigator.hardwareConcurrency || 4;
+    session = await ort.InferenceSession.create(onnxUrl, {
+      executionProviders: ['wasm'],
+      graphOptimizationLevel: 'all',
+    });
+    const loadTime = (performance.now() - t0).toFixed(0);
+    log(`  Session created in ${loadTime}ms`, 'ok');
+    log(`  WASM threads: ${ort.env.wasm.numThreads}`, 'info');
+
+    // Quick test
+    log('\nQuick test (100 points)...', 'info');
+    const testXyz = baseXyz ? new Float32Array(baseXyz.buffer, 0, 300) : new Float32Array(300);
+    const testTime = new Float32Array(100).fill(0.5);
+    const result = await session.run({
+      xyz: new ort.Tensor('float32', testXyz, [100, 3]),
+      time: new ort.Tensor('float32', testTime, [100, 1]),
+    });
+    log(`  dx shape: [${result.dx.dims}]`, 'ok');
+    log(`  dx sample: [${Array.from(result.dx.data.slice(0, 3)).map(v => v.toFixed(4)).join(', ')}]`, 'info');
+
+    setStatus('Model loaded, ready for benchmark');
+    document.getElementById('btn-bench').disabled = false;
+    document.getElementById('btn-compare').disabled = false;
+  } catch (err) {
+    log(`Error: ${err.message}`, 'fail');
+    setStatus('Load failed');
+  }
+}
+
+function float16ToFloat32(u16arr) {
+  const f32 = new Float32Array(u16arr.length);
+  for (let i = 0; i < u16arr.length; i++) {
+    const h = u16arr[i];
+    const sign = (h >> 15) & 0x1;
+    const exp = (h >> 10) & 0x1f;
+    const mant = h & 0x3ff;
+    if (exp === 0) f32[i] = mant === 0 ? 0 : (sign ? -1 : 1) * Math.pow(2, -14) * (mant / 1024);
+    else if (exp === 31) f32[i] = mant === 0 ? (sign ? -Infinity : Infinity) : NaN;
+    else f32[i] = (sign ? -1 : 1) * Math.pow(2, exp - 15) * (1 + mant / 1024);
+  }
+  return f32;
+}
+
+async function runBenchmark() {
+  if (!session || !baseXyz) { log('Model not loaded!', 'fail'); return; }
+
+  const N = manifest.total_gaussians;
+  log(`\n${'='.repeat(50)}`, 'info');
+  log(`BENCHMARK: ${N.toLocaleString()} points`, 'info');
+  log(`${'='.repeat(50)}`, 'info');
+
+  const fullTime = new Float32Array(N).fill(0.5);
+
+  // Full batch
+  log('\nFull batch inference...', 'info');
+  const t0 = performance.now();
+  const result = await session.run({
+    xyz: new ort.Tensor('float32', baseXyz, [N, 3]),
+    time: new ort.Tensor('float32', fullTime, [N, 1]),
+  });
+  const fullMs = (performance.now() - t0).toFixed(0);
+  log(`  Full ${N.toLocaleString()} points: ${fullMs}ms`, fullMs < 1000 ? 'ok' : 'warn');
+
+  // Batched inference
+  for (const batchSize of [1000, 5000, 10000, 32000, 64000]) {
+    const bt0 = performance.now();
+    for (let i = 0; i < N; i += batchSize) {
+      const end = Math.min(i + batchSize, N);
+      const batchN = end - i;
+      await session.run({
+        xyz: new ort.Tensor('float32', new Float32Array(baseXyz.buffer, i * 12, batchN * 3), [batchN, 3]),
+        time: new ort.Tensor('float32', new Float32Array(batchN).fill(0.5), [batchN, 1]),
+      });
+    }
+    const bMs = (performance.now() - bt0).toFixed(0);
+    log(`  Batched (${batchSize.toLocaleString()}): ${bMs}ms`, bMs < 1000 ? 'ok' : 'warn');
+  }
+
+  // Multiple time values (simulate animation)
+  log('\nAnimation simulation (19 frames)...', 'info');
+  const animT0 = performance.now();
+  for (let f = 0; f < 19; f++) {
+    const t = (f + 1) / 20;
+    const timeArr = new Float32Array(N).fill(t);
+    await session.run({
+      xyz: new ort.Tensor('float32', baseXyz, [N, 3]),
+      time: new ort.Tensor('float32', timeArr, [N, 1]),
+    });
+  }
+  const animMs = (performance.now() - animT0).toFixed(0);
+  const perFrame = (animMs / 19).toFixed(0);
+  log(`  19 frames total: ${animMs}ms (${perFrame}ms/frame)`, perFrame < 1000 ? 'ok' : 'warn');
+
+  // Summary
+  log(`\n${'='.repeat(50)}`, 'info');
+  log('SUMMARY', 'info');
+  log(`  Single frame: ${fullMs}ms`, 'info');
+  log(`  Per frame (19 avg): ${perFrame}ms`, 'info');
+  log(`  Target: <100ms (real-time) / <1000ms (acceptable)`, 'info');
+  log(`  Verdict: ${fullMs < 1000 ? '✅ ACCEPTABLE' : fullMs < 3000 ? '⚠️ SLOW but usable' : '❌ TOO SLOW'}`, fullMs < 1000 ? 'ok' : 'warn');
+  log(`${'='.repeat(50)}`, 'info');
+
+  setStatus(`Benchmark done: ${fullMs}ms/frame`);
+}
+
+async function compareWithPrebaked() {
+  if (!session || !baseXyz || !manifest) { log('Model not loaded!', 'fail'); return; }
+
+  log(`\n${'='.repeat(50)}`, 'info');
+  log('COMPARISON: ONNX vs Prebaked P-frames', 'info');
+  log(`${'='.repeat(50)}`, 'info');
+
+  // Load first prebaked P-frame
+  const fname = manifest.p_frames[0];
+  log(`\nLoading prebaked: ${fname}...`, 'info');
+  const resp = await fetch('data/' + fname);
+  const gz = await resp.arrayBuffer();
+  const ds = new DecompressionStream('gzip');
+  const blob = new Blob([gz]);
+  const stream = blob.stream().pipeThrough(ds);
+  const raw = await new Response(stream).arrayBuffer();
+
+  const hv = new DataView(raw);
+  const version = hv.getUint32(4, true);
+  const dynCount = hv.getUint32(8, true);
+  let off = 20 + dynCount * 4;
+  const prebakedXyz = float16ToFloat32(new Uint16Array(raw, off, dynCount * 3));
+  off += dynCount * 6;
+  const prebakedRot = float16ToFloat32(new Uint16Array(raw, off, dynCount * 4));
+  off += dynCount * 8;
+  const prebakedScale = float16ToFloat32(new Uint16Array(raw, off, dynCount * 3));
+  off += dynCount * 6;
+  const prebakedOpa = float16ToFloat32(new Uint16Array(raw, off, dynCount));
+
+  log(`  Prebaked version: ${version}, dynCount: ${dynCount.toLocaleString()}`, 'info');
+
+  // Run ONNX inference for the same time
+  const frameIdx = manifest.frame_indices[0];
+  const t = frameIdx / (manifest.total_source_frames - 1);
+  log(`\nRunning ONNX inference for t=${t.toFixed(4)} (frame ${frameIdx})...`, 'info');
+
+  const N = manifest.total_gaussians;
+  const timeArr = new Float32Array(N).fill(t);
+  const result = await session.run({
+    xyz: new ort.Tensor('float32', baseXyz, [N, 3]),
+    time: new ort.Tensor('float32', timeArr, [N, 1]),
+  });
+
+  // Compare (ONNX outputs raw deltas, prebaked is absolute post-activation)
+  // We need to apply activation to ONNX output to compare
+  log('\nNote: ONNX output is raw delta, prebaked is absolute post-activation.', 'warn');
+  log('Direct numerical comparison not possible without base activation.', 'warn');
+  log('Visual comparison via viewer is the definitive test.', 'info');
+
+  // At least compare shapes
+  log(`\nONNX dx: [${result.dx.dims}], Prebaked xyz: [${dynCount}, 3]`, 'info');
+  log(`ONNX dx range: [${Math.min(...result.dx.data.slice(0,1000)).toFixed(4)}, ${Math.max(...result.dx.data.slice(0,1000)).toFixed(4)}]`, 'info');
+  log(`Prebaked xyz range: [${Math.min(...prebakedXyz.slice(0,1000)).toFixed(4)}, ${Math.max(...prebakedXyz.slice(0,1000)).toFixed(4)}]`, 'info');
+
+  // Data size comparison
+  const onnxSize = 7.7; // MB compressed
+  const prebakedSize = manifest.p_frames.length * (gz.byteLength / 1024 / 1024);
+  log(`\nData size comparison:`, 'info');
+  log(`  ONNX model: ~${onnxSize.toFixed(1)} MB (supports infinite frames)`, 'ok');
+  log(`  Prebaked (${manifest.p_frames.length} frames): ~${prebakedSize.toFixed(1)} MB`, 'warn');
+  log(`  Savings: ${((1 - onnxSize / prebakedSize) * 100).toFixed(0)}%`, 'ok');
+
+  setStatus('Comparison done');
+}
+</script>
+</body>
+</html>
