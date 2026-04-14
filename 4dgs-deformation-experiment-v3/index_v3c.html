@@ -244,7 +244,7 @@ function float16ToFloat32(u16arr) {
 }
 
 async function loadDynamicMask() {
-  const resp = await fetch('data_v3c/' + manifest.dynamic_mask + ');
+  const resp = await fetch('data_v3c/' + manifest.dynamic_mask);
   const compressed = await resp.arrayBuffer();
   const raw = await decompressGzip(compressed);
   const view = new DataView(raw);
