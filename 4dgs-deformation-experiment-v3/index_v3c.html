@@ -206,7 +206,7 @@ function setLoading(pct, text) {
 // ============================================================
 async function loadManifest() {
   setLoading(5, 'Loading manifest...');
-  const resp = await fetch('data_v3c/manifest.json);
+  const resp = await fetch('data_v3c/manifest.json');
   manifest = await resp.json();
   targetFPS = manifest.target_fps || 30;
   document.getElementById('stat-total').textContent = manifest.total_gaussians.toLocaleString();
