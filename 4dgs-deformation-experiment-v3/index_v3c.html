@@ -98,7 +98,7 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V3c 窶?30Hz (precise per-frame)</div>
+  <div id="loading-title">4DGS VIEWER V3c - 30Hz (precise per-frame)</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
@@ -427,7 +427,8 @@ async function loadAndDecodePFrameBundle() {
       baseOpQ = frame.opQ;
     } else {
       // V3c: Refresh蟶?flag=2) 蜥?譎ｮ騾壼ｸｧ髣ｴdelta(flag=0): 扈滉ｸdiff隗｣遐
-      // diff = quantized_abs[i] - quantized_abs[ref], 謇莉･蜿蜉蜷守ｲｾ遑ｮ諱｢螟埼㍼蛹也ｻ晏ｯｹ蛟?      const isRefreshFrame = isRefresh;
+      // diff = quantized_abs[i] - quantized_abs[ref], 謇莉･蜿蜉蜷守ｲｾ遑ｮ諱｢螟埼㍼蛹也ｻ晏ｯｹ蛟?      
+      const isRefreshFrame = isRefresh;
       const refXyzQ = isRefreshFrame ? baseXyzQ : prevXyzQ;
       const refDcQ = isRefreshFrame ? baseDcQ : prevDcQ;
       const refOpQ = isRefreshFrame ? baseOpQ : prevOpQ;
