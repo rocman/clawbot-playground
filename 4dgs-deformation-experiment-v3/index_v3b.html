@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V3b — Cut Roasted Beef</title>
+<title>4DGS Deformation Viewer V3b �?Cut Roasted Beef</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -98,7 +98,7 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V3b — 30Hz (xyz int8)</div>
+  <div id="loading-title">4DGS VIEWER V3b �?30Hz (xyz int8)</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
@@ -201,7 +201,7 @@ function setLoading(pct, text) {
 // ============================================================
 async function loadManifest() {
   setLoading(5, 'Loading manifest...');
-  const resp = await fetch('data_v3b/manifest.json?t=' + Date.now());
+  const resp = await fetch('data_v3b/manifest.json);
   manifest = await resp.json();
   targetFPS = manifest.target_fps || 30;
   document.getElementById('stat-total').textContent = manifest.total_gaussians.toLocaleString();
@@ -239,7 +239,7 @@ function float16ToFloat32(u16arr) {
 }
 
 async function loadDynamicMask() {
-  const resp = await fetch('data_v3b/' + manifest.dynamic_mask + '?t=' + Date.now());
+  const resp = await fetch('data_v3b/' + manifest.dynamic_mask + ');
   const compressed = await resp.arrayBuffer();
   const raw = await decompressGzip(compressed);
   const view = new DataView(raw);
@@ -254,7 +254,7 @@ async function loadAndDecodePFrameBundle() {
   const bundleUrl = 'data_v3b/' + manifest.p_frame_bundle;
   pframeStatus.textContent = 'Bundle: downloading...';
 
-  const resp = await fetch(bundleUrl + '?t=' + Date.now());
+  const resp = await fetch(bundleUrl + ');
   const contentLength = resp.headers.get('content-length');
   const totalBytes = contentLength ? parseInt(contentLength) : manifest.p_frame_bundle_size;
 
@@ -361,7 +361,7 @@ async function loadAndDecodePFrameBundle() {
   let prevDcQ = null;
   let prevOpQ = null;
 
-  // base帧(frame 0)的解码结果，供refresh帧作为参考基准
+  // base�?frame 0)的解码结果，供refresh帧作为参考基�?
   let baseXyz = null;
   let baseDcQ = null;
   let baseOpQ = null;
@@ -369,8 +369,8 @@ async function loadAndDecodePFrameBundle() {
   for (let fi = 0; fi < numFrames; fi++) {
     const ft = frameTable[fi];
     let fStart = dataStart + ft.dataOffset;
-    const isBaseFrame = ft.flag === 1;     // 只有frame 0是绝对编码(xyz float16)
-    const isRefresh = ft.flag === 2;       // refresh帧：int8差量编码，参考base帧
+    const isBaseFrame = ft.flag === 1;     // 只有frame 0是绝对编�?xyz float16)
+    const isRefresh = ft.flag === 2;       // refresh帧：int8差量编码，参考base�?
 
     // V3b: xyz解码方式取决于帧类型
     let fXyzDelta;
@@ -419,13 +419,13 @@ async function loadAndDecodePFrameBundle() {
         }
       }
 
-      // 保存base帧作为refresh帧的参考基准
+      // 保存base帧作为refresh帧的参考基�?
       baseXyz = frame.xyz;
       baseDcQ = frame.dcQ;
       baseOpQ = frame.opQ;
     } else {
-      // Refresh帧(flag=2) 和 普通帧间delta(flag=0): 统一差量解码
-      // 区别仅在于参考对象: refresh参考base帧, 普通帧参考前一帧
+      // Refresh�?flag=2) �?普通帧间delta(flag=0): 统一差量解码
+      // 区别仅在于参考对�? refresh参考base�? 普通帧参考前一�?
       const refXyz = isRefresh ? baseXyz : prevXyz;
       const refDcQ = isRefresh ? baseDcQ : prevDcQ;
       const refOpQ = isRefresh ? baseOpQ : prevOpQ;
@@ -486,7 +486,7 @@ async function loadAndDecodePFrameBundle() {
 }
 
 // ============================================================
-// V3: Delta texture (same V2 layout — 2 pixels per gaussian)
+// V3: Delta texture (same V2 layout �?2 pixels per gaussian)
 // ============================================================
 const DELTA_K = 256;
 let deltaTexW = 0, deltaTexH = 0;
@@ -591,7 +591,7 @@ async function init() {
   deltaSampler = dyno.dynoSampler2D(deltaTexture);
   maskSampler = dyno.dynoSampler2D(maskTexture);
 
-  const iFrameUrl = 'data_v3b/' + manifest.i_frame + '?t=' + Date.now();
+  const iFrameUrl = 'data_v3b/' + manifest.i_frame + ';
   const iFrameResp = await fetch(iFrameUrl);
   const iFrameBytes = new Uint8Array(await iFrameResp.arrayBuffer());
   console.log(`[V3] SPZ I-frame loaded: ${(iFrameBytes.byteLength/1024/1024).toFixed(2)} MB`);
@@ -599,7 +599,7 @@ async function init() {
   setLoading(50, 'Initializing Spark.js...');
   splatMesh = new SplatMesh({ fileBytes: iFrameBytes });
 
-  // V3 shader (same structure as V2 — displacement + rgba override)
+  // V3 shader (same structure as V2 �?displacement + rgba override)
   splatMesh.objectModifier = dyno.dynoBlock(
     { gsplat: dyno.Gsplat },
     { gsplat: dyno.Gsplat },

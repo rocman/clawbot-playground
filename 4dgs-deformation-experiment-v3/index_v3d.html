@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V3d â€” Sliding Window</title>
+<title>4DGS Deformation Viewer V3d â€?Sliding Window</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -111,7 +111,7 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V3d â€” Sliding Window</div>
+  <div id="loading-title">4DGS VIEWER V3d â€?Sliding Window</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
@@ -235,7 +235,7 @@ function setLoading(pct, text) {
 // ============================================================
 async function loadManifest() {
   setLoading(5, 'Loading manifest...');
-  const resp = await fetch('data_v3d/manifest.json?t=' + Date.now());
+  const resp = await fetch('data_v3d/manifest.json);
   manifest = await resp.json();
   targetFPS = manifest.target_fps || 30;
   N = manifest.dynamic_gaussians;
@@ -284,7 +284,7 @@ function float16ToFloat32(u16arr) {
 }
 
 async function loadDynamicMask() {
-  const resp = await fetch('data_v3d/' + manifest.dynamic_mask + '?t=' + Date.now());
+  const resp = await fetch('data_v3d/' + manifest.dynamic_mask + ');
   const compressed = await resp.arrayBuffer();
   const raw = await decompressGzip(compressed);
   const view = new DataView(raw);
@@ -297,7 +297,7 @@ async function loadDynamicMask() {
 // ============================================================
 async function loadGopMeta() {
   gopStatus.textContent = 'Meta: downloading...';
-  const resp = await fetch('data_v3d/' + manifest.gop_meta + '?t=' + Date.now());
+  const resp = await fetch('data_v3d/' + manifest.gop_meta + ');
   const compressed = await resp.arrayBuffer();
   const raw = await decompressGzip(compressed);
   const rawView = new DataView(raw);
@@ -385,7 +385,7 @@ async function loadGop(gopIdx) {
   console.log(`[V3d] Loading GOP ${gopIdx}: frames ${gopInfo.start_frame}-${gopInfo.end_frame - 1}`);
   
   try {
-    const resp = await fetch(`data_v3d/${gopInfo.filename}?t=${Date.now()}`);
+    const resp = await fetch(`data_v3d/${gopInfo.filename}`);
     const compressed = await resp.arrayBuffer();
     const raw = await decompressGzip(compressed);
     const rawView = new DataView(raw);
@@ -558,7 +558,7 @@ function updateGopStripUI(gopIdx, state) {
   if (state === 'loaded') seg.classList.add('loaded');
   else if (state === 'active') seg.classList.add('active');
   else if (state === 'loading') seg.classList.add('loading');
-  // 'evicted' and 'error' â†’ default (gray)
+  // 'evicted' and 'error' â†?default (gray)
 }
 
 function updateGopStats() {
@@ -699,7 +699,7 @@ async function init() {
   deltaSampler = dyno.dynoSampler2D(deltaTexture);
   maskSampler = dyno.dynoSampler2D(maskTexture);
 
-  const iFrameUrl = 'data_v3d/' + manifest.i_frame + '?t=' + Date.now();
+  const iFrameUrl = 'data_v3d/' + manifest.i_frame + ';
   const iFrameResp = await fetch(iFrameUrl);
   const iFrameBytes = new Uint8Array(await iFrameResp.arrayBuffer());
   console.log(`[V3d] SPZ I-frame loaded: ${(iFrameBytes.byteLength/1024/1024).toFixed(2)} MB`);
@@ -923,7 +923,7 @@ function updateFrame(idx) {
   } else {
     const frame = getFrameData(idx);
     if (!frame) {
-      // GOP not loaded yet â€” show loading state, stay on I-frame
+      // GOP not loaded yet â€?show loading state, stay on I-frame
       frameLabel.textContent = `P-Frame ${idx}/${manifest.p_frame_count} (loading GOP ${gopIdx}...)`;
       uFrameIndex.value = 0;
       return;

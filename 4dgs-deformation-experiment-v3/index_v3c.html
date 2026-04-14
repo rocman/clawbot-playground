@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V3c — Cut Roasted Beef</title>
+<title>4DGS Deformation Viewer V3c �?Cut Roasted Beef</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -98,7 +98,7 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V3c — 30Hz (precise per-frame)</div>
+  <div id="loading-title">4DGS VIEWER V3c �?30Hz (precise per-frame)</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
@@ -206,7 +206,7 @@ function setLoading(pct, text) {
 // ============================================================
 async function loadManifest() {
   setLoading(5, 'Loading manifest...');
-  const resp = await fetch('data_v3c/manifest.json?t=' + Date.now());
+  const resp = await fetch('data_v3c/manifest.json);
   manifest = await resp.json();
   targetFPS = manifest.target_fps || 30;
   document.getElementById('stat-total').textContent = manifest.total_gaussians.toLocaleString();
@@ -244,7 +244,7 @@ function float16ToFloat32(u16arr) {
 }
 
 async function loadDynamicMask() {
-  const resp = await fetch('data_v3c/' + manifest.dynamic_mask + '?t=' + Date.now());
+  const resp = await fetch('data_v3c/' + manifest.dynamic_mask + ');
   const compressed = await resp.arrayBuffer();
   const raw = await decompressGzip(compressed);
   const view = new DataView(raw);
@@ -259,7 +259,7 @@ async function loadAndDecodePFrameBundle() {
   const bundleUrl = 'data_v3c/' + manifest.p_frame_bundle;
   pframeStatus.textContent = 'Bundle: downloading...';
 
-  const resp = await fetch(bundleUrl + '?t=' + Date.now());
+  const resp = await fetch(bundleUrl + ');
   const contentLength = resp.headers.get('content-length');
   const totalBytes = contentLength ? parseInt(contentLength) : manifest.p_frame_bundle_size;
 
@@ -306,7 +306,7 @@ async function loadAndDecodePFrameBundle() {
 
   console.log(`[V3c] Bundle: magic=${magic} ver=${version} frames=${numFrames} gaussians=${numGaussians} fps=${bundleFPS} qmode=${quantMode}`);
 
-  // Parse frame index table (N 脳 12B)
+  // Parse frame index table (N �?12B)
   let pos = 28;
   const frameTable = [];
   for (let i = 0; i < numFrames; i++) {
@@ -356,7 +356,7 @@ async function loadAndDecodePFrameBundle() {
   const opBytes = N;
 
   // V3c: xyz uint8 quantization/dequantization helpers
-  // Quantize float32 abs delta 鈫?uint8 [0,255]
+  // Quantize float32 abs delta �?uint8 [0,255]
   function quantizeXyzToU8(absDelta, n) {
     const result = new Uint8Array(n * 3);
     for (let c = 0; c < 3; c++) {
@@ -368,7 +368,7 @@ async function loadAndDecodePFrameBundle() {
     }
     return result;
   }
-  // Dequantize uint8 鈫?float32 abs delta
+  // Dequantize uint8 �?float32 abs delta
   function dequantXyzFromU8(u8Arr, n) {
     const result = new Float32Array(n * 3);
     for (let c = 0; c < 3; c++) {
@@ -386,21 +386,19 @@ async function loadAndDecodePFrameBundle() {
   // so diff decoding produces exact quantized absolute values with NO cumulative error
   // MEMORY OPT: only store uint8 quantized data per frame, dequantize on-the-fly during playback
   const t0 = performance.now();
-  let prevXyzQ = null;   // Uint8Array — quantized xyz absolute delta
+  let prevXyzQ = null;   // Uint8Array �?quantized xyz absolute delta
   let prevDcQ = null;
   let prevOpQ = null;
 
-  // base帧的量化状态，供refresh帧作为参考基准
-  let baseXyzQ = null;
+  // base帧的量化状态，供refresh帧作为参考基�?  let baseXyzQ = null;
   let baseDcQ = null;
   let baseOpQ = null;
 
   for (let fi = 0; fi < numFrames; fi++) {
     const ft = frameTable[fi];
     let fStart = dataStart + ft.dataOffset;
-    const isBaseFrame = ft.flag === 1;     // 只有frame 0是绝对编码(xyz float16)
-    const isRefresh = ft.flag === 2;       // refresh帧：int8差量编码，参考base帧
-
+    const isBaseFrame = ft.flag === 1;     // 只有frame 0是绝对编�?xyz float16)
+    const isRefresh = ft.flag === 2;       // refresh帧：int8差量编码，参考base�?
     // MEMORY OPT: only allocate uint8 arrays, no float32 pre-computation
     const frame = {
       xyzQ: new Uint8Array(N * 3),   // V3c: quantized xyz abs delta (uint8)
@@ -424,14 +422,12 @@ async function loadAndDecodePFrameBundle() {
       // V3c: quantize base xyz to uint8 for subsequent diff decoding
       frame.xyzQ = quantizeXyzToU8(fXyzDelta, N);
 
-      // 保存base帧的量化状态作为refresh帧的参考基准
-      baseXyzQ = frame.xyzQ;
+      // 保存base帧的量化状态作为refresh帧的参考基�?      baseXyzQ = frame.xyzQ;
       baseDcQ = frame.dcQ;
       baseOpQ = frame.opQ;
     } else {
-      // V3c: Refresh帧(flag=2) 和 普通帧间delta(flag=0): 统一diff解码
-      // diff = quantized_abs[i] - quantized_abs[ref], 所以叠加后精确恢复量化绝对值
-      const isRefreshFrame = isRefresh;
+      // V3c: Refresh�?flag=2) �?普通帧间delta(flag=0): 统一diff解码
+      // diff = quantized_abs[i] - quantized_abs[ref], 所以叠加后精确恢复量化绝对�?      const isRefreshFrame = isRefresh;
       const refXyzQ = isRefreshFrame ? baseXyzQ : prevXyzQ;
       const refDcQ = isRefreshFrame ? baseDcQ : prevDcQ;
       const refOpQ = isRefreshFrame ? baseOpQ : prevOpQ;
@@ -485,7 +481,7 @@ async function loadAndDecodePFrameBundle() {
 }
 
 // ============================================================
-// V3: Delta texture (same V2 layout — 2 pixels per gaussian)
+// V3: Delta texture (same V2 layout �?2 pixels per gaussian)
 // ============================================================
 const DELTA_K = 256;
 let deltaTexW = 0, deltaTexH = 0;
@@ -605,7 +601,7 @@ async function init() {
   deltaSampler = dyno.dynoSampler2D(deltaTexture);
   maskSampler = dyno.dynoSampler2D(maskTexture);
 
-  const iFrameUrl = 'data_v3c/' + manifest.i_frame + '?t=' + Date.now();
+  const iFrameUrl = 'data_v3c/' + manifest.i_frame + ';
   const iFrameResp = await fetch(iFrameUrl);
   const iFrameBytes = new Uint8Array(await iFrameResp.arrayBuffer());
   console.log(`[V3c] SPZ I-frame loaded: ${(iFrameBytes.byteLength/1024/1024).toFixed(2)} MB`);
@@ -613,7 +609,7 @@ async function init() {
   setLoading(50, 'Initializing Spark.js...');
   splatMesh = new SplatMesh({ fileBytes: iFrameBytes });
 
-  // V3 shader (same structure as V2 — displacement + rgba override)
+  // V3 shader (same structure as V2 �?displacement + rgba override)
   splatMesh.objectModifier = dyno.dynoBlock(
     { gsplat: dyno.Gsplat },
     { gsplat: dyno.Gsplat },
