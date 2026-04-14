@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V3d â€?Sliding Window</title>
+<title>4DGS Deformation Viewer V3d - Sliding Window</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -111,7 +111,7 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V3d â€?Sliding Window</div>
+  <div id="loading-title">4DGS VIEWER V3d Ã¢â‚¬?Sliding Window</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
@@ -558,7 +558,7 @@ function updateGopStripUI(gopIdx, state) {
   if (state === 'loaded') seg.classList.add('loaded');
   else if (state === 'active') seg.classList.add('active');
   else if (state === 'loading') seg.classList.add('loading');
-  // 'evicted' and 'error' â†?default (gray)
+  // 'evicted' and 'error' Ã¢â€ ?default (gray)
 }
 
 function updateGopStats() {
@@ -923,7 +923,7 @@ function updateFrame(idx) {
   } else {
     const frame = getFrameData(idx);
     if (!frame) {
-      // GOP not loaded yet â€?show loading state, stay on I-frame
+      // GOP not loaded yet Ã¢â‚¬?show loading state, stay on I-frame
       frameLabel.textContent = `P-Frame ${idx}/${manifest.p_frame_count} (loading GOP ${gopIdx}...)`;
       uFrameIndex.value = 0;
       return;
