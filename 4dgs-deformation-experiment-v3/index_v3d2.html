@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>4DGS Deformation Viewer V3d2 — Sliding Window</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+  canvas { touch-action: none; display: block; }
+
+  #loading-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: #0a0a0fee;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.5s;
+  }
+  #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  #loading-title { font-size: 24px; font-weight: 300; letter-spacing: 2px; margin-bottom: 24px; color: #7ecfff; }
+  #loading-bar-bg { width: 300px; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+  #loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3a8bff, #7ecfff); transition: width 0.3s; }
+  #loading-text { margin-top: 12px; font-size: 13px; color: #888; }
+
+  #controls {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: linear-gradient(transparent, #0a0a0fcc 30%, #0a0a0fee);
+    padding: 16px 24px 20px;
+  }
+  #timeline-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  #play-btn {
+    width: 36px; height: 36px; border: none; border-radius: 50%;
+    background: #3a8bff; color: #fff; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  #play-btn:hover { background: #5aa0ff; }
+  #timeline {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 6px; background: #333; border-radius: 3px; outline: none; cursor: pointer;
+  }
+  #timeline::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    background: #7ecfff; border-radius: 50%; cursor: grab;
+  }
+  #frame-label { font-size: 13px; color: #aaa; min-width: 140px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  #info-bar { display: flex; gap: 20px; font-size: 12px; color: #666; flex-wrap: wrap; }
+  #info-bar span { display: flex; align-items: center; gap: 4px; }
+  #info-bar .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-static { background: #4a9; }
+  .dot-dynamic { background: #f74; }
+  .dot-fps { background: #7ecfff; }
+  .dot-mem { background: #c8a; }
+
+  #mode-bar {
+    position: fixed; top: 16px; left: 16px; z-index: 100;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .mode-btn {
+    padding: 6px 14px; border: 1px solid #444; border-radius: 16px;
+    background: transparent; color: #aaa; font-size: 12px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mode-btn.active { background: #3a8bff33; border-color: #3a8bff; color: #7ecfff; }
+  .mode-btn:hover { border-color: #666; }
+
+  #speed-bar {
+    position: fixed; top: 56px; left: 16px; z-index: 100;
+    display: flex; gap: 6px; align-items: center;
+  }
+  #speed-bar label { font-size: 11px; color: #666; }
+  .speed-btn {
+    padding: 3px 10px; border: 1px solid #333; border-radius: 12px;
+    background: transparent; color: #777; font-size: 11px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .speed-btn.active { background: #3a8bff22; border-color: #3a8bff; color: #7ecfff; }
+
+  #title-bar {
+    position: fixed; top: 16px; right: 16px; z-index: 100;
+    text-align: right;
+  }
+  #title-bar h1 { font-size: 16px; font-weight: 400; color: #7ecfff; letter-spacing: 1px; }
+  #title-bar p { font-size: 11px; color: #666; margin-top: 4px; }
+
+  #gop-progress {
+    position: fixed; top: 60px; right: 16px; z-index: 100;
+    font-size: 11px; color: #666; text-align: right;
+    transition: opacity 0.5s;
+  }
+  #gop-progress .bar-bg {
+    width: 140px; height: 3px; background: #222; border-radius: 2px;
+    overflow: hidden; margin-top: 4px; margin-left: auto;
+  }
+  #gop-progress .bar { height: 100%; width: 0%; background: #f74; transition: width 0.3s; }
+
+  /* GOP indicator strip on timeline */
+  #gop-strip {
+    position: relative; height: 8px; margin: 0 60px 4px 48px;
+    display: flex; gap: 1px; border-radius: 2px; overflow: hidden;
+  }
+  #gop-strip .gop-seg {
+    flex: 1; height: 100%; background: #222; transition: background 0.3s;
+  }
+  #gop-strip .gop-seg.loaded { background: #3a5; }
+  #gop-strip .gop-seg.active { background: #7ecfff; }
+  #gop-strip .gop-seg.loading { background: #f74; animation: pulse 0.8s infinite alternate; }
+  @keyframes pulse { from { opacity: 0.5; } to { opacity: 1.0; } }
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div id="loading-title">4DGS VIEWER V3d2 — Sliding Window</div>
+  <div id="loading-bar-bg"><div id="loading-bar"></div></div>
+  <div id="loading-text">Initializing...</div>
+</div>
+
+<div id="title-bar">
+  <h1>4DGS Viewer V3d2 - Sliding Window</h1>
+  <p>V3d2: GOP-based streaming | Constant memory | PSNR 32.26 dB</p>
+</div>
+
+<div id="gop-progress">
+  <span id="gop-status">GOPs: initializing...</span>
+  <div class="bar-bg"><div class="bar" id="gop-bar"></div></div>
+</div>
+
+<div id="mode-bar">
+  <button class="mode-btn active" data-mode="animated" title="Play animated sequence">&#9654; Animated</button>
+  <button class="mode-btn" data-mode="i-frame" title="View I-frame only">&#9724; I-Frame</button>
+  <button class="mode-btn" data-mode="highlight" title="Highlight dynamic regions">&#9681; Dynamic</button>
+</div>
+
+<div id="speed-bar">
+  <label>Speed:</label>
+  <button class="speed-btn" data-speed="0.5">0.5x</button>
+  <button class="speed-btn active" data-speed="1">1x</button>
+  <button class="speed-btn" data-speed="2">2x</button>
+</div>
+
+<div id="controls">
+  <div id="gop-strip"></div>
+  <div id="timeline-row">
+    <button id="play-btn" title="Play/Pause">&#9654;</button>
+    <input type="range" id="timeline" min="0" max="299" step="1" value="0">
+    <span id="frame-label">I-Frame (0.0s / 10.0s)</span>
+  </div>
+  <div id="info-bar">
+    <span><span class="dot dot-static"></span> Static: <span id="stat-static">--</span></span>
+    <span><span class="dot dot-dynamic"></span> Dynamic: <span id="stat-dynamic">--</span></span>
+    <span>Total: <span id="stat-total">--</span> splats</span>
+    <span><span class="dot dot-fps"></span> <span id="stat-fps">--</span> FPS</span>
+    <span><span class="dot dot-mem"></span> GOPs: <span id="stat-gops">0/0</span></span>
+    <span>Window: <span id="stat-window">--</span></span>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.178.0/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/",
+    "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.10/spark.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SplatMesh, dyno } from "@sparkjsdev/spark";
+
+// ============================================================
+// #refresh: skip browser cache when URL contains #refresh
+// ============================================================
+const REFRESH_MODE = location.hash.toLowerCase().includes('refresh');
+const FETCH_OPTS = REFRESH_MODE ? { cache: 'reload' } : {};
+function cfetch(url, opts) { return fetch(url, Object.assign({}, FETCH_OPTS, opts)); }
+if (REFRESH_MODE) console.log('[V3d2] 🔄 Refresh mode: bypassing browser cache for all fetches');
+
+// ============================================================
+// Configuration
+// ============================================================
+const WINDOW_GOPS = 3;     // Number of GOPs to keep in memory (current + neighbors)
+const PREFETCH_GOPS = 1;   // How many GOPs to prefetch ahead
+const DELTA_K = 256;
+
+// ============================================================
+// State
+// ============================================================
+let manifest = null;
+let dynamicMask = null;
+let splatMesh = null;
+let currentFrame = 0;
+let isPlaying = false;
+let viewMode = 'animated';
+let playbackSpeedMult = 1.0;
+let targetFPS = 30;
+
+let uFrameIndex = null;
+let uViewMode = null;
+let deltaSampler = null;
+let maskSampler = null;
+let deltaTexture = null;
+let maskTexture = null;
+let spzBaselineXyz = null;
+
+// Quantization params (loaded from gop_meta)
+let qXyzDMin = null, qXyzDMax = null, qXyzDScale = null;
+let qDcMin = null, qDcMax = null;
+let qOpMin = 0, qOpMax = 0;
+
+// GOP sliding window state
+let gopCache = new Map();         // gopIndex -> { frames: [{xyzQ, dcQ, opQ}, ...], lastAccess: timestamp }
+let gopLoadingSet = new Set();    // GOP indices currently being fetched
+let baseXyzQ = null;              // Base frame quantized state (always in memory)
+let baseDcQ = null;
+let baseOpQ = null;
+let metaLoaded = false;
+let N = 0;                        // number of dynamic gaussians
+
+const TOTAL_DURATION_DEFAULT = 10.0;
+let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
+
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingBar = document.getElementById('loading-bar');
+const loadingText = document.getElementById('loading-text');
+const playBtn = document.getElementById('play-btn');
+const timeline = document.getElementById('timeline');
+const frameLabel = document.getElementById('frame-label');
+const gopStatus = document.getElementById('gop-status');
+const gopBar = document.getElementById('gop-bar');
+const gopStrip = document.getElementById('gop-strip');
+
+function setLoading(pct, text) {
+  loadingBar.style.width = pct + '%';
+  if (text) loadingText.textContent = text;
+}
+
+// Show refresh mode badge
+if (REFRESH_MODE) {
+  const badge = document.createElement('div');
+  badge.style.cssText = 'position:fixed;top:4px;left:50%;transform:translateX(-50%);z-index:9999;background:#f74;color:#fff;padding:3px 12px;border-radius:10px;font-size:11px;letter-spacing:1px;opacity:0.85;pointer-events:none;';
+  badge.textContent = '🔄 REFRESH MODE — cache bypassed';
+  document.body.appendChild(badge);
+  setTimeout(() => { badge.style.transition = 'opacity 3s'; badge.style.opacity = '0'; }, 5000);
+}
+
+// ============================================================
+// Data Loading
+// ============================================================
+async function loadManifest() {
+  setLoading(5, 'Loading manifest...');
+  const resp = await cfetch('data_v3d/manifest.json');
+  manifest = await resp.json();
+  targetFPS = manifest.target_fps || 30;
+  N = manifest.dynamic_gaussians;
+  TOTAL_DURATION = (manifest.p_frame_count || 299) / targetFPS;
+  
+  document.getElementById('stat-total').textContent = manifest.total_gaussians.toLocaleString();
+  document.getElementById('stat-dynamic').textContent = manifest.dynamic_gaussians.toLocaleString();
+  document.getElementById('stat-static').textContent =
+    (manifest.total_gaussians - manifest.dynamic_gaussians).toLocaleString();
+  timeline.max = manifest.p_frame_count;
+  
+  // Build GOP strip
+  gopStrip.innerHTML = '';
+  for (let i = 0; i < manifest.gop_count; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'gop-seg';
+    seg.id = `gop-seg-${i}`;
+    seg.title = `GOP ${i}: frames ${manifest.gop_index[i].start_frame}-${manifest.gop_index[i].end_frame - 1}`;
+    gopStrip.appendChild(seg);
+  }
+}
+
+async function decompressGzip(buf) {
+  const ds = new DecompressionStream('gzip');
+  const blob = new Blob([buf]);
+  const stream = blob.stream().pipeThrough(ds);
+  return await new Response(stream).blob().then(b => b.arrayBuffer());
+}
+
+function float16ToFloat32(u16arr) {
+  const f32 = new Float32Array(u16arr.length);
+  for (let i = 0; i < u16arr.length; i++) {
+    const h = u16arr[i];
+    const sign = (h >> 15) & 0x1;
+    const exp = (h >> 10) & 0x1f;
+    const mant = h & 0x3ff;
+    if (exp === 0) {
+      f32[i] = mant === 0 ? (sign ? -0 : 0) : (sign ? -1 : 1) * Math.pow(2, -14) * (mant / 1024);
+    } else if (exp === 31) {
+      f32[i] = mant === 0 ? (sign ? -Infinity : Infinity) : NaN;
+    } else {
+      f32[i] = (sign ? -1 : 1) * Math.pow(2, exp - 15) * (1 + mant / 1024);
+    }
+  }
+  return f32;
+}
+
+async function loadDynamicMask() {
+  const resp = await cfetch('data_v3d/' + manifest.dynamic_mask + '');
+  const compressed = await resp.arrayBuffer();
+  const raw = await decompressGzip(compressed);
+  const view = new DataView(raw);
+  const totalN = view.getUint32(0, true);
+  dynamicMask = new Uint8Array(raw, 4, totalN);
+}
+
+// ============================================================
+// GOP Meta Loading (header + quant params + SPZ baseline + base frame)
+// ============================================================
+async function loadGopMeta() {
+  gopStatus.textContent = 'Meta: downloading...';
+  const resp = await cfetch('data_v3d/' + manifest.gop_meta + '');
+  const compressed = await resp.arrayBuffer();
+  const raw = await decompressGzip(compressed);
+  const rawView = new DataView(raw);
+  
+  // Parse header (28 bytes)
+  const magic = String.fromCharCode(...new Uint8Array(raw, 0, 4));
+  const version = rawView.getUint32(4, true);
+  console.log(`[V3d] Meta: magic=${magic} ver=${version}`);
+  
+  // Parse quant params (56 bytes, starting at offset 28)
+  let pos = 28;
+  qDcMin = [rawView.getFloat32(pos, true), rawView.getFloat32(pos+4, true), rawView.getFloat32(pos+8, true)];
+  qDcMax = [rawView.getFloat32(pos+12, true), rawView.getFloat32(pos+16, true), rawView.getFloat32(pos+20, true)];
+  qOpMin = rawView.getFloat32(pos+24, true);
+  qOpMax = rawView.getFloat32(pos+28, true);
+  qXyzDMin = [rawView.getFloat32(pos+32, true), rawView.getFloat32(pos+36, true), rawView.getFloat32(pos+40, true)];
+  qXyzDMax = [rawView.getFloat32(pos+44, true), rawView.getFloat32(pos+48, true), rawView.getFloat32(pos+52, true)];
+  pos += 56;
+  
+  qXyzDScale = [
+    (qXyzDMax[0] - qXyzDMin[0]) / 255.0,
+    (qXyzDMax[1] - qXyzDMin[1]) / 255.0,
+    (qXyzDMax[2] - qXyzDMin[2]) / 255.0,
+  ];
+  
+  console.log(`[V3d] xyz range: x=[${qXyzDMin[0].toFixed(4)},${qXyzDMax[0].toFixed(4)}] y=[${qXyzDMin[1].toFixed(4)},${qXyzDMax[1].toFixed(4)}] z=[${qXyzDMin[2].toFixed(4)},${qXyzDMax[2].toFixed(4)}]`);
+  
+  // Parse SPZ baseline
+  const spzSize = rawView.getUint32(pos, true);
+  pos += 4;
+  const spzXyz16 = new Uint16Array(raw, pos, N * 3);
+  spzBaselineXyz = float16ToFloat32(spzXyz16);
+  pos += spzSize;
+  console.log(`[V3d] SPZ baseline: ${N} points, ${spzSize} bytes`);
+  
+  // Parse base frame (frame 0): float16 xyz + uint8 dc/op
+  const xyzBytesBase = N * 3 * 2;
+  const dcBytes = N * 3;
+  const opBytes = N;
+  
+  const baseXyz16 = new Uint16Array(raw, pos, N * 3);
+  const baseXyzDelta = float16ToFloat32(baseXyz16);
+  pos += xyzBytesBase;
+  
+  const baseDcRaw = new Uint8Array(raw, pos, N * 3);
+  pos += dcBytes;
+  const baseOpRaw = new Uint8Array(raw, pos, N);
+  
+  // Quantize base xyz to uint8 (needed as reference for GOP refresh frames)
+  baseXyzQ = new Uint8Array(N * 3);
+  for (let c = 0; c < 3; c++) {
+    const scale = 255.0 / (qXyzDMax[c] - qXyzDMin[c] + 1e-10);
+    for (let i = 0; i < N; i++) {
+      let q = Math.round((baseXyzDelta[i * 3 + c] - qXyzDMin[c]) * scale);
+      baseXyzQ[i * 3 + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
+    }
+  }
+  baseDcQ = new Uint8Array(baseDcRaw);
+  baseOpQ = new Uint8Array(baseOpRaw);
+  
+  metaLoaded = true;
+  gopStatus.textContent = 'Meta: loaded';
+  console.log(`[V3d] Meta loaded, base frame quantized`);
+}
+
+// ============================================================
+// GOP Loading & Decoding
+// ============================================================
+function getGopIndexForFrame(globalFrame) {
+  // Frame 0 = I-frame (no GOP needed)
+  // Frame 1-299 = P-frames, P-frame index = globalFrame - 1
+  if (globalFrame === 0) return -1;
+  const pFrameIdx = globalFrame - 1;
+  return Math.floor(pFrameIdx / manifest.gop_size);
+}
+
+async function loadGop(gopIdx) {
+  if (gopCache.has(gopIdx) || gopLoadingSet.has(gopIdx)) return;
+  if (gopIdx < 0 || gopIdx >= manifest.gop_count) return;
+  
+  gopLoadingSet.add(gopIdx);
+  updateGopStripUI(gopIdx, 'loading');
+  
+  const gopInfo = manifest.gop_index[gopIdx];
+  console.log(`[V3d] Loading GOP ${gopIdx}: frames ${gopInfo.start_frame}-${gopInfo.end_frame - 1}`);
+  
+  try {
+    const resp = await cfetch(`data_v3d/${gopInfo.filename}`);
+    const compressed = await resp.arrayBuffer();
+    const raw = await decompressGzip(compressed);
+    const rawView = new DataView(raw);
+    const rawBytes = new Uint8Array(raw);
+    
+    // Parse GOP header (16 bytes)
+    const gIdx = rawView.getUint32(0, true);
+    const startFrame = rawView.getUint32(4, true);
+    const numFrames = rawView.getUint32(8, true);
+    
+    const xyzBytesBase = N * 3 * 2;
+    const xyzBytesInt8 = N * 3;
+    const dcBytes = N * 3;
+    const opBytes = N;
+    
+    // Decode frames in this GOP
+    const frames = [];
+    let prevXyzQ = null, prevDcQ = null, prevOpQ = null;
+    let pos = 16; // after GOP header
+    
+    for (let fi = 0; fi < numFrames; fi++) {
+      const globalFrameIdx = startFrame + fi; // This is the bundle frame index (0-based)
+      
+      // Determine frame type from original bundle structure
+      // Frame 0 in bundle = base (flag=1), frame 30,60,90... = refresh (flag=2), others = inter (flag=0)
+      const isBaseFrame = globalFrameIdx === 0;
+      const isRefresh = !isBaseFrame && (globalFrameIdx % manifest.gop_size === 0);
+      
+      const frame = {
+        xyzQ: new Uint8Array(N * 3),
+        dcQ: new Uint8Array(N * 3),
+        opQ: new Uint8Array(N),
+      };
+      
+      if (isBaseFrame) {
+        // Base frame: float16 xyz + uint8 dc/op
+        const fXyz16 = new Uint16Array(raw, pos, N * 3);
+        const fXyzDelta = float16ToFloat32(fXyz16);
+        pos += xyzBytesBase;
+        
+        const fDcU8 = new Uint8Array(raw, pos, N * 3);
+        pos += dcBytes;
+        const fOpU8 = new Uint8Array(raw, pos, N);
+        pos += opBytes;
+        
+        frame.dcQ.set(fDcU8);
+        frame.opQ.set(fOpU8);
+        
+        // Quantize base xyz to uint8
+        for (let c = 0; c < 3; c++) {
+          const scale = 255.0 / (qXyzDMax[c] - qXyzDMin[c] + 1e-10);
+          for (let i = 0; i < N; i++) {
+            let q = Math.round((fXyzDelta[i * 3 + c] - qXyzDMin[c]) * scale);
+            frame.xyzQ[i * 3 + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
+          }
+        }
+      } else {
+        // int8 diff frame
+        const fXyzI8 = new Int8Array(raw, pos, N * 3);
+        pos += xyzBytesInt8;
+        const fDcI8 = new Int8Array(raw, pos, N * 3);
+        pos += dcBytes;
+        const fOpI8 = new Int8Array(raw, pos, N);
+        pos += opBytes;
+        
+        // Reference: refresh frames use base, inter frames use prev
+        const refXyzQ = isRefresh ? baseXyzQ : prevXyzQ;
+        const refDcQ = isRefresh ? baseDcQ : prevDcQ;
+        const refOpQ = isRefresh ? baseOpQ : prevOpQ;
+        
+        for (let i = 0; i < N * 3; i++) {
+          let q = refXyzQ[i] + fXyzI8[i];
+          frame.xyzQ[i] = q < 0 ? 0 : (q > 255 ? 255 : q);
+        }
+        for (let i = 0; i < N * 3; i++) {
+          let q = refDcQ[i] + fDcI8[i];
+          frame.dcQ[i] = q < 0 ? 0 : (q > 255 ? 255 : q);
+        }
+        for (let i = 0; i < N; i++) {
+          let q = refOpQ[i] + fOpI8[i];
+          frame.opQ[i] = q < 0 ? 0 : (q > 255 ? 255 : q);
+        }
+      }
+      
+      frames.push(frame);
+      prevXyzQ = frame.xyzQ;
+      prevDcQ = frame.dcQ;
+      prevOpQ = frame.opQ;
+    }
+    
+    gopCache.set(gopIdx, {
+      frames,
+      startFrame: gopInfo.start_frame,
+      endFrame: gopInfo.end_frame,
+      numFrames,
+      lastAccess: performance.now(),
+    });
+    
+    gopLoadingSet.delete(gopIdx);
+    updateGopStripUI(gopIdx, 'loaded');
+    updateGopStats();
+    console.log(`[V3d] GOP ${gopIdx} decoded: ${numFrames} frames`);
+    
+  } catch (err) {
+    console.error(`[V3d] Failed to load GOP ${gopIdx}:`, err);
+    gopLoadingSet.delete(gopIdx);
+    updateGopStripUI(gopIdx, 'error');
+  }
+}
+
+function evictDistantGops(currentGopIdx) {
+  // Keep only GOPs within the window range
+  const minKeep = Math.max(0, currentGopIdx - WINDOW_GOPS);
+  const maxKeep = Math.min(manifest.gop_count - 1, currentGopIdx + WINDOW_GOPS);
+  
+  for (const [idx, gop] of gopCache) {
+    if (idx < minKeep || idx > maxKeep) {
+      gopCache.delete(idx);
+      updateGopStripUI(idx, 'evicted');
+      console.log(`[V3d] Evicted GOP ${idx} (distance from current: ${Math.abs(idx - currentGopIdx)})`);
+    }
+  }
+  updateGopStats();
+}
+
+async function ensureGopsForFrame(globalFrame) {
+  const gopIdx = getGopIndexForFrame(globalFrame);
+  if (gopIdx < 0) return; // I-frame, no GOP needed
+  
+  // Load current GOP if not cached
+  if (!gopCache.has(gopIdx) && !gopLoadingSet.has(gopIdx)) {
+    await loadGop(gopIdx);
+  }
+  
+  // Prefetch next GOPs (non-blocking)
+  for (let d = 1; d <= PREFETCH_GOPS; d++) {
+    const nextGop = gopIdx + d;
+    if (nextGop < manifest.gop_count && !gopCache.has(nextGop) && !gopLoadingSet.has(nextGop)) {
+      loadGop(nextGop); // fire-and-forget
+    }
+  }
+  
+  // Evict distant GOPs
+  evictDistantGops(gopIdx);
+}
+
+function getFrameData(globalFrame) {
+  // Returns decoded frame data {xyzQ, dcQ, opQ} or null if not loaded
+  if (globalFrame === 0) return null; // I-frame
+  
+  const pFrameIdx = globalFrame - 1; // 0-based P-frame index
+  const gopIdx = Math.floor(pFrameIdx / manifest.gop_size);
+  const gop = gopCache.get(gopIdx);
+  if (!gop) return null;
+  
+  const localIdx = pFrameIdx - gop.startFrame;
+  if (localIdx < 0 || localIdx >= gop.frames.length) return null;
+  
+  gop.lastAccess = performance.now();
+  return gop.frames[localIdx];
+}
+
+// ============================================================
+// UI helpers
+// ============================================================
+function updateGopStripUI(gopIdx, state) {
+  const seg = document.getElementById(`gop-seg-${gopIdx}`);
+  if (!seg) return;
+  seg.className = 'gop-seg';
+  if (state === 'loaded') seg.classList.add('loaded');
+  else if (state === 'active') seg.classList.add('active');
+  else if (state === 'loading') seg.classList.add('loading');
+  // 'evicted' and 'error' → default (gray)
+}
+
+function updateGopStats() {
+  const loaded = gopCache.size;
+  const total = manifest ? manifest.gop_count : 0;
+  document.getElementById('stat-gops').textContent = `${loaded}/${total}`;
+  
+  // Estimate memory
+  const frameMemMB = loaded * manifest.gop_size * N * 7 / 1024 / 1024;
+  document.getElementById('stat-window').textContent = `${frameMemMB.toFixed(0)} MB (${loaded} GOPs)`;
+  
+  const pct = total > 0 ? Math.round(loaded / Math.min(WINDOW_GOPS * 2 + 1, total) * 100) : 0;
+  gopBar.style.width = pct + '%';
+}
+
+function highlightActiveGop(gopIdx) {
+  // Reset all loaded GOPs to 'loaded' state, mark current as 'active'
+  for (const [idx] of gopCache) {
+    updateGopStripUI(idx, idx === gopIdx ? 'active' : 'loaded');
+  }
+}
+
+// ============================================================
+// Delta texture (same as V3c)
+// ============================================================
+let deltaTexW = 0, deltaTexH = 0;
+
+function packDeltaToTexture(texData, frame, nDyn) {
+  texData.fill(0);
+  const dcScale0 = (qDcMax[0] - qDcMin[0]) / 255.0;
+  const dcScale1 = (qDcMax[1] - qDcMin[1]) / 255.0;
+  const dcScale2 = (qDcMax[2] - qDcMin[2]) / 255.0;
+  const opScale = (qOpMax - qOpMin) / 255.0;
+
+  for (let i = 0; i < nDyn; i++) {
+    const row = Math.floor(i / DELTA_K);
+    const col = (i % DELTA_K) * 2;
+
+    const dx = frame.xyzQ[i * 3 + 0] * qXyzDScale[0] + qXyzDMin[0];
+    const dy = frame.xyzQ[i * 3 + 1] * qXyzDScale[1] + qXyzDMin[1];
+    const dz = frame.xyzQ[i * 3 + 2] * qXyzDScale[2] + qXyzDMin[2];
+
+    const dc0 = frame.dcQ[i * 3 + 0] * dcScale0 + qDcMin[0];
+    const dc1 = frame.dcQ[i * 3 + 1] * dcScale1 + qDcMin[1];
+    const dc2 = frame.dcQ[i * 3 + 2] * dcScale2 + qDcMin[2];
+
+    const op = frame.opQ[i] * opScale + qOpMin;
+
+    let off = (row * deltaTexW + col) * 4;
+    texData[off + 0] = dx;
+    texData[off + 1] = dy;
+    texData[off + 2] = dz;
+    texData[off + 3] = dc0;
+
+    off = (row * deltaTexW + col + 1) * 4;
+    texData[off + 0] = dc1;
+    texData[off + 1] = dc2;
+    texData[off + 2] = op;
+    texData[off + 3] = 0;
+  }
+}
+
+function createDeltaTexture(nDyn) {
+  deltaTexW = DELTA_K * 2;
+  deltaTexH = Math.ceil(nDyn / DELTA_K);
+  const texData = new Float32Array(deltaTexW * deltaTexH * 4);
+  const tex = new THREE.DataTexture(texData, deltaTexW, deltaTexH, THREE.RGBAFormat, THREE.FloatType);
+  tex.needsUpdate = true;
+  tex.minFilter = THREE.NearestFilter;
+  tex.magFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  return tex;
+}
+
+function createMaskTexture() {
+  const totalN = manifest.total_gaussians;
+  const texW = Math.ceil(Math.sqrt(totalN));
+  const texH = Math.ceil(totalN / texW);
+  const texData = new Float32Array(texW * texH * 4);
+  let dynIdx = 0;
+  for (let i = 0; i < totalN; i++) {
+    const off = i * 4;
+    const isDyn = dynamicMask[i];
+    texData[off + 0] = isDyn;
+    texData[off + 1] = isDyn ? dynIdx : -1;
+    if (isDyn) dynIdx++;
+  }
+  for (let i = totalN; i < texW * texH; i++) texData[i * 4 + 1] = -1;
+  const tex = new THREE.DataTexture(texData, texW, texH, THREE.RGBAFormat, THREE.FloatType);
+  tex.needsUpdate = true;
+  tex.minFilter = THREE.NearestFilter;
+  tex.magFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  return { texture: tex, width: texW, height: texH };
+}
+
+// ============================================================
+// Scene setup
+// ============================================================
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ============================================================
+// Init
+// ============================================================
+async function init() {
+  const t0 = performance.now();
+
+  await loadManifest();
+
+  setLoading(10, 'Loading dynamic mask...');
+  await loadDynamicMask();
+
+  setLoading(20, 'Loading GOP metadata...');
+  await loadGopMeta();
+
+  setLoading(30, 'Creating textures...');
+  const nDyn = manifest.dynamic_gaussians;
+  deltaTexture = createDeltaTexture(nDyn);
+  const maskInfo = createMaskTexture();
+  maskTexture = maskInfo.texture;
+  const maskTexWidth = maskInfo.width;
+
+  setLoading(40, 'Loading SPZ I-frame...');
+
+  uFrameIndex = dyno.dynoInt(0);
+  uViewMode = dyno.dynoInt(0);
+  deltaSampler = dyno.dynoSampler2D(deltaTexture);
+  maskSampler = dyno.dynoSampler2D(maskTexture);
+
+  const iFrameUrl = 'data_v3d/' + manifest.i_frame + '';
+  const iFrameResp = await cfetch(iFrameUrl);
+  const iFrameBytes = new Uint8Array(await iFrameResp.arrayBuffer());
+  console.log(`[V3d] SPZ I-frame loaded: ${(iFrameBytes.byteLength/1024/1024).toFixed(2)} MB`);
+
+  setLoading(60, 'Initializing Spark.js...');
+  splatMesh = new SplatMesh({ fileBytes: iFrameBytes });
+
+  // Shader (same as V3c)
+  splatMesh.objectModifier = dyno.dynoBlock(
+    { gsplat: dyno.Gsplat },
+    { gsplat: dyno.Gsplat },
+    ({ gsplat }) => {
+      const d = new dyno.Dyno({
+        inTypes: {
+          gsplat: dyno.Gsplat,
+          frameIdx: "int",
+          mode: "int",
+          deltaTex: "sampler2D",
+          maskTex: "sampler2D",
+          maskW: "int",
+          deltaK: "int",
+        },
+        outTypes: { gsplat: dyno.Gsplat },
+        globals: () => [
+          dyno.unindent(`
+            vec2 lookupMask(sampler2D mTex, int idx, int mW) {
+              int r = idx / mW;
+              int c = idx - r * mW;
+              return texelFetch(mTex, ivec2(c, r), 0).rg;
+            }
+            void fetchDeltaV3(sampler2D dTex, int dIdx, int K,
+                              out vec3 dPos, out vec3 dDC, out float dOp) {
+              int sr = dIdx / K;
+              int sc = (dIdx - sr * K) * 2;
+              vec4 t0 = texelFetch(dTex, ivec2(sc, sr), 0);
+              vec4 t1 = texelFetch(dTex, ivec2(sc+1, sr), 0);
+              dPos = t0.xyz;
+              dDC  = vec3(t0.w, t1.xy);
+              dOp  = t1.z;
+            }
+          `)
+        ],
+        statements: ({ inputs, outputs }) => dyno.unindentLines(`
+          ${outputs.gsplat} = ${inputs.gsplat};
+          int sIdx = ${inputs.gsplat}.index;
+          vec2 md = lookupMask(${inputs.maskTex}, sIdx, ${inputs.maskW});
+          float isDyn = md.r;
+          int dIdx = int(md.g);
+
+          if (${inputs.mode} == 2) {
+            if (isDyn > 0.5)
+              ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(1.0,0.5,0.2), 0.6);
+            else
+              ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(0.2,0.7,0.6), 0.4);
+          }
+
+          if (${inputs.mode} == 0 && ${inputs.frameIdx} > 0 && isDyn > 0.5 && dIdx >= 0) {
+            vec3 dp, ddc; float dop;
+            fetchDeltaV3(${inputs.deltaTex}, dIdx, ${inputs.deltaK}, dp, ddc, dop);
+            float SH_C0 = 0.28209479177;
+            ${outputs.gsplat}.center += dp;
+            ${outputs.gsplat}.rgba.rgb = SH_C0 * ddc + 0.5;
+            ${outputs.gsplat}.rgba.a = dop;
+          }
+        `)
+      });
+      gsplat = d.apply({
+        gsplat,
+        frameIdx: uFrameIndex,
+        mode: uViewMode,
+        deltaTex: deltaSampler,
+        maskTex: maskSampler,
+        maskW: dyno.dynoInt(maskTexWidth),
+        deltaK: dyno.dynoInt(DELTA_K),
+      }).gsplat;
+      return { gsplat };
+    }
+  );
+
+  splatMesh.quaternion.set(1, 0, 0, 0);
+  splatMesh.position.set(0, 0, 0);
+  scene.add(splatMesh);
+
+  camera.position.set(0.5, 4.5, 15.0);
+
+  setLoading(80, 'Preloading initial GOPs...');
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(2.435, -2.0, -15.003);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.1;
+  controls.screenSpacePanning = true;
+  controls.minDistance = 0.5;
+  controls.maxDistance = 100;
+  controls.update();
+
+  // Preload first 2 GOPs
+  await loadGop(0);
+  loadGop(1); // fire and forget
+
+  setLoading(100, 'Ready!');
+  const loadTime = ((performance.now() - t0) / 1000).toFixed(1);
+  console.log(`[V3d] Ready in ${loadTime}s (sliding window mode)`);
+
+  setTimeout(() => {
+    loadingOverlay.classList.add('hidden');
+    splatMesh.updateGenerator();
+    isPlaying = true;
+    playBtn.textContent = '\u23F8';
+  }, 300);
+
+  // ============================================================
+  // 30Hz Animation Loop
+  // ============================================================
+  let frameCount = 0, lastFpsTime = performance.now();
+  let lastFrameTime = performance.now();
+  const FRAME_INTERVAL = 1000 / targetFPS;
+
+  renderer.setAnimationLoop(function animate() {
+    const now = performance.now();
+
+    if (isPlaying && viewMode === 'animated' && metaLoaded) {
+      const adjustedInterval = FRAME_INTERVAL / playbackSpeedMult;
+      if (now - lastFrameTime >= adjustedInterval) {
+        lastFrameTime = now;
+        const maxFrame = manifest.p_frame_count;
+        const nextFrame = (currentFrame + 1) % (maxFrame + 1);
+        updateFrame(nextFrame);
+      }
+    }
+
+    splatMesh.updateVersion();
+    controls.update();
+    renderer.render(scene, camera);
+
+    frameCount++;
+    if (now - lastFpsTime > 500) {
+      document.getElementById('stat-fps').textContent =
+        Math.round(frameCount / ((now - lastFpsTime) / 1000));
+      frameCount = 0;
+      lastFpsTime = now;
+    }
+  });
+
+  // ============================================================
+  // WebSocket for viewctl remote control
+  // ============================================================
+  const wsUrl = 'ws://' + location.host + '/';
+  let ws = null;
+  function connectWS() {
+    try {
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => console.log('[WS] Connected to viewctl');
+      ws.onclose = () => setTimeout(connectWS, 3000);
+      ws.onerror = () => {};
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg.type === 'setCamera') {
+            if (msg.position) camera.position.fromArray(msg.position);
+            if (msg.target) controls.target.fromArray(msg.target);
+            controls.update();
+            reportCamera();
+          } else if (msg.type === 'rotateCamera') {
+            const az = (msg.azimuth || 0) * Math.PI / 180;
+            const el = (msg.elevation || 0) * Math.PI / 180;
+            const off = new THREE.Vector3().subVectors(camera.position, controls.target);
+            const r = off.length();
+            let theta = Math.acos(Math.max(-1, Math.min(1, off.y / r)));
+            let phi = Math.atan2(off.x, off.z);
+            phi += az; theta = Math.max(0.01, Math.min(Math.PI - 0.01, theta + el));
+            off.set(r * Math.sin(theta) * Math.sin(phi), r * Math.cos(theta),
+                    r * Math.sin(theta) * Math.cos(phi));
+            camera.position.copy(controls.target).add(off);
+            controls.update();
+            reportCamera();
+          } else if (msg.type === 'setFrame') {
+            updateFrame(msg.frame || 0);
+          } else if (msg.type === 'requestScreenshot') {
+            renderer.render(scene, camera);
+            const dataUrl = renderer.domElement.toDataURL('image/png');
+            ws.send(JSON.stringify({
+              type: 'screenshotResult', dataUrl,
+              width: renderer.domElement.width, height: renderer.domElement.height,
+              camera: { position: camera.position.toArray(), target: controls.target.toArray() },
+            }));
+          } else if (msg.type === 'refresh') {
+            console.log('[WS] Received refresh signal — reloading with #refresh');
+            location.hash = 'refresh';
+            location.reload();
+          }
+        } catch (e) {}
+      };
+    } catch (e) { setTimeout(connectWS, 3000); }
+  }
+  function reportCamera() {
+    if (ws && ws.readyState === 1)
+      ws.send(JSON.stringify({ type: 'cameraState',
+        position: camera.position.toArray(), target: controls.target.toArray(),
+        up: camera.up.toArray() }));
+  }
+  setInterval(reportCamera, 1000);
+  renderer.domElement.addEventListener('pointerup', () => setTimeout(reportCamera, 100));
+  connectWS();
+}
+
+// ============================================================
+// Frame management (sliding window version)
+// ============================================================
+function updateFrame(idx) {
+  currentFrame = idx;
+  timeline.value = idx;
+  const timeSec = (idx / targetFPS).toFixed(1);
+  const gopIdx = getGopIndexForFrame(idx);
+
+  // Trigger async GOP loading/eviction
+  ensureGopsForFrame(idx);
+  
+  // Highlight active GOP in strip
+  if (gopIdx >= 0) highlightActiveGop(gopIdx);
+
+  if (idx === 0) {
+    uFrameIndex.value = 0;
+    frameLabel.textContent = `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)`;
+  } else {
+    const frame = getFrameData(idx);
+    if (!frame) {
+      // GOP not loaded yet — show loading state, stay on I-frame
+      frameLabel.textContent = `P-Frame ${idx}/${manifest.p_frame_count} (loading GOP ${gopIdx}...)`;
+      uFrameIndex.value = 0;
+      return;
+    }
+    
+    const texData = deltaTexture.image.data;
+    packDeltaToTexture(texData, frame, manifest.dynamic_gaussians);
+    deltaTexture.needsUpdate = true;
+    uFrameIndex.value = idx;
+    frameLabel.textContent = `P-Frame ${idx}/${manifest.p_frame_count} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [GOP ${gopIdx}]`;
+  }
+}
+
+// ============================================================
+// UI: Play/Pause, Timeline, Modes, Speed
+// ============================================================
+playBtn.addEventListener('click', () => {
+  isPlaying = !isPlaying;
+  playBtn.textContent = isPlaying ? '\u23F8' : '\u25B6';
+});
+
+timeline.addEventListener('input', (e) => {
+  isPlaying = false;
+  playBtn.textContent = '\u25B6';
+  updateFrame(parseInt(e.target.value));
+});
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    viewMode = btn.dataset.mode;
+    if (viewMode === 'animated') {
+      uViewMode.value = 0;
+    } else if (viewMode === 'i-frame') {
+      uViewMode.value = 1;
+      uFrameIndex.value = 0;
+      currentFrame = 0;
+      timeline.value = 0;
+      isPlaying = false;
+      playBtn.textContent = '\u25B6';
+    } else if (viewMode === 'highlight') {
+      uViewMode.value = 2;
+      uFrameIndex.value = 0;
+      isPlaying = false;
+      playBtn.textContent = '\u25B6';
+    }
+    splatMesh.updateGenerator();
+  });
+});
+
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    playbackSpeedMult = parseFloat(btn.dataset.speed);
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); playBtn.click(); }
+  else if (e.key === 'ArrowRight') updateFrame(Math.min(currentFrame + 1, manifest.p_frame_count));
+  else if (e.key === 'ArrowLeft') updateFrame(Math.max(currentFrame - 1, 0));
+});
+
+window._viewer = {
+  updateFrame: (f) => updateFrame(f),
+  getFrame: () => currentFrame,
+  setSpeed: (s) => { playbackSpeedMult = s; },
+  getGopCache: () => gopCache,
+  getGopStats: () => ({
+    cached: gopCache.size,
+    total: manifest?.gop_count || 0,
+    memMB: gopCache.size * (manifest?.gop_size || 30) * N * 7 / 1024 / 1024,
+  }),
+};
+
+init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
+</script>
+</body>
+</html>
