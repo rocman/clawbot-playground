@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V4 — Stream Decode + Double-Buffer + OPFS Cache</title>
+<title>4DGS Deformation Viewer V4 — Double-Buffer texSubImage2D</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -116,14 +116,14 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V4 — Double-Buffer + OPFS Cache</div>
+  <div id="loading-title">4DGS VIEWER V4 — Double-Buffer texSubImage2D</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
 
 <div id="title-bar">
-  <h1>4DGS Viewer V4</h1>
-  <p>V4: Double-Buffer texSubImage2D | 2-GOP window | OPFS/IDB cache | Float16</p>
+  <h1>4DGS Viewer V4 — Double-Buffer</h1>
+  <p>V4-DblBuf: texSubImage2D ping-pong | 2-GOP window | OPFS/IDB cache | Float16</p>
 </div>
 
 <div id="gop-progress">
