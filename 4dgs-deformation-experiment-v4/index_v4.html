@@ -524,9 +524,30 @@ setInterval(updateMemoryBadge, 2000);
 // ============================================================
 async function decompressGzip(buf) {
   const ds = new DecompressionStream('gzip');
-  const blob = new Blob([buf]);
-  const stream = blob.stream().pipeThrough(ds);
-  return await new Response(stream).blob().then(b => b.arrayBuffer());
+  // Use ReadableStream directly to avoid intermediate Blob allocation (~25MB)
+  const reader = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array(buf));
+      controller.close();
+    }
+  }).pipeThrough(ds).getReader();
+  
+  const chunks = [];
+  let totalLen = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    totalLen += value.byteLength;
+  }
+  // Merge chunks into single ArrayBuffer
+  const result = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return result.buffer;
 }
 
 function float16ToFloat32(u16arr) {
@@ -574,6 +595,7 @@ function streamDecodeFrameRange(gopIdx, targetLocalIdx) {
 
   const raw = gop.raw;
   const rawView = new DataView(raw);
+  const rawU8 = new Uint8Array(raw);  // single view for all byte-level reads (no per-frame alloc)
   const numFrames = gop.numFrames;
   const gopInfo = manifest.gop_index[gopIdx];
 
@@ -629,9 +651,9 @@ function streamDecodeFrameRange(gopIdx, targetLocalIdx) {
       const fXyz16 = new Uint16Array(raw, pos, N * 3);
       const fXyzDelta = float16ToFloat32(fXyz16);
       pos += xyzBytesBase;
-      const fDcU8 = new Uint8Array(raw, pos, N * 3);
+      const dcOff = pos;
       pos += dcBytes;
-      const fOpU8 = new Uint8Array(raw, pos, N);
+      const opOff = pos;
       pos += opBytes;
 
       for (let i = 0; i < N; i++) {
@@ -641,17 +663,19 @@ function streamDecodeFrameRange(gopIdx, targetLocalIdx) {
           let q = Math.round((fXyzDelta[i * 3 + c] - qXyzDMin[c]) * scale);
           outFrame[bOff + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
         }
-        outFrame[bOff + 3] = fDcU8[i * 3];
-        outFrame[bOff + 4] = fDcU8[i * 3 + 1];
-        outFrame[bOff + 5] = fDcU8[i * 3 + 2];
-        outFrame[bOff + 6] = fOpU8[i];
+        const i3 = i * 3;
+        outFrame[bOff + 3] = rawU8[dcOff + i3];
+        outFrame[bOff + 4] = rawU8[dcOff + i3 + 1];
+        outFrame[bOff + 5] = rawU8[dcOff + i3 + 2];
+        outFrame[bOff + 6] = rawU8[opOff + i];
       }
     } else {
-      const fXyzI8 = new Int8Array(raw, pos, N * 3);
+      // P-frame delta decode — read directly from rawView to avoid per-frame typed array allocation
+      const xyzOff = pos;
       pos += xyzBytesInt8;
-      const fDcI8 = new Int8Array(raw, pos, N * 3);
+      const dcOff = pos;
       pos += dcBytes;
-      const fOpI8 = new Int8Array(raw, pos, N);
+      const opOff = pos;
       pos += opBytes;
 
       // Reference: for refresh frames use baseData, otherwise use prevFrame
@@ -659,15 +683,23 @@ function streamDecodeFrameRange(gopIdx, targetLocalIdx) {
 
       for (let i = 0; i < N; i++) {
         const bOff = i * STRIDE;
+        const i3 = i * 3;
         for (let c = 0; c < 3; c++) {
-          let q = ref[bOff + c] + fXyzI8[i * 3 + c];
+          // Read int8 from raw buffer: rawU8 gives unsigned, convert to signed
+          let v = rawU8[xyzOff + i3 + c];
+          if (v > 127) v -= 256; // unsigned → signed int8
+          let q = ref[bOff + c] + v;
           outFrame[bOff + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
         }
         for (let c = 0; c < 3; c++) {
-          let q = ref[bOff + 3 + c] + fDcI8[i * 3 + c];
+          let v = rawU8[dcOff + i3 + c];
+          if (v > 127) v -= 256;
+          let q = ref[bOff + 3 + c] + v;
           outFrame[bOff + 3 + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
         }
-        let q = ref[bOff + 6] + fOpI8[i];
+        let v = rawU8[opOff + i];
+        if (v > 127) v -= 256;
+        let q = ref[bOff + 6] + v;
         outFrame[bOff + 6] = q < 0 ? 0 : (q > 255 ? 255 : q);
       }
     }
@@ -971,6 +1003,8 @@ function evictDistantGops(currentGopIdx) {
   }
   if (evicted > 0 || stripped > 0) {
     diagLog('info', `Eviction: removed ${evicted}, stripped-raw ${stripped}, kept: [${[...keepSet].sort((a,b)=>a-b).join(',')}] (current=${currentGopIdx})`);
+    // Nudge GC after freeing large raw buffers
+    if (stripped > 0) nudgeGC();
   }
   reportStats();
 }
@@ -1002,6 +1036,30 @@ function reportStats() {
     `${totalMemMB.toFixed(1)} MB (${rawCount} raw + ${compOnlyCount} gz + buf)`;
   const pct = total > 0 ? Math.round(loaded / Math.min(MAX_CACHED_GOPS, total) * 100) : 0;
   gopBar.style.width = pct + '%';
+}
+
+// ============================================================
+// GC Nudge — encourage V8 to run garbage collection
+// We can't call gc() directly, but allocating+discarding a large
+// temporary buffer creates memory pressure that triggers Major GC.
+// ============================================================
+function nudgeGC() {
+  try {
+    // Allocate ~32MB temporary buffer — enough to trigger V8's GC heuristic
+    // The allocation itself plus immediate discard signals memory pressure
+    const pressure = new ArrayBuffer(32 * 1024 * 1024);
+    // Reference it briefly to prevent dead-code elimination
+    if (pressure.byteLength === 0) console.log('noop');
+  } catch (e) {
+    // OOM — GC will definitely run now
+  }
+  // Schedule a second nudge on next microtask to catch any stragglers
+  Promise.resolve().then(() => {
+    try {
+      const p2 = new ArrayBuffer(16 * 1024 * 1024);
+      if (p2.byteLength === 0) console.log('noop');
+    } catch (e) {}
+  });
 }
 
 // ============================================================
@@ -1640,6 +1698,9 @@ playBtn.addEventListener('click', () => {
     const freedMB = releasePlaybackBuffers();
     diagLog('info', `Playback paused: released ${freedMB.toFixed(1)} MB of playback buffers`);
     reportStats();
+    // Nudge GC to actually reclaim the freed memory (not just null the refs)
+    nudgeGC();
+    setTimeout(() => { nudgeGC(); updateMemoryBadge(); }, 200);
     updateMemoryBadge();
   } else {
     // === Resume: re-acquire current GOP data for playback ===
