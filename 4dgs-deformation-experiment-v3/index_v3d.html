@@ -847,7 +847,8 @@ async function init() {
   // ============================================================
   // WebSocket for viewctl remote control
   // ============================================================
-  const wsUrl = 'ws://' + location.host + '/';
+  const isLocalhost = ['localhost','127.0.0.1'].includes(location.hostname);
+  const wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/';
   let ws = null;
   function connectWS() {
     try {
@@ -899,7 +900,7 @@ async function init() {
   }
   setInterval(reportCamera, 1000);
   renderer.domElement.addEventListener('pointerup', () => setTimeout(reportCamera, 100));
-  connectWS();
+  if (isLocalhost) connectWS();
 }
 
 // ============================================================

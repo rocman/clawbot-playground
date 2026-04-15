@@ -567,7 +567,8 @@ async function init() {
   });
   
   // 9. WebSocket control channel
-  const wsUrl = 'ws://' + location.host + '/';
+  const isLocalhost = ['localhost','127.0.0.1'].includes(location.hostname);
+  const wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/';
   let ws = null;
   function connectWS() {
     try {
@@ -637,7 +638,7 @@ async function init() {
   setInterval(reportCameraState, 1000);
   renderer.domElement.addEventListener('pointerup', () => setTimeout(reportCameraState, 100));
   
-  connectWS();
+  if (isLocalhost) connectWS();
   
   // Hide loading
   setTimeout(() => {
