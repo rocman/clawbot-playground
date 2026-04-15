@@ -8,15 +8,17 @@ const log = document.getElementById('log');
 function l(msg) { log.textContent += new Date().toISOString().slice(11,19) + ' ' + msg + '\n'; console.log(msg); }
 
 l('1. Starting...');
-try {
-  const isLocal = ['localhost','127.0.0.1'].includes(location.hostname);
-if (isLocal) {
-  const ws = new WebSocket('ws://' + location.host + '/');
-  ws.onopen = () => l('2. WS connected!');
-  ws.onerror = (e) => l('WS error: ' + e);
-  ws.onclose = () => l('WS closed');
-} catch(e) { l('WS exception: ' + e); }
-} else { l('2. WS skipped (not localhost)'); }
+const _isLocalhost = ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(location.hostname);
+if (_isLocalhost) {
+  try {
+    const ws = new WebSocket('ws://' + location.host + '/');
+    ws.onopen = () => l('2. WS connected!');
+    ws.onerror = (e) => l('WS error: ' + e);
+    ws.onclose = () => l('WS closed');
+  } catch(e) { l('WS exception: ' + e); }
+} else {
+  l('2. WS skipped (not localhost)');
+}
 
 l('3. Fetching manifest...');
 fetch('data/manifest.json').then(r => r.json()).then(m => {

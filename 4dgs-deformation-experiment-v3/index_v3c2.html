@@ -770,11 +770,13 @@ async function init() {
 
   // ============================================================
   // WebSocket for viewctl remote control
+  // Only connect on localhost (viewctl is a local-only tool)
   // ============================================================
-  const isLocalhost = ['localhost','127.0.0.1'].includes(location.hostname);
-  const wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/';
+  const _isLocalhost = ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(location.hostname);
+  const wsUrl = 'ws://' + location.host + '/';
   let ws = null;
   function connectWS() {
+    if (!_isLocalhost) return;
     try {
       ws = new WebSocket(wsUrl);
       ws.onopen = () => console.log('[WS] Connected to viewctl');
@@ -828,7 +830,7 @@ async function init() {
   }
   setInterval(reportCamera, 1000);
   renderer.domElement.addEventListener('pointerup', () => setTimeout(reportCamera, 100));
-  if (isLocalhost) connectWS();
+  connectWS();
 }
 
 // ============================================================
