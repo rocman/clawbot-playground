@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V4 — Memory Optimized (No Worker)</title>
+<title>4DGS Deformation Viewer V4 — OPFS/IDB Cached</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -116,14 +116,14 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V4 — No Worker, Memory Optimized</div>
+  <div id="loading-title">4DGS VIEWER V4 — OPFS/IDB Persistent Cache</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
 
 <div id="title-bar">
-  <h1>4DGS Viewer V4 — Memory Optimized</h1>
-  <p>V4: No Worker | 2-GOP sliding window | Float16 textures | Target: 60-80MB</p>
+  <h1>4DGS Viewer V4 — OPFS/IDB Cached</h1>
+  <p>V4: No Worker | 2-GOP window | OPFS/IDB persistent cache | Float16</p>
 </div>
 
 <div id="gop-progress">
@@ -160,6 +160,7 @@
     <span><span class="dot dot-fps"></span> <span id="stat-fps">--</span> FPS</span>
     <span><span class="dot dot-mem"></span> GOPs: <span id="stat-gops">0/0</span></span>
     <span>Window: <span id="stat-window">--</span></span>
+    <span>Cache: <span id="stat-cache">--</span></span>
   </div>
 </div>
 
@@ -184,6 +185,187 @@ import { SplatMesh, dyno } from "@sparkjsdev/spark";
 const MAX_CACHED_GOPS = 2;   // current + next (was 7-8 in old version)
 const DELTA_K = 256;
 const STRIDE = 7; // bytes per gaussian per frame: xyz(3) + dc(3) + op(1)
+
+// ============================================================
+// L2 Persistent Cache — OPFS (preferred) + IndexedDB (fallback)
+// Stores raw gzip bytes so page refresh skips network entirely.
+// Cache key = manifestVersion + "/" + filename (invalidated on version change)
+// ============================================================
+class GopPersistCache {
+  constructor() {
+    this._mode = null;  // 'opfs' | 'idb' | null
+    this._opfsRoot = null;
+    this._idbDB = null;
+    this._ready = this._init();
+  }
+
+  async _init() {
+    // Try OPFS first
+    try {
+      if (navigator.storage && navigator.storage.getDirectory) {
+        const root = await navigator.storage.getDirectory();
+        this._opfsRoot = await root.getDirectoryHandle('4dgs-v4-cache', { create: true });
+        this._mode = 'opfs';
+        console.log('[PersistCache] Using OPFS');
+        return;
+      }
+    } catch (e) {
+      console.warn('[PersistCache] OPFS unavailable:', e.message);
+    }
+    // Fallback to IndexedDB
+    try {
+      this._idbDB = await new Promise((resolve, reject) => {
+        const req = indexedDB.open('4dgs-v4-cache', 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('blobs')) {
+            db.createObjectStore('blobs');
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      this._mode = 'idb';
+      console.log('[PersistCache] Using IndexedDB');
+    } catch (e) {
+      console.warn('[PersistCache] IndexedDB unavailable:', e.message);
+      this._mode = null;
+    }
+  }
+
+  _key(manifestVersion, filename) {
+    return `${manifestVersion}/${filename}`;
+  }
+
+  async get(manifestVersion, filename) {
+    await this._ready;
+    const key = this._key(manifestVersion, filename);
+    if (this._mode === 'opfs') {
+      return this._opfsGet(key);
+    } else if (this._mode === 'idb') {
+      return this._idbGet(key);
+    }
+    return null;
+  }
+
+  async put(manifestVersion, filename, arrayBuffer) {
+    await this._ready;
+    const key = this._key(manifestVersion, filename);
+    if (this._mode === 'opfs') {
+      return this._opfsPut(key, arrayBuffer);
+    } else if (this._mode === 'idb') {
+      return this._idbPut(key, arrayBuffer);
+    }
+  }
+
+  // --- OPFS ---
+  async _opfsGet(key) {
+    try {
+      // key = "v3d/gop_000.bin.gz" → use flat filename with safe chars
+      const safeName = key.replace(/\//g, '__');
+      const fh = await this._opfsRoot.getFileHandle(safeName);
+      const file = await fh.getFile();
+      return await file.arrayBuffer();
+    } catch (e) {
+      return null; // NotFoundError → cache miss
+    }
+  }
+  async _opfsPut(key, buf) {
+    try {
+      const safeName = key.replace(/\//g, '__');
+      const fh = await this._opfsRoot.getFileHandle(safeName, { create: true });
+      const writable = await fh.createWritable();
+      await writable.write(buf);
+      await writable.close();
+    } catch (e) {
+      console.warn('[PersistCache] OPFS write failed:', e.message);
+    }
+  }
+
+  // --- IndexedDB ---
+  async _idbGet(key) {
+    return new Promise((resolve) => {
+      try {
+        const tx = this._idbDB.transaction('blobs', 'readonly');
+        const req = tx.objectStore('blobs').get(key);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+      } catch (e) { resolve(null); }
+    });
+  }
+  async _idbPut(key, buf) {
+    return new Promise((resolve) => {
+      try {
+        const tx = this._idbDB.transaction('blobs', 'readwrite');
+        tx.objectStore('blobs').put(buf, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      } catch (e) { resolve(); }
+    });
+  }
+
+  // Invalidate all entries not matching current manifest version
+  async purgeOldVersions(currentVersion) {
+    await this._ready;
+    const prefix = currentVersion + '/';
+    if (this._mode === 'opfs') {
+      try {
+        const safePrefix = prefix.replace(/\//g, '__');
+        for await (const [name] of this._opfsRoot) {
+          if (!name.startsWith(safePrefix)) {
+            await this._opfsRoot.removeEntry(name).catch(() => {});
+          }
+        }
+      } catch (e) {}
+    } else if (this._mode === 'idb') {
+      try {
+        const tx = this._idbDB.transaction('blobs', 'readwrite');
+        const store = tx.objectStore('blobs');
+        const req = store.getAllKeys();
+        req.onsuccess = () => {
+          for (const k of req.result) {
+            if (!k.startsWith(prefix)) store.delete(k);
+          }
+        };
+      } catch (e) {}
+    }
+  }
+
+  get mode() { return this._mode; }
+}
+
+const persistCache = new GopPersistCache();
+
+// Helper: fetch with L2 persistent cache
+// Returns raw ArrayBuffer (still gzip-compressed for GOP/meta/mask files)
+async function cachedFetch(url, cacheFilename) {
+  const ver = manifest ? (manifest.version || 'unknown') : 'unknown';
+  // Try L2 cache first
+  const cached = await persistCache.get(ver, cacheFilename);
+  if (cached) {
+    diagStatsAccum.cacheHits++;
+    diagLog('info', `L2 cache HIT: ${cacheFilename} (${(cached.byteLength/1024).toFixed(0)} KB)`);
+    updateCacheStatus();
+    return cached;
+  }
+  // L3: network fetch (no cache-busting timestamp)
+  diagStatsAccum.cacheMisses++;
+  diagLog('info', `L2 cache MISS: ${cacheFilename}, fetching from network`);
+  const resp = await fetch(url);
+  const buf = await resp.arrayBuffer();
+  // Store in L2 (fire-and-forget)
+  persistCache.put(ver, cacheFilename, buf).catch(() => {});
+  updateCacheStatus();
+  return buf;
+}
+
+function updateCacheStatus() {
+  const el = document.getElementById('stat-cache');
+  if (el) {
+    const mode = persistCache.mode || 'none';
+    el.textContent = `${mode.toUpperCase()} ${diagStatsAccum.cacheHits}/${diagStatsAccum.cacheHits + diagStatsAccum.cacheMisses} hits`;
+  }
+}
 
 // ============================================================
 // State
@@ -232,7 +414,7 @@ let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
 // Diagnostic
 const diagLogs = [];
 const DIAG_LOG_MAX = 300;
-let diagStatsAccum = { framesRequested: 0, framesApplied: 0, framesDropped: 0, stallFrames: 0 };
+let diagStatsAccum = { framesRequested: 0, framesApplied: 0, framesDropped: 0, stallFrames: 0, cacheHits: 0, cacheMisses: 0 };
 function diagLog(level, msg, data) {
   const entry = { ts: performance.now(), level, msg, ...(data || {}) };
   diagLogs.push(entry);
@@ -365,11 +547,20 @@ function packFrameToHalfFloat(frame) {
 // ============================================================
 async function loadManifest() {
   setLoading(5, 'Loading manifest...');
-  const resp = await fetch('data_v3d/manifest.json?t=' + Date.now());
+  // Manifest always fetches from network (cache-bust) to detect version changes
+  const isRefresh = location.hash === '#refresh';
+  const resp = await fetch('data_v3d/manifest.json' + (isRefresh ? '?t=' + Date.now() : ''), {
+    cache: isRefresh ? 'reload' : 'default'
+  });
   manifest = await resp.json();
   targetFPS = manifest.target_fps || 30;
   TOTAL_DURATION = (manifest.p_frame_count || 299) / targetFPS;
   N = manifest.dynamic_gaussians;
+
+  // Purge old version cache entries (fire-and-forget)
+  const ver = manifest.version || 'unknown';
+  persistCache.purgeOldVersions(ver).catch(() => {});
+  console.log(`[PersistCache] Version: ${ver}, mode: ${persistCache.mode || 'none'}`);
 
   document.getElementById('stat-total').textContent = manifest.total_gaussians.toLocaleString();
   document.getElementById('stat-dynamic').textContent = manifest.dynamic_gaussians.toLocaleString();
@@ -389,8 +580,7 @@ async function loadManifest() {
 }
 
 async function loadDynamicMask() {
-  const resp = await fetch('data_v3d/' + manifest.dynamic_mask + '?t=' + Date.now());
-  const compressed = await resp.arrayBuffer();
+  const compressed = await cachedFetch('data_v3d/' + manifest.dynamic_mask, manifest.dynamic_mask);
   const raw = await decompressGzip(compressed);
   const view = new DataView(raw);
   const totalN = view.getUint32(0, true);
@@ -402,9 +592,7 @@ async function loadDynamicMask() {
 // ============================================================
 async function loadGopMeta() {
   gopStatus.textContent = 'Meta: downloading...';
-  const metaUrl = `data_v3d/${manifest.gop_meta}?t=${Date.now()}`;
-  const resp = await fetch(metaUrl);
-  const compressed = await resp.arrayBuffer();
+  const compressed = await cachedFetch(`data_v3d/${manifest.gop_meta}`, manifest.gop_meta);
   const raw = await decompressGzip(compressed);
   const rawView = new DataView(raw);
 
@@ -472,8 +660,7 @@ async function loadGop(gopIdx) {
 
   const gopInfo = manifest.gop_index[gopIdx];
   try {
-    const resp = await fetch(`data_v3d/${gopInfo.filename}?t=${Date.now()}`);
-    const compressed = await resp.arrayBuffer();
+    const compressed = await cachedFetch(`data_v3d/${gopInfo.filename}`, gopInfo.filename);
     const raw = await decompressGzip(compressed);
     const rawView = new DataView(raw);
 
@@ -729,6 +916,10 @@ async function init() {
   const t0 = performance.now();
 
   await loadManifest();
+  // Clear #refresh hash after manifest loaded (used by viewctl refresh)
+  if (location.hash === '#refresh') {
+    history.replaceState(null, '', location.pathname + location.search);
+  }
 
   setLoading(10, 'Loading dynamic mask...');
   await loadDynamicMask();
@@ -751,9 +942,8 @@ async function init() {
   deltaSampler = dyno.dynoSampler2D(deltaTexture);
   maskSampler = dyno.dynoSampler2D(maskTexture);
 
-  const iFrameUrl = 'data_v3d/' + manifest.i_frame + '?t=' + Date.now();
-  const iFrameResp = await fetch(iFrameUrl);
-  const iFrameBytes = new Uint8Array(await iFrameResp.arrayBuffer());
+  const iFrameBuf = await cachedFetch('data_v3d/' + manifest.i_frame, manifest.i_frame);
+  const iFrameBytes = new Uint8Array(iFrameBuf);
   console.log(`[V4] SPZ I-frame loaded: ${(iFrameBytes.byteLength/1024/1024).toFixed(2)} MB`);
 
   setLoading(70, 'Initializing Spark.js...');
@@ -1112,6 +1302,7 @@ window._viewer = {
     stats: { ...diagStatsAccum },
     currentFrame,
     gopCacheSize: gopCache.size,
+    cacheMode: persistCache.mode,
     logs: diagLogs.slice(-50),
   }),
   dumpDiag: () => {
