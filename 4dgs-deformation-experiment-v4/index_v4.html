@@ -369,21 +369,36 @@ async function cachedFetch(url, cacheFilename) {
     diagLog('warn', `L2 cache has empty entry for ${cacheFilename}, purging`);
     persistCache.delete(ver, cacheFilename).catch(() => {});
   }
-  // L3: network fetch (no cache-busting timestamp)
+  // L3: network fetch with retry (no cache-busting timestamp)
   diagStatsAccum.cacheMisses++;
-  diagLog('info', `L2 cache MISS: ${cacheFilename}, fetching from network`);
-  const resp = await fetch(url);
-  if (!resp.ok) {
-    throw new Error(`HTTP ${resp.status} for ${url}`);
+  const fullUrl = new URL(url, location.href).href;
+  diagLog('info', `L2 cache MISS: ${cacheFilename}, fetching from network: ${fullUrl}`);
+  const MAX_RETRIES = 3;
+  let lastErr = null;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status} for ${fullUrl}`);
+      }
+      const buf = await resp.arrayBuffer();
+      if (buf.byteLength === 0) {
+        throw new Error(`Empty response for ${fullUrl}`);
+      }
+      // Store in L2 (fire-and-forget)
+      persistCache.put(ver, cacheFilename, buf).catch(() => {});
+      updateCacheStatus();
+      if (attempt > 1) diagLog('info', `${cacheFilename} succeeded on attempt ${attempt}`);
+      return buf;
+    } catch (e) {
+      lastErr = e;
+      diagLog('warn', `Fetch attempt ${attempt}/${MAX_RETRIES} failed for ${cacheFilename}: ${e.message} (url: ${fullUrl})`);
+      if (attempt < MAX_RETRIES) {
+        await new Promise(r => setTimeout(r, 500 * attempt)); // backoff: 500ms, 1000ms
+      }
+    }
   }
-  const buf = await resp.arrayBuffer();
-  if (buf.byteLength === 0) {
-    throw new Error(`Empty response for ${url}`);
-  }
-  // Store in L2 (fire-and-forget)
-  persistCache.put(ver, cacheFilename, buf).catch(() => {});
-  updateCacheStatus();
-  return buf;
+  throw lastErr;
 }
 
 function updateCacheStatus() {
@@ -778,7 +793,9 @@ async function loadGop(gopIdx) {
     gopFailedSet.add(gopIdx);
     // Allow retry after 5 seconds
     setTimeout(() => gopFailedSet.delete(gopIdx), 5000);
-    diagLog('error', `GOP ${gopIdx} load failed: ${err.message}`);
+    const gopUrl = new URL(`data_v3d/${gopInfo.filename}`, location.href).href;
+    diagLog('error', `GOP ${gopIdx} load failed: ${err.message} (url: ${gopUrl})`, { stack: err.stack });
+    console.error(`[V4] GOP ${gopIdx} load failed:`, err, `\nFull URL: ${gopUrl}`);
     updateGopStripUI(gopIdx, 'error');
   }
 }
