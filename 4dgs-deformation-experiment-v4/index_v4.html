@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V4 — Stream Decode + Double-Buffer + OPFS Cache + Lazy Decompress</title>
+<title>4DGS Deformation Viewer V4 — Stream Decode + Double-Buffer + OPFS Cache + Lazy Decompress + Stop-Release</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -123,7 +123,7 @@
 
 <div id="title-bar">
   <h1>4DGS Viewer V4</h1>
-  <p>V4: Double-Buffer texSubImage2D | Lazy-decompress GOP | OPFS/IDB cache | Float16</p>
+  <p>V4: Double-Buffer texSubImage2D | Lazy-decompress GOP | Stop-release | OPFS/IDB cache | Float16</p>
 </div>
 
 <div id="gop-progress">
@@ -579,6 +579,14 @@ function streamDecodeFrameRange(gopIdx, targetLocalIdx) {
 
   if (targetLocalIdx < 0 || targetLocalIdx >= numFrames) return null;
 
+  // Lazy-rebuild decode buffers (may have been freed by releasePlaybackBuffers)
+  if (!decodeOutputBuf) decodeOutputBuf = new Uint8Array(N * STRIDE);
+  if (!streamState.prevFrame) {
+    streamState.prevFrame = new Uint8Array(N * STRIDE);
+    streamState.gopIdx = -1;
+    streamState.localIdx = -1;
+  }
+
   // Determine start index for decoding
   let startLocalIdx = 0;
   if (streamState.gopIdx === gopIdx && streamState.localIdx >= 0 && streamState.localIdx < targetLocalIdx) {
@@ -683,6 +691,11 @@ function packFrameToHalfFloat(frame, halfIdx) {
   const dcScale1 = (qDcMax[1] - qDcMin[1]) / 255.0;
   const dcScale2 = (qDcMax[2] - qDcMin[2]) / 255.0;
   const opScale = (qOpMax - qOpMin) / 255.0;
+
+  // Lazy-rebuild reusable buffer (may have been freed by releasePlaybackBuffers)
+  if (!reusableTexData) {
+    reusableTexData = new Uint16Array(deltaTexW * deltaTexHalfH * 4);
+  }
 
   // Reuse pre-allocated buffer (sized for one half only)
   const texData = reusableTexData;
@@ -978,13 +991,76 @@ function reportStats() {
   const compMB = compressedBytes / 1024 / 1024;
   const rawMB = rawBytes / 1024 / 1024;
   // Also account for stream decode buffers (~2 × N × STRIDE)
-  const decodeBufMB = 2 * N * STRIDE / 1024 / 1024;
-  const totalMemMB = compMB + rawMB + decodeBufMB;
+  const decodeBufBytes = (decodeOutputBuf ? decodeOutputBuf.byteLength : 0) +
+                         (streamState.prevFrame ? streamState.prevFrame.byteLength : 0);
+  const decodeBufMB = decodeBufBytes / 1024 / 1024;
+  // Also account for reusableTexData
+  const texBufMB = reusableTexData ? reusableTexData.byteLength / 1024 / 1024 : 0;
+  const totalMemMB = compMB + rawMB + decodeBufMB + texBufMB;
   document.getElementById('stat-gops').textContent = `${loaded}/${total}`;
   document.getElementById('stat-window').textContent =
     `${totalMemMB.toFixed(1)} MB (${rawCount} raw + ${compOnlyCount} gz + buf)`;
   const pct = total > 0 ? Math.round(loaded / Math.min(MAX_CACHED_GOPS, total) * 100) : 0;
   gopBar.style.width = pct + '%';
+}
+
+// ============================================================
+// P0: Stop-release — free playback buffers when paused
+// Frees: all gopCache entries, streamState buffers, decode output buffer
+// On resume: re-download and decompress from L2 persistent cache (instant)
+// ============================================================
+function releasePlaybackBuffers() {
+  let freedBytes = 0;
+
+  // 1. Release all GOP cache entries (raw + compressed)
+  for (const [idx, gop] of gopCache) {
+    if (gop.raw) freedBytes += gop.raw.byteLength;
+    if (gop.compressed) freedBytes += gop.compressed.byteLength;
+    updateGopStripUI(idx, 'evicted');
+  }
+  gopCache.clear();
+
+  // 2. Release stream decode buffers
+  if (streamState.prevFrame) {
+    freedBytes += streamState.prevFrame.byteLength;
+    streamState.prevFrame = null;
+  }
+  streamState.gopIdx = -1;
+  streamState.localIdx = -1;
+
+  if (decodeOutputBuf) {
+    freedBytes += decodeOutputBuf.byteLength;
+    decodeOutputBuf = null;
+  }
+
+  // 3. Release reusable tex data buffer
+  if (reusableTexData) {
+    freedBytes += reusableTexData.byteLength;
+    reusableTexData = null;
+  }
+
+  return freedBytes / 1024 / 1024;
+}
+
+// ============================================================
+// P0: Release texture CPU-side data after GPU upload
+// deltaTexture: Uint16Array CPU copy is useless since we use texSubImage2D
+// maskTexture: Float32Array CPU copy is useless after initial GPU upload
+// ============================================================
+function releaseTextureCPUData() {
+  // deltaTexture — we bypass THREE.js with direct texSubImage2D, CPU data never needed
+  if (deltaTexture && deltaTexture.image && deltaTexture.image.data) {
+    const bytes = deltaTexture.image.data.byteLength;
+    deltaTexture.image.data = new Uint16Array(0); // replace with empty array (can't set to null — THREE.js checks)
+    diagLog('info', `Released deltaTexture CPU data: ${(bytes/1024/1024).toFixed(1)} MB`);
+  }
+
+  // maskTexture — already uploaded to GPU, CPU data no longer needed
+  if (maskTexture && maskTexture.image && maskTexture.image.data) {
+    const bytes = maskTexture.image.data.byteLength;
+    maskTexture.image.data = new Float32Array(0);
+    diagLog('info', `Released maskTexture CPU data: ${(bytes/1024/1024).toFixed(1)} MB`);
+  }
 }
 
 // ============================================================
@@ -1317,6 +1393,14 @@ async function init() {
     splatMesh.updateGenerator();
     isPlaying = true;
     playBtn.textContent = '\u23F8';
+
+    // P0: Release texture CPU data after first render ensures GPU has the data
+    // Delay slightly to ensure THREE.js has completed initial GPU upload
+    setTimeout(() => {
+      // Force one render to ensure textures are uploaded to GPU
+      renderer.render(scene, camera);
+      releaseTextureCPUData();
+    }, 500);
   }, 300);
 
   // ============================================================
@@ -1549,6 +1633,22 @@ function updateFrame(idx) {
 playBtn.addEventListener('click', () => {
   isPlaying = !isPlaying;
   playBtn.textContent = isPlaying ? '\u23F8' : '\u25B6';
+
+  if (!isPlaying) {
+    // === P0: Stop-release — free all GOP raw/compressed, streamState, decode buffers ===
+    // This can free ~28+ MB of JS Heap memory when paused
+    const freedMB = releasePlaybackBuffers();
+    diagLog('info', `Playback paused: released ${freedMB.toFixed(1)} MB of playback buffers`);
+    reportStats();
+    updateMemoryBadge();
+  } else {
+    // === Resume: re-acquire current GOP data for playback ===
+    const gopIdx = getGopIndexForFrame(currentFrame);
+    if (gopIdx >= 0 && !gopCache.has(gopIdx)) {
+      diagLog('info', `Playback resumed: reloading GOP ${gopIdx}`);
+      loadGop(gopIdx, true);
+    }
+  }
 });
 
 timeline.addEventListener('input', (e) => {
@@ -1609,6 +1709,14 @@ window._viewer = {
     gopCacheSize: gopCache.size,
     cacheMode: persistCache.mode,
     dblBuf: { readHalf: uDeltaHalf ? uDeltaHalf.value : -1, writeHalf, deltaTexH, deltaTexHalfH },
+    buffers: {
+      decodeOutputBuf: decodeOutputBuf ? (decodeOutputBuf.byteLength / 1024).toFixed(0) + ' KB' : 'released',
+      streamPrevFrame: streamState.prevFrame ? (streamState.prevFrame.byteLength / 1024).toFixed(0) + ' KB' : 'released',
+      reusableTexData: reusableTexData ? (reusableTexData.byteLength / 1024).toFixed(0) + ' KB' : 'released',
+      deltaTexCPU: (deltaTexture && deltaTexture.image && deltaTexture.image.data && deltaTexture.image.data.byteLength > 0) ? (deltaTexture.image.data.byteLength / 1024).toFixed(0) + ' KB' : 'released',
+      maskTexCPU: (maskTexture && maskTexture.image && maskTexture.image.data && maskTexture.image.data.byteLength > 0) ? (maskTexture.image.data.byteLength / 1024).toFixed(0) + ' KB' : 'released',
+    },
+    isPlaying,
     logs: diagLogs.slice(-50),
   }),
   dumpDiag: () => {
