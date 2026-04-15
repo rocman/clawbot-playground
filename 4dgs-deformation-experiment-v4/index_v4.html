@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V4 — Stream Decode + Double-Buffer + OPFS Cache</title>
+<title>4DGS Deformation Viewer V4 — Stream Decode + Double-Buffer + OPFS Cache + Lazy Decompress</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -123,7 +123,7 @@
 
 <div id="title-bar">
   <h1>4DGS Viewer V4</h1>
-  <p>V4: Double-Buffer texSubImage2D | 2-GOP window | OPFS/IDB cache | Float16</p>
+  <p>V4: Double-Buffer texSubImage2D | Lazy-decompress GOP | OPFS/IDB cache | Float16</p>
 </div>
 
 <div id="gop-progress">
@@ -438,9 +438,10 @@ let qDcMin = null, qDcMax = null;
 let qOpMin = 0, qOpMax = 0;
 let baseData = null; // Uint8Array(N * 7)
 
-// GOP cache — stores RAW decompressed data (not decoded frames) to save memory
-// gopIndex -> { raw: ArrayBuffer, numFrames, startFrame, endFrame, lastAccess }
-// Memory: ~0.7-1.5MB per GOP (raw) vs ~27MB per GOP (decoded)
+// GOP cache — lazy decompression: stores compressed gzip + optionally decompressed raw
+// gopIndex -> { compressed: ArrayBuffer, raw: ArrayBuffer|null, numFrames, startFrame, endFrame, lastAccess }
+// Memory: ~1-1.5MB per GOP (compressed) vs ~25-27MB per GOP (decompressed raw)
+// Strategy (Scheme C): current GOP keeps both compressed+raw; prefetch GOP keeps compressed only
 const gopCache = new Map();
 const gopLoadingSet = new Set(); // GOPs currently being fetched
 const gopFailedSet = new Set();  // GOPs that failed to load (prevents infinite retry)
@@ -827,30 +828,42 @@ async function loadGopMeta() {
 }
 
 // ============================================================
-// GOP Loading — stores RAW decompressed data only (no upfront decode)
-// Memory: ~1-2MB per GOP (raw) instead of ~27MB (decoded)
+// GOP Loading — stores COMPRESSED gzip data + optionally decompressed raw
+// Memory: ~1-1.5MB per GOP (compressed) instead of ~25MB (decompressed)
+// Decompression happens on-demand via ensureGopDecompressed()
+// keepRaw=true: also keep decompressed data (for current/imminent playback)
+// keepRaw=false: discard raw after reading header (prefetch-only mode)
 // ============================================================
-async function loadGop(gopIdx) {
+async function loadGop(gopIdx, keepRaw = true) {
   if (gopCache.has(gopIdx) || gopLoadingSet.has(gopIdx) || gopFailedSet.has(gopIdx)) return;
   if (gopIdx < 0 || gopIdx >= manifest.gop_count) return;
 
   gopLoadingSet.add(gopIdx);
   updateGopStripUI(gopIdx, 'loading');
-  diagLog('info', `GOP ${gopIdx} loading started`);
+  diagLog('info', `GOP ${gopIdx} loading started (keepRaw=${keepRaw})`);
   const loadStart = performance.now();
 
   const gopInfo = manifest.gop_index[gopIdx];
   try {
     const compressed = await cachedFetch(`data_v3d/${gopInfo.filename}`, gopInfo.filename);
-    const raw = await decompressGzip(compressed);
-    const rawView = new DataView(raw);
 
-    // GOP header (16 bytes) — only read numFrames
-    const numFrames = rawView.getUint32(8, true);
+    let raw = null;
+    let numFrames;
 
-    // Store ONLY the raw decompressed data — decode happens on-demand via streamDecodeFrameRange
+    if (keepRaw) {
+      // Full decompress — needed for immediate playback
+      raw = await decompressGzip(compressed);
+      const rawView = new DataView(raw);
+      numFrames = rawView.getUint32(8, true);
+    } else {
+      // Prefetch-only: compute numFrames from manifest, skip expensive decompress entirely
+      numFrames = gopInfo.end_frame - gopInfo.start_frame;
+    }
+
+    // Store entry — raw is null for prefetch-only (lazy decompress later)
     gopCache.set(gopIdx, {
-      raw,              // ArrayBuffer — decompressed GOP binary (~1-2MB)
+      compressed,       // ArrayBuffer — original gzip bytes (~1-1.5MB)
+      raw,              // decompressed data (~25MB) or null
       numFrames,
       startFrame: gopInfo.start_frame,
       endFrame: gopInfo.end_frame,
@@ -858,9 +871,14 @@ async function loadGop(gopIdx) {
     });
 
     gopLoadingSet.delete(gopIdx);
-    const rawKB = (raw.byteLength / 1024).toFixed(0);
+    const compKB = (compressed.byteLength / 1024).toFixed(0);
     const loadMs = (performance.now() - loadStart).toFixed(0);
-    diagLog('info', `GOP ${gopIdx} loaded in ${loadMs}ms (raw: ${rawKB} KB — no upfront decode)`);
+    if (raw) {
+      const rawMB = (raw.byteLength / 1024 / 1024).toFixed(1);
+      diagLog('info', `GOP ${gopIdx} loaded+decompressed in ${loadMs}ms (compressed: ${compKB} KB, raw: ${rawMB} MB)`);
+    } else {
+      diagLog('info', `GOP ${gopIdx} prefetched in ${loadMs}ms (compressed only: ${compKB} KB, ${numFrames} frames)`);
+    }
     updateGopStripUI(gopIdx, 'loaded');
     reportStats();
 
@@ -877,19 +895,46 @@ async function loadGop(gopIdx) {
 }
 
 // ============================================================
-// Eviction — keep only MAX_CACHED_GOPS (current + next)
+// Lazy Decompress — decompress GOP raw data on demand
+// Only the current playing GOP needs raw; prefetched GOP stays compressed
+// ============================================================
+async function ensureGopDecompressed(gopIdx) {
+  const gop = gopCache.get(gopIdx);
+  if (!gop) return false;
+  if (gop.raw) return true; // already decompressed
+
+  // Decompress from stored compressed data
+  const t0 = performance.now();
+  try {
+    const raw = await decompressGzip(gop.compressed);
+    gop.raw = raw;
+    const ms = (performance.now() - t0).toFixed(1);
+    const rawMB = (raw.byteLength / 1024 / 1024).toFixed(1);
+    diagLog('info', `GOP ${gopIdx} lazy-decompressed in ${ms}ms (${rawMB} MB)`);
+    reportStats();
+    return true;
+  } catch (err) {
+    diagLog('error', `GOP ${gopIdx} lazy-decompress failed: ${err.message}`);
+    return false;
+  }
+}
+
+// ============================================================
+// Eviction — keep only MAX_CACHED_GOPS compressed, strip raw from non-current
 // ============================================================
 function evictDistantGops(currentGopIdx) {
   const totalGops = manifest.gop_count;
   const keepSet = new Set();
   keepSet.add(currentGopIdx);
-  // Keep next GOP for seamless playback
+  // Keep next GOP for seamless playback (compressed only)
   const nextGop = (currentGopIdx + 1) % totalGops;
   keepSet.add(nextGop);
 
   let evicted = 0;
-  for (const [idx] of gopCache) {
+  let stripped = 0;
+  for (const [idx, gop] of gopCache) {
     if (!keepSet.has(idx)) {
+      // Fully evict GOPs outside the keep window
       gopCache.delete(idx);
       // Reset stream state if it referenced the evicted GOP
       if (streamState.gopIdx === idx) {
@@ -898,10 +943,21 @@ function evictDistantGops(currentGopIdx) {
       }
       updateGopStripUI(idx, 'evicted');
       evicted++;
+    } else if (idx !== currentGopIdx && gop.raw) {
+      // Strip raw from non-current GOPs (keep compressed only) — this is the big memory save
+      const rawMB = (gop.raw.byteLength / 1024 / 1024).toFixed(1);
+      gop.raw = null;
+      // Reset stream state since raw was freed
+      if (streamState.gopIdx === idx) {
+        streamState.gopIdx = -1;
+        streamState.localIdx = -1;
+      }
+      stripped++;
+      diagLog('info', `GOP ${idx} raw stripped (freed ${rawMB} MB), keeping compressed only`);
     }
   }
-  if (evicted > 0) {
-    diagLog('info', `Evicted ${evicted} GOPs, kept: [${[...keepSet].sort((a,b)=>a-b).join(',')}]`);
+  if (evicted > 0 || stripped > 0) {
+    diagLog('info', `Eviction: removed ${evicted}, stripped-raw ${stripped}, kept: [${[...keepSet].sort((a,b)=>a-b).join(',')}] (current=${currentGopIdx})`);
   }
   reportStats();
 }
@@ -909,17 +965,24 @@ function evictDistantGops(currentGopIdx) {
 function reportStats() {
   const loaded = gopCache.size;
   const total = manifest ? manifest.gop_count : 0;
-  // Calculate actual raw memory usage (not decoded frame size)
-  let rawMemBytes = 0;
+  // Calculate actual memory usage: compressed + raw (if decompressed)
+  let compressedBytes = 0;
+  let rawBytes = 0;
+  let rawCount = 0;
+  let compOnlyCount = 0;
   for (const [, gop] of gopCache) {
-    rawMemBytes += gop.raw.byteLength;
+    if (gop.compressed) compressedBytes += gop.compressed.byteLength;
+    if (gop.raw) { rawBytes += gop.raw.byteLength; rawCount++; }
+    else { compOnlyCount++; }
   }
-  const rawMemMB = rawMemBytes / 1024 / 1024;
+  const compMB = compressedBytes / 1024 / 1024;
+  const rawMB = rawBytes / 1024 / 1024;
   // Also account for stream decode buffers (~2 × N × STRIDE)
   const decodeBufMB = 2 * N * STRIDE / 1024 / 1024;
-  const totalMemMB = rawMemMB + decodeBufMB;
+  const totalMemMB = compMB + rawMB + decodeBufMB;
   document.getElementById('stat-gops').textContent = `${loaded}/${total}`;
-  document.getElementById('stat-window').textContent = `${totalMemMB.toFixed(1)} MB (${loaded} raw GOPs + decode buf)`;
+  document.getElementById('stat-window').textContent =
+    `${totalMemMB.toFixed(1)} MB (${rawCount} raw + ${compOnlyCount} gz + buf)`;
   const pct = total > 0 ? Math.round(loaded / Math.min(MAX_CACHED_GOPS, total) * 100) : 0;
   gopBar.style.width = pct + '%';
 }
@@ -1015,6 +1078,7 @@ function applyFrameData(globalFrame) {
   const gopIdx = getGopIndexForFrame(globalFrame);
   const gop = gopCache.get(gopIdx);
   if (!gop) return false; // GOP not loaded yet
+  if (!gop.raw) return false; // GOP loaded but not yet decompressed (lazy decompress pending)
 
   const pFrameIdx = globalFrame - 1;
   const localIdx = pFrameIdx - gop.startFrame;
@@ -1069,18 +1133,35 @@ function applyFrameData(globalFrame) {
 
 // Prefetch next GOP in background (fire-and-forget async)
 let prefetchPromise = null;
-function triggerPrefetch(currentGopIdx) {
+// Track ongoing lazy-decompress to avoid duplicate calls
+let _decompressingSet = new Set();
+
+function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
   const totalGops = manifest.gop_count;
   const nextGop = (currentGopIdx + 1) % totalGops;
   if (!gopCache.has(nextGop) && !gopLoadingSet.has(nextGop)) {
-    prefetchPromise = loadGop(nextGop);
+    // Prefetch with keepRaw=false — only download + store compressed
+    prefetchPromise = loadGop(nextGop, false);
   }
   // Also prefetch GOP 0 when near end (for loop)
   if (currentGopIdx >= totalGops - 2) {
     if (!gopCache.has(0) && !gopLoadingSet.has(0)) {
-      loadGop(0);
+      loadGop(0, false);
     }
   }
+
+  // Proactive lazy-decompress: when near end of current GOP, decompress next GOP's raw
+  // Threshold: last 5 frames of current GOP (gives ~170ms at 30fps to decompress)
+  const DECOMPRESS_AHEAD_FRAMES = 5;
+  if (currentGopFrames > 0 && currentLocalIdx >= currentGopFrames - DECOMPRESS_AHEAD_FRAMES) {
+    const nextEntry = gopCache.get(nextGop);
+    if (nextEntry && !nextEntry.raw && !_decompressingSet.has(nextGop)) {
+      _decompressingSet.add(nextGop);
+      diagLog('info', `Proactive decompress: GOP ${nextGop} (${DECOMPRESS_AHEAD_FRAMES} frames ahead)`);
+      ensureGopDecompressed(nextGop).finally(() => _decompressingSet.delete(nextGop));
+    }
+  }
+
   evictDistantGops(currentGopIdx);
 }
 
@@ -1214,9 +1295,9 @@ async function init() {
   camera.position.set(0.5, 4.5, 15.0);
 
   setLoading(85, 'Preloading first GOP...');
-  await loadGop(0);
-  // Fire-and-forget prefetch of GOP 1
-  loadGop(1);
+  await loadGop(0, true);  // keepRaw=true — needed for immediate playback
+  // Fire-and-forget prefetch of GOP 1 (compressed only — lazy decompress later)
+  loadGop(1, false);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(2.435, -2.0, -15.003);
@@ -1275,15 +1356,34 @@ async function init() {
             const activeSeg = document.getElementById(`gop-seg-${gopIdx}`);
             if (activeSeg) { activeSeg.className = 'gop-seg active'; }
           }
-          // Prefetch next GOP asynchronously
-          if (gopIdx >= 0) triggerPrefetch(gopIdx);
+          // Prefetch next GOP asynchronously (pass local frame info for proactive decompress)
+          if (gopIdx >= 0) {
+            const gop = gopCache.get(gopIdx);
+            const pIdx = nextFrame - 1;
+            const localIdx = gop ? pIdx - gop.startFrame : 0;
+            const gopFrames = gop ? gop.numFrames : 0;
+            triggerPrefetch(gopIdx, localIdx, gopFrames);
+          }
         } else {
-          // GOP not loaded — stall: hold current frame, trigger load
+          // Stall: frame not available — either GOP not loaded or not decompressed
           diagStatsAccum.stallFrames++;
           const gopIdx = getGopIndexForFrame(nextFrame);
-          frameLabel.textContent = `Loading GOP ${gopIdx}...`;
-          if (gopIdx >= 0 && !gopCache.has(gopIdx) && !gopLoadingSet.has(gopIdx)) {
-            loadGop(gopIdx);
+          if (gopIdx >= 0) {
+            const gopEntry = gopCache.get(gopIdx);
+            if (gopEntry && !gopEntry.raw) {
+              // GOP is cached (compressed) but needs lazy decompress
+              frameLabel.textContent = `Decompressing GOP ${gopIdx}...`;
+              if (!_decompressingSet.has(gopIdx)) {
+                _decompressingSet.add(gopIdx);
+                ensureGopDecompressed(gopIdx).finally(() => _decompressingSet.delete(gopIdx));
+              }
+            } else if (!gopEntry && !gopLoadingSet.has(gopIdx)) {
+              // GOP not downloaded at all
+              frameLabel.textContent = `Loading GOP ${gopIdx}...`;
+              loadGop(gopIdx);
+            } else {
+              frameLabel.textContent = `Loading GOP ${gopIdx}...`;
+            }
           }
         }
       }
@@ -1410,19 +1510,34 @@ function updateFrame(idx) {
       segs.forEach(s => { if (s.classList.contains('active')) s.classList.replace('active', 'loaded'); });
       const activeSeg = document.getElementById(`gop-seg-${gopIdx}`);
       if (activeSeg) activeSeg.className = 'gop-seg active';
-      triggerPrefetch(gopIdx);
+      const gop = gopCache.get(gopIdx);
+      const pIdx = idx - 1;
+      const localIdx = gop ? pIdx - gop.startFrame : 0;
+      const gopFrames = gop ? gop.numFrames : 0;
+      triggerPrefetch(gopIdx, localIdx, gopFrames);
     }
   } else {
-    // GOP not loaded — trigger async load
+    // GOP not loaded or not decompressed — trigger async load/decompress
     const gopIdx = getGopIndexForFrame(idx);
     if (gopIdx >= 0) {
-      loadGop(gopIdx).then(() => {
-        // Retry applying after load
-        if (currentFrame === idx || !isPlaying) {
-          applyFrameData(idx);
-          currentFrame = idx;
-        }
-      });
+      const gopEntry = gopCache.get(gopIdx);
+      if (gopEntry && !gopEntry.raw) {
+        // Cached but compressed — decompress then retry
+        ensureGopDecompressed(gopIdx).then(() => {
+          if (currentFrame === idx || !isPlaying) {
+            applyFrameData(idx);
+            currentFrame = idx;
+          }
+        });
+      } else if (!gopEntry) {
+        // Not cached at all — download then retry
+        loadGop(gopIdx).then(() => {
+          if (currentFrame === idx || !isPlaying) {
+            applyFrameData(idx);
+            currentFrame = idx;
+          }
+        });
+      }
     }
   }
   diagStatsAccum.framesRequested++;
