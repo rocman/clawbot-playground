@@ -35,6 +35,8 @@ let currentPlaybackGop = -1; // track which GOP playback is currently in
 // ★ Pending frame request — when GOP is loading, we save the request
 // and fulfill it as soon as the GOP finishes loading (push model)
 let pendingFrameRequest = null; // { globalFrame, deltaK, seq }
+let latestFrameRequest = null;  // ★ Latest incoming request (for debounce)
+let frameRequestScheduled = false; // ★ Whether a setTimeout(0) is pending
 
 // Diagnostic log buffer — forwarded to main thread for viewctl relay
 const LOG_BUFFER_MAX = 200;
@@ -79,12 +81,14 @@ function float16ToFloat32(u16arr) {
 
 // ============================================================
 // Float32 → Float16 (for texture packing)
+// ★ OPTIMIZED: Pre-allocated shared buffer (avoids GC pressure from 896K allocs/frame)
 // ============================================================
+const _f32View = new Float32Array(1);
+const _i32View = new Int32Array(_f32View.buffer);
+
 function float32ToFloat16(val) {
-  const fv = new Float32Array(1);
-  const iv = new Int32Array(fv.buffer);
-  fv[0] = val;
-  const f = iv[0];
+  _f32View[0] = val;
+  const f = _i32View[0];
   const sign = (f >> 31) & 0x1;
   let exp = ((f >> 23) & 0xff) - 127 + 15;
   let mant = (f >> 13) & 0x3ff;
@@ -403,7 +407,15 @@ function fulfillPendingRequest(loadedGopIdx) {
   if (!pendingFrameRequest) return;
   const { globalFrame, deltaK, seq } = pendingFrameRequest;
   const targetGop = getGopIndexForFrame(globalFrame);
-  if (targetGop !== loadedGopIdx) return; // not the GOP we're waiting for
+  if (targetGop !== loadedGopIdx) {
+    // GOP mismatch — the pending request is for a different GOP.
+    // This can happen if the user jumped to a different frame while waiting.
+    // Clear the stale pending request and notify main thread to retry.
+    diagLog('info', `fulfillPending: GOP ${loadedGopIdx} loaded but pending wants GOP ${targetGop} (frame ${globalFrame}). Clearing stale pending.`);
+    pendingFrameRequest = null;
+    self.postMessage({ type: 'frameData', globalFrame, data: null, loading: false, staleCleared: true, gopIdx: loadedGopIdx, seq });
+    return;
+  }
   
   const gop = gopCache.get(targetGop);
   if (!gop) return;
@@ -582,8 +594,21 @@ self.onmessage = function(e) {
       break;
     
     case 'requestFrame':
-      // seq is used by main thread to discard stale responses
-      handleFrameRequest(msg.globalFrame, msg.deltaK || 256, msg.seq || 0);
+      // ★ FIX v4 final: Batch/debounce frame requests.
+      // Store the latest request and schedule processing with setTimeout(0).
+      // If multiple requests arrive in quick succession, only the latest will be processed.
+      latestFrameRequest = { globalFrame: msg.globalFrame, deltaK: msg.deltaK || 256, seq: msg.seq || 0 };
+      if (!frameRequestScheduled) {
+        frameRequestScheduled = true;
+        setTimeout(() => {
+          frameRequestScheduled = false;
+          if (latestFrameRequest) {
+            const r = latestFrameRequest;
+            latestFrameRequest = null;
+            handleFrameRequest(r.globalFrame, r.deltaK, r.seq);
+          }
+        }, 0);
+      }
       break;
     
     case 'prefetch':

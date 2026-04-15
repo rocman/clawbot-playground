@@ -213,6 +213,7 @@ let lastAppliedSeq = -1;          // seq of last applied frame
 let gopLoadingStallCount = 0;     // consecutive frames where GOP was loading (stall detector)
 let waitingForWorkerPush = false;  // ★ true = Worker will push data when GOP loads; don't spam requests
 let stallStartTime = 0;           // timestamp when stall started
+let lastRequestedFrame = -1;      // last frame sent to Worker (for de-duplication)
 
 // Quantization params (received from worker)
 let qXyzDScale = null;
@@ -391,19 +392,15 @@ function initWorker() {
           break;
         
         case 'frameData':
-          // ★ FIX v2: Only discard responses for frames OLDER than what we've already applied.
-          // Use globalFrame-based comparison, not seq-based (seq grows during stalls,
-          // causing valid late-arriving data to be wrongly discarded).
-          // Special case: allow frame 1 after frame 299 (loop wraparound)
+          // ★ FIX v4 final: Accept any frame data that has actual texture data.
+          // Worker's debounce ensures only relevant (latest) frames are processed.
+          // Main thread just accepts whatever comes back.
           {
-            const isStaleFrame = msg.globalFrame !== 0 
-              && lastAppliedFrame > 0
-              && msg.globalFrame < lastAppliedFrame
-              && !(lastAppliedFrame > manifest.p_frame_count - 30 && msg.globalFrame < 30); // loop exception
-            
-            if (isStaleFrame) {
-              diagStatsAccum.framesDropped++;
-              diagLog('debug', `Dropped stale frame ${msg.globalFrame} (lastApplied=${lastAppliedFrame})`);
+            // Handle staleCleared from Worker (pending request was for wrong GOP)
+            if (msg.staleCleared) {
+              diagLog('info', `Worker cleared stale pending (frame ${msg.globalFrame}). Resuming animation.`);
+              waitingForWorkerPush = false;
+              gopLoadingStallCount = 0;
               break;
             }
           }
@@ -663,7 +660,7 @@ async function init() {
   let frameCount = 0, lastFpsTime = performance.now();
   let lastFrameTime = performance.now();
   const FRAME_INTERVAL = 1000 / targetFPS;
-  const MAX_STALL_SECONDS = 15; // after N seconds of stall, force-skip to next available GOP
+  const MAX_STALL_SECONDS = 5; // after N seconds of stall, force-skip to next loaded GOP
 
   renderer.setAnimationLoop(function animate() {
     const now = performance.now();
@@ -674,25 +671,21 @@ async function init() {
         lastFrameTime = now;
         
         if (waitingForWorkerPush) {
-          // ★ PUSH MODEL: Worker will push data when GOP finishes loading.
-          // Don't send any new requests — just wait.
-          // Only bail out if we've been waiting too long (stalled for MAX_STALL_SECONDS).
+          // ★ FIX v4: Data-driven advancement.
+          // We've requested frame N but Worker says GOP is still loading.
+          // DON'T advance currentFrame. Just wait for Worker push.
+          // After timeout, try advancing to same frame again (GOP may have loaded).
           const stallDuration = (now - stallStartTime) / 1000;
           if (stallDuration > MAX_STALL_SECONDS) {
-            diagLog('warn', `Force-skip after ${stallDuration.toFixed(1)}s stall at frame ${currentFrame}`);
-            // Try to find the next frame whose GOP IS loaded
+            diagLog('warn', `Stall timeout (${stallDuration.toFixed(1)}s) at frame ${currentFrame}. Retrying.`);
             waitingForWorkerPush = false;
             gopLoadingStallCount = 0;
-            const maxFrame = manifest.p_frame_count;
-            // Skip to next GOP boundary
-            const curGop = getGopIndexForFrame(currentFrame);
-            const nextGopStart = ((curGop + 1) % manifest.gop_count) * manifest.gop_size + 1;
-            const skipTo = nextGopStart <= maxFrame ? nextGopStart : 0;
-            updateFrame(skipTo);
+            // DON'T call updateFrame here — let the normal advancement below handle it
           }
-          // Otherwise: do nothing, just hold the last good frame and wait for Worker push
         } else {
-          // Normal advancement
+          // ★ FIX v4 final: Free-running advancement (like V3d).
+          // Don't wait for Worker to apply data before advancing.
+          // Worker will skip outdated requests and only process the latest one.
           const maxFrame = manifest.p_frame_count;
           const nextFrame = (currentFrame + 1) % (maxFrame + 1);
           updateFrame(nextFrame);
@@ -840,7 +833,7 @@ function updateFrame(idx) {
     frameLabel.textContent = `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)`;
   } else {
     frameLabel.textContent = `P-Frame ${idx}/${manifest.p_frame_count} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [GOP ${gopIdx}]`;
-    // ★ CRITICAL FIX: Each request gets a unique, monotonically increasing seq
+    lastRequestedFrame = idx;
     frameRequestSeq++;
     diagStatsAccum.framesRequested++;
     dataWorker.postMessage({ type: 'requestFrame', globalFrame: idx, deltaK: DELTA_K, seq: frameRequestSeq });
