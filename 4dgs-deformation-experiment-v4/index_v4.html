@@ -304,6 +304,23 @@ class GopPersistCache {
     });
   }
 
+  // Delete a specific cache entry
+  async delete(manifestVersion, filename) {
+    await this._ready;
+    const key = this._key(manifestVersion, filename);
+    if (this._mode === 'opfs') {
+      try {
+        const safeName = key.replace(/\//g, '__');
+        await this._opfsRoot.removeEntry(safeName);
+      } catch (e) {}
+    } else if (this._mode === 'idb') {
+      try {
+        const tx = this._idbDB.transaction('blobs', 'readwrite');
+        tx.objectStore('blobs').delete(key);
+      } catch (e) {}
+    }
+  }
+
   // Invalidate all entries not matching current manifest version
   async purgeOldVersions(currentVersion) {
     await this._ready;
@@ -342,17 +359,27 @@ async function cachedFetch(url, cacheFilename) {
   const ver = manifest ? (manifest.version || 'unknown') : 'unknown';
   // Try L2 cache first
   const cached = await persistCache.get(ver, cacheFilename);
-  if (cached) {
+  if (cached && cached.byteLength > 0) {
     diagStatsAccum.cacheHits++;
     diagLog('info', `L2 cache HIT: ${cacheFilename} (${(cached.byteLength/1024).toFixed(0)} KB)`);
     updateCacheStatus();
     return cached;
+  } else if (cached && cached.byteLength === 0) {
+    // Stale empty entry — purge it
+    diagLog('warn', `L2 cache has empty entry for ${cacheFilename}, purging`);
+    persistCache.delete(ver, cacheFilename).catch(() => {});
   }
   // L3: network fetch (no cache-busting timestamp)
   diagStatsAccum.cacheMisses++;
   diagLog('info', `L2 cache MISS: ${cacheFilename}, fetching from network`);
   const resp = await fetch(url);
+  if (!resp.ok) {
+    throw new Error(`HTTP ${resp.status} for ${url}`);
+  }
   const buf = await resp.arrayBuffer();
+  if (buf.byteLength === 0) {
+    throw new Error(`Empty response for ${url}`);
+  }
   // Store in L2 (fire-and-forget)
   persistCache.put(ver, cacheFilename, buf).catch(() => {});
   updateCacheStatus();
@@ -397,6 +424,7 @@ let baseData = null; // Uint8Array(N * 7)
 // gopIndex -> { data: Uint8Array(numFrames * N * 7), numFrames, startFrame, endFrame, lastAccess }
 const gopCache = new Map();
 const gopLoadingSet = new Set(); // GOPs currently being fetched
+const gopFailedSet = new Set();  // GOPs that failed to load (prevents infinite retry)
 
 // Frame packing pre-allocated buffers
 const _f32View = new Float32Array(1);
@@ -650,7 +678,7 @@ async function loadGopMeta() {
 // GOP Loading & Decoding — main thread, async
 // ============================================================
 async function loadGop(gopIdx) {
-  if (gopCache.has(gopIdx) || gopLoadingSet.has(gopIdx)) return;
+  if (gopCache.has(gopIdx) || gopLoadingSet.has(gopIdx) || gopFailedSet.has(gopIdx)) return;
   if (gopIdx < 0 || gopIdx >= manifest.gop_count) return;
 
   gopLoadingSet.add(gopIdx);
@@ -747,6 +775,9 @@ async function loadGop(gopIdx) {
 
   } catch (err) {
     gopLoadingSet.delete(gopIdx);
+    gopFailedSet.add(gopIdx);
+    // Allow retry after 5 seconds
+    setTimeout(() => gopFailedSet.delete(gopIdx), 5000);
     diagLog('error', `GOP ${gopIdx} load failed: ${err.message}`);
     updateGopStripUI(gopIdx, 'error');
   }
