@@ -23,6 +23,29 @@ const STRIDE = 7; // bytes per gaussian per frame: xyz(3) + dc(3) + op(1)
 let WINDOW_GOPS = 3;
 let PREFETCH_GOPS = 1;
 
+// Sequence number for frame requests — used to discard stale responses
+let currentRequestSeq = 0;
+
+// ★ Concurrent load limiter — prevents browser connection exhaustion
+const MAX_CONCURRENT_LOADS = 2; // browser has 6 TCP connections per origin; leave room for main thread resources
+let activeLoads = 0;
+const loadQueue = []; // { gopIdx, priority, resolve }
+let currentPlaybackGop = -1; // track which GOP playback is currently in
+
+// ★ Pending frame request — when GOP is loading, we save the request
+// and fulfill it as soon as the GOP finishes loading (push model)
+let pendingFrameRequest = null; // { globalFrame, deltaK, seq }
+
+// Diagnostic log buffer — forwarded to main thread for viewctl relay
+const LOG_BUFFER_MAX = 200;
+const logBuffer = [];
+function diagLog(level, msg, data) {
+  const entry = { ts: performance.now(), level, msg, ...(data || {}) };
+  logBuffer.push(entry);
+  if (logBuffer.length > LOG_BUFFER_MAX) logBuffer.shift();
+  self.postMessage({ type: 'diagLog', entry });
+}
+
 // ============================================================
 // Gzip decompression
 // ============================================================
@@ -202,14 +225,65 @@ async function loadGopMeta(metaUrl) {
 }
 
 // ============================================================
-// GOP Loading & Decoding
+// GOP Loading & Decoding — with concurrency-limited queue
 // ============================================================
-async function loadGop(gopIdx) {
+
+// Enqueue a GOP load with priority (lower = higher priority)
+function enqueueGopLoad(gopIdx, priority) {
   if (gopCache.has(gopIdx) || gopLoadingSet.has(gopIdx)) return;
   if (gopIdx < 0 || gopIdx >= manifest.gop_count) return;
   
+  // Check if already in queue
+  const existing = loadQueue.findIndex(item => item.gopIdx === gopIdx);
+  if (existing !== -1) {
+    // Update priority if new one is higher (lower number)
+    if (priority < loadQueue[existing].priority) {
+      loadQueue[existing].priority = priority;
+      loadQueue.sort((a, b) => a.priority - b.priority);
+      diagLog('debug', `GOP ${gopIdx} priority updated to ${priority} in queue`);
+    }
+    return;
+  }
+  
+  loadQueue.push({ gopIdx, priority });
+  loadQueue.sort((a, b) => a.priority - b.priority);
+  diagLog('debug', `GOP ${gopIdx} enqueued with priority ${priority}, queue length=${loadQueue.length}`);
+  
+  // Try to start loading
+  drainLoadQueue();
+}
+
+function drainLoadQueue() {
+  while (activeLoads < MAX_CONCURRENT_LOADS && loadQueue.length > 0) {
+    const item = loadQueue.shift();
+    // Re-check: might have been loaded/started while waiting in queue
+    if (gopCache.has(item.gopIdx) || gopLoadingSet.has(item.gopIdx)) continue;
+    activeLoads++;
+    doLoadGop(item.gopIdx).finally(() => {
+      activeLoads--;
+      drainLoadQueue(); // process next in queue
+    });
+  }
+}
+
+// Remove stale entries from load queue (GOPs that are no longer needed)
+function pruneLoadQueue(keepSet) {
+  for (let i = loadQueue.length - 1; i >= 0; i--) {
+    if (!keepSet.has(loadQueue[i].gopIdx)) {
+      diagLog('debug', `Pruned GOP ${loadQueue[i].gopIdx} from load queue (no longer in window)`);
+      loadQueue.splice(i, 1);
+    }
+  }
+}
+
+// The actual GOP loader — called only by drainLoadQueue
+async function doLoadGop(gopIdx) {
+  if (gopCache.has(gopIdx)) return; // double check
+  
   gopLoadingSet.add(gopIdx);
   self.postMessage({ type: 'gopState', gopIdx, state: 'loading' });
+  diagLog('info', `GOP ${gopIdx} loading started (concurrent: ${activeLoads}/${MAX_CONCURRENT_LOADS})`);
+  const loadStart = performance.now();
   
   const gopInfo = manifest.gop_index[gopIdx];
   
@@ -309,25 +383,91 @@ async function loadGop(gopIdx) {
     });
     
     gopLoadingSet.delete(gopIdx);
+    const loadMs = (performance.now() - loadStart).toFixed(0);
+    diagLog('info', `GOP ${gopIdx} loaded in ${loadMs}ms, frames ${gopInfo.start_frame}-${gopInfo.end_frame - 1}`);
     self.postMessage({ type: 'gopState', gopIdx, state: 'loaded' });
     reportStats();
     
+    // ★ PUSH MODEL: Fulfill pending frame request if it targets this GOP
+    fulfillPendingRequest(gopIdx);
+    
   } catch (err) {
     gopLoadingSet.delete(gopIdx);
+    diagLog('error', `GOP ${gopIdx} load failed: ${err.message}`);
     self.postMessage({ type: 'gopState', gopIdx, state: 'error', error: err.message });
   }
 }
 
-function evictDistantGops(currentGopIdx) {
-  const minKeep = Math.max(0, currentGopIdx - WINDOW_GOPS);
-  const maxKeep = Math.min(manifest.gop_count - 1, currentGopIdx + WINDOW_GOPS);
+// ★ Fulfill a pending frame request after GOP load completes
+function fulfillPendingRequest(loadedGopIdx) {
+  if (!pendingFrameRequest) return;
+  const { globalFrame, deltaK, seq } = pendingFrameRequest;
+  const targetGop = getGopIndexForFrame(globalFrame);
+  if (targetGop !== loadedGopIdx) return; // not the GOP we're waiting for
   
+  const gop = gopCache.get(targetGop);
+  if (!gop) return;
+  
+  pendingFrameRequest = null; // clear pending
+  
+  const pFrameIdx = globalFrame - 1;
+  const localIdx = pFrameIdx - gop.startFrame;
+  if (localIdx < 0 || localIdx >= gop.numFrames) {
+    diagLog('warn', `Pending fulfill: frame ${globalFrame} localIdx ${localIdx} out of range for GOP ${targetGop}`);
+    self.postMessage({ type: 'frameData', globalFrame, data: null, seq });
+    return;
+  }
+  
+  gop.lastAccess = performance.now();
+  const frameSlice = getFrameSlice(gop.data, localIdx, N);
+  const texData = packFrameToHalfFloat(frameSlice, N, deltaK);
+  
+  diagLog('info', `Pending fulfill: GOP ${targetGop} ready, pushing frame ${globalFrame} (seq=${seq})`);
+  self.postMessage(
+    { type: 'frameData', globalFrame, data: texData.buffer, gopIdx: targetGop, seq },
+    [texData.buffer]
+  );
+}
+
+// Legacy wrapper for init-time sequential loading
+async function loadGop(gopIdx) {
+  if (gopCache.has(gopIdx) || gopLoadingSet.has(gopIdx)) return;
+  return doLoadGop(gopIdx);
+}
+
+// Smarter eviction: aware of loop playback
+// When near end of sequence, also keep beginning GOPs (for seamless loop)
+function evictDistantGops(currentGopIdx) {
+  const totalGops = manifest.gop_count;
+  const keepSet = new Set();
+  
+  // Keep GOPs within the window around current position
+  for (let d = -WINDOW_GOPS; d <= WINDOW_GOPS; d++) {
+    let idx = currentGopIdx + d;
+    // Wrap around for loop playback
+    if (idx < 0) idx += totalGops;
+    if (idx >= totalGops) idx -= totalGops;
+    keepSet.add(idx);
+  }
+  
+  // Also keep prefetch targets
+  for (let d = 1; d <= PREFETCH_GOPS; d++) {
+    keepSet.add((currentGopIdx + WINDOW_GOPS + d) % totalGops);
+  }
+  
+  let evicted = 0;
   for (const [idx, gop] of gopCache) {
-    if (idx < minKeep || idx > maxKeep) {
+    if (!keepSet.has(idx)) {
       gopCache.delete(idx);
       self.postMessage({ type: 'gopState', gopIdx: idx, state: 'evicted' });
+      evicted++;
     }
   }
+  if (evicted > 0) {
+    diagLog('info', `Evicted ${evicted} GOPs, kept: [${[...keepSet].sort((a,b)=>a-b).join(',')}]`);
+  }
+  // Also prune the load queue — remove GOPs that are no longer in the keep window
+  pruneLoadQueue(keepSet);
   reportStats();
 }
 
@@ -353,55 +493,64 @@ function getGopIndexForFrame(globalFrame) {
   return Math.floor(pFrameIdx / manifest.gop_size);
 }
 
-async function handleFrameRequest(globalFrame, deltaK) {
+// NON-BLOCKING frame request — never awaits GOP loading
+// Returns data immediately if available, or 'loading' status if GOP not ready
+function handleFrameRequest(globalFrame, deltaK, seq) {
   if (globalFrame === 0) {
     // I-frame — no delta data needed
-    self.postMessage({ type: 'frameData', globalFrame, data: null });
+    pendingFrameRequest = null; // clear any pending
+    self.postMessage({ type: 'frameData', globalFrame, data: null, seq });
     return;
   }
   
   const gopIdx = getGopIndexForFrame(globalFrame);
+  currentPlaybackGop = gopIdx;
   
-  // Ensure current GOP is loaded
-  if (!gopCache.has(gopIdx) && !gopLoadingSet.has(gopIdx)) {
-    await loadGop(gopIdx);
+  // ★ Priority-based loading: current GOP gets highest priority (0)
+  enqueueGopLoad(gopIdx, 0);
+  
+  // Prefetch next GOPs with decreasing priority
+  const totalGops = manifest.gop_count;
+  for (let d = 1; d <= PREFETCH_GOPS + 1; d++) {
+    const nextGop = (gopIdx + d) % totalGops;
+    enqueueGopLoad(nextGop, d);
   }
   
-  // Prefetch next GOPs
-  for (let d = 1; d <= PREFETCH_GOPS; d++) {
-    const nextGop = gopIdx + d;
-    if (nextGop < manifest.gop_count && !gopCache.has(nextGop) && !gopLoadingSet.has(nextGop)) {
-      loadGop(nextGop); // fire-and-forget
-    }
+  // Also prefetch GOP 0 when near end (for loop)
+  if (gopIdx >= totalGops - 2) {
+    enqueueGopLoad(0, 2);
   }
   
   // Evict distant GOPs
   evictDistantGops(gopIdx);
   
-  // Get frame data
+  // Get frame data — immediate return
   const gop = gopCache.get(gopIdx);
   if (!gop) {
-    // Still loading...
-    self.postMessage({ type: 'frameData', globalFrame, data: null, loading: true, gopIdx });
+    // ★ PUSH MODEL: Save as pending request — will be fulfilled when GOP loads
+    pendingFrameRequest = { globalFrame, deltaK, seq };
+    self.postMessage({ type: 'frameData', globalFrame, data: null, loading: true, gopIdx, seq });
     return;
   }
+  
+  // GOP is available — clear any pending and serve immediately
+  pendingFrameRequest = null;
   
   const pFrameIdx = globalFrame - 1;
   const localIdx = pFrameIdx - gop.startFrame;
   if (localIdx < 0 || localIdx >= gop.numFrames) {
-    self.postMessage({ type: 'frameData', globalFrame, data: null });
+    diagLog('warn', `Frame ${globalFrame} localIdx ${localIdx} out of range for GOP ${gopIdx} (numFrames=${gop.numFrames})`);
+    self.postMessage({ type: 'frameData', globalFrame, data: null, seq });
     return;
   }
   
   gop.lastAccess = performance.now();
   
-  // Extract frame slice and pack to half-float texture
   const frameSlice = getFrameSlice(gop.data, localIdx, N);
   const texData = packFrameToHalfFloat(frameSlice, N, deltaK);
   
-  // Transfer the texture data (zero-copy transfer)
   self.postMessage(
-    { type: 'frameData', globalFrame, data: texData.buffer, gopIdx },
+    { type: 'frameData', globalFrame, data: texData.buffer, gopIdx, seq },
     [texData.buffer]
   );
 }
@@ -409,7 +558,7 @@ async function handleFrameRequest(globalFrame, deltaK) {
 // ============================================================
 // Message handler
 // ============================================================
-self.onmessage = async function(e) {
+self.onmessage = function(e) {
   const msg = e.data;
   
   switch (msg.type) {
@@ -420,17 +569,21 @@ self.onmessage = async function(e) {
       WINDOW_GOPS = msg.windowGops || 3;
       PREFETCH_GOPS = msg.prefetchGops || 1;
       
-      await loadGopMeta(msg.metaUrl);
-      
-      // Preload first GOPs
-      await loadGop(0);
-      loadGop(1); // fire-and-forget
-      
-      self.postMessage({ type: 'ready' });
+      // Init is async but we handle it here
+      (async () => {
+        await loadGopMeta(msg.metaUrl);
+        
+        // Preload first GOPs
+        await loadGop(0);
+        loadGop(1); // fire-and-forget
+        
+        self.postMessage({ type: 'ready' });
+      })();
       break;
     
     case 'requestFrame':
-      await handleFrameRequest(msg.globalFrame, msg.deltaK || 256);
+      // seq is used by main thread to discard stale responses
+      handleFrameRequest(msg.globalFrame, msg.deltaK || 256, msg.seq || 0);
       break;
     
     case 'prefetch':
@@ -442,6 +595,10 @@ self.onmessage = async function(e) {
     case 'setWindow':
       WINDOW_GOPS = msg.windowSize || 3;
       PREFETCH_GOPS = msg.prefetchGops || 1;
+      break;
+    
+    case 'getLogBuffer':
+      self.postMessage({ type: 'logBuffer', logs: logBuffer.slice() });
       break;
   }
 };

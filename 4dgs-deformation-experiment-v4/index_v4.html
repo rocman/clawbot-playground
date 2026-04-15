@@ -182,7 +182,7 @@ import { SplatMesh, dyno } from "@sparkjsdev/spark";
 // Configuration
 // ============================================================
 const WINDOW_GOPS = 3;
-const PREFETCH_GOPS = 1;
+const PREFETCH_GOPS = 2;  // increased from 1 to reduce stalls at GOP boundaries
 const DELTA_K = 256;
 
 // ============================================================
@@ -207,8 +207,12 @@ let maskTexture = null;
 // Worker state
 let dataWorker = null;
 let workerReady = false;
-let pendingFrameRequests = new Map(); // globalFrame -> resolve callback
-let lastRequestedFrame = -1;
+let frameRequestSeq = 0;          // monotonic counter: each requestFrame gets a new seq
+let lastAppliedFrame = -1;        // last frame whose texture data was actually applied
+let lastAppliedSeq = -1;          // seq of last applied frame
+let gopLoadingStallCount = 0;     // consecutive frames where GOP was loading (stall detector)
+let waitingForWorkerPush = false;  // ★ true = Worker will push data when GOP loads; don't spam requests
+let stallStartTime = 0;           // timestamp when stall started
 
 // Quantization params (received from worker)
 let qXyzDScale = null;
@@ -216,6 +220,29 @@ let qXyzDMin = null;
 
 const TOTAL_DURATION_DEFAULT = 10.0;
 let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
+
+// ============================================================
+// Diagnostic logging — buffered and relayed through viewctl WS
+// ============================================================
+const diagLogs = [];
+const DIAG_LOG_MAX = 500;
+let diagStatsAccum = { framesRequested: 0, framesApplied: 0, framesDropped: 0, stallFrames: 0 };
+function diagLog(level, msg, data) {
+  const entry = { ts: performance.now(), level, src: 'main', msg, ...(data || {}) };
+  diagLogs.push(entry);
+  if (diagLogs.length > DIAG_LOG_MAX) diagLogs.shift();
+  // Also console.log for dev
+  if (level === 'warn' || level === 'error') {
+    console.warn(`[V4:${level}]`, msg, data || '');
+  }
+}
+function sendDiagToViewctl(ws, entry) {
+  if (ws && ws.readyState === 1) {
+    try {
+      ws.send(JSON.stringify({ type: 'v4DiagLog', entry }));
+    } catch (e) {}
+  }
+}
 
 const loadingOverlay = document.getElementById('loading-overlay');
 const loadingBar = document.getElementById('loading-bar');
@@ -364,22 +391,61 @@ function initWorker() {
           break;
         
         case 'frameData':
+          // ★ FIX v2: Only discard responses for frames OLDER than what we've already applied.
+          // Use globalFrame-based comparison, not seq-based (seq grows during stalls,
+          // causing valid late-arriving data to be wrongly discarded).
+          // Special case: allow frame 1 after frame 299 (loop wraparound)
+          {
+            const isStaleFrame = msg.globalFrame !== 0 
+              && lastAppliedFrame > 0
+              && msg.globalFrame < lastAppliedFrame
+              && !(lastAppliedFrame > manifest.p_frame_count - 30 && msg.globalFrame < 30); // loop exception
+            
+            if (isStaleFrame) {
+              diagStatsAccum.framesDropped++;
+              diagLog('debug', `Dropped stale frame ${msg.globalFrame} (lastApplied=${lastAppliedFrame})`);
+              break;
+            }
+          }
+          
           if (msg.data) {
             // Received HalfFloat texture data from worker
             const texData = new Uint16Array(msg.data);
             deltaTexture.image.data.set(texData);
             deltaTexture.needsUpdate = true;
-          }
-          // Update frame label
-          if (msg.globalFrame === 0) {
-            uFrameIndex.value = 0;
-          } else if (msg.data) {
             uFrameIndex.value = msg.globalFrame;
-          } else if (msg.loading) {
-            // GOP still loading, show status
-            frameLabel.textContent = `P-Frame ${msg.globalFrame}/${manifest.p_frame_count} (loading GOP ${msg.gopIdx}...)`;
+            lastAppliedFrame = msg.globalFrame;
+            lastAppliedSeq = msg.seq;
+            gopLoadingStallCount = 0;
+            waitingForWorkerPush = false;  // ★ resume animation
+            diagStatsAccum.framesApplied++;
+          } else if (msg.globalFrame === 0) {
             uFrameIndex.value = 0;
+            lastAppliedFrame = 0;
+            lastAppliedSeq = msg.seq;
+            gopLoadingStallCount = 0;
+            waitingForWorkerPush = false;
+          } else if (msg.loading) {
+            // GOP still loading — Worker will push data when ready (push model).
+            // DON'T spam re-requests! Just mark as waiting.
+            if (!waitingForWorkerPush) {
+              gopLoadingStallCount = 0; // reset on first stall signal
+              waitingForWorkerPush = true;
+              stallStartTime = performance.now();
+              diagLog('info', `Waiting for GOP ${msg.gopIdx} (push model), holding frame ${lastAppliedFrame}`);
+            }
+            gopLoadingStallCount++;
+            diagStatsAccum.stallFrames++;
+            const stallSec = ((performance.now() - stallStartTime) / 1000).toFixed(1);
+            frameLabel.textContent = `P-Frame ${msg.globalFrame}/${manifest.p_frame_count} (loading GOP ${msg.gopIdx}... ${stallSec}s)`;
           }
+          break;
+        
+        case 'diagLog':
+          // Relay worker diagnostic log to viewctl WS
+          diagLogs.push({ ...msg.entry, src: 'worker' });
+          if (diagLogs.length > DIAG_LOG_MAX) diagLogs.shift();
+          sendDiagToViewctl(_viewctlWs, msg.entry);
           break;
         
         case 'gopState':
@@ -592,11 +658,12 @@ async function init() {
   }, 300);
 
   // ============================================================
-  // 30Hz Animation Loop
+  // 30Hz Animation Loop — with stall-aware frame advancement
   // ============================================================
   let frameCount = 0, lastFpsTime = performance.now();
   let lastFrameTime = performance.now();
   const FRAME_INTERVAL = 1000 / targetFPS;
+  const MAX_STALL_SECONDS = 15; // after N seconds of stall, force-skip to next available GOP
 
   renderer.setAnimationLoop(function animate() {
     const now = performance.now();
@@ -605,9 +672,31 @@ async function init() {
       const adjustedInterval = FRAME_INTERVAL / playbackSpeedMult;
       if (now - lastFrameTime >= adjustedInterval) {
         lastFrameTime = now;
-        const maxFrame = manifest.p_frame_count;
-        const nextFrame = (currentFrame + 1) % (maxFrame + 1);
-        updateFrame(nextFrame);
+        
+        if (waitingForWorkerPush) {
+          // ★ PUSH MODEL: Worker will push data when GOP finishes loading.
+          // Don't send any new requests — just wait.
+          // Only bail out if we've been waiting too long (stalled for MAX_STALL_SECONDS).
+          const stallDuration = (now - stallStartTime) / 1000;
+          if (stallDuration > MAX_STALL_SECONDS) {
+            diagLog('warn', `Force-skip after ${stallDuration.toFixed(1)}s stall at frame ${currentFrame}`);
+            // Try to find the next frame whose GOP IS loaded
+            waitingForWorkerPush = false;
+            gopLoadingStallCount = 0;
+            const maxFrame = manifest.p_frame_count;
+            // Skip to next GOP boundary
+            const curGop = getGopIndexForFrame(currentFrame);
+            const nextGopStart = ((curGop + 1) % manifest.gop_count) * manifest.gop_size + 1;
+            const skipTo = nextGopStart <= maxFrame ? nextGopStart : 0;
+            updateFrame(skipTo);
+          }
+          // Otherwise: do nothing, just hold the last good frame and wait for Worker push
+        } else {
+          // Normal advancement
+          const maxFrame = manifest.p_frame_count;
+          const nextFrame = (currentFrame + 1) % (maxFrame + 1);
+          updateFrame(nextFrame);
+        }
       }
     }
 
@@ -625,16 +714,25 @@ async function init() {
   });
 
   // ============================================================
-  // WebSocket for viewctl remote control
+  // WebSocket for viewctl remote control + diagnostic relay
+  // Only connect on localhost (viewctl is a local-only tool)
   // ============================================================
-  const isLocalhost = ['localhost','127.0.0.1'].includes(location.hostname);
-  const wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/';
+  const _isLocalhost = ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(location.hostname);
+  const wsUrl = 'ws://' + location.host + '/';
   let ws = null;
+  // Expose ws reference for diag log relay
+  window._viewctlWs = null;
   function connectWS() {
+    if (!_isLocalhost) return;
     try {
       ws = new WebSocket(wsUrl);
-      ws.onopen = () => console.log('[WS] Connected to viewctl');
-      ws.onclose = () => setTimeout(connectWS, 3000);
+      window._viewctlWs = ws;
+      ws.onopen = () => {
+        console.log('[WS] Connected to viewctl');
+        // Send initial diagnostic summary
+        sendDiagToViewctl(ws, { ts: performance.now(), level: 'info', src: 'main', msg: 'V4 viewer connected, diag logging active' });
+      };
+      ws.onclose = () => { window._viewctlWs = null; setTimeout(connectWS, 3000); };
       ws.onerror = () => {};
       ws.onmessage = (evt) => {
         try {
@@ -667,6 +765,22 @@ async function init() {
               width: renderer.domElement.width, height: renderer.domElement.height,
               camera: { position: camera.position.toArray(), target: controls.target.toArray() },
             }));
+          } else if (msg.type === 'getDiagLogs') {
+            // Viewctl requesting full diagnostic log dump
+            ws.send(JSON.stringify({
+              type: 'diagLogDump',
+              logs: diagLogs.slice(-100),
+              stats: diagStatsAccum,
+              currentFrame,
+              lastAppliedFrame,
+              lastAppliedSeq,
+              frameRequestSeq,
+              gopLoadingStallCount,
+            }));
+          } else if (msg.type === 'refresh') {
+            // Handle viewctl refresh command
+            location.hash = '#refresh';
+            location.reload();
           }
         } catch (e) {}
       };
@@ -678,9 +792,22 @@ async function init() {
         position: camera.position.toArray(), target: controls.target.toArray(),
         up: camera.up.toArray() }));
   }
+  // Periodic diagnostic stats report via WS (every 5s)
+  setInterval(() => {
+    if (ws && ws.readyState === 1) {
+      ws.send(JSON.stringify({
+        type: 'v4DiagStats',
+        stats: { ...diagStatsAccum },
+        currentFrame,
+        lastAppliedFrame,
+        gopLoadingStallCount,
+        frameRequestSeq,
+      }));
+    }
+  }, 5000);
   setInterval(reportCamera, 1000);
   renderer.domElement.addEventListener('pointerup', () => setTimeout(reportCamera, 100));
-  if (isLocalhost) connectWS();
+  connectWS();
 }
 
 // ============================================================
@@ -705,12 +832,18 @@ function updateFrame(idx) {
   }
 
   if (idx === 0) {
+    frameRequestSeq++;
     uFrameIndex.value = 0;
+    lastAppliedFrame = 0;
+    lastAppliedSeq = frameRequestSeq;
+    gopLoadingStallCount = 0;
     frameLabel.textContent = `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)`;
   } else {
     frameLabel.textContent = `P-Frame ${idx}/${manifest.p_frame_count} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [GOP ${gopIdx}]`;
-    // Request frame data from worker
-    dataWorker.postMessage({ type: 'requestFrame', globalFrame: idx, deltaK: DELTA_K });
+    // ★ CRITICAL FIX: Each request gets a unique, monotonically increasing seq
+    frameRequestSeq++;
+    diagStatsAccum.framesRequested++;
+    dataWorker.postMessage({ type: 'requestFrame', globalFrame: idx, deltaK: DELTA_K, seq: frameRequestSeq });
   }
 }
 
@@ -774,7 +907,22 @@ window._viewer = {
     usedMB: (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1),
     totalMB: (performance.memory.totalJSHeapSize / 1024 / 1024).toFixed(1),
   } : null,
+  // Diagnostic API
+  getDiag: () => ({
+    stats: { ...diagStatsAccum },
+    currentFrame, lastAppliedFrame, lastAppliedSeq,
+    frameRequestSeq, gopLoadingStallCount, waitingForWorkerPush,
+    logs: diagLogs.slice(-50),
+  }),
+  dumpDiag: () => {
+    const d = window._viewer.getDiag();
+    console.table([d.stats]);
+    console.log('[V4 Diag] Recent logs:', d.logs);
+    return d;
+  },
 };
+// Expose _viewctlWs for diag relay
+window._viewctlWs = null;
 
 init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
 </script>
