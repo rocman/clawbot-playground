@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>4DGS Deformation Viewer V4 — Memory Optimized</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+  canvas { touch-action: none; display: block; }
+
+  #loading-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: #0a0a0fee;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.5s;
+  }
+  #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  #loading-title { font-size: 24px; font-weight: 300; letter-spacing: 2px; margin-bottom: 24px; color: #7ecfff; }
+  #loading-bar-bg { width: 300px; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+  #loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3a8bff, #7ecfff); transition: width 0.3s; }
+  #loading-text { margin-top: 12px; font-size: 13px; color: #888; }
+
+  #controls {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: linear-gradient(transparent, #0a0a0fcc 30%, #0a0a0fee);
+    padding: 16px 24px 20px;
+  }
+  #timeline-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  #play-btn {
+    width: 36px; height: 36px; border: none; border-radius: 50%;
+    background: #3a8bff; color: #fff; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  #play-btn:hover { background: #5aa0ff; }
+  #timeline {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 6px; background: #333; border-radius: 3px; outline: none; cursor: pointer;
+  }
+  #timeline::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    background: #7ecfff; border-radius: 50%; cursor: grab;
+  }
+  #frame-label { font-size: 13px; color: #aaa; min-width: 140px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  #info-bar { display: flex; gap: 20px; font-size: 12px; color: #666; flex-wrap: wrap; }
+  #info-bar span { display: flex; align-items: center; gap: 4px; }
+  #info-bar .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-static { background: #4a9; }
+  .dot-dynamic { background: #f74; }
+  .dot-fps { background: #7ecfff; }
+  .dot-mem { background: #c8a; }
+
+  #mode-bar {
+    position: fixed; top: 16px; left: 16px; z-index: 100;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .mode-btn {
+    padding: 6px 14px; border: 1px solid #444; border-radius: 16px;
+    background: transparent; color: #aaa; font-size: 12px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mode-btn.active { background: #3a8bff33; border-color: #3a8bff; color: #7ecfff; }
+  .mode-btn:hover { border-color: #666; }
+
+  #speed-bar {
+    position: fixed; top: 56px; left: 16px; z-index: 100;
+    display: flex; gap: 6px; align-items: center;
+  }
+  #speed-bar label { font-size: 11px; color: #666; }
+  .speed-btn {
+    padding: 3px 10px; border: 1px solid #333; border-radius: 12px;
+    background: transparent; color: #777; font-size: 11px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .speed-btn.active { background: #3a8bff22; border-color: #3a8bff; color: #7ecfff; }
+
+  #title-bar {
+    position: fixed; top: 16px; right: 16px; z-index: 100;
+    text-align: right;
+  }
+  #title-bar h1 { font-size: 16px; font-weight: 400; color: #7ecfff; letter-spacing: 1px; }
+  #title-bar p { font-size: 11px; color: #666; margin-top: 4px; }
+
+  #gop-progress {
+    position: fixed; top: 60px; right: 16px; z-index: 100;
+    font-size: 11px; color: #666; text-align: right;
+    transition: opacity 0.5s;
+  }
+  #gop-progress .bar-bg {
+    width: 140px; height: 3px; background: #222; border-radius: 2px;
+    overflow: hidden; margin-top: 4px; margin-left: auto;
+  }
+  #gop-progress .bar { height: 100%; width: 0%; background: #f74; transition: width 0.3s; }
+
+  #gop-strip {
+    position: relative; height: 8px; margin: 0 60px 4px 48px;
+    display: flex; gap: 1px; border-radius: 2px; overflow: hidden;
+  }
+  #gop-strip .gop-seg {
+    flex: 1; height: 100%; background: #222; transition: background 0.3s;
+  }
+  #gop-strip .gop-seg.loaded { background: #3a5; }
+  #gop-strip .gop-seg.active { background: #7ecfff; }
+  #gop-strip .gop-seg.loading { background: #f74; animation: pulse 0.8s infinite alternate; }
+  @keyframes pulse { from { opacity: 0.5; } to { opacity: 1.0; } }
+
+  #mem-badge {
+    position: fixed; top: 90px; right: 16px; z-index: 100;
+    font-size: 11px; padding: 4px 10px; border-radius: 12px;
+    background: #1a3a1a; color: #4a9; border: 1px solid #2a5a2a;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div id="loading-title">4DGS VIEWER V4 — Memory Optimized</div>
+  <div id="loading-bar-bg"><div id="loading-bar"></div></div>
+  <div id="loading-text">Initializing...</div>
+</div>
+
+<div id="title-bar">
+  <h1>4DGS Viewer V4 - Memory Optimized</h1>
+  <p>V4: Float16 textures | Web Worker | Compact storage | Target: 60-80MB</p>
+</div>
+
+<div id="gop-progress">
+  <span id="gop-status">GOPs: initializing...</span>
+  <div class="bar-bg"><div class="bar" id="gop-bar"></div></div>
+</div>
+
+<div id="mem-badge">MEM: --</div>
+
+<div id="mode-bar">
+  <button class="mode-btn active" data-mode="animated" title="Play animated sequence">&#9654; Animated</button>
+  <button class="mode-btn" data-mode="i-frame" title="View I-frame only">&#9724; I-Frame</button>
+  <button class="mode-btn" data-mode="highlight" title="Highlight dynamic regions">&#9681; Dynamic</button>
+</div>
+
+<div id="speed-bar">
+  <label>Speed:</label>
+  <button class="speed-btn" data-speed="0.5">0.5x</button>
+  <button class="speed-btn active" data-speed="1">1x</button>
+  <button class="speed-btn" data-speed="2">2x</button>
+</div>
+
+<div id="controls">
+  <div id="gop-strip"></div>
+  <div id="timeline-row">
+    <button id="play-btn" title="Play/Pause">&#9654;</button>
+    <input type="range" id="timeline" min="0" max="299" step="1" value="0">
+    <span id="frame-label">I-Frame (0.0s / 10.0s)</span>
+  </div>
+  <div id="info-bar">
+    <span><span class="dot dot-static"></span> Static: <span id="stat-static">--</span></span>
+    <span><span class="dot dot-dynamic"></span> Dynamic: <span id="stat-dynamic">--</span></span>
+    <span>Total: <span id="stat-total">--</span> splats</span>
+    <span><span class="dot dot-fps"></span> <span id="stat-fps">--</span> FPS</span>
+    <span><span class="dot dot-mem"></span> GOPs: <span id="stat-gops">0/0</span></span>
+    <span>Window: <span id="stat-window">--</span></span>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.178.0/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/",
+    "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.10/spark.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SplatMesh, dyno } from "@sparkjsdev/spark";
+
+// ============================================================
+// Configuration
+// ============================================================
+const WINDOW_GOPS = 3;
+const PREFETCH_GOPS = 2;  // increased from 1 to reduce stalls at GOP boundaries
+const DELTA_K = 256;
+
+// ============================================================
+// State
+// ============================================================
+let manifest = null;
+let dynamicMask = null;
+let splatMesh = null;
+let currentFrame = 0;
+let isPlaying = false;
+let viewMode = 'animated';
+let playbackSpeedMult = 1.0;
+let targetFPS = 30;
+
+let uFrameIndex = null;
+let uViewMode = null;
+let deltaSampler = null;
+let maskSampler = null;
+let deltaTexture = null;
+let maskTexture = null;
+
+// Worker state
+let dataWorker = null;
+let workerReady = false;
+let frameRequestSeq = 0;          // monotonic counter: each requestFrame gets a new seq
+let lastAppliedFrame = -1;        // last frame whose texture data was actually applied
+let lastAppliedSeq = -1;          // seq of last applied frame
+let gopLoadingStallCount = 0;     // consecutive frames where GOP was loading (stall detector)
+
+// Quantization params (received from worker)
+let qXyzDScale = null;
+let qXyzDMin = null;
+
+const TOTAL_DURATION_DEFAULT = 10.0;
+let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
+
+// ============================================================
+// Diagnostic logging — buffered and relayed through viewctl WS
+// ============================================================
+const diagLogs = [];
+const DIAG_LOG_MAX = 500;
+let diagStatsAccum = { framesRequested: 0, framesApplied: 0, framesDropped: 0, stallFrames: 0 };
+function diagLog(level, msg, data) {
+  const entry = { ts: performance.now(), level, src: 'main', msg, ...(data || {}) };
+  diagLogs.push(entry);
+  if (diagLogs.length > DIAG_LOG_MAX) diagLogs.shift();
+  // Also console.log for dev
+  if (level === 'warn' || level === 'error') {
+    console.warn(`[V4:${level}]`, msg, data || '');
+  }
+}
+function sendDiagToViewctl(ws, entry) {
+  if (ws && ws.readyState === 1) {
+    try {
+      ws.send(JSON.stringify({ type: 'v4DiagLog', entry }));
+    } catch (e) {}
+  }
+}
+
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingBar = document.getElementById('loading-bar');
+const loadingText = document.getElementById('loading-text');
+const playBtn = document.getElementById('play-btn');
+const timeline = document.getElementById('timeline');
+const frameLabel = document.getElementById('frame-label');
+const gopStatus = document.getElementById('gop-status');
+const gopBar = document.getElementById('gop-bar');
+const gopStrip = document.getElementById('gop-strip');
+const memBadge = document.getElementById('mem-badge');
+
+function setLoading(pct, text) {
+  loadingBar.style.width = pct + '%';
+  if (text) loadingText.textContent = text;
+}
+
+// ============================================================
+// Memory monitoring
+// ============================================================
+function updateMemoryBadge() {
+  if (performance.memory) {
+    const usedMB = (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(0);
+    const totalMB = (performance.memory.totalJSHeapSize / 1024 / 1024).toFixed(0);
+    memBadge.textContent = `MEM: ${usedMB}/${totalMB} MB`;
+  }
+}
+setInterval(updateMemoryBadge, 2000);
+
+// ============================================================
+// Data Loading (main thread — only lightweight data)
+// ============================================================
+async function loadManifest() {
+  setLoading(5, 'Loading manifest...');
+  const resp = await fetch('data_v3d/manifest.json?t=' + Date.now());
+  manifest = await resp.json();
+  targetFPS = manifest.target_fps || 30;
+  TOTAL_DURATION = (manifest.p_frame_count || 299) / targetFPS;
+  
+  document.getElementById('stat-total').textContent = manifest.total_gaussians.toLocaleString();
+  document.getElementById('stat-dynamic').textContent = manifest.dynamic_gaussians.toLocaleString();
+  document.getElementById('stat-static').textContent =
+    (manifest.total_gaussians - manifest.dynamic_gaussians).toLocaleString();
+  timeline.max = manifest.p_frame_count;
+  
+  // Build GOP strip
+  gopStrip.innerHTML = '';
+  for (let i = 0; i < manifest.gop_count; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'gop-seg';
+    seg.id = `gop-seg-${i}`;
+    seg.title = `GOP ${i}: frames ${manifest.gop_index[i].start_frame}-${manifest.gop_index[i].end_frame - 1}`;
+    gopStrip.appendChild(seg);
+  }
+}
+
+async function decompressGzip(buf) {
+  const ds = new DecompressionStream('gzip');
+  const blob = new Blob([buf]);
+  const stream = blob.stream().pipeThrough(ds);
+  return await new Response(stream).blob().then(b => b.arrayBuffer());
+}
+
+async function loadDynamicMask() {
+  const resp = await fetch('data_v3d/' + manifest.dynamic_mask + '?t=' + Date.now());
+  const compressed = await resp.arrayBuffer();
+  const raw = await decompressGzip(compressed);
+  const view = new DataView(raw);
+  const totalN = view.getUint32(0, true);
+  dynamicMask = new Uint8Array(raw, 4, totalN);
+}
+
+// ============================================================
+// Phase 1: Compact Mask Texture (HalfFloat RG instead of Float32 RGBA)
+// Saves ~75% memory: Float32 RGBA (16B/texel) → HalfFloat RG (4B/texel)
+// ============================================================
+function createMaskTexture() {
+  const totalN = manifest.total_gaussians;
+  const texW = Math.ceil(Math.sqrt(totalN));
+  const texH = Math.ceil(totalN / texW);
+  
+  // Use Float32 RG format — saves ~75% vs Float32 RGBA
+  // R = isDynamic (0.0 or 1.0), G = dynamicIndex (or -1.0)
+  const texData = new Float32Array(texW * texH * 2); // RG only
+  let dynIdx = 0;
+  for (let i = 0; i < totalN; i++) {
+    const off = i * 2;
+    const isDyn = dynamicMask[i];
+    texData[off + 0] = isDyn ? 1.0 : 0.0;
+    texData[off + 1] = isDyn ? dynIdx : -1.0;
+    if (isDyn) dynIdx++;
+  }
+  for (let i = totalN; i < texW * texH; i++) {
+    texData[i * 2 + 0] = 0.0;
+    texData[i * 2 + 1] = -1.0;
+  }
+  
+  const tex = new THREE.DataTexture(texData, texW, texH, THREE.RGFormat, THREE.FloatType);
+  tex.needsUpdate = true;
+  tex.minFilter = THREE.NearestFilter;
+  tex.magFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  
+  return { texture: tex, width: texW, height: texH };
+}
+
+// ============================================================
+// Phase 1: Half-float Delta Texture
+// ============================================================
+let deltaTexW = 0, deltaTexH = 0;
+
+function createDeltaTexture(nDyn) {
+  deltaTexW = DELTA_K * 2;
+  deltaTexH = Math.ceil(nDyn / DELTA_K);
+  // Phase 1: HalfFloat — saves 50% vs Float32
+  const texData = new Uint16Array(deltaTexW * deltaTexH * 4);
+  const tex = new THREE.DataTexture(texData, deltaTexW, deltaTexH, THREE.RGBAFormat, THREE.HalfFloatType);
+  tex.needsUpdate = true;
+  tex.minFilter = THREE.NearestFilter;
+  tex.magFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  return tex;
+}
+
+// ============================================================
+// Web Worker setup
+// ============================================================
+function initWorker() {
+  return new Promise((resolve, reject) => {
+    dataWorker = new Worker('v4_data_worker.js');
+    
+    dataWorker.onmessage = function(e) {
+      const msg = e.data;
+      
+      switch (msg.type) {
+        case 'ready':
+          workerReady = true;
+          resolve();
+          break;
+        
+        case 'metaLoaded':
+          // Store quant params for shader
+          qXyzDScale = msg.quantParams.qXyzDScale;
+          qXyzDMin = msg.quantParams.qXyzDMin;
+          gopStatus.textContent = 'Meta: loaded';
+          break;
+        
+        case 'frameData':
+          // ★ CRITICAL FIX: Discard stale frame responses using sequence number
+          if (msg.seq !== undefined && msg.seq < lastAppliedSeq) {
+            // This response is from an older request — DISCARD to prevent regression
+            diagStatsAccum.framesDropped++;
+            diagLog('debug', `Dropped stale frame: seq=${msg.seq} < lastApplied=${lastAppliedSeq}, frame=${msg.globalFrame}`);
+            break;
+          }
+          
+          if (msg.data) {
+            // Received HalfFloat texture data from worker
+            const texData = new Uint16Array(msg.data);
+            deltaTexture.image.data.set(texData);
+            deltaTexture.needsUpdate = true;
+            uFrameIndex.value = msg.globalFrame;
+            lastAppliedFrame = msg.globalFrame;
+            lastAppliedSeq = msg.seq;
+            gopLoadingStallCount = 0;
+            diagStatsAccum.framesApplied++;
+          } else if (msg.globalFrame === 0) {
+            uFrameIndex.value = 0;
+            lastAppliedFrame = 0;
+            lastAppliedSeq = msg.seq;
+            gopLoadingStallCount = 0;
+          } else if (msg.loading) {
+            // GOP still loading — hold last good frame, DON'T set uFrameIndex to 0!
+            gopLoadingStallCount++;
+            diagStatsAccum.stallFrames++;
+            frameLabel.textContent = `P-Frame ${msg.globalFrame}/${manifest.p_frame_count} (loading GOP ${msg.gopIdx}...) [stall ${gopLoadingStallCount}]`;
+            diagLog('info', `Stall #${gopLoadingStallCount}: GOP ${msg.gopIdx} loading, holding frame ${lastAppliedFrame}`);
+          }
+          break;
+        
+        case 'diagLog':
+          // Relay worker diagnostic log to viewctl WS
+          diagLogs.push({ ...msg.entry, src: 'worker' });
+          if (diagLogs.length > DIAG_LOG_MAX) diagLogs.shift();
+          sendDiagToViewctl(_viewctlWs, msg.entry);
+          break;
+        
+        case 'gopState':
+          updateGopStripUI(msg.gopIdx, msg.state);
+          break;
+        
+        case 'stats':
+          document.getElementById('stat-gops').textContent = `${msg.cached}/${msg.total}`;
+          document.getElementById('stat-window').textContent = `${msg.memMB} MB (${msg.cached} GOPs)`;
+          const pct = msg.total > 0 ? Math.round(msg.cached / Math.min(WINDOW_GOPS * 2 + 1, msg.total) * 100) : 0;
+          gopBar.style.width = pct + '%';
+          break;
+        
+        case 'status':
+          gopStatus.textContent = msg.msg;
+          break;
+      }
+    };
+    
+    dataWorker.onerror = function(err) {
+      console.error('[V4] Worker error:', err);
+      reject(err);
+    };
+    
+    // Init worker with manifest and data URLs
+    const baseUrl = 'data_v3d/';
+    const metaUrl = `data_v3d/${manifest.gop_meta}?t=${Date.now()}`;
+    dataWorker.postMessage({
+      type: 'init',
+      manifest,
+      baseUrl,
+      metaUrl,
+      windowGops: WINDOW_GOPS,
+      prefetchGops: PREFETCH_GOPS,
+    });
+  });
+}
+
+// ============================================================
+// UI helpers
+// ============================================================
+function updateGopStripUI(gopIdx, state) {
+  const seg = document.getElementById(`gop-seg-${gopIdx}`);
+  if (!seg) return;
+  seg.className = 'gop-seg';
+  if (state === 'loaded') seg.classList.add('loaded');
+  else if (state === 'active') seg.classList.add('active');
+  else if (state === 'loading') seg.classList.add('loading');
+}
+
+function getGopIndexForFrame(globalFrame) {
+  if (globalFrame === 0) return -1;
+  const pFrameIdx = globalFrame - 1;
+  return Math.floor(pFrameIdx / manifest.gop_size);
+}
+
+// ============================================================
+// Scene setup
+// ============================================================
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ============================================================
+// Init
+// ============================================================
+async function init() {
+  const t0 = performance.now();
+
+  await loadManifest();
+
+  setLoading(10, 'Loading dynamic mask...');
+  await loadDynamicMask();
+
+  setLoading(20, 'Creating textures (Float16 optimized)...');
+  const nDyn = manifest.dynamic_gaussians;
+  deltaTexture = createDeltaTexture(nDyn);
+  const maskInfo = createMaskTexture();
+  maskTexture = maskInfo.texture;
+  const maskTexWidth = maskInfo.width;
+
+  // Release dynamicMask after creating texture (Phase 1: free early)
+  dynamicMask = null;
+
+  setLoading(30, 'Initializing Web Worker...');
+  await initWorker();
+
+  setLoading(50, 'Loading SPZ I-frame...');
+
+  uFrameIndex = dyno.dynoInt(0);
+  uViewMode = dyno.dynoInt(0);
+  deltaSampler = dyno.dynoSampler2D(deltaTexture);
+  maskSampler = dyno.dynoSampler2D(maskTexture);
+
+  const iFrameUrl = 'data_v3d/' + manifest.i_frame + '?t=' + Date.now();
+  const iFrameResp = await fetch(iFrameUrl);
+  const iFrameBytes = new Uint8Array(await iFrameResp.arrayBuffer());
+  console.log(`[V4] SPZ I-frame loaded: ${(iFrameBytes.byteLength/1024/1024).toFixed(2)} MB`);
+
+  setLoading(70, 'Initializing Spark.js...');
+  splatMesh = new SplatMesh({ fileBytes: iFrameBytes });
+
+  // Phase 1: Updated shader for RG mask texture + HalfFloat delta texture
+  splatMesh.objectModifier = dyno.dynoBlock(
+    { gsplat: dyno.Gsplat },
+    { gsplat: dyno.Gsplat },
+    ({ gsplat }) => {
+      const d = new dyno.Dyno({
+        inTypes: {
+          gsplat: dyno.Gsplat,
+          frameIdx: "int",
+          mode: "int",
+          deltaTex: "sampler2D",
+          maskTex: "sampler2D",
+          maskW: "int",
+          deltaK: "int",
+        },
+        outTypes: { gsplat: dyno.Gsplat },
+        globals: () => [
+          dyno.unindent(`
+            vec2 lookupMaskV4(sampler2D mTex, int idx, int mW) {
+              int r = idx / mW;
+              int c = idx - r * mW;
+              return texelFetch(mTex, ivec2(c, r), 0).rg;
+            }
+            void fetchDeltaV4(sampler2D dTex, int dIdx, int K,
+                              out vec3 dPos, out vec3 dDC, out float dOp) {
+              int sr = dIdx / K;
+              int sc = (dIdx - sr * K) * 2;
+              vec4 t0 = texelFetch(dTex, ivec2(sc, sr), 0);
+              vec4 t1 = texelFetch(dTex, ivec2(sc+1, sr), 0);
+              dPos = t0.xyz;
+              dDC  = vec3(t0.w, t1.xy);
+              dOp  = t1.z;
+            }
+          `)
+        ],
+        statements: ({ inputs, outputs }) => dyno.unindentLines(`
+          ${outputs.gsplat} = ${inputs.gsplat};
+          int sIdx = ${inputs.gsplat}.index;
+          vec2 md = lookupMaskV4(${inputs.maskTex}, sIdx, ${inputs.maskW});
+          float isDyn = md.r;
+          int dIdx = int(md.g);
+
+          if (${inputs.mode} == 2) {
+            if (isDyn > 0.5)
+              ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(1.0,0.5,0.2), 0.6);
+            else
+              ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(0.2,0.7,0.6), 0.4);
+          }
+
+          if (${inputs.mode} == 0 && ${inputs.frameIdx} > 0 && isDyn > 0.5 && dIdx >= 0) {
+            vec3 dp, ddc; float dop;
+            fetchDeltaV4(${inputs.deltaTex}, dIdx, ${inputs.deltaK}, dp, ddc, dop);
+            float SH_C0 = 0.28209479177;
+            ${outputs.gsplat}.center += dp;
+            ${outputs.gsplat}.rgba.rgb = SH_C0 * ddc + 0.5;
+            ${outputs.gsplat}.rgba.a = dop;
+          }
+        `)
+      });
+      gsplat = d.apply({
+        gsplat,
+        frameIdx: uFrameIndex,
+        mode: uViewMode,
+        deltaTex: deltaSampler,
+        maskTex: maskSampler,
+        maskW: dyno.dynoInt(maskTexWidth),
+        deltaK: dyno.dynoInt(DELTA_K),
+      }).gsplat;
+      return { gsplat };
+    }
+  );
+
+  splatMesh.quaternion.set(1, 0, 0, 0);
+  splatMesh.position.set(0, 0, 0);
+  scene.add(splatMesh);
+
+  camera.position.set(0.5, 4.5, 15.0);
+
+  setLoading(90, 'Worker preloading GOPs...');
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(2.435, -2.0, -15.003);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.1;
+  controls.screenSpacePanning = true;
+  controls.minDistance = 0.5;
+  controls.maxDistance = 100;
+  controls.update();
+
+  setLoading(100, 'Ready!');
+  const loadTime = ((performance.now() - t0) / 1000).toFixed(1);
+  console.log(`[V4] Ready in ${loadTime}s (memory-optimized mode)`);
+
+  setTimeout(() => {
+    loadingOverlay.classList.add('hidden');
+    splatMesh.updateGenerator();
+    isPlaying = true;
+    playBtn.textContent = '\u23F8';
+  }, 300);
+
+  // ============================================================
+  // 30Hz Animation Loop — with stall-aware frame advancement
+  // ============================================================
+  let frameCount = 0, lastFpsTime = performance.now();
+  let lastFrameTime = performance.now();
+  const FRAME_INTERVAL = 1000 / targetFPS;
+  const MAX_STALL_BEFORE_SKIP = 10; // after N stall frames, skip ahead to avoid stuck
+
+  renderer.setAnimationLoop(function animate() {
+    const now = performance.now();
+
+    if (isPlaying && viewMode === 'animated' && workerReady) {
+      const adjustedInterval = FRAME_INTERVAL / playbackSpeedMult;
+      if (now - lastFrameTime >= adjustedInterval) {
+        lastFrameTime = now;
+        
+        // ★ STALL PROTECTION: If GOP is loading, don't blindly push frame forward
+        // Only advance if the last request was actually applied (or if we've been stalling too long)
+        if (gopLoadingStallCount > 0 && gopLoadingStallCount < MAX_STALL_BEFORE_SKIP) {
+          // Re-request the SAME frame (GOP might have loaded by now)
+          updateFrame(currentFrame);
+        } else {
+          // Normal advancement (or force-skip after max stall)
+          if (gopLoadingStallCount >= MAX_STALL_BEFORE_SKIP) {
+            diagLog('warn', `Force-advancing after ${gopLoadingStallCount} stall frames at frame ${currentFrame}`);
+            gopLoadingStallCount = 0;
+          }
+          const maxFrame = manifest.p_frame_count;
+          const nextFrame = (currentFrame + 1) % (maxFrame + 1);
+          updateFrame(nextFrame);
+        }
+      }
+    }
+
+    splatMesh.updateVersion();
+    controls.update();
+    renderer.render(scene, camera);
+
+    frameCount++;
+    if (now - lastFpsTime > 500) {
+      document.getElementById('stat-fps').textContent =
+        Math.round(frameCount / ((now - lastFpsTime) / 1000));
+      frameCount = 0;
+      lastFpsTime = now;
+    }
+  });
+
+  // ============================================================
+  // WebSocket for viewctl remote control + diagnostic relay
+  // ============================================================
+  const wsUrl = 'ws://' + location.host + '/';
+  let ws = null;
+  // Expose ws reference for diag log relay
+  window._viewctlWs = null;
+  function connectWS() {
+    try {
+      ws = new WebSocket(wsUrl);
+      window._viewctlWs = ws;
+      ws.onopen = () => {
+        console.log('[WS] Connected to viewctl');
+        // Send initial diagnostic summary
+        sendDiagToViewctl(ws, { ts: performance.now(), level: 'info', src: 'main', msg: 'V4 viewer connected, diag logging active' });
+      };
+      ws.onclose = () => { window._viewctlWs = null; setTimeout(connectWS, 3000); };
+      ws.onerror = () => {};
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg.type === 'setCamera') {
+            if (msg.position) camera.position.fromArray(msg.position);
+            if (msg.target) controls.target.fromArray(msg.target);
+            controls.update();
+            reportCamera();
+          } else if (msg.type === 'rotateCamera') {
+            const az = (msg.azimuth || 0) * Math.PI / 180;
+            const el = (msg.elevation || 0) * Math.PI / 180;
+            const off = new THREE.Vector3().subVectors(camera.position, controls.target);
+            const r = off.length();
+            let theta = Math.acos(Math.max(-1, Math.min(1, off.y / r)));
+            let phi = Math.atan2(off.x, off.z);
+            phi += az; theta = Math.max(0.01, Math.min(Math.PI - 0.01, theta + el));
+            off.set(r * Math.sin(theta) * Math.sin(phi), r * Math.cos(theta),
+                    r * Math.sin(theta) * Math.cos(phi));
+            camera.position.copy(controls.target).add(off);
+            controls.update();
+            reportCamera();
+          } else if (msg.type === 'setFrame') {
+            updateFrame(msg.frame || 0);
+          } else if (msg.type === 'requestScreenshot') {
+            renderer.render(scene, camera);
+            const dataUrl = renderer.domElement.toDataURL('image/png');
+            ws.send(JSON.stringify({
+              type: 'screenshotResult', dataUrl,
+              width: renderer.domElement.width, height: renderer.domElement.height,
+              camera: { position: camera.position.toArray(), target: controls.target.toArray() },
+            }));
+          } else if (msg.type === 'getDiagLogs') {
+            // Viewctl requesting full diagnostic log dump
+            ws.send(JSON.stringify({
+              type: 'diagLogDump',
+              logs: diagLogs.slice(-100),
+              stats: diagStatsAccum,
+              currentFrame,
+              lastAppliedFrame,
+              lastAppliedSeq,
+              frameRequestSeq,
+              gopLoadingStallCount,
+            }));
+          } else if (msg.type === 'refresh') {
+            // Handle viewctl refresh command
+            location.hash = '#refresh';
+            location.reload();
+          }
+        } catch (e) {}
+      };
+    } catch (e) { setTimeout(connectWS, 3000); }
+  }
+  function reportCamera() {
+    if (ws && ws.readyState === 1)
+      ws.send(JSON.stringify({ type: 'cameraState',
+        position: camera.position.toArray(), target: controls.target.toArray(),
+        up: camera.up.toArray() }));
+  }
+  // Periodic diagnostic stats report via WS (every 5s)
+  setInterval(() => {
+    if (ws && ws.readyState === 1) {
+      ws.send(JSON.stringify({
+        type: 'v4DiagStats',
+        stats: { ...diagStatsAccum },
+        currentFrame,
+        lastAppliedFrame,
+        gopLoadingStallCount,
+        frameRequestSeq,
+      }));
+    }
+  }, 5000);
+  setInterval(reportCamera, 1000);
+  renderer.domElement.addEventListener('pointerup', () => setTimeout(reportCamera, 100));
+  connectWS();
+}
+
+// ============================================================
+// Frame management (Worker-based)
+// ============================================================
+function updateFrame(idx) {
+  currentFrame = idx;
+  timeline.value = idx;
+  const timeSec = (idx / targetFPS).toFixed(1);
+  const gopIdx = getGopIndexForFrame(idx);
+
+  // Highlight active GOP in strip
+  if (gopIdx >= 0) {
+    const segs = gopStrip.querySelectorAll('.gop-seg');
+    segs.forEach(s => {
+      if (s.classList.contains('active')) s.classList.replace('active', 'loaded');
+    });
+    const activeSeg = document.getElementById(`gop-seg-${gopIdx}`);
+    if (activeSeg && (activeSeg.classList.contains('loaded') || activeSeg.className === 'gop-seg')) {
+      activeSeg.className = 'gop-seg active';
+    }
+  }
+
+  if (idx === 0) {
+    frameRequestSeq++;
+    uFrameIndex.value = 0;
+    lastAppliedFrame = 0;
+    lastAppliedSeq = frameRequestSeq;
+    gopLoadingStallCount = 0;
+    frameLabel.textContent = `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)`;
+  } else {
+    frameLabel.textContent = `P-Frame ${idx}/${manifest.p_frame_count} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [GOP ${gopIdx}]`;
+    // ★ CRITICAL FIX: Each request gets a unique, monotonically increasing seq
+    frameRequestSeq++;
+    diagStatsAccum.framesRequested++;
+    dataWorker.postMessage({ type: 'requestFrame', globalFrame: idx, deltaK: DELTA_K, seq: frameRequestSeq });
+  }
+}
+
+// ============================================================
+// UI: Play/Pause, Timeline, Modes, Speed
+// ============================================================
+playBtn.addEventListener('click', () => {
+  isPlaying = !isPlaying;
+  playBtn.textContent = isPlaying ? '\u23F8' : '\u25B6';
+});
+
+timeline.addEventListener('input', (e) => {
+  isPlaying = false;
+  playBtn.textContent = '\u25B6';
+  updateFrame(parseInt(e.target.value));
+});
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    viewMode = btn.dataset.mode;
+    if (viewMode === 'animated') {
+      uViewMode.value = 0;
+    } else if (viewMode === 'i-frame') {
+      uViewMode.value = 1;
+      uFrameIndex.value = 0;
+      currentFrame = 0;
+      timeline.value = 0;
+      isPlaying = false;
+      playBtn.textContent = '\u25B6';
+    } else if (viewMode === 'highlight') {
+      uViewMode.value = 2;
+      uFrameIndex.value = 0;
+      isPlaying = false;
+      playBtn.textContent = '\u25B6';
+    }
+    splatMesh.updateGenerator();
+  });
+});
+
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    playbackSpeedMult = parseFloat(btn.dataset.speed);
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); playBtn.click(); }
+  else if (e.key === 'ArrowRight') updateFrame(Math.min(currentFrame + 1, manifest.p_frame_count));
+  else if (e.key === 'ArrowLeft') updateFrame(Math.max(currentFrame - 1, 0));
+});
+
+window._viewer = {
+  updateFrame: (f) => updateFrame(f),
+  getFrame: () => currentFrame,
+  setSpeed: (s) => { playbackSpeedMult = s; },
+  getMemory: () => performance.memory ? {
+    usedMB: (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1),
+    totalMB: (performance.memory.totalJSHeapSize / 1024 / 1024).toFixed(1),
+  } : null,
+  // Diagnostic API
+  getDiag: () => ({
+    stats: { ...diagStatsAccum },
+    currentFrame, lastAppliedFrame, lastAppliedSeq,
+    frameRequestSeq, gopLoadingStallCount,
+    logs: diagLogs.slice(-50),
+  }),
+  dumpDiag: () => {
+    const d = window._viewer.getDiag();
+    console.table([d.stats]);
+    console.log('[V4 Diag] Recent logs:', d.logs);
+    return d;
+  },
+};
+// Expose _viewctlWs for diag relay
+window._viewctlWs = null;
+
+init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
+</script>
+</body>
+</html>
