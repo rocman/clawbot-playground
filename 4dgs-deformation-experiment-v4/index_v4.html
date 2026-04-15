@@ -1003,8 +1003,6 @@ function evictDistantGops(currentGopIdx) {
   }
   if (evicted > 0 || stripped > 0) {
     diagLog('info', `Eviction: removed ${evicted}, stripped-raw ${stripped}, kept: [${[...keepSet].sort((a,b)=>a-b).join(',')}] (current=${currentGopIdx})`);
-    // Nudge GC after freeing large raw buffers
-    if (stripped > 0) nudgeGC();
   }
   reportStats();
 }
@@ -1036,30 +1034,6 @@ function reportStats() {
     `${totalMemMB.toFixed(1)} MB (${rawCount} raw + ${compOnlyCount} gz + buf)`;
   const pct = total > 0 ? Math.round(loaded / Math.min(MAX_CACHED_GOPS, total) * 100) : 0;
   gopBar.style.width = pct + '%';
-}
-
-// ============================================================
-// GC Nudge — encourage V8 to run garbage collection
-// We can't call gc() directly, but allocating+discarding a large
-// temporary buffer creates memory pressure that triggers Major GC.
-// ============================================================
-function nudgeGC() {
-  try {
-    // Allocate ~32MB temporary buffer — enough to trigger V8's GC heuristic
-    // The allocation itself plus immediate discard signals memory pressure
-    const pressure = new ArrayBuffer(32 * 1024 * 1024);
-    // Reference it briefly to prevent dead-code elimination
-    if (pressure.byteLength === 0) console.log('noop');
-  } catch (e) {
-    // OOM — GC will definitely run now
-  }
-  // Schedule a second nudge on next microtask to catch any stragglers
-  Promise.resolve().then(() => {
-    try {
-      const p2 = new ArrayBuffer(16 * 1024 * 1024);
-      if (p2.byteLength === 0) console.log('noop');
-    } catch (e) {}
-  });
 }
 
 // ============================================================
@@ -1698,9 +1672,6 @@ playBtn.addEventListener('click', () => {
     const freedMB = releasePlaybackBuffers();
     diagLog('info', `Playback paused: released ${freedMB.toFixed(1)} MB of playback buffers`);
     reportStats();
-    // Nudge GC to actually reclaim the freed memory (not just null the refs)
-    nudgeGC();
-    setTimeout(() => { nudgeGC(); updateMemoryBadge(); }, 200);
     updateMemoryBadge();
   } else {
     // === Resume: re-acquire current GOP data for playback ===
