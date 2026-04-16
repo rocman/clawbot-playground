@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>4DGS Deformation Viewer V4b — Batch Pre-bake GOP Texture + Low-Frequency Update</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+  canvas { touch-action: none; display: block; }
+
+  #loading-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: #0a0a0fee;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.5s;
+  }
+  #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  #loading-title { font-size: 24px; font-weight: 300; letter-spacing: 2px; margin-bottom: 24px; color: #7ecfff; }
+  #loading-bar-bg { width: 300px; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+  #loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3a8bff, #7ecfff); transition: width 0.3s; }
+  #loading-text { margin-top: 12px; font-size: 13px; color: #888; }
+
+  #controls {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: linear-gradient(transparent, #0a0a0fcc 30%, #0a0a0fee);
+    padding: 16px 24px 20px;
+  }
+  #timeline-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  #play-btn {
+    width: 36px; height: 36px; border: none; border-radius: 50%;
+    background: #3a8bff; color: #fff; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  #play-btn:hover { background: #5aa0ff; }
+  #timeline {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 6px; background: #333; border-radius: 3px; outline: none; cursor: pointer;
+  }
+  #timeline::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    background: #7ecfff; border-radius: 50%; cursor: grab;
+  }
+  #frame-label { font-size: 13px; color: #aaa; text-align: center; font-variant-numeric: tabular-nums; margin-bottom: 6px; }
+
+  #info-bar { display: flex; gap: 20px; font-size: 12px; color: #666; flex-wrap: wrap; }
+  #info-bar span { display: flex; align-items: center; gap: 4px; }
+  #info-bar .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-static { background: #4a9; }
+  .dot-dynamic { background: #f74; }
+  .dot-fps { background: #7ecfff; }
+  .dot-mem { background: #c8a; }
+
+  #mode-bar {
+    position: fixed; top: 16px; left: 16px; z-index: 100;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .mode-btn {
+    padding: 6px 14px; border: 1px solid #444; border-radius: 16px;
+    background: transparent; color: #aaa; font-size: 12px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mode-btn.active { background: #3a8bff33; border-color: #3a8bff; color: #7ecfff; }
+  .mode-btn:hover { border-color: #666; }
+
+  #speed-bar {
+    position: fixed; top: 56px; left: 16px; z-index: 100;
+    display: flex; gap: 6px; align-items: center;
+  }
+  #speed-bar label { font-size: 11px; color: #666; }
+  .speed-btn {
+    padding: 3px 10px; border: 1px solid #333; border-radius: 12px;
+    background: transparent; color: #777; font-size: 11px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .speed-btn.active { background: #3a8bff22; border-color: #3a8bff; color: #7ecfff; }
+
+  #title-bar {
+    position: fixed; top: 16px; right: 16px; z-index: 100;
+    text-align: right;
+  }
+  #title-bar h1 { font-size: 16px; font-weight: 400; color: #7ecfff; letter-spacing: 1px; }
+  #title-bar p { font-size: 11px; color: #666; margin-top: 4px; }
+
+  #gop-progress {
+    position: fixed; top: 60px; right: 16px; z-index: 100;
+    font-size: 11px; color: #666; text-align: right;
+    transition: opacity 0.5s;
+  }
+  #gop-progress .bar-bg {
+    width: 140px; height: 3px; background: #222; border-radius: 2px;
+    overflow: hidden; margin-top: 4px; margin-left: auto;
+  }
+  #gop-progress .bar { height: 100%; width: 0%; background: #f74; transition: width 0.3s; }
+
+  #gop-strip {
+    position: relative; height: 8px; margin: 0 0 4px 48px;
+    display: flex; gap: 1px; border-radius: 2px; overflow: hidden;
+  }
+  #gop-strip .gop-seg {
+    flex: 1; height: 100%; background: #222; transition: background 0.3s;
+  }
+  #gop-strip .gop-seg.loaded { background: #3a5; }
+  #gop-strip .gop-seg.active { background: #7ecfff; }
+  #gop-strip .gop-seg.loading { background: #f74; animation: pulse 0.8s infinite alternate; }
+  @keyframes pulse { from { opacity: 0.5; } to { opacity: 1.0; } }
+
+  #mem-badge {
+    position: fixed; top: 90px; right: 16px; z-index: 100;
+    font-size: 11px; padding: 4px 10px; border-radius: 12px;
+    background: #1a3a1a; color: #4a9; border: 1px solid #2a5a2a;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div id="loading-title">4DGS VIEWER V4b — Batch Pre-bake + Low-Freq Update</div>
+  <div id="loading-bar-bg"><div id="loading-bar"></div></div>
+  <div id="loading-text">Initializing...</div>
+</div>
+
+<div id="title-bar">
+  <h1>4DGS Viewer V4b</h1>
+  <p>V4b: Batch pre-bake GOP frames to large texture | Low-freq CPU update | GPU-only playback</p>
+</div>
+
+<div id="gop-progress">
+  <span id="gop-status">GOPs: initializing...</span>
+  <div class="bar-bg"><div class="bar" id="gop-bar"></div></div>
+</div>
+
+<div id="mem-badge">MEM: --</div>
+
+<div id="mode-bar">
+  <button class="mode-btn active" data-mode="animated" title="Play animated sequence">&#9654; Animated</button>
+  <button class="mode-btn" data-mode="i-frame" title="View I-frame only">&#9724; I-Frame</button>
+  <button class="mode-btn" data-mode="highlight" title="Highlight dynamic regions">&#9681; Dynamic</button>
+</div>
+
+<div id="speed-bar">
+  <label>Speed:</label>
+  <button class="speed-btn" data-speed="0.5">0.5x</button>
+  <button class="speed-btn active" data-speed="1">1x</button>
+  <button class="speed-btn" data-speed="2">2x</button>
+</div>
+
+<div id="controls">
+  <div id="frame-label">I-Frame (0.0s / 10.0s)</div>
+  <div id="gop-strip"></div>
+  <div id="timeline-row">
+    <button id="play-btn" title="Play/Pause">&#9654;</button>
+    <input type="range" id="timeline" min="0" max="299" step="1" value="0">
+  </div>
+  <div id="info-bar">
+    <span><span class="dot dot-static"></span> Static: <span id="stat-static">--</span></span>
+    <span><span class="dot dot-dynamic"></span> Dynamic: <span id="stat-dynamic">--</span></span>
+    <span>Total: <span id="stat-total">--</span> splats</span>
+    <span><span class="dot dot-fps"></span> <span id="stat-fps">--</span> FPS</span>
+    <span><span class="dot dot-mem"></span> GOPs: <span id="stat-gops">0/0</span></span>
+    <span>Window: <span id="stat-window">--</span></span>
+    <span>Cache: <span id="stat-cache">--</span></span>
+    <span>Bake: <span id="stat-dblbuf">--</span></span>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.178.0/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/",
+    "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.10/spark.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SplatMesh, dyno } from "@sparkjsdev/spark";
+
+// ============================================================
+// Configuration — Batch Pre-bake: decode entire GOP → bake all frames to large texture → release raw
+// During playback: shader selects frame from pre-baked atlas, ZERO CPU cost per frame
+// ============================================================
+const MAX_CACHED_GOPS = 2;   // raw compressed GOP cache (current + prefetch next)
+const DELTA_K = 256;
+const STRIDE = 7; // bytes per gaussian per frame: xyz(3) + dc(3) + op(1)
+const BAKE_BATCH_SIZE = 30;  // max frames to pre-bake into texture atlas (= GOP size)
+
+// ============================================================
+// L2 Persistent Cache — OPFS (preferred) + IndexedDB (fallback)
+// Stores raw gzip bytes so page refresh skips network entirely.
+// Cache key = manifestVersion + "/" + filename (invalidated on version change)
+// ============================================================
+class GopPersistCache {
+  constructor() {
+    this._mode = null;  // 'opfs' | 'idb' | null
+    this._opfsRoot = null;
+    this._idbDB = null;
+    this._ready = this._init();
+  }
+
+  async _init() {
+    // Try OPFS first
+    try {
+      if (navigator.storage && navigator.storage.getDirectory) {
+        const root = await navigator.storage.getDirectory();
+        this._opfsRoot = await root.getDirectoryHandle('4dgs-v4-cache', { create: true });
+        this._mode = 'opfs';
+        console.log('[PersistCache] Using OPFS');
+        return;
+      }
+    } catch (e) {
+      console.warn('[PersistCache] OPFS unavailable:', e.message);
+    }
+    // Fallback to IndexedDB
+    try {
+      this._idbDB = await new Promise((resolve, reject) => {
+        const req = indexedDB.open('4dgs-v4-cache', 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('blobs')) {
+            db.createObjectStore('blobs');
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      this._mode = 'idb';
+      console.log('[PersistCache] Using IndexedDB');
+    } catch (e) {
+      console.warn('[PersistCache] IndexedDB unavailable:', e.message);
+      this._mode = null;
+    }
+  }
+
+  _key(manifestVersion, filename) {
+    return `${manifestVersion}/${filename}`;
+  }
+
+  async get(manifestVersion, filename) {
+    await this._ready;
+    const key = this._key(manifestVersion, filename);
+    if (this._mode === 'opfs') {
+      return this._opfsGet(key);
+    } else if (this._mode === 'idb') {
+      return this._idbGet(key);
+    }
+    return null;
+  }
+
+  async put(manifestVersion, filename, arrayBuffer) {
+    await this._ready;
+    const key = this._key(manifestVersion, filename);
+    if (this._mode === 'opfs') {
+      return this._opfsPut(key, arrayBuffer);
+    } else if (this._mode === 'idb') {
+      return this._idbPut(key, arrayBuffer);
+    }
+  }
+
+  // --- OPFS ---
+  async _opfsGet(key) {
+    try {
+      // key = "v3d/gop_000.bin.gz" → use flat filename with safe chars
+      const safeName = key.replace(/\//g, '__');
+      const fh = await this._opfsRoot.getFileHandle(safeName);
+      const file = await fh.getFile();
+      return await file.arrayBuffer();
+    } catch (e) {
+      return null; // NotFoundError → cache miss
+    }
+  }
+  async _opfsPut(key, buf) {
+    try {
+      const safeName = key.replace(/\//g, '__');
+      const fh = await this._opfsRoot.getFileHandle(safeName, { create: true });
+      const writable = await fh.createWritable();
+      await writable.write(buf);
+      await writable.close();
+    } catch (e) {
+      console.warn('[PersistCache] OPFS write failed:', e.message);
+    }
+  }
+
+  // --- IndexedDB ---
+  async _idbGet(key) {
+    return new Promise((resolve) => {
+      try {
+        const tx = this._idbDB.transaction('blobs', 'readonly');
+        const req = tx.objectStore('blobs').get(key);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+      } catch (e) { resolve(null); }
+    });
+  }
+  async _idbPut(key, buf) {
+    return new Promise((resolve) => {
+      try {
+        const tx = this._idbDB.transaction('blobs', 'readwrite');
+        tx.objectStore('blobs').put(buf, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      } catch (e) { resolve(); }
+    });
+  }
+
+  // Delete a specific cache entry
+  async delete(manifestVersion, filename) {
+    await this._ready;
+    const key = this._key(manifestVersion, filename);
+    if (this._mode === 'opfs') {
+      try {
+        const safeName = key.replace(/\//g, '__');
+        await this._opfsRoot.removeEntry(safeName);
+      } catch (e) {}
+    } else if (this._mode === 'idb') {
+      try {
+        const tx = this._idbDB.transaction('blobs', 'readwrite');
+        tx.objectStore('blobs').delete(key);
+      } catch (e) {}
+    }
+  }
+
+  // Invalidate all entries not matching current manifest version
+  async purgeOldVersions(currentVersion) {
+    await this._ready;
+    const prefix = currentVersion + '/';
+    if (this._mode === 'opfs') {
+      try {
+        const safePrefix = prefix.replace(/\//g, '__');
+        for await (const [name] of this._opfsRoot) {
+          if (!name.startsWith(safePrefix)) {
+            await this._opfsRoot.removeEntry(name).catch(() => {});
+          }
+        }
+      } catch (e) {}
+    } else if (this._mode === 'idb') {
+      try {
+        const tx = this._idbDB.transaction('blobs', 'readwrite');
+        const store = tx.objectStore('blobs');
+        const req = store.getAllKeys();
+        req.onsuccess = () => {
+          for (const k of req.result) {
+            if (!k.startsWith(prefix)) store.delete(k);
+          }
+        };
+      } catch (e) {}
+    }
+  }
+
+  get mode() { return this._mode; }
+}
+
+const persistCache = new GopPersistCache();
+
+// Helper: fetch with L2 persistent cache
+// Returns raw ArrayBuffer (still gzip-compressed for GOP/meta/mask files)
+async function cachedFetch(url, cacheFilename) {
+  const ver = manifest ? (manifest.version || 'unknown') : 'unknown';
+  // Try L2 cache first
+  const cached = await persistCache.get(ver, cacheFilename);
+  if (cached && cached.byteLength > 0) {
+    diagStatsAccum.cacheHits++;
+    diagLog('info', `L2 cache HIT: ${cacheFilename} (${(cached.byteLength/1024).toFixed(0)} KB)`);
+    updateCacheStatus();
+    return cached;
+  } else if (cached && cached.byteLength === 0) {
+    // Stale empty entry — purge it
+    diagLog('warn', `L2 cache has empty entry for ${cacheFilename}, purging`);
+    persistCache.delete(ver, cacheFilename).catch(() => {});
+  }
+  // L3: network fetch with retry (no cache-busting timestamp)
+  diagStatsAccum.cacheMisses++;
+  const fullUrl = new URL(url, location.href).href;
+  diagLog('info', `L2 cache MISS: ${cacheFilename}, fetching from network: ${fullUrl}`);
+  const MAX_RETRIES = 3;
+  let lastErr = null;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status} for ${fullUrl}`);
+      }
+      const buf = await resp.arrayBuffer();
+      if (buf.byteLength === 0) {
+        throw new Error(`Empty response for ${fullUrl}`);
+      }
+      // Store in L2 (fire-and-forget)
+      persistCache.put(ver, cacheFilename, buf).catch(() => {});
+      updateCacheStatus();
+      if (attempt > 1) diagLog('info', `${cacheFilename} succeeded on attempt ${attempt}`);
+      return buf;
+    } catch (e) {
+      lastErr = e;
+      diagLog('warn', `Fetch attempt ${attempt}/${MAX_RETRIES} failed for ${cacheFilename}: ${e.message} (url: ${fullUrl})`);
+      if (attempt < MAX_RETRIES) {
+        await new Promise(r => setTimeout(r, 500 * attempt)); // backoff: 500ms, 1000ms
+      }
+    }
+  }
+  throw lastErr;
+}
+
+function updateCacheStatus() {
+  const el = document.getElementById('stat-cache');
+  if (el) {
+    const mode = persistCache.mode || 'none';
+    el.textContent = `${mode.toUpperCase()} ${diagStatsAccum.cacheHits}/${diagStatsAccum.cacheHits + diagStatsAccum.cacheMisses} hits`;
+  }
+}
+
+// ============================================================
+// State
+// ============================================================
+let manifest = null;
+let dynamicMask = null;
+let splatMesh = null;
+let currentFrame = 0;
+let isPlaying = false;
+let viewMode = 'animated';
+let playbackSpeedMult = 1.0;
+let targetFPS = 30;
+
+let uFrameIndex = null;
+let uViewMode = null;
+let uDeltaHalf = null;    // int: which bank to READ (0=bank A, 1=bank B)
+let uDeltaHalfH = null;   // int: rows per single frame
+let uBakedLocalIdx = null; // int: which frame slot within the bank to read
+let deltaSampler = null;
+let maskSampler = null;
+let deltaTexture = null;
+let maskTexture = null;
+
+// Data state (previously in Worker)
+let N = 0; // dynamic gaussians count
+let qXyzDMin = null, qXyzDMax = null, qXyzDScale = null;
+let qDcMin = null, qDcMax = null;
+let qOpMin = 0, qOpMax = 0;
+let baseData = null; // Uint8Array(N * 7)
+
+// GOP cache — lazy decompression: stores compressed gzip + optionally decompressed raw
+// gopIndex -> { compressed: ArrayBuffer, raw: ArrayBuffer|null, numFrames, startFrame, endFrame, lastAccess }
+// Memory: ~1-1.5MB per GOP (compressed) vs ~25-27MB per GOP (decompressed raw)
+// Strategy (Scheme C): current GOP keeps both compressed+raw; prefetch GOP keeps compressed only
+const gopCache = new Map();
+const gopLoadingSet = new Set(); // GOPs currently being fetched
+const gopFailedSet = new Set();  // GOPs that failed to load (prevents infinite retry)
+
+// Stream-decode state — decode frames on-the-fly from raw GOP data
+// Only keeps 1 decoded frame in memory (~0.9MB) instead of 30 frames (~27MB)
+let streamState = {
+  gopIdx: -1,         // which GOP is currently being stream-decoded
+  localIdx: -1,       // last decoded local frame index within the GOP
+  prevFrame: null,     // Uint8Array(N * STRIDE) — last decoded frame (used as ref for next)
+};
+
+// Reusable decode output buffer (avoids per-frame allocation)
+let decodeOutputBuf = null;  // Uint8Array(N * STRIDE), allocated after N is known
+
+// Frame packing pre-allocated buffers
+const _f32View = new Float32Array(1);
+const _i32View = new Int32Array(_f32View.buffer);
+
+// Delta texture dimensions — large atlas: width = DELTA_K*2, height = rows_per_frame * GOP_FRAMES * 2 (double-bank)
+let deltaTexW = 0, deltaTexH = 0;
+let deltaTexHalfH = 0; // height of ONE frame's data region
+let rowsPerFrame = 0;  // how many texture rows each frame occupies
+
+// Batch-bake state: two banks (A/B) in the texture atlas
+// One bank is being read by GPU (playback), the other is being written (bake)
+// Each bank holds up to BAKE_BATCH_SIZE frames
+let bakedBank = 0;       // which bank (0 or 1) is currently active for reading
+let bankFrameCount = 0;  // how many frames in the active bank
+let bankStartFrame = 0;  // global frame index of first frame in active bank
+let bankGopIdx = -1;     // which GOP the active bank was baked from
+let bakeInProgress = false; // is a bake operation currently running
+let glTexHandle = null;  // raw WebGL texture handle for texSubImage2D
+
+// Reusable texture data buffer (avoids re-allocation every frame)
+let reusableTexData = null;
+
+const TOTAL_DURATION_DEFAULT = 10.0;
+let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
+
+// Diagnostic
+const diagLogs = [];
+const DIAG_LOG_MAX = 300;
+let diagStatsAccum = { framesRequested: 0, framesApplied: 0, framesDropped: 0, stallFrames: 0, cacheHits: 0, cacheMisses: 0 };
+function diagLog(level, msg, data) {
+  const entry = { ts: performance.now(), level, msg, ...(data || {}) };
+  diagLogs.push(entry);
+  if (diagLogs.length > DIAG_LOG_MAX) diagLogs.shift();
+  if (level === 'warn' || level === 'error') console.warn(`[V4:${level}]`, msg, data || '');
+}
+
+// ============================================================
+// DOM refs
+// ============================================================
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingBar = document.getElementById('loading-bar');
+const loadingText = document.getElementById('loading-text');
+const playBtn = document.getElementById('play-btn');
+const timeline = document.getElementById('timeline');
+const frameLabel = document.getElementById('frame-label');
+const gopStatus = document.getElementById('gop-status');
+const gopBar = document.getElementById('gop-bar');
+const gopStrip = document.getElementById('gop-strip');
+const memBadge = document.getElementById('mem-badge');
+
+function setLoading(pct, text) {
+  loadingBar.style.width = pct + '%';
+  if (text) loadingText.textContent = text;
+}
+
+// ============================================================
+// Memory monitoring
+// ============================================================
+function updateMemoryBadge() {
+  if (performance.memory) {
+    const usedMB = (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(0);
+    const totalMB = (performance.memory.totalJSHeapSize / 1024 / 1024).toFixed(0);
+    memBadge.textContent = `MEM: ${usedMB}/${totalMB} MB`;
+  }
+}
+setInterval(updateMemoryBadge, 2000);
+
+// ============================================================
+// Utility functions (previously in Worker)
+// ============================================================
+async function decompressGzip(buf) {
+  const ds = new DecompressionStream('gzip');
+  // Use ReadableStream directly to avoid intermediate Blob allocation (~25MB)
+  const reader = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array(buf));
+      controller.close();
+    }
+  }).pipeThrough(ds).getReader();
+  
+  const chunks = [];
+  let totalLen = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    totalLen += value.byteLength;
+  }
+  // Merge chunks into single ArrayBuffer
+  const result = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return result.buffer;
+}
+
+function float16ToFloat32(u16arr) {
+  const f32 = new Float32Array(u16arr.length);
+  for (let i = 0; i < u16arr.length; i++) {
+    const h = u16arr[i];
+    const sign = (h >> 15) & 0x1;
+    const exp = (h >> 10) & 0x1f;
+    const mant = h & 0x3ff;
+    if (exp === 0) {
+      f32[i] = mant === 0 ? (sign ? -0 : 0) : (sign ? -1 : 1) * Math.pow(2, -14) * (mant / 1024);
+    } else if (exp === 31) {
+      f32[i] = mant === 0 ? (sign ? -Infinity : Infinity) : NaN;
+    } else {
+      f32[i] = (sign ? -1 : 1) * Math.pow(2, exp - 15) * (1 + mant / 1024);
+    }
+  }
+  return f32;
+}
+
+function float32ToFloat16(val) {
+  _f32View[0] = val;
+  const f = _i32View[0];
+  const sign = (f >> 31) & 0x1;
+  let exp = ((f >> 23) & 0xff) - 127 + 15;
+  let mant = (f >> 13) & 0x3ff;
+  if (exp <= 0) {
+    if (exp < -10) return sign << 15;
+    mant = (mant | 0x400) >> (1 - exp);
+    return (sign << 15) | mant;
+  }
+  if (exp >= 31) return (sign << 15) | (31 << 10) | (mant ? 1 : 0);
+  return (sign << 15) | (exp << 10) | mant;
+}
+
+// ============================================================
+// Stream Decoder — decode a single frame from raw GOP binary
+// Decodes in sequence from frame 0 to target, maintaining prevFrame state.
+// For sequential playback (frame N → N+1), only 1 frame decode is needed.
+// ============================================================
+function streamDecodeFrameRange(gopIdx, targetLocalIdx) {
+  // Returns a Uint8Array(N*STRIDE) with the decoded target frame
+  const gop = gopCache.get(gopIdx);
+  if (!gop) return null;
+
+  const raw = gop.raw;
+  const rawView = new DataView(raw);
+  const rawU8 = new Uint8Array(raw);  // single view for all byte-level reads (no per-frame alloc)
+  const numFrames = gop.numFrames;
+  const gopInfo = manifest.gop_index[gopIdx];
+
+  if (targetLocalIdx < 0 || targetLocalIdx >= numFrames) return null;
+
+  // Lazy-rebuild decode buffers (may have been freed by releasePlaybackBuffers)
+  if (!decodeOutputBuf) decodeOutputBuf = new Uint8Array(N * STRIDE);
+  if (!streamState.prevFrame) {
+    streamState.prevFrame = new Uint8Array(N * STRIDE);
+    streamState.gopIdx = -1;
+    streamState.localIdx = -1;
+  }
+
+  // Determine start index for decoding
+  let startLocalIdx = 0;
+  if (streamState.gopIdx === gopIdx && streamState.localIdx >= 0 && streamState.localIdx < targetLocalIdx) {
+    // Can continue from where we left off (sequential playback optimization)
+    startLocalIdx = streamState.localIdx + 1;
+  } else {
+    // Must decode from the beginning of the GOP
+    streamState.prevFrame = new Uint8Array(N * STRIDE);
+    streamState.gopIdx = gopIdx;
+    streamState.localIdx = -1;
+  }
+
+  const xyzBytesBase = N * 3 * 2;
+  const xyzBytesInt8 = N * 3;
+  const dcBytes = N * 3;
+  const opBytes = N;
+
+  // Calculate byte offset — skip to startLocalIdx
+  let pos = 16; // GOP header
+  for (let fi = 0; fi < startLocalIdx; fi++) {
+    const globalFrameIdx = gopInfo.start_frame + fi;
+    const isBaseFrame = globalFrameIdx === 0;
+    if (isBaseFrame) {
+      pos += xyzBytesBase + dcBytes + opBytes; // float16 xyz + uint8 dc + uint8 op
+    } else {
+      pos += xyzBytesInt8 + dcBytes + opBytes; // int8 xyz + int8 dc + int8 op
+    }
+  }
+
+  // Decode frames from startLocalIdx to targetLocalIdx
+  const outFrame = decodeOutputBuf;
+  const prevFrame = streamState.prevFrame;
+
+  for (let fi = startLocalIdx; fi <= targetLocalIdx; fi++) {
+    const globalFrameIdx = gopInfo.start_frame + fi;
+    const isBaseFrame = globalFrameIdx === 0;
+    const isRefresh = !isBaseFrame && (globalFrameIdx % manifest.gop_size === 0);
+
+    if (isBaseFrame) {
+      const fXyz16 = new Uint16Array(raw, pos, N * 3);
+      const fXyzDelta = float16ToFloat32(fXyz16);
+      pos += xyzBytesBase;
+      const dcOff = pos;
+      pos += dcBytes;
+      const opOff = pos;
+      pos += opBytes;
+
+      for (let i = 0; i < N; i++) {
+        const bOff = i * STRIDE;
+        for (let c = 0; c < 3; c++) {
+          const scale = 255.0 / (qXyzDMax[c] - qXyzDMin[c] + 1e-10);
+          let q = Math.round((fXyzDelta[i * 3 + c] - qXyzDMin[c]) * scale);
+          outFrame[bOff + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
+        }
+        const i3 = i * 3;
+        outFrame[bOff + 3] = rawU8[dcOff + i3];
+        outFrame[bOff + 4] = rawU8[dcOff + i3 + 1];
+        outFrame[bOff + 5] = rawU8[dcOff + i3 + 2];
+        outFrame[bOff + 6] = rawU8[opOff + i];
+      }
+    } else {
+      // P-frame delta decode — read directly from rawView to avoid per-frame typed array allocation
+      const xyzOff = pos;
+      pos += xyzBytesInt8;
+      const dcOff = pos;
+      pos += dcBytes;
+      const opOff = pos;
+      pos += opBytes;
+
+      // Reference: for refresh frames use baseData, otherwise use prevFrame
+      const ref = isRefresh ? baseData : prevFrame;
+
+      for (let i = 0; i < N; i++) {
+        const bOff = i * STRIDE;
+        const i3 = i * 3;
+        for (let c = 0; c < 3; c++) {
+          // Read int8 from raw buffer: rawU8 gives unsigned, convert to signed
+          let v = rawU8[xyzOff + i3 + c];
+          if (v > 127) v -= 256; // unsigned → signed int8
+          let q = ref[bOff + c] + v;
+          outFrame[bOff + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
+        }
+        for (let c = 0; c < 3; c++) {
+          let v = rawU8[dcOff + i3 + c];
+          if (v > 127) v -= 256;
+          let q = ref[bOff + 3 + c] + v;
+          outFrame[bOff + 3 + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
+        }
+        let v = rawU8[opOff + i];
+        if (v > 127) v -= 256;
+        let q = ref[bOff + 6] + v;
+        outFrame[bOff + 6] = q < 0 ? 0 : (q > 255 ? 255 : q);
+      }
+    }
+
+    // Copy outFrame → prevFrame for next iteration
+    prevFrame.set(outFrame);
+    streamState.localIdx = fi;
+  }
+
+  return outFrame;
+}
+
+// ============================================================
+// Pack frame → HalfFloat into reusableTexData (one frame's worth)
+// Used by bakeGopToTexture — packs into reusableTexData for per-frame upload
+// ============================================================
+function packFrameToReusable(frame) {
+  const dcScale0 = (qDcMax[0] - qDcMin[0]) / 255.0;
+  const dcScale1 = (qDcMax[1] - qDcMin[1]) / 255.0;
+  const dcScale2 = (qDcMax[2] - qDcMin[2]) / 255.0;
+  const opScale = (qOpMax - qOpMin) / 255.0;
+
+  const buf = reusableTexData;
+  buf.fill(0);
+
+  for (let i = 0; i < N; i++) {
+    const bOff = i * STRIDE;
+    const row = Math.floor(i / DELTA_K);
+    const col = (i % DELTA_K) * 2;
+
+    const dx = frame[bOff + 0] * qXyzDScale[0] + qXyzDMin[0];
+    const dy = frame[bOff + 1] * qXyzDScale[1] + qXyzDMin[1];
+    const dz = frame[bOff + 2] * qXyzDScale[2] + qXyzDMin[2];
+    const dc0 = frame[bOff + 3] * dcScale0 + qDcMin[0];
+    const dc1 = frame[bOff + 4] * dcScale1 + qDcMin[1];
+    const dc2 = frame[bOff + 5] * dcScale2 + qDcMin[2];
+    const op = frame[bOff + 6] * opScale + qOpMin;
+
+    let off = (row * deltaTexW + col) * 4;
+    buf[off + 0] = float32ToFloat16(dx);
+    buf[off + 1] = float32ToFloat16(dy);
+    buf[off + 2] = float32ToFloat16(dz);
+    buf[off + 3] = float32ToFloat16(dc0);
+
+    off = (row * deltaTexW + col + 1) * 4;
+    buf[off + 0] = float32ToFloat16(dc1);
+    buf[off + 1] = float32ToFloat16(dc2);
+    buf[off + 2] = float32ToFloat16(op);
+    buf[off + 3] = 0;
+  }
+}
+
+// Legacy wrapper for single-frame packing (used during initial load)
+function packFrameToHalfFloat(frame, halfIdx) {
+  const dcScale0 = (qDcMax[0] - qDcMin[0]) / 255.0;
+  const dcScale1 = (qDcMax[1] - qDcMin[1]) / 255.0;
+  const dcScale2 = (qDcMax[2] - qDcMin[2]) / 255.0;
+  const opScale = (qOpMax - qOpMin) / 255.0;
+
+  if (!reusableTexData) {
+    reusableTexData = new Uint16Array(deltaTexW * rowsPerFrame * 4);
+  }
+  const texData = reusableTexData;
+  texData.fill(0);
+
+  for (let i = 0; i < N; i++) {
+    const bOff = i * STRIDE;
+    const row = Math.floor(i / DELTA_K);
+    const col = (i % DELTA_K) * 2;
+
+    const dx = frame[bOff + 0] * qXyzDScale[0] + qXyzDMin[0];
+    const dy = frame[bOff + 1] * qXyzDScale[1] + qXyzDMin[1];
+    const dz = frame[bOff + 2] * qXyzDScale[2] + qXyzDMin[2];
+    const dc0 = frame[bOff + 3] * dcScale0 + qDcMin[0];
+    const dc1 = frame[bOff + 4] * dcScale1 + qDcMin[1];
+    const dc2 = frame[bOff + 5] * dcScale2 + qDcMin[2];
+    const op = frame[bOff + 6] * opScale + qOpMin;
+
+    let off = (row * deltaTexW + col) * 4;
+    texData[off + 0] = float32ToFloat16(dx);
+    texData[off + 1] = float32ToFloat16(dy);
+    texData[off + 2] = float32ToFloat16(dz);
+    texData[off + 3] = float32ToFloat16(dc0);
+
+    off = (row * deltaTexW + col + 1) * 4;
+    texData[off + 0] = float32ToFloat16(dc1);
+    texData[off + 1] = float32ToFloat16(dc2);
+    texData[off + 2] = float32ToFloat16(op);
+    texData[off + 3] = 0;
+  }
+  const yOffset = halfIdx * rowsPerFrame * BAKE_BATCH_SIZE;
+  return { data: texData, yOffset };
+}
+
+// ============================================================
+// Data Loading
+// ============================================================
+async function loadManifest() {
+  setLoading(5, 'Loading manifest...');
+  // Manifest always fetches from network (cache-bust) to detect version changes
+  const isRefresh = location.hash === '#refresh';
+  const resp = await fetch('data_v3d/manifest.json' + (isRefresh ? '?t=' + Date.now() : ''), {
+    cache: isRefresh ? 'reload' : 'default'
+  });
+  manifest = await resp.json();
+  targetFPS = manifest.target_fps || 30;
+  TOTAL_DURATION = (manifest.p_frame_count || 299) / targetFPS;
+  N = manifest.dynamic_gaussians;
+
+  // Purge old version cache entries (fire-and-forget)
+  const ver = manifest.version || 'unknown';
+  persistCache.purgeOldVersions(ver).catch(() => {});
+  console.log(`[PersistCache] Version: ${ver}, mode: ${persistCache.mode || 'none'}`);
+
+  document.getElementById('stat-total').textContent = manifest.total_gaussians.toLocaleString();
+  document.getElementById('stat-dynamic').textContent = manifest.dynamic_gaussians.toLocaleString();
+  document.getElementById('stat-static').textContent =
+    (manifest.total_gaussians - manifest.dynamic_gaussians).toLocaleString();
+  timeline.max = manifest.p_frame_count;
+
+  // Build GOP strip
+  gopStrip.innerHTML = '';
+  for (let i = 0; i < manifest.gop_count; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'gop-seg';
+    seg.id = `gop-seg-${i}`;
+    seg.title = `GOP ${i}: frames ${manifest.gop_index[i].start_frame}-${manifest.gop_index[i].end_frame - 1}`;
+    gopStrip.appendChild(seg);
+  }
+}
+
+async function loadDynamicMask() {
+  const compressed = await cachedFetch('data_v3d/' + manifest.dynamic_mask, manifest.dynamic_mask);
+  const raw = await decompressGzip(compressed);
+  const view = new DataView(raw);
+  const totalN = view.getUint32(0, true);
+  dynamicMask = new Uint8Array(raw, 4, totalN);
+}
+
+// ============================================================
+// GOP Meta — parse quantization params + base frame
+// ============================================================
+async function loadGopMeta() {
+  gopStatus.textContent = 'Meta: downloading...';
+  const compressed = await cachedFetch(`data_v3d/${manifest.gop_meta}`, manifest.gop_meta);
+  const raw = await decompressGzip(compressed);
+  const rawView = new DataView(raw);
+
+  // Header (28 bytes)
+  let pos = 28;
+
+  // Quant params (56 bytes)
+  qDcMin = [rawView.getFloat32(pos, true), rawView.getFloat32(pos+4, true), rawView.getFloat32(pos+8, true)];
+  qDcMax = [rawView.getFloat32(pos+12, true), rawView.getFloat32(pos+16, true), rawView.getFloat32(pos+20, true)];
+  qOpMin = rawView.getFloat32(pos+24, true);
+  qOpMax = rawView.getFloat32(pos+28, true);
+  qXyzDMin = [rawView.getFloat32(pos+32, true), rawView.getFloat32(pos+36, true), rawView.getFloat32(pos+40, true)];
+  qXyzDMax = [rawView.getFloat32(pos+44, true), rawView.getFloat32(pos+48, true), rawView.getFloat32(pos+52, true)];
+  pos += 56;
+
+  qXyzDScale = [
+    (qXyzDMax[0] - qXyzDMin[0]) / 255.0,
+    (qXyzDMax[1] - qXyzDMin[1]) / 255.0,
+    (qXyzDMax[2] - qXyzDMin[2]) / 255.0,
+  ];
+
+  // Skip SPZ baseline
+  const spzSize = rawView.getUint32(pos, true);
+  pos += 4 + spzSize;
+
+  // Parse base frame
+  const xyzBytesBase = N * 3 * 2;
+  const dcBytes = N * 3;
+  const baseXyz16 = new Uint16Array(raw, pos, N * 3);
+  const baseXyzDelta = float16ToFloat32(baseXyz16);
+  pos += xyzBytesBase;
+
+  const baseDcRaw = new Uint8Array(raw, pos, N * 3);
+  pos += dcBytes;
+  const baseOpRaw = new Uint8Array(raw, pos, N);
+
+  baseData = new Uint8Array(N * STRIDE);
+  for (let i = 0; i < N; i++) {
+    for (let c = 0; c < 3; c++) {
+      const scale = 255.0 / (qXyzDMax[c] - qXyzDMin[c] + 1e-10);
+      let q = Math.round((baseXyzDelta[i * 3 + c] - qXyzDMin[c]) * scale);
+      baseData[i * STRIDE + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
+    }
+    baseData[i * STRIDE + 3] = baseDcRaw[i * 3];
+    baseData[i * STRIDE + 4] = baseDcRaw[i * 3 + 1];
+    baseData[i * STRIDE + 5] = baseDcRaw[i * 3 + 2];
+    baseData[i * STRIDE + 6] = baseOpRaw[i];
+  }
+
+  gopStatus.textContent = 'Meta: loaded';
+  diagLog('info', 'GOP meta loaded, quant params ready');
+
+  // Initialize stream-decode buffers now that N is known
+  decodeOutputBuf = new Uint8Array(N * STRIDE);
+  streamState.prevFrame = new Uint8Array(N * STRIDE);
+  diagLog('info', `Stream-decode buffers allocated: ${(2 * N * STRIDE / 1024).toFixed(0)} KB`);
+}
+
+// ============================================================
+// GOP Loading — stores COMPRESSED gzip data + optionally decompressed raw
+// Memory: ~1-1.5MB per GOP (compressed) instead of ~25MB (decompressed)
+// Decompression happens on-demand via ensureGopDecompressed()
+// keepRaw=true: also keep decompressed data (for current/imminent playback)
+// keepRaw=false: discard raw after reading header (prefetch-only mode)
+// ============================================================
+async function loadGop(gopIdx, keepRaw = true) {
+  if (gopCache.has(gopIdx) || gopLoadingSet.has(gopIdx) || gopFailedSet.has(gopIdx)) return;
+  if (gopIdx < 0 || gopIdx >= manifest.gop_count) return;
+
+  gopLoadingSet.add(gopIdx);
+  updateGopStripUI(gopIdx, 'loading');
+  diagLog('info', `GOP ${gopIdx} loading started (keepRaw=${keepRaw})`);
+  const loadStart = performance.now();
+
+  const gopInfo = manifest.gop_index[gopIdx];
+  try {
+    const compressed = await cachedFetch(`data_v3d/${gopInfo.filename}`, gopInfo.filename);
+
+    let raw = null;
+    let numFrames;
+
+    if (keepRaw) {
+      // Full decompress — needed for immediate playback
+      raw = await decompressGzip(compressed);
+      const rawView = new DataView(raw);
+      numFrames = rawView.getUint32(8, true);
+    } else {
+      // Prefetch-only: compute numFrames from manifest, skip expensive decompress entirely
+      numFrames = gopInfo.end_frame - gopInfo.start_frame;
+    }
+
+    // Store entry — raw is null for prefetch-only (lazy decompress later)
+    gopCache.set(gopIdx, {
+      compressed,       // ArrayBuffer — original gzip bytes (~1-1.5MB)
+      raw,              // decompressed data (~25MB) or null
+      numFrames,
+      startFrame: gopInfo.start_frame,
+      endFrame: gopInfo.end_frame,
+      lastAccess: performance.now(),
+    });
+
+    gopLoadingSet.delete(gopIdx);
+    const compKB = (compressed.byteLength / 1024).toFixed(0);
+    const loadMs = (performance.now() - loadStart).toFixed(0);
+    if (raw) {
+      const rawMB = (raw.byteLength / 1024 / 1024).toFixed(1);
+      diagLog('info', `GOP ${gopIdx} loaded+decompressed in ${loadMs}ms (compressed: ${compKB} KB, raw: ${rawMB} MB)`);
+    } else {
+      diagLog('info', `GOP ${gopIdx} prefetched in ${loadMs}ms (compressed only: ${compKB} KB, ${numFrames} frames)`);
+    }
+    updateGopStripUI(gopIdx, 'loaded');
+    reportStats();
+
+  } catch (err) {
+    gopLoadingSet.delete(gopIdx);
+    gopFailedSet.add(gopIdx);
+    // Allow retry after 5 seconds
+    setTimeout(() => gopFailedSet.delete(gopIdx), 5000);
+    const gopUrl = new URL(`data_v3d/${gopInfo.filename}`, location.href).href;
+    diagLog('error', `GOP ${gopIdx} load failed: ${err.message} (url: ${gopUrl})`, { stack: err.stack });
+    console.error(`[V4] GOP ${gopIdx} load failed:`, err, `\nFull URL: ${gopUrl}`);
+    updateGopStripUI(gopIdx, 'error');
+  }
+}
+
+// ============================================================
+// Lazy Decompress — decompress GOP raw data on demand
+// Only the current playing GOP needs raw; prefetched GOP stays compressed
+// ============================================================
+async function ensureGopDecompressed(gopIdx) {
+  const gop = gopCache.get(gopIdx);
+  if (!gop) return false;
+  if (gop.raw) return true; // already decompressed
+
+  // Decompress from stored compressed data
+  const t0 = performance.now();
+  try {
+    const raw = await decompressGzip(gop.compressed);
+    gop.raw = raw;
+    const ms = (performance.now() - t0).toFixed(1);
+    const rawMB = (raw.byteLength / 1024 / 1024).toFixed(1);
+    diagLog('info', `GOP ${gopIdx} lazy-decompressed in ${ms}ms (${rawMB} MB)`);
+    reportStats();
+    return true;
+  } catch (err) {
+    diagLog('error', `GOP ${gopIdx} lazy-decompress failed: ${err.message}`);
+    return false;
+  }
+}
+
+// ============================================================
+// Eviction — keep only MAX_CACHED_GOPS compressed, strip raw from non-current
+// ============================================================
+function evictDistantGops(currentGopIdx) {
+  const totalGops = manifest.gop_count;
+  const keepSet = new Set();
+  keepSet.add(currentGopIdx);
+  // Keep next GOP for seamless playback (compressed only)
+  const nextGop = (currentGopIdx + 1) % totalGops;
+  keepSet.add(nextGop);
+
+  let evicted = 0;
+  let stripped = 0;
+  for (const [idx, gop] of gopCache) {
+    if (!keepSet.has(idx)) {
+      // Fully evict GOPs outside the keep window
+      gopCache.delete(idx);
+      // Reset stream state if it referenced the evicted GOP
+      if (streamState.gopIdx === idx) {
+        streamState.gopIdx = -1;
+        streamState.localIdx = -1;
+      }
+      updateGopStripUI(idx, 'evicted');
+      evicted++;
+    } else if (idx !== currentGopIdx && gop.raw) {
+      // Strip raw from non-current GOPs (keep compressed only) — this is the big memory save
+      const rawMB = (gop.raw.byteLength / 1024 / 1024).toFixed(1);
+      gop.raw = null;
+      // Reset stream state since raw was freed
+      if (streamState.gopIdx === idx) {
+        streamState.gopIdx = -1;
+        streamState.localIdx = -1;
+      }
+      stripped++;
+      diagLog('info', `GOP ${idx} raw stripped (freed ${rawMB} MB), keeping compressed only`);
+    }
+  }
+  if (evicted > 0 || stripped > 0) {
+    diagLog('info', `Eviction: removed ${evicted}, stripped-raw ${stripped}, kept: [${[...keepSet].sort((a,b)=>a-b).join(',')}] (current=${currentGopIdx})`);
+    // Nudge GC after freeing large raw buffers
+    if (stripped > 0) nudgeGC();
+  }
+  reportStats();
+}
+
+function reportStats() {
+  const loaded = gopCache.size;
+  const total = manifest ? manifest.gop_count : 0;
+  // Calculate actual memory usage: compressed + raw (if decompressed)
+  let compressedBytes = 0;
+  let rawBytes = 0;
+  let rawCount = 0;
+  let compOnlyCount = 0;
+  for (const [, gop] of gopCache) {
+    if (gop.compressed) compressedBytes += gop.compressed.byteLength;
+    if (gop.raw) { rawBytes += gop.raw.byteLength; rawCount++; }
+    else { compOnlyCount++; }
+  }
+  const compMB = compressedBytes / 1024 / 1024;
+  const rawMB = rawBytes / 1024 / 1024;
+  // Also account for stream decode buffers (~2 × N × STRIDE)
+  const decodeBufBytes = (decodeOutputBuf ? decodeOutputBuf.byteLength : 0) +
+                         (streamState.prevFrame ? streamState.prevFrame.byteLength : 0);
+  const decodeBufMB = decodeBufBytes / 1024 / 1024;
+  // Also account for reusableTexData
+  const texBufMB = reusableTexData ? reusableTexData.byteLength / 1024 / 1024 : 0;
+  const totalMemMB = compMB + rawMB + decodeBufMB + texBufMB;
+  document.getElementById('stat-gops').textContent = `${loaded}/${total}`;
+  document.getElementById('stat-window').textContent =
+    `${totalMemMB.toFixed(1)} MB (${rawCount} raw + ${compOnlyCount} gz + buf)`;
+  const pct = total > 0 ? Math.round(loaded / Math.min(MAX_CACHED_GOPS, total) * 100) : 0;
+  gopBar.style.width = pct + '%';
+}
+
+// ============================================================
+// GC Nudge — encourage V8 to run garbage collection
+// We can't call gc() directly, but allocating+discarding a large
+// temporary buffer creates memory pressure that triggers Major GC.
+// ============================================================
+function nudgeGC() {
+  try {
+    // Allocate ~32MB temporary buffer — enough to trigger V8's GC heuristic
+    // The allocation itself plus immediate discard signals memory pressure
+    const pressure = new ArrayBuffer(32 * 1024 * 1024);
+    // Reference it briefly to prevent dead-code elimination
+    if (pressure.byteLength === 0) console.log('noop');
+  } catch (e) {
+    // OOM — GC will definitely run now
+  }
+  // Schedule a second nudge on next microtask to catch any stragglers
+  Promise.resolve().then(() => {
+    try {
+      const p2 = new ArrayBuffer(16 * 1024 * 1024);
+      if (p2.byteLength === 0) console.log('noop');
+    } catch (e) {}
+  });
+}
+
+// ============================================================
+// P0: Stop-release — free playback buffers when paused
+// Frees: all gopCache entries, streamState buffers, decode output buffer
+// On resume: re-download and decompress from L2 persistent cache (instant)
+// ============================================================
+function releasePlaybackBuffers() {
+  let freedBytes = 0;
+
+  // 1. Release all GOP cache entries (raw + compressed)
+  for (const [idx, gop] of gopCache) {
+    if (gop.raw) freedBytes += gop.raw.byteLength;
+    if (gop.compressed) freedBytes += gop.compressed.byteLength;
+    updateGopStripUI(idx, 'evicted');
+  }
+  gopCache.clear();
+
+  // 2. Release stream decode buffers
+  if (streamState.prevFrame) {
+    freedBytes += streamState.prevFrame.byteLength;
+    streamState.prevFrame = null;
+  }
+  streamState.gopIdx = -1;
+  streamState.localIdx = -1;
+
+  if (decodeOutputBuf) {
+    freedBytes += decodeOutputBuf.byteLength;
+    decodeOutputBuf = null;
+  }
+
+  // 3. Release reusable tex data buffer
+  if (reusableTexData) {
+    freedBytes += reusableTexData.byteLength;
+    reusableTexData = null;
+  }
+
+  // Reset bake state
+  bankGopIdx = -1;
+  bankFrameCount = 0;
+  bakeInProgress = false;
+
+  return freedBytes / 1024 / 1024;
+}
+
+// ============================================================
+// P0: Release texture CPU-side data after GPU upload
+// deltaTexture: Uint16Array CPU copy is useless since we use texSubImage2D
+// maskTexture: Float32Array CPU copy is useless after initial GPU upload
+// ============================================================
+function releaseTextureCPUData() {
+  // deltaTexture — we bypass THREE.js with direct texSubImage2D, CPU data never needed
+  if (deltaTexture && deltaTexture.image && deltaTexture.image.data) {
+    const bytes = deltaTexture.image.data.byteLength;
+    deltaTexture.image.data = new Uint16Array(0); // replace with empty array (can't set to null — THREE.js checks)
+    diagLog('info', `Released deltaTexture CPU data: ${(bytes/1024/1024).toFixed(1)} MB`);
+  }
+
+  // maskTexture — already uploaded to GPU, CPU data no longer needed
+  if (maskTexture && maskTexture.image && maskTexture.image.data) {
+    const bytes = maskTexture.image.data.byteLength;
+    maskTexture.image.data = new Float32Array(0);
+    diagLog('info', `Released maskTexture CPU data: ${(bytes/1024/1024).toFixed(1)} MB`);
+  }
+}
+
+// ============================================================
+// Textures
+// ============================================================
+function createMaskTexture() {
+  const totalN = manifest.total_gaussians;
+  const texW = Math.ceil(Math.sqrt(totalN));
+  const texH = Math.ceil(totalN / texW);
+  const texData = new Float32Array(texW * texH * 2);
+  let dynIdx = 0;
+  for (let i = 0; i < totalN; i++) {
+    const off = i * 2;
+    const isDyn = dynamicMask[i];
+    texData[off + 0] = isDyn ? 1.0 : 0.0;
+    texData[off + 1] = isDyn ? dynIdx : -1.0;
+    if (isDyn) dynIdx++;
+  }
+  for (let i = totalN; i < texW * texH; i++) {
+    texData[i * 2 + 0] = 0.0;
+    texData[i * 2 + 1] = -1.0;
+  }
+  const tex = new THREE.DataTexture(texData, texW, texH, THREE.RGFormat, THREE.FloatType);
+  tex.needsUpdate = true;
+  tex.minFilter = THREE.NearestFilter;
+  tex.magFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  return { texture: tex, width: texW, height: texH };
+}
+
+function createDeltaTexture() {
+  deltaTexW = DELTA_K * 2;
+  rowsPerFrame = Math.ceil(N / DELTA_K);  // rows needed for 1 frame's data
+  // Two banks: bank 0 and bank 1, each holds BAKE_BATCH_SIZE frames
+  const bankHeight = rowsPerFrame * BAKE_BATCH_SIZE;
+  deltaTexHalfH = bankHeight;  // height of one bank
+  deltaTexH = bankHeight * 2;  // total height = 2 banks
+  const texData = new Uint16Array(deltaTexW * deltaTexH * 4);
+  const tex = new THREE.DataTexture(texData, deltaTexW, deltaTexH, THREE.RGBAFormat, THREE.HalfFloatType);
+  tex.needsUpdate = true;
+  tex.minFilter = THREE.NearestFilter;
+  tex.magFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  // Pre-allocate reusable buffer — sized for ONE FRAME only (used during bake)
+  reusableTexData = new Uint16Array(deltaTexW * rowsPerFrame * 4);
+  console.log(`[BatchBake] Delta texture: ${deltaTexW}×${deltaTexH} (2 banks, each ${bankHeight} rows for ${BAKE_BATCH_SIZE} frames), frame rows: ${rowsPerFrame}`);
+  console.log(`[BatchBake] reusable per-frame: ${(reusableTexData.byteLength/1024).toFixed(0)} KB`);
+  return tex;
+}
+
+// ============================================================
+// UI helpers
+// ============================================================
+function updateGopStripUI(gopIdx, state) {
+  const seg = document.getElementById(`gop-seg-${gopIdx}`);
+  if (!seg) return;
+  seg.className = 'gop-seg';
+  if (state === 'loaded') seg.classList.add('loaded');
+  else if (state === 'active') seg.classList.add('active');
+  else if (state === 'loading') seg.classList.add('loading');
+}
+
+function getGopIndexForFrame(globalFrame) {
+  if (globalFrame === 0) return -1;
+  const pFrameIdx = globalFrame - 1;
+  return Math.floor(pFrameIdx / manifest.gop_size);
+}
+
+// ============================================================
+// Scene setup
+// ============================================================
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ============================================================
+// Frame update — double-buffer with texSubImage2D
+// Write next frame into inactive half, then flip readHalf uniform
+// ============================================================
+// ============================================================
+// Batch Bake — decode all frames of a GOP, upload each to its slot in the bank
+// Uses only per-frame reusableTexData (~1MB) instead of full bank buffer (~60MB)
+// After baking, raw GOP data and decode buffers can be released
+// ============================================================
+async function bakeGopToTexture(gopIdx) {
+  if (bakeInProgress) return false;
+  bakeInProgress = true;
+
+  const gop = gopCache.get(gopIdx);
+  if (!gop) { bakeInProgress = false; return false; }
+
+  // Ensure decompressed
+  if (!gop.raw) {
+    const ok = await ensureGopDecompressed(gopIdx);
+    if (!ok) { bakeInProgress = false; return false; }
+  }
+
+  const t0 = performance.now();
+  const numFrames = gop.numFrames;
+  const targetBank = 1 - bakedBank; // write to the inactive bank
+
+  // Ensure decode buffers exist
+  if (!streamState.prevFrame) {
+    streamState.prevFrame = new Uint8Array(N * STRIDE);
+    streamState.gopIdx = -1;
+    streamState.localIdx = -1;
+  }
+  if (!decodeOutputBuf) decodeOutputBuf = new Uint8Array(N * STRIDE);
+  // Ensure per-frame pack buffer exists
+  if (!reusableTexData) {
+    reusableTexData = new Uint16Array(deltaTexW * rowsPerFrame * 4);
+  }
+
+  // Reset stream state for this GOP
+  streamState.prevFrame.fill(0);
+  streamState.gopIdx = -1;
+  streamState.localIdx = -1;
+
+  const gl = renderer.getContext();
+  const texProps = renderer.properties.get(deltaTexture);
+  const glTex = texProps.__webglTexture;
+  const bankYBase = targetBank * deltaTexHalfH;
+
+  // Decode each frame, pack to reusableTexData, upload per-frame slice via texSubImage2D
+  for (let fi = 0; fi < numFrames; fi++) {
+    const frameData = streamDecodeFrameRange(gopIdx, fi);
+    if (!frameData) continue;
+
+    // Pack this frame into reusableTexData
+    packFrameToReusable(frameData);
+
+    // Upload this frame's rows to the correct slot in the bank
+    const frameYOffset = bankYBase + fi * rowsPerFrame;
+
+    if (glTex) {
+      gl.bindTexture(gl.TEXTURE_2D, glTex);
+      gl.texSubImage2D(
+        gl.TEXTURE_2D,
+        0,
+        0,
+        frameYOffset,
+        deltaTexW,
+        rowsPerFrame,
+        gl.RGBA,
+        gl.HALF_FLOAT,
+        reusableTexData
+      );
+    } else {
+      // Fallback: write to CPU data array for initial upload
+      const fullSize = deltaTexW * deltaTexH * 4;
+      if (!deltaTexture.image.data || deltaTexture.image.data.length < fullSize) {
+        deltaTexture.image.data = new Uint16Array(fullSize);
+      }
+      const off = (bankYBase + fi * rowsPerFrame) * deltaTexW * 4;
+      deltaTexture.image.data.set(reusableTexData, off);
+    }
+  }
+
+  // If we used the fallback path, flag for GPU upload
+  if (!glTex) {
+    deltaTexture.needsUpdate = true;
+  }
+
+  // Activate the newly baked bank
+  bakedBank = targetBank;
+  bankFrameCount = numFrames;
+  bankStartFrame = gop.startFrame;
+  bankGopIdx = gopIdx;
+
+  // Release raw data + decode buffers — this is the key memory optimization!
+  gop.raw = null;
+  if (streamState.prevFrame) {
+    streamState.prevFrame = null;
+    streamState.gopIdx = -1;
+    streamState.localIdx = -1;
+  }
+  if (decodeOutputBuf) {
+    decodeOutputBuf = null;
+  }
+
+  const ms = (performance.now() - t0).toFixed(1);
+  diagLog('info', `GOP ${gopIdx} baked ${numFrames} frames to bank ${targetBank} in ${ms}ms → raw released, CPU buffers freed`);
+  reportStats();
+
+  bakeInProgress = false;
+  return true;
+}
+
+function applyFrameData(globalFrame) {
+  if (globalFrame === 0) {
+    uFrameIndex.value = 0;
+    uViewMode.value === 1 ? null : (uDeltaHalf.value = bakedBank);
+    return true;
+  }
+
+  const gopIdx = getGopIndexForFrame(globalFrame);
+  const pFrameIdx = globalFrame - 1;
+
+  // Check if this frame is in the currently baked bank
+  if (bankGopIdx === gopIdx && bankFrameCount > 0) {
+    const localIdx = pFrameIdx - bankStartFrame;
+    if (localIdx >= 0 && localIdx < bankFrameCount) {
+      // Frame is pre-baked! Just update uniforms — ZERO CPU decode cost
+      uFrameIndex.value = globalFrame;
+      uDeltaHalf.value = bakedBank;
+      // Tell shader which frame slot to read within the bank
+      uBakedLocalIdx.value = localIdx;
+      diagStatsAccum.framesApplied++;
+      return true;
+    }
+  }
+
+  // Frame not in baked bank — need to bake the GOP
+  // Trigger async bake (will be ready next loop iteration)
+  const gop = gopCache.get(gopIdx);
+  if (!gop) return false;
+  
+  if (!bakeInProgress) {
+    diagLog('info', `Frame ${globalFrame} not in baked bank (bank GOP=${bankGopIdx}), triggering bake of GOP ${gopIdx}`);
+    bakeGopToTexture(gopIdx).then(ok => {
+      if (ok) diagLog('info', `Bake complete for GOP ${gopIdx}, frames ${bankStartFrame}..${bankStartFrame + bankFrameCount - 1}`);
+    });
+  }
+  return false; // stall this frame — will be resolved after bake completes
+}
+
+// Prefetch next GOP in background (fire-and-forget async)
+let prefetchPromise = null;
+// Track ongoing lazy-decompress to avoid duplicate calls
+let _decompressingSet = new Set();
+
+function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
+  const totalGops = manifest.gop_count;
+  const nextGop = (currentGopIdx + 1) % totalGops;
+  if (!gopCache.has(nextGop) && !gopLoadingSet.has(nextGop)) {
+    prefetchPromise = loadGop(nextGop, false);
+  }
+  // Also prefetch GOP 0 when near end (for loop)
+  if (currentGopIdx >= totalGops - 2) {
+    if (!gopCache.has(0) && !gopLoadingSet.has(0)) {
+      loadGop(0, false);
+    }
+  }
+
+  // V4b: Proactive pre-bake — when nearing end of baked bank, bake next GOP
+  // Start baking 10 frames before end of current bank (gives ~333ms at 30fps)
+  const BAKE_AHEAD_FRAMES = 10;
+  if (currentGopFrames > 0 && currentLocalIdx >= currentGopFrames - BAKE_AHEAD_FRAMES) {
+    if (bankGopIdx !== nextGop && !bakeInProgress) {
+      const nextEntry = gopCache.get(nextGop);
+      if (nextEntry) {
+        diagLog('info', `Proactive bake: GOP ${nextGop} (${BAKE_AHEAD_FRAMES} frames before GOP end)`);
+        // Ensure decompressed first, then bake
+        if (!nextEntry.raw && !_decompressingSet.has(nextGop)) {
+          _decompressingSet.add(nextGop);
+          ensureGopDecompressed(nextGop).then(() => {
+            _decompressingSet.delete(nextGop);
+            bakeGopToTexture(nextGop);
+          });
+        } else if (nextEntry.raw) {
+          bakeGopToTexture(nextGop);
+        }
+      }
+    }
+  }
+
+  evictDistantGops(currentGopIdx);
+}
+
+// ============================================================
+// Init
+// ============================================================
+async function init() {
+  const t0 = performance.now();
+
+  await loadManifest();
+  // Clear #refresh hash after manifest loaded (used by viewctl refresh)
+  if (location.hash === '#refresh') {
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+
+  setLoading(10, 'Loading dynamic mask...');
+  await loadDynamicMask();
+
+  setLoading(20, 'Creating textures (Float16 optimized)...');
+  deltaTexture = createDeltaTexture();
+  const maskInfo = createMaskTexture();
+  maskTexture = maskInfo.texture;
+  const maskTexWidth = maskInfo.width;
+
+  // Release dynamicMask after creating texture
+  dynamicMask = null;
+
+  setLoading(30, 'Loading GOP meta (quant params)...');
+  await loadGopMeta();
+
+  setLoading(50, 'Loading SPZ I-frame...');
+  uFrameIndex = dyno.dynoInt(0);
+  uViewMode = dyno.dynoInt(0);
+  uDeltaHalf = dyno.dynoInt(0);          // which bank to read (0 or 1)
+  uDeltaHalfH = dyno.dynoInt(rowsPerFrame);  // rows per single frame
+  uBakedLocalIdx = dyno.dynoInt(0);      // which frame slot within the bank to read
+  deltaSampler = dyno.dynoSampler2D(deltaTexture);
+  maskSampler = dyno.dynoSampler2D(maskTexture);
+
+  const iFrameBuf = await cachedFetch('data_v3d/' + manifest.i_frame, manifest.i_frame);
+  const iFrameBytes = new Uint8Array(iFrameBuf);
+  console.log(`[V4] SPZ I-frame loaded: ${(iFrameBytes.byteLength/1024/1024).toFixed(2)} MB`);
+
+  setLoading(70, 'Initializing Spark.js...');
+  splatMesh = new SplatMesh({ fileBytes: iFrameBytes });
+
+  // Shader — double-buffer aware: reads from active half of delta texture
+  splatMesh.objectModifier = dyno.dynoBlock(
+    { gsplat: dyno.Gsplat },
+    { gsplat: dyno.Gsplat },
+    ({ gsplat }) => {
+      const d = new dyno.Dyno({
+        inTypes: {
+          gsplat: dyno.Gsplat,
+          frameIdx: "int",
+          mode: "int",
+          deltaTex: "sampler2D",
+          maskTex: "sampler2D",
+          maskW: "int",
+          deltaK: "int",
+          deltaHalf: "int",     // which bank (0 or 1)
+          deltaHalfH: "int",    // rows per single frame
+          bakedLocalIdx: "int", // frame slot within the bank
+        },
+        outTypes: { gsplat: dyno.Gsplat },
+        globals: () => [
+          dyno.unindent(`
+            vec2 lookupMaskV4(sampler2D mTex, int idx, int mW) {
+              int r = idx / mW;
+              int c = idx - r * mW;
+              return texelFetch(mTex, ivec2(c, r), 0).rg;
+            }
+            void fetchDeltaV4b(sampler2D dTex, int dIdx, int K,
+                               int bankSel, int rowsPerFrm, int localFrameIdx,
+                               out vec3 dPos, out vec3 dDC, out float dOp) {
+              int sr = dIdx / K;
+              int sc = (dIdx - sr * K) * 2;
+              // bankOffset = bankSel * rowsPerFrm * BAKE_BATCH_SIZE (passed as deltaHalfH * bankSel conceptually)
+              // frameOffset within bank = localFrameIdx * rowsPerFrm
+              int bankRows = rowsPerFrm * ${BAKE_BATCH_SIZE};
+              int actualRow = sr + bankSel * bankRows + localFrameIdx * rowsPerFrm;
+              vec4 t0 = texelFetch(dTex, ivec2(sc, actualRow), 0);
+              vec4 t1 = texelFetch(dTex, ivec2(sc+1, actualRow), 0);
+              dPos = t0.xyz;
+              dDC  = vec3(t0.w, t1.xy);
+              dOp  = t1.z;
+            }
+          `)
+        ],
+        statements: ({ inputs, outputs }) => dyno.unindentLines(`
+          ${outputs.gsplat} = ${inputs.gsplat};
+          int sIdx = ${inputs.gsplat}.index;
+          vec2 md = lookupMaskV4(${inputs.maskTex}, sIdx, ${inputs.maskW});
+          float isDyn = md.r;
+          int dIdx = int(md.g);
+
+          if (${inputs.mode} == 2) {
+            if (isDyn > 0.5)
+              ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(1.0,0.5,0.2), 0.6);
+            else
+              ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(0.2,0.7,0.6), 0.4);
+          }
+
+          if (${inputs.mode} == 0 && ${inputs.frameIdx} > 0 && isDyn > 0.5 && dIdx >= 0) {
+            vec3 dp, ddc; float dop;
+            fetchDeltaV4b(${inputs.deltaTex}, dIdx, ${inputs.deltaK},
+                          ${inputs.deltaHalf}, ${inputs.deltaHalfH},
+                          ${inputs.bakedLocalIdx},
+                          dp, ddc, dop);
+            float SH_C0 = 0.28209479177;
+            ${outputs.gsplat}.center += dp;
+            ${outputs.gsplat}.rgba.rgb = SH_C0 * ddc + 0.5;
+            ${outputs.gsplat}.rgba.a = dop;
+          }
+        `)
+      });
+      gsplat = d.apply({
+        gsplat,
+        frameIdx: uFrameIndex,
+        mode: uViewMode,
+        deltaTex: deltaSampler,
+        maskTex: maskSampler,
+        maskW: dyno.dynoInt(maskTexWidth),
+        deltaK: dyno.dynoInt(DELTA_K),
+        deltaHalf: uDeltaHalf,
+        deltaHalfH: uDeltaHalfH,
+        bakedLocalIdx: uBakedLocalIdx,
+      }).gsplat;
+      return { gsplat };
+    }
+  );
+
+  splatMesh.quaternion.set(1, 0, 0, 0);
+  splatMesh.position.set(0, 0, 0);
+  scene.add(splatMesh);
+
+  camera.position.set(0.5, 4.5, 15.0);
+
+  setLoading(85, 'Pre-baking first GOP to texture atlas...');
+  await loadGop(0, true);  // keepRaw=true — needed for baking
+  // Bake first GOP immediately
+  await bakeGopToTexture(0);
+  // Fire-and-forget prefetch of GOP 1 (compressed only — lazy decompress later)
+  loadGop(1, false);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(2.435, -2.0, -15.003);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.1;
+  controls.screenSpacePanning = true;
+  controls.minDistance = 0.5;
+  controls.maxDistance = 100;
+  controls.update();
+
+  setLoading(100, 'Ready!');
+  const loadTime = ((performance.now() - t0) / 1000).toFixed(1);
+  console.log(`[V4] Ready in ${loadTime}s (no-worker, memory-optimized)`);
+
+  setTimeout(() => {
+    loadingOverlay.classList.add('hidden');
+    splatMesh.updateGenerator();
+    isPlaying = true;
+    playBtn.textContent = '\u23F8';
+
+    // P0: Release texture CPU data after first render ensures GPU has the data
+    // Delay slightly to ensure THREE.js has completed initial GPU upload
+    setTimeout(() => {
+      // Force one render to ensure textures are uploaded to GPU
+      renderer.render(scene, camera);
+      releaseTextureCPUData();
+    }, 500);
+  }, 300);
+
+  // ============================================================
+  // 30Hz Animation Loop — synchronous frame application
+  // ============================================================
+  let frameCount = 0, lastFpsTime = performance.now();
+  let lastFrameTime = performance.now();
+  const FRAME_INTERVAL = 1000 / targetFPS;
+
+  renderer.setAnimationLoop(function animate() {
+    const now = performance.now();
+
+    if (isPlaying && viewMode === 'animated') {
+      const adjustedInterval = FRAME_INTERVAL / playbackSpeedMult;
+      if (now - lastFrameTime >= adjustedInterval) {
+        lastFrameTime = now;
+
+        const maxFrame = manifest.p_frame_count;
+        const nextFrame = (currentFrame + 1) % (maxFrame + 1);
+
+        // Try to apply frame data synchronously
+        const applied = applyFrameData(nextFrame);
+        if (applied) {
+          currentFrame = nextFrame;
+          timeline.value = nextFrame;
+          const timeSec = (nextFrame / targetFPS).toFixed(1);
+          const gopIdx = getGopIndexForFrame(nextFrame);
+          if (nextFrame === 0) {
+            frameLabel.textContent = `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)`;
+          } else {
+            frameLabel.textContent = `P-Frame ${nextFrame}/${maxFrame} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [GOP ${gopIdx}]`;
+          }
+          // Update GOP strip highlight
+          if (gopIdx >= 0) {
+            const segs = gopStrip.querySelectorAll('.gop-seg');
+            segs.forEach(s => { if (s.classList.contains('active')) s.classList.replace('active', 'loaded'); });
+            const activeSeg = document.getElementById(`gop-seg-${gopIdx}`);
+            if (activeSeg) { activeSeg.className = 'gop-seg active'; }
+          }
+          // Prefetch next GOP asynchronously (pass baked bank info for proactive bake)
+          if (gopIdx >= 0) {
+            const pIdx = nextFrame - 1;
+            const gopInfo = manifest.gop_index[gopIdx];
+            const localIdx = pIdx - gopInfo.start_frame;
+            const gopFrames = gopInfo.end_frame - gopInfo.start_frame;
+            triggerPrefetch(gopIdx, localIdx, gopFrames);
+          }
+        } else {
+          // Stall: frame not in baked bank — trigger bake
+          diagStatsAccum.stallFrames++;
+          const gopIdx = getGopIndexForFrame(nextFrame);
+          if (gopIdx >= 0 && !bakeInProgress) {
+            const gopEntry = gopCache.get(gopIdx);
+            if (gopEntry && gopEntry.raw) {
+              frameLabel.textContent = `Baking GOP ${gopIdx}...`;
+              bakeGopToTexture(gopIdx);
+            } else if (gopEntry && !gopEntry.raw) {
+              frameLabel.textContent = `Decompressing + Baking GOP ${gopIdx}...`;
+              if (!_decompressingSet.has(gopIdx)) {
+                _decompressingSet.add(gopIdx);
+                ensureGopDecompressed(gopIdx).then(() => {
+                  _decompressingSet.delete(gopIdx);
+                  bakeGopToTexture(gopIdx);
+                });
+              }
+            } else if (!gopEntry && !gopLoadingSet.has(gopIdx)) {
+              frameLabel.textContent = `Loading GOP ${gopIdx}...`;
+              loadGop(gopIdx, true).then(() => bakeGopToTexture(gopIdx));
+            } else {
+              frameLabel.textContent = `Loading GOP ${gopIdx}...`;
+            }
+          } else if (bakeInProgress) {
+            frameLabel.textContent = `Baking in progress...`;
+          }
+        }
+      }
+    }
+
+    splatMesh.updateVersion();
+    controls.update();
+    renderer.render(scene, camera);
+
+    frameCount++;
+    if (now - lastFpsTime > 500) {
+      document.getElementById('stat-fps').textContent =
+        Math.round(frameCount / ((now - lastFpsTime) / 1000));
+      frameCount = 0;
+      lastFpsTime = now;
+      // Update double-buffer indicator
+      const dblEl = document.getElementById('stat-dblbuf');
+      if (dblEl) dblEl.textContent = `Bank:${bakedBank} GOP:${bankGopIdx} F:${bankFrameCount} ${bakeInProgress ? '(baking...)' : ''}`;
+    }
+  });
+
+  // ============================================================
+  // WebSocket for viewctl (preserved from old V4)
+  // ============================================================
+  const _isLocalhost = ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(location.hostname);
+  const wsUrl = 'ws://' + location.host + '/';
+  let ws = null;
+  window._viewctlWs = null;
+
+  function connectWS() {
+    if (!_isLocalhost) return;
+    try {
+      ws = new WebSocket(wsUrl);
+      window._viewctlWs = ws;
+      ws.onopen = () => console.log('[WS] Connected to viewctl');
+      ws.onclose = () => { window._viewctlWs = null; setTimeout(connectWS, 3000); };
+      ws.onerror = () => {};
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg.type === 'setCamera') {
+            if (msg.position) camera.position.fromArray(msg.position);
+            if (msg.target) controls.target.fromArray(msg.target);
+            controls.update();
+            reportCamera();
+          } else if (msg.type === 'rotateCamera') {
+            const az = (msg.azimuth || 0) * Math.PI / 180;
+            const el = (msg.elevation || 0) * Math.PI / 180;
+            const off = new THREE.Vector3().subVectors(camera.position, controls.target);
+            const r = off.length();
+            let theta = Math.acos(Math.max(-1, Math.min(1, off.y / r)));
+            let phi = Math.atan2(off.x, off.z);
+            phi += az; theta = Math.max(0.01, Math.min(Math.PI - 0.01, theta + el));
+            off.set(r * Math.sin(theta) * Math.sin(phi), r * Math.cos(theta),
+                    r * Math.sin(theta) * Math.cos(phi));
+            camera.position.copy(controls.target).add(off);
+            controls.update();
+            reportCamera();
+          } else if (msg.type === 'setFrame') {
+            updateFrame(msg.frame || 0);
+          } else if (msg.type === 'requestScreenshot') {
+            renderer.render(scene, camera);
+            const dataUrl = renderer.domElement.toDataURL('image/png');
+            ws.send(JSON.stringify({
+              type: 'screenshotResult', dataUrl,
+              width: renderer.domElement.width, height: renderer.domElement.height,
+              camera: { position: camera.position.toArray(), target: controls.target.toArray() },
+            }));
+          } else if (msg.type === 'getDiagLogs') {
+            ws.send(JSON.stringify({
+              type: 'diagLogDump',
+              logs: diagLogs.slice(-100),
+              stats: diagStatsAccum,
+              currentFrame,
+            }));
+          } else if (msg.type === 'refresh') {
+            location.hash = '#refresh';
+            location.reload();
+          }
+        } catch (e) {}
+      };
+    } catch (e) { setTimeout(connectWS, 3000); }
+  }
+
+  function reportCamera() {
+    if (ws && ws.readyState === 1)
+      ws.send(JSON.stringify({ type: 'cameraState',
+        position: camera.position.toArray(), target: controls.target.toArray(),
+        up: camera.up.toArray() }));
+  }
+  setInterval(() => {
+    if (ws && ws.readyState === 1) {
+      ws.send(JSON.stringify({
+        type: 'v4DiagStats',
+        stats: { ...diagStatsAccum },
+        currentFrame,
+        gopCacheSize: gopCache.size,
+      }));
+    }
+  }, 5000);
+  setInterval(reportCamera, 1000);
+  renderer.domElement.addEventListener('pointerup', () => setTimeout(reportCamera, 100));
+  connectWS();
+}
+
+// ============================================================
+// Frame management (direct — no Worker)
+// ============================================================
+function updateFrame(idx) {
+  const applied = applyFrameData(idx);
+  if (applied) {
+    currentFrame = idx;
+    timeline.value = idx;
+    const timeSec = (idx / targetFPS).toFixed(1);
+    const gopIdx = getGopIndexForFrame(idx);
+    if (idx === 0) {
+      frameLabel.textContent = `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)`;
+    } else {
+      frameLabel.textContent = `P-Frame ${idx}/${manifest.p_frame_count} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [GOP ${gopIdx}]`;
+    }
+    if (gopIdx >= 0) {
+      const segs = gopStrip.querySelectorAll('.gop-seg');
+      segs.forEach(s => { if (s.classList.contains('active')) s.classList.replace('active', 'loaded'); });
+      const activeSeg = document.getElementById(`gop-seg-${gopIdx}`);
+      if (activeSeg) activeSeg.className = 'gop-seg active';
+      // For v4b: use baked bank info
+      const pIdx = idx - 1;
+      const localIdx = pIdx - bankStartFrame;
+      triggerPrefetch(gopIdx, localIdx, bankFrameCount);
+    }
+  } else {
+    // Frame not in baked bank — trigger async load + bake
+    const gopIdx = getGopIndexForFrame(idx);
+    if (gopIdx >= 0 && !bakeInProgress) {
+      const gopEntry = gopCache.get(gopIdx);
+      if (!gopEntry) {
+        // Not cached — download, decompress, then bake
+        loadGop(gopIdx, true).then(() => {
+          bakeGopToTexture(gopIdx).then(() => {
+            if (currentFrame === idx || !isPlaying) {
+              applyFrameData(idx);
+              currentFrame = idx;
+            }
+          });
+        });
+      } else if (!gopEntry.raw) {
+        // Cached compressed — decompress then bake
+        ensureGopDecompressed(gopIdx).then(() => {
+          bakeGopToTexture(gopIdx).then(() => {
+            if (currentFrame === idx || !isPlaying) {
+              applyFrameData(idx);
+              currentFrame = idx;
+            }
+          });
+        });
+      } else {
+        // Has raw — just bake
+        bakeGopToTexture(gopIdx).then(() => {
+          if (currentFrame === idx || !isPlaying) {
+            applyFrameData(idx);
+            currentFrame = idx;
+          }
+        });
+      }
+    }
+  }
+  diagStatsAccum.framesRequested++;
+}
+
+// ============================================================
+// UI: Play/Pause, Timeline, Modes, Speed
+// ============================================================
+playBtn.addEventListener('click', () => {
+  isPlaying = !isPlaying;
+  playBtn.textContent = isPlaying ? '\u23F8' : '\u25B6';
+
+  if (!isPlaying) {
+    // === P0: Stop-release — free all GOP raw/compressed, streamState, decode buffers ===
+    // This can free ~28+ MB of JS Heap memory when paused
+    const freedMB = releasePlaybackBuffers();
+    diagLog('info', `Playback paused: released ${freedMB.toFixed(1)} MB of playback buffers`);
+    reportStats();
+    // Nudge GC to actually reclaim the freed memory (not just null the refs)
+    nudgeGC();
+    setTimeout(() => { nudgeGC(); updateMemoryBadge(); }, 200);
+    updateMemoryBadge();
+  } else {
+    // === Resume: re-acquire current GOP data and re-bake ===
+    const gopIdx = getGopIndexForFrame(currentFrame);
+    if (gopIdx >= 0) {
+      if (!gopCache.has(gopIdx)) {
+        diagLog('info', `Playback resumed: reloading + baking GOP ${gopIdx}`);
+        loadGop(gopIdx, true).then(() => bakeGopToTexture(gopIdx));
+      } else {
+        const gop = gopCache.get(gopIdx);
+        if (gop && !gop.raw) {
+          ensureGopDecompressed(gopIdx).then(() => bakeGopToTexture(gopIdx));
+        } else {
+          bakeGopToTexture(gopIdx);
+        }
+      }
+    }
+  }
+});
+
+timeline.addEventListener('input', (e) => {
+  isPlaying = false;
+  playBtn.textContent = '\u25B6';
+  updateFrame(parseInt(e.target.value));
+});
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    viewMode = btn.dataset.mode;
+    if (viewMode === 'animated') {
+      uViewMode.value = 0;
+    } else if (viewMode === 'i-frame') {
+      uViewMode.value = 1;
+      uFrameIndex.value = 0;
+      currentFrame = 0;
+      timeline.value = 0;
+      isPlaying = false;
+      playBtn.textContent = '\u25B6';
+    } else if (viewMode === 'highlight') {
+      uViewMode.value = 2;
+      uFrameIndex.value = 0;
+      isPlaying = false;
+      playBtn.textContent = '\u25B6';
+    }
+    splatMesh.updateGenerator();
+  });
+});
+
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    playbackSpeedMult = parseFloat(btn.dataset.speed);
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); playBtn.click(); }
+  else if (e.key === 'ArrowRight') updateFrame(Math.min(currentFrame + 1, manifest.p_frame_count));
+  else if (e.key === 'ArrowLeft') updateFrame(Math.max(currentFrame - 1, 0));
+});
+
+window._viewer = {
+  updateFrame: (f) => updateFrame(f),
+  getFrame: () => currentFrame,
+  setSpeed: (s) => { playbackSpeedMult = s; },
+  getMemory: () => performance.memory ? {
+    usedMB: (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1),
+    totalMB: (performance.memory.totalJSHeapSize / 1024 / 1024).toFixed(1),
+  } : null,
+  getDiag: () => ({
+    stats: { ...diagStatsAccum },
+    currentFrame,
+    gopCacheSize: gopCache.size,
+    cacheMode: persistCache.mode,
+    dblBuf: { bakedBank, bankGopIdx, bankFrameCount, bankStartFrame, bakeInProgress, deltaTexH, rowsPerFrame },
+    buffers: {
+      decodeOutputBuf: decodeOutputBuf ? (decodeOutputBuf.byteLength / 1024).toFixed(0) + ' KB' : 'released',
+      streamPrevFrame: streamState.prevFrame ? (streamState.prevFrame.byteLength / 1024).toFixed(0) + ' KB' : 'released',
+      reusableTexData: reusableTexData ? (reusableTexData.byteLength / 1024).toFixed(0) + ' KB' : 'released',
+      deltaTexCPU: (deltaTexture && deltaTexture.image && deltaTexture.image.data && deltaTexture.image.data.byteLength > 0) ? (deltaTexture.image.data.byteLength / 1024).toFixed(0) + ' KB' : 'released',
+      maskTexCPU: (maskTexture && maskTexture.image && maskTexture.image.data && maskTexture.image.data.byteLength > 0) ? (maskTexture.image.data.byteLength / 1024).toFixed(0) + ' KB' : 'released',
+    },
+    isPlaying,
+    logs: diagLogs.slice(-50),
+  }),
+  dumpDiag: () => {
+    const d = window._viewer.getDiag();
+    console.table([d.stats]);
+    console.log('[V4 Diag] Recent logs:', d.logs);
+    return d;
+  },
+};
+
+init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
+</script>
+</body>
+</html>
