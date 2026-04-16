@@ -185,7 +185,7 @@ import { SplatMesh, dyno } from "@sparkjsdev/spark";
 // During playback: shader selects frame from pre-baked atlas, ZERO CPU cost per frame
 // ============================================================
 const MAX_CACHED_GOPS = 2;   // raw compressed GOP cache (current + prefetch next)
-const DELTA_K = 256;
+const DELTA_K = 512;         // ⚡ raised from 256: keeps atlas height ≤ 16384 (GPU MAX_TEXTURE_SIZE)
 const STRIDE = 7; // bytes per gaussian per frame: xyz(3) + dc(3) + op(1)
 const BAKE_BATCH_SIZE = 30;  // max frames to pre-bake into texture atlas (= GOP size)
 
@@ -481,7 +481,7 @@ let glTexHandle = null;  // raw WebGL texture handle for texSubImage2D
 
 // Incremental bake state machine — processes BAKE_FRAMES_PER_TICK frames per render tick
 // This avoids blocking the main thread and eliminates stutter
-const BAKE_FRAMES_PER_TICK = 2; // decode+pack+upload 2 frames per render tick
+const BAKE_FRAMES_PER_TICK = 5; // decode+pack+upload 5 frames per render tick
 let bakeState = null; // null = idle, otherwise: { gopIdx, targetBank, nextFrame, totalFrames, bankYBase, t0 }
 
 // Reusable texture data buffer (avoids re-allocation every frame)
@@ -1033,6 +1033,8 @@ function evictDistantGops(currentGopIdx) {
       updateGopStripUI(idx, 'evicted');
       evicted++;
     } else if (idx !== currentGopIdx && gop.raw) {
+      // Skip stripping if this GOP is currently being baked (incremental bake needs raw!)
+      if (bakeState && bakeState.gopIdx === idx) continue;
       // Strip raw from non-current GOPs (keep compressed only) — this is the big memory save
       const rawMB = (gop.raw.byteLength / 1024 / 1024).toFixed(1);
       gop.raw = null;
@@ -1047,8 +1049,6 @@ function evictDistantGops(currentGopIdx) {
   }
   if (evicted > 0 || stripped > 0) {
     diagLog('info', `Eviction: removed ${evicted}, stripped-raw ${stripped}, kept: [${[...keepSet].sort((a,b)=>a-b).join(',')}] (current=${currentGopIdx})`);
-    // Nudge GC after freeing large raw buffers
-    if (stripped > 0) nudgeGC();
   }
   reportStats();
 }
@@ -1084,28 +1084,6 @@ function reportStats() {
 
 // ============================================================
 // GC Nudge — encourage V8 to run garbage collection
-// We can't call gc() directly, but allocating+discarding a large
-// temporary buffer creates memory pressure that triggers Major GC.
-// ============================================================
-function nudgeGC() {
-  try {
-    // Allocate ~32MB temporary buffer — enough to trigger V8's GC heuristic
-    // The allocation itself plus immediate discard signals memory pressure
-    const pressure = new ArrayBuffer(32 * 1024 * 1024);
-    // Reference it briefly to prevent dead-code elimination
-    if (pressure.byteLength === 0) console.log('noop');
-  } catch (e) {
-    // OOM — GC will definitely run now
-  }
-  // Schedule a second nudge on next microtask to catch any stragglers
-  Promise.resolve().then(() => {
-    try {
-      const p2 = new ArrayBuffer(16 * 1024 * 1024);
-      if (p2.byteLength === 0) console.log('noop');
-    } catch (e) {}
-  });
-}
-
 // ============================================================
 // P0: Stop-release — free playback buffers when paused
 // Frees: all gopCache entries, streamState buffers, decode output buffer
@@ -1156,9 +1134,12 @@ function releasePlaybackBuffers() {
 // ============================================================
 function releaseTextureCPUData() {
   // deltaTexture — we bypass THREE.js with direct texSubImage2D, CPU data never needed
+  // IMPORTANT: After releasing, ensure needsUpdate stays false to prevent
+  // THREE.js from re-uploading the (now empty) CPU buffer to GPU
   if (deltaTexture && deltaTexture.image && deltaTexture.image.data) {
     const bytes = deltaTexture.image.data.byteLength;
     deltaTexture.image.data = new Uint16Array(0); // replace with empty array (can't set to null — THREE.js checks)
+    deltaTexture.needsUpdate = false; // CRITICAL: prevent THREE.js from overwriting GPU data with empty array
     diagLog('info', `Released deltaTexture CPU data: ${(bytes/1024/1024).toFixed(1)} MB`);
   }
 
@@ -1166,6 +1147,7 @@ function releaseTextureCPUData() {
   if (maskTexture && maskTexture.image && maskTexture.image.data) {
     const bytes = maskTexture.image.data.byteLength;
     maskTexture.image.data = new Float32Array(0);
+    maskTexture.needsUpdate = false; // CRITICAL: prevent re-upload of empty data
     diagLog('info', `Released maskTexture CPU data: ${(bytes/1024/1024).toFixed(1)} MB`);
   }
 }
@@ -1339,6 +1321,8 @@ function bakeTickIncremental() {
         reusableTexData
       );
     } else {
+      // CPU fallback — should not happen after renderer.initTexture() during init
+      diagLog('warn', `bakeTickIncremental: glTex missing for frame ${fi}, using CPU fallback (unexpected after initTexture)`);
       const fullSize = deltaTexW * deltaTexH * 4;
       if (!deltaTexture.image.data || deltaTexture.image.data.length < fullSize) {
         deltaTexture.image.data = new Uint16Array(fullSize);
@@ -1351,7 +1335,10 @@ function bakeTickIncremental() {
   bakeState.nextFrame = endFrame;
 
   if (bakeState.nextFrame >= totalFrames) {
-    if (!glTex) deltaTexture.needsUpdate = true;
+    // Only set needsUpdate if we used the CPU fallback path AND CPU data is still valid
+    if (!glTex && deltaTexture.image.data && deltaTexture.image.data.length > 0) {
+      deltaTexture.needsUpdate = true;
+    }
 
     bakedBank = targetBank;
     bankFrameCount = totalFrames;
@@ -1386,14 +1373,9 @@ async function bakeGopToTexture(gopIdx) {
 async function bakeGopSync(gopIdx) {
   const ok = await startBake(gopIdx);
   if (!ok) return false;
-  // Run all ticks to completion
+  // Process all frames to completion in one go
   while (bakeState) {
-    // Temporarily set a very high per-tick limit to process everything at once
-    const savedNextFrame = bakeState.nextFrame;
-    // Process all remaining frames
-    while (bakeState) {
-      bakeTickIncremental();
-    }
+    bakeTickIncremental();
   }
   return true;
 }
@@ -1455,8 +1437,8 @@ function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
   }
 
   // V4b: Proactive pre-bake — when nearing end of baked bank, bake next GOP
-  // Start baking 10 frames before end of current bank (gives ~333ms at 30fps)
-  const BAKE_AHEAD_FRAMES = 10;
+  // Start baking 15 frames before end of current bank (gives ~500ms at 30fps)
+  const BAKE_AHEAD_FRAMES = 15;
   if (currentGopFrames > 0 && currentLocalIdx >= currentGopFrames - BAKE_AHEAD_FRAMES) {
     if (bankGopIdx !== nextGop && !bakeInProgress) {
       const nextEntry = gopCache.get(nextGop);
@@ -1615,6 +1597,19 @@ async function init() {
   camera.position.set(0.5, 4.5, 15.0);
 
   setLoading(85, 'Pre-baking first GOP to texture atlas...');
+
+  // Force THREE.js to create WebGL texture objects for deltaTexture and maskTexture.
+  // We need glTexture to exist so bakeGopSync can use texSubImage2D directly.
+  // initTexture() uploads the texture data to GPU and creates __webglTexture.
+  renderer.initTexture(deltaTexture);
+  renderer.initTexture(maskTexture);
+  {
+    const texProps = renderer.properties.get(deltaTexture);
+    const glTexOk = !!texProps.__webglTexture;
+    diagLog('info', `GPU textures force-initialized via renderer.initTexture() — deltaTexture glTex: ${glTexOk}`);
+    console.log(`[V4b] initTexture done, glTex exists: ${glTexOk}`);
+  }
+
   await loadGop(0, true);  // keepRaw=true — needed for baking
   // Bake first GOP synchronously (initial load — no need to spread across ticks)
   await bakeGopSync(0);
@@ -1908,9 +1903,8 @@ playBtn.addEventListener('click', () => {
     const freedMB = releasePlaybackBuffers();
     diagLog('info', `Playback paused: released ${freedMB.toFixed(1)} MB of playback buffers`);
     reportStats();
-    // Nudge GC to actually reclaim the freed memory (not just null the refs)
-    nudgeGC();
-    setTimeout(() => { nudgeGC(); updateMemoryBadge(); }, 200);
+    // Memory will be reclaimed naturally by GC
+    setTimeout(() => { updateMemoryBadge(); }, 200);
     updateMemoryBadge();
   } else {
     // === Resume: re-acquire current GOP data and re-bake ===
