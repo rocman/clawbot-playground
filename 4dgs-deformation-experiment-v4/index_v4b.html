@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V4b — Batch Pre-bake GOP Texture + M:N Work-Tick Scheduling</title>
+<title>4DGS Deformation Viewer V4b — Batch Pre-bake GOP Texture + M:N(5/tick) I-frame Pure-Contrib</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -116,14 +116,14 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V4b — Batch Pre-bake + M:N Work-Tick Scheduling</div>
+  <div id="loading-title">4DGS VIEWER V4b — Batch Pre-bake + M:N(5/tick) I-frame Pure-Contrib</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
 
 <div id="title-bar">
   <h1>4DGS Viewer V4b</h1>
-  <p>V4b: Batch pre-bake GOP frames to large texture | M:N work-tick scheduling | GPU-only playback</p>
+  <p>V4b: Batch pre-bake GOP frames to large texture | M:N (5/tick, I-frame=pure contrib) | GPU-only playback</p>
 </div>
 
 <div id="gop-progress">
@@ -192,12 +192,16 @@ const BAKE_BATCH_SIZE = 30;  // max frames to pre-bake into texture atlas (= GOP
 // ============================================================
 // M:N Work-Tick Scheduling — bake M frames over N "work ticks",
 // then enjoy (GOP_SIZE - N) pure-consumption ticks with ZERO CPU cost.
-// M = GOP size (30 frames), N = BAKE_WORK_TICKS (configurable).
-// Each work tick bakes ceil(M/N) frames. After N ticks bake is done,
-// remaining playback ticks are "free" — ideal window for GC, etc.
+// Fixed: each work tick bakes BAKE_FRAMES_PER_WORK_TICK frames.
+// N = ceil(M / BAKE_FRAMES_PER_WORK_TICK), rest are pure consumption.
+// I-frame (global frame 0) is the FIRST work tick of GOP 0 — it's a
+// "pure contribution" tick because I-frame rendering doesn't consume
+// baked texture (shader skips delta fetch when frameIdx===0), so all
+// CPU/GPU budget goes to baking the first batch for subsequent frames.
 // ============================================================
-const BAKE_WORK_TICKS = 10;  // N: spread bake across this many render ticks
-// Actual per-tick bake count is computed dynamically: ceil(gopFrames / BAKE_WORK_TICKS)
+const BAKE_FRAMES_PER_WORK_TICK = 5;  // each work tick bakes exactly 5 frames
+// N = ceil(gopSize / 5) = 6 work ticks for gop_size=30
+// Pure consumption ticks = gopSize - N = 30 - 6 = 24 ticks (800ms free time)
 
 // ============================================================
 // L2 Persistent Cache — OPFS (preferred) + IndexedDB (fallback)
@@ -1282,8 +1286,9 @@ async function startBake(gopIdx) {
   const targetBank = 1 - bakedBank;
   const bankYBase = targetBank * deltaTexHalfH;
 
-  // M:N scheduling: compute how many frames to bake per work tick
-  const framesPerWorkTick = Math.ceil(gop.numFrames / BAKE_WORK_TICKS);
+  // M:N scheduling: fixed frames per work tick
+  const framesPerWorkTick = BAKE_FRAMES_PER_WORK_TICK;
+  const workTicks = Math.ceil(gop.numFrames / framesPerWorkTick);
 
   bakeState = {
     gopIdx,
@@ -1293,11 +1298,11 @@ async function startBake(gopIdx) {
     bankYBase,
     t0: performance.now(),
     framesUploaded: 0,
-    framesPerWorkTick,  // dynamic: ceil(M/N)
+    framesPerWorkTick,  // fixed: BAKE_FRAMES_PER_WORK_TICK
   };
   bakeInProgress = true;
 
-  diagLog('info', `Incremental bake started: GOP ${gopIdx} → bank ${targetBank} (${gop.numFrames} frames, ${framesPerWorkTick}/tick × ${BAKE_WORK_TICKS} work ticks)`);
+  diagLog('info', `Incremental bake started: GOP ${gopIdx} → bank ${targetBank} (M=${gop.numFrames}, N=${workTicks}, ${framesPerWorkTick}/tick, I-frame=${gopIdx === 0 ? 'pure-contrib' : 'n/a'})`);
   return true;
 }
 
@@ -1369,7 +1374,8 @@ function bakeTickIncremental() {
     if (decodeOutputBuf) decodeOutputBuf = null;
 
     const ms = (performance.now() - t0).toFixed(1);
-    diagLog('info', `GOP ${gopIdx} bake complete: ${totalFrames} frames → bank ${targetBank} in ${ms}ms (${framesPerWorkTick}/tick × ${BAKE_WORK_TICKS} work ticks) → raw released`);
+    const workTicks = Math.ceil(totalFrames / framesPerWorkTick);
+    diagLog('info', `GOP ${gopIdx} bake complete: M=${totalFrames} in ${workTicks} work ticks (${framesPerWorkTick}/tick), ${ms}ms → raw released`);
     reportStats();
 
     bakeState = null;
@@ -1455,9 +1461,9 @@ function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
 
   // V4b M:N: Proactive pre-bake — immediately start baking next GOP once current
   // GOP's bake is done (bakeInProgress === false). This gives the FULL playback
-  // duration of the current GOP (~1s at 30fps) to finish the next bake, spread
-  // across BAKE_WORK_TICKS work ticks. The remaining ticks are pure consumption
-  // with zero CPU cost — ideal for GC and smooth rendering.
+  // duration of the current GOP (~1s at 30fps) to finish the next bake.
+  // Each work tick bakes BAKE_FRAMES_PER_WORK_TICK=5 frames, so N=ceil(M/5)=6
+  // work ticks, leaving 24 pure-consumption ticks (800ms) with zero CPU cost.
   if (!bakeInProgress && bankGopIdx !== nextGop) {
     const nextEntry = gopCache.get(nextGop);
     if (nextEntry) {
@@ -1753,8 +1759,10 @@ async function init() {
       // Update double-buffer indicator
       const dblEl = document.getElementById('stat-dblbuf');
       if (dblEl) {
-        const bakeProgress = bakeState ? `${bakeState.nextFrame}/${bakeState.totalFrames} (${bakeState.framesPerWorkTick}/tick)` : '';
-        dblEl.textContent = `Bank:${bakedBank} GOP:${bankGopIdx} F:${bankFrameCount} ${bakeInProgress ? `⚙ baking ${bakeProgress}` : '✓ consuming'}`;
+        const workTicks = bakeState ? Math.ceil(bakeState.totalFrames / bakeState.framesPerWorkTick) : 0;
+        const bakeProgress = bakeState ? `${bakeState.nextFrame}/${bakeState.totalFrames} (${bakeState.framesPerWorkTick}/tick, N=${workTicks})` : '';
+        const pureConsume = bankFrameCount > 0 ? bankFrameCount - Math.ceil(bankFrameCount / BAKE_FRAMES_PER_WORK_TICK) : 0;
+        dblEl.textContent = `Bank:${bakedBank} GOP:${bankGopIdx} ${bakeInProgress ? `⚙ bake ${bakeProgress}` : `✓ ${pureConsume} pure-consume ticks`}`;
       }
     }
   });
