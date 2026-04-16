@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V4b — Batch Pre-bake GOP Texture + M:N(5/tick) I-frame Pure-Contrib</title>
+<title>4DGS Deformation Viewer V4b — Wide Texture (DELTA_K=2048) + M:150 Group Bake + Single Bank</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -116,14 +116,14 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V4b — Batch Pre-bake + M:N(5/tick) I-frame Pure-Contrib</div>
+  <div id="loading-title">4DGS VIEWER V4b — Wide Texture K=2048 + M:150 Group Bake</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
 
 <div id="title-bar">
   <h1>4DGS Viewer V4b</h1>
-  <p>V4b: Batch pre-bake GOP frames to large texture | M:N (5/tick, I-frame=pure contrib) | GPU-only playback</p>
+  <p>V4b: Wide texture (K=2048, 4096px) | M:150 group bake (5 GOPs) | Single bank 9450 rows | GPU-only playback</p>
 </div>
 
 <div id="gop-progress">
@@ -184,24 +184,22 @@ import { SplatMesh, dyno } from "@sparkjsdev/spark";
 // Configuration — Batch Pre-bake: decode entire GOP → bake all frames to large texture → release raw
 // During playback: shader selects frame from pre-baked atlas, ZERO CPU cost per frame
 // ============================================================
-const MAX_CACHED_GOPS = 2;   // raw compressed GOP cache (current + prefetch next)
-const DELTA_K = 512;         // ⚡ raised from 256: keeps atlas height ≤ 16384 (GPU MAX_TEXTURE_SIZE)
+const MAX_CACHED_GOPS = 6;   // raw compressed GOP cache — need more for 150-frame groups
+const DELTA_K = 2048;        // ⚡ wide texture: 4096 cols → rowsPerFrame=63 → 150 frames = 9450 rows ✅
 const STRIDE = 7; // bytes per gaussian per frame: xyz(3) + dc(3) + op(1)
-const BAKE_BATCH_SIZE = 30;  // max frames to pre-bake into texture atlas (= GOP size)
+const BAKE_BATCH_SIZE = 150; // ⚡ M=150: pre-bake 150 frames into texture atlas (5 GOPs)
+const GOPS_PER_GROUP = 5;    // M=150 / gop_size=30 = 5 GOPs per bake group
 
 // ============================================================
 // M:N Work-Tick Scheduling — bake M frames over N "work ticks",
-// then enjoy (GOP_SIZE - N) pure-consumption ticks with ZERO CPU cost.
+// then enjoy (GROUP_SIZE - N) pure-consumption ticks with ZERO CPU cost.
 // Fixed: each work tick bakes BAKE_FRAMES_PER_WORK_TICK frames.
-// N = ceil(M / BAKE_FRAMES_PER_WORK_TICK), rest are pure consumption.
-// I-frame (global frame 0) is the FIRST work tick of GOP 0 — it's a
-// "pure contribution" tick because I-frame rendering doesn't consume
-// baked texture (shader skips delta fetch when frameIdx===0), so all
-// CPU/GPU budget goes to baking the first batch for subsequent frames.
+// With M=150: N = ceil(150/5) = 30 work ticks,
+// pure consumption = 150-30 = 120 ticks (4 seconds free @ 30fps)
 // ============================================================
 const BAKE_FRAMES_PER_WORK_TICK = 5;  // each work tick bakes exactly 5 frames
-// N = ceil(gopSize / 5) = 6 work ticks for gop_size=30
-// Pure consumption ticks = gopSize - N = 30 - 6 = 24 ticks (800ms free time)
+// N = ceil(150 / 5) = 30 work ticks for M=150
+// Pure consumption ticks = 150 - 30 = 120 ticks (4s free time)
 
 // ============================================================
 // L2 Persistent Cache — OPFS (preferred) + IndexedDB (fallback)
@@ -478,24 +476,31 @@ let decodeOutputBuf = null;  // Uint8Array(N * STRIDE), allocated after N is kno
 const _f32View = new Float32Array(1);
 const _i32View = new Int32Array(_f32View.buffer);
 
-// Delta texture dimensions — large atlas: width = DELTA_K*2, height = rows_per_frame * GOP_FRAMES * 2 (double-bank)
+// Delta texture dimensions — single-bank atlas: width = DELTA_K*2, height = rows_per_frame * BAKE_BATCH_SIZE
+// With DELTA_K=2048, M=150: 4096 × 9450 → fits within 16384 ✅
+// Single bank: bake-then-flip, bake next group into same texture after current group finishes playback
 let deltaTexW = 0, deltaTexH = 0;
-let deltaTexHalfH = 0; // height of ONE frame's data region
+let deltaTexHalfH = 0; // height of the single bank (= rowsPerFrame * BAKE_BATCH_SIZE)
 let rowsPerFrame = 0;  // how many texture rows each frame occupies
 
-// Batch-bake state: two banks (A/B) in the texture atlas
-// One bank is being read by GPU (playback), the other is being written (bake)
-// Each bank holds up to BAKE_BATCH_SIZE frames
-let bakedBank = 0;       // which bank (0 or 1) is currently active for reading
-let bankFrameCount = 0;  // how many frames in the active bank
-let bankStartFrame = 0;  // global frame index of first frame in active bank
-let bankGopIdx = -1;     // which GOP the active bank was baked from
+// Batch-bake state: single bank, bake-then-flip
+// Bake next group of GOPS_PER_GROUP GOPs (=150 frames) into the single bank
+// When current group finishes playback, the next group is already baked → flip
+let bakedBank = 0;       // always 0 (single bank — kept for shader compat)
+let bankFrameCount = 0;  // how many frames in the current baked group
+let bankStartFrame = 0;  // global frame index of first frame in baked group
+let bankGopIdx = -1;     // first GOP index of the baked group
+let bankGopEndIdx = -1;  // last GOP index (exclusive) of the baked group
 let bakeInProgress = false; // is a bake operation currently running
 let glTexHandle = null;  // raw WebGL texture handle for texSubImage2D
 
-// M:N work-tick bake state machine — processes ceil(M/N) frames per work tick
-// During bake: only work ticks run decode+pack+upload; after bake: all ticks are pure consumption
-let bakeState = null; // null = idle, otherwise: { gopIdx, targetBank, nextFrame, totalFrames, bankYBase, t0, framesPerWorkTick }
+// Group tracking — which GOP group is currently baked / being baked
+let currentGroupIdx = -1; // floor(gopIdx / GOPS_PER_GROUP)
+let bakedGroupIdx = -1;   // group that is fully baked in texture
+
+// M:N work-tick bake state machine — processes BAKE_FRAMES_PER_WORK_TICK frames per tick
+// Bakes an entire group (150 frames from multiple GOPs) incrementally
+let bakeState = null; // null = idle, otherwise: { groupGops, targetBank, nextFrame, totalFrames, bankYBase, t0, framesPerWorkTick, currentSubGopIdx, subGopOffset }
 
 // Reusable texture data buffer (avoids re-allocation every frame)
 let reusableTexData = null;
@@ -1026,42 +1031,54 @@ async function ensureGopDecompressed(gopIdx) {
 // ============================================================
 function evictDistantGops(currentGopIdx) {
   const totalGops = manifest.gop_count;
+  const currentGroup = Math.floor(currentGopIdx / GOPS_PER_GROUP);
+  const nextGroup = currentGroup + 1;
+  
+  // Keep all GOPs in current group and next group
   const keepSet = new Set();
-  keepSet.add(currentGopIdx);
-  // Keep next GOP for seamless playback (compressed only)
-  const nextGop = (currentGopIdx + 1) % totalGops;
-  keepSet.add(nextGop);
+  for (let g = currentGroup * GOPS_PER_GROUP; g < Math.min((currentGroup + 1) * GOPS_PER_GROUP, totalGops); g++) {
+    keepSet.add(g);
+  }
+  for (let g = nextGroup * GOPS_PER_GROUP; g < Math.min((nextGroup + 1) * GOPS_PER_GROUP, totalGops); g++) {
+    keepSet.add(g);
+  }
+  // Also keep group 0 GOPs when near end (for loop)
+  if (currentGroup >= Math.floor((totalGops - 1) / GOPS_PER_GROUP)) {
+    for (let g = 0; g < Math.min(GOPS_PER_GROUP, totalGops); g++) {
+      keepSet.add(g);
+    }
+  }
 
   let evicted = 0;
   let stripped = 0;
   for (const [idx, gop] of gopCache) {
     if (!keepSet.has(idx)) {
-      // Fully evict GOPs outside the keep window
       gopCache.delete(idx);
-      // Reset stream state if it referenced the evicted GOP
       if (streamState.gopIdx === idx) {
         streamState.gopIdx = -1;
         streamState.localIdx = -1;
       }
       updateGopStripUI(idx, 'evicted');
       evicted++;
-    } else if (idx !== currentGopIdx && gop.raw) {
-      // Skip stripping if this GOP is currently being baked (incremental bake needs raw!)
-      if (bakeState && bakeState.gopIdx === idx) continue;
-      // Strip raw from non-current GOPs (keep compressed only) — this is the big memory save
-      const rawMB = (gop.raw.byteLength / 1024 / 1024).toFixed(1);
-      gop.raw = null;
-      // Reset stream state since raw was freed
-      if (streamState.gopIdx === idx) {
-        streamState.gopIdx = -1;
-        streamState.localIdx = -1;
+    } else {
+      // Strip raw from GOPs not in current group (keep compressed)
+      const gopGroup = Math.floor(idx / GOPS_PER_GROUP);
+      if (gopGroup !== currentGroup && gop.raw) {
+        // Skip if this GOP is currently being baked
+        if (bakeState && bakeState.groupGops && bakeState.groupGops.includes(idx)) continue;
+        const rawMB = (gop.raw.byteLength / 1024 / 1024).toFixed(1);
+        gop.raw = null;
+        if (streamState.gopIdx === idx) {
+          streamState.gopIdx = -1;
+          streamState.localIdx = -1;
+        }
+        stripped++;
+        diagLog('info', `GOP ${idx} raw stripped (freed ${rawMB} MB), keeping compressed only`);
       }
-      stripped++;
-      diagLog('info', `GOP ${idx} raw stripped (freed ${rawMB} MB), keeping compressed only`);
     }
   }
   if (evicted > 0 || stripped > 0) {
-    diagLog('info', `Eviction: removed ${evicted}, stripped-raw ${stripped}, kept: [${[...keepSet].sort((a,b)=>a-b).join(',')}] (current=${currentGopIdx})`);
+    diagLog('info', `Eviction: removed ${evicted}, stripped-raw ${stripped}, kept groups: [${currentGroup},${nextGroup}]`);
   }
   reportStats();
 }
@@ -1134,7 +1151,9 @@ function releasePlaybackBuffers() {
 
   // Reset bake state
   bankGopIdx = -1;
+  bankGopEndIdx = -1;
   bankFrameCount = 0;
+  bakedGroupIdx = -1;
   bakeInProgress = false;
 
   return freedBytes / 1024 / 1024;
@@ -1196,10 +1215,10 @@ function createMaskTexture() {
 function createDeltaTexture() {
   deltaTexW = DELTA_K * 2;
   rowsPerFrame = Math.ceil(N / DELTA_K);  // rows needed for 1 frame's data
-  // Two banks: bank 0 and bank 1, each holds BAKE_BATCH_SIZE frames
+  // Single bank: holds BAKE_BATCH_SIZE (=150) frames
   const bankHeight = rowsPerFrame * BAKE_BATCH_SIZE;
-  deltaTexHalfH = bankHeight;  // height of one bank
-  deltaTexH = bankHeight * 2;  // total height = 2 banks
+  deltaTexHalfH = bankHeight;  // height of the single bank
+  deltaTexH = bankHeight;      // total height = single bank (no double-buffering)
   const texData = new Uint16Array(deltaTexW * deltaTexH * 4);
   const tex = new THREE.DataTexture(texData, deltaTexW, deltaTexH, THREE.RGBAFormat, THREE.HalfFloatType);
   tex.needsUpdate = true;
@@ -1208,7 +1227,7 @@ function createDeltaTexture() {
   tex.generateMipmaps = false;
   // Pre-allocate reusable buffer — sized for ONE FRAME only (used during bake)
   reusableTexData = new Uint16Array(deltaTexW * rowsPerFrame * 4);
-  console.log(`[BatchBake] Delta texture: ${deltaTexW}×${deltaTexH} (2 banks, each ${bankHeight} rows for ${BAKE_BATCH_SIZE} frames), frame rows: ${rowsPerFrame}`);
+  console.log(`[BatchBake] Delta texture: ${deltaTexW}×${deltaTexH} (single bank, ${bankHeight} rows for ${BAKE_BATCH_SIZE} frames), frame rows: ${rowsPerFrame}`);
   console.log(`[BatchBake] reusable per-frame: ${(reusableTexData.byteLength/1024).toFixed(0)} KB`);
   return tex;
 }
@@ -1254,16 +1273,28 @@ window.addEventListener('resize', () => {
 // Processes ceil(M/N) frames per work tick to avoid blocking
 // ============================================================
 
-// Start an incremental bake of a GOP into the inactive bank
-async function startBake(gopIdx) {
+// Start an incremental bake of a GOP GROUP into the single bank
+// groupStartGop = first GOP index of the group (e.g. 0, 5, 10)
+async function startBake(groupStartGop) {
   if (bakeInProgress) return false;
 
-  const gop = gopCache.get(gopIdx);
-  if (!gop) return false;
+  const totalGops = manifest.gop_count;
+  const groupEnd = Math.min(groupStartGop + GOPS_PER_GROUP, totalGops);
 
-  // Ensure decompressed
-  if (!gop.raw) {
-    const ok = await ensureGopDecompressed(gopIdx);
+  // Collect all GOPs in this group, ensure they're all cached
+  const groupGops = [];
+  let totalFrames = 0;
+  for (let g = groupStartGop; g < groupEnd; g++) {
+    const gop = gopCache.get(g);
+    if (!gop) return false; // not yet loaded
+    groupGops.push(g);
+    totalFrames += gop.numFrames;
+  }
+
+  // Ensure first sub-GOP is decompressed
+  const firstGop = gopCache.get(groupStartGop);
+  if (!firstGop.raw) {
+    const ok = await ensureGopDecompressed(groupStartGop);
     if (!ok) return false;
   }
 
@@ -1283,54 +1314,91 @@ async function startBake(gopIdx) {
   streamState.gopIdx = -1;
   streamState.localIdx = -1;
 
-  const targetBank = 1 - bakedBank;
-  const bankYBase = targetBank * deltaTexHalfH;
-
-  // M:N scheduling: fixed frames per work tick
+  const bankYBase = 0; // single bank starts at row 0
   const framesPerWorkTick = BAKE_FRAMES_PER_WORK_TICK;
-  const workTicks = Math.ceil(gop.numFrames / framesPerWorkTick);
+  const workTicks = Math.ceil(totalFrames / framesPerWorkTick);
 
   bakeState = {
-    gopIdx,
-    targetBank,
-    nextFrame: 0,
-    totalFrames: gop.numFrames,
+    groupGops,            // array of GOP indices in this group
+    groupStartGop,
+    targetBank: 0,        // always 0 (single bank)
+    nextFrame: 0,         // next frame to bake (index within group, 0-based)
+    totalFrames,
     bankYBase,
     t0: performance.now(),
     framesUploaded: 0,
-    framesPerWorkTick,  // fixed: BAKE_FRAMES_PER_WORK_TICK
+    framesPerWorkTick,
+    // Sub-GOP tracking: which sub-GOP within the group is currently being decoded
+    currentSubGopIdx: 0,     // index into groupGops[] array
+    subGopFrameOffset: 0,    // cumulative frame count before current sub-GOP
   };
   bakeInProgress = true;
 
-  diagLog('info', `Incremental bake started: GOP ${gopIdx} → bank ${targetBank} (M=${gop.numFrames}, N=${workTicks}, ${framesPerWorkTick}/tick, I-frame=${gopIdx === 0 ? 'pure-contrib' : 'n/a'})`);
+  diagLog('info', `Group bake started: GOPs [${groupGops.join(',')}] → bank 0 (M=${totalFrames}, N=${workTicks}, ${framesPerWorkTick}/tick)`);
   return true;
 }
 
 // Process up to framesPerWorkTick frames (called from animate loop each work tick)
+// Handles multi-GOP group bake: automatically advances to next sub-GOP within the group
 // Returns: 'busy' | 'done' | 'idle'
 function bakeTickIncremental() {
   if (!bakeState) return 'idle';
 
-  const { gopIdx, targetBank, bankYBase, totalFrames, t0, framesPerWorkTick } = bakeState;
-  const gop = gopCache.get(gopIdx);
-  if (!gop || !gop.raw) {
-    diagLog('warn', `Bake aborted: GOP ${gopIdx} raw not available`);
-    bakeState = null;
-    bakeInProgress = false;
-    return 'idle';
-  }
+  const { groupGops, targetBank, bankYBase, totalFrames, t0, framesPerWorkTick } = bakeState;
 
   const gl = renderer.getContext();
   const texProps = renderer.properties.get(deltaTexture);
   const glTex = texProps.__webglTexture;
 
   const endFrame = Math.min(bakeState.nextFrame + framesPerWorkTick, totalFrames);
+  
   for (let fi = bakeState.nextFrame; fi < endFrame; fi++) {
-    const frameData = streamDecodeFrameRange(gopIdx, fi);
+    // Determine which sub-GOP this frame belongs to
+    let subGopIdx = bakeState.currentSubGopIdx;
+    let subGopOffset = bakeState.subGopFrameOffset;
+    
+    // Advance to correct sub-GOP if needed
+    while (subGopIdx < groupGops.length) {
+      const gopIdx = groupGops[subGopIdx];
+      const gop = gopCache.get(gopIdx);
+      if (!gop) { bakeState = null; bakeInProgress = false; return 'idle'; }
+      if (fi < subGopOffset + gop.numFrames) break; // this frame is in current sub-GOP
+      subGopOffset += gop.numFrames;
+      subGopIdx++;
+      // Reset stream state for new sub-GOP
+      streamState.prevFrame.fill(0);
+      streamState.gopIdx = -1;
+      streamState.localIdx = -1;
+    }
+    
+    if (subGopIdx >= groupGops.length) break; // shouldn't happen
+    
+    const gopIdx = groupGops[subGopIdx];
+    const gop = gopCache.get(gopIdx);
+    
+    // Ensure this sub-GOP is decompressed (lazy decompress)
+    if (!gop.raw) {
+      // Trigger async decompress and bail out — will continue next tick
+      if (!_decompressingSet.has(gopIdx)) {
+        _decompressingSet.add(gopIdx);
+        ensureGopDecompressed(gopIdx).then(() => _decompressingSet.delete(gopIdx));
+      }
+      // Save state and return busy — will retry next tick
+      bakeState.currentSubGopIdx = subGopIdx;
+      bakeState.subGopFrameOffset = subGopOffset;
+      return 'busy';
+    }
+    
+    bakeState.currentSubGopIdx = subGopIdx;
+    bakeState.subGopFrameOffset = subGopOffset;
+    
+    const localIdx = fi - subGopOffset; // local frame index within this sub-GOP
+    const frameData = streamDecodeFrameRange(gopIdx, localIdx);
     if (!frameData) continue;
 
     packFrameToReusable(frameData);
 
+    // fi = global frame index within the group (0 to totalFrames-1)
     const frameYOffset = bankYBase + fi * rowsPerFrame;
     if (glTex) {
       gl.bindTexture(gl.TEXTURE_2D, glTex);
@@ -1341,13 +1409,12 @@ function bakeTickIncremental() {
         reusableTexData
       );
     } else {
-      // CPU fallback — should not happen after renderer.initTexture() during init
-      diagLog('warn', `bakeTickIncremental: glTex missing for frame ${fi}, using CPU fallback (unexpected after initTexture)`);
+      diagLog('warn', `bakeTickIncremental: glTex missing for frame ${fi}`);
       const fullSize = deltaTexW * deltaTexH * 4;
       if (!deltaTexture.image.data || deltaTexture.image.data.length < fullSize) {
         deltaTexture.image.data = new Uint16Array(fullSize);
       }
-      const off = (bankYBase + fi * rowsPerFrame) * deltaTexW * 4;
+      const off = frameYOffset * deltaTexW * 4;
       deltaTexture.image.data.set(reusableTexData, off);
     }
     bakeState.framesUploaded++;
@@ -1356,16 +1423,29 @@ function bakeTickIncremental() {
 
   if (bakeState.nextFrame >= totalFrames) {
     // Only set needsUpdate if we used the CPU fallback path AND CPU data is still valid
-    if (!glTex && deltaTexture.image.data && deltaTexture.image.data.length > 0) {
+    const texProps2 = renderer.properties.get(deltaTexture);
+    if (!texProps2.__webglTexture && deltaTexture.image.data && deltaTexture.image.data.length > 0) {
       deltaTexture.needsUpdate = true;
     }
 
-    bakedBank = targetBank;
+    // Calculate bank metadata
+    const firstGopIdx = groupGops[0];
+    const lastGopIdx = groupGops[groupGops.length - 1];
+    const firstGopInfo = manifest.gop_index[firstGopIdx];
+    
+    bakedBank = 0; // always 0, single bank
     bankFrameCount = totalFrames;
-    bankStartFrame = gop.startFrame;
-    bankGopIdx = gopIdx;
+    bankStartFrame = firstGopInfo.start_frame;
+    bankGopIdx = firstGopIdx;
+    bankGopEndIdx = lastGopIdx + 1;
+    bakedGroupIdx = Math.floor(firstGopIdx / GOPS_PER_GROUP);
 
-    gop.raw = null;
+    // Release raw data for all sub-GOPs in this group
+    for (const g of groupGops) {
+      const gop = gopCache.get(g);
+      if (gop && gop.raw) gop.raw = null;
+    }
+    
     if (streamState.prevFrame) {
       streamState.prevFrame = null;
       streamState.gopIdx = -1;
@@ -1375,7 +1455,7 @@ function bakeTickIncremental() {
 
     const ms = (performance.now() - t0).toFixed(1);
     const workTicks = Math.ceil(totalFrames / framesPerWorkTick);
-    diagLog('info', `GOP ${gopIdx} bake complete: M=${totalFrames} in ${workTicks} work ticks (${framesPerWorkTick}/tick), ${ms}ms → raw released`);
+    diagLog('info', `Group bake complete: GOPs [${groupGops.join(',')}] M=${totalFrames} in ${workTicks} work ticks (${framesPerWorkTick}/tick), ${ms}ms → raw released`);
     reportStats();
 
     bakeState = null;
@@ -1385,18 +1465,34 @@ function bakeTickIncremental() {
   return 'busy';
 }
 
-// Legacy wrapper — kicks off incremental bake
-async function bakeGopToTexture(gopIdx) {
-  return startBake(gopIdx);
+// Legacy wrapper — kicks off incremental bake of a GROUP
+async function bakeGopToTexture(groupStartGop) {
+  return startBake(groupStartGop);
 }
 
 // Synchronous full bake — used for initial load only (blocking is OK during init)
-async function bakeGopSync(gopIdx) {
-  const ok = await startBake(gopIdx);
+async function bakeGopSync(groupStartGop) {
+  const ok = await startBake(groupStartGop);
   if (!ok) return false;
   // Process all frames to completion in one go
   while (bakeState) {
-    bakeTickIncremental();
+    // During sync bake, we may need to decompress sub-GOPs on demand
+    if (bakeState) {
+      const subGopIdx = bakeState.currentSubGopIdx;
+      if (subGopIdx < bakeState.groupGops.length) {
+        const gopIdx = bakeState.groupGops[subGopIdx];
+        const gop = gopCache.get(gopIdx);
+        if (gop && !gop.raw) {
+          await ensureGopDecompressed(gopIdx);
+        }
+      }
+    }
+    const status = bakeTickIncremental();
+    if (status === 'idle') break;
+    // If busy due to decompression wait, yield briefly
+    if (status === 'busy' && bakeState) {
+      await new Promise(r => setTimeout(r, 10));
+    }
   }
   return true;
 }
@@ -1404,41 +1500,43 @@ async function bakeGopSync(gopIdx) {
 function applyFrameData(globalFrame) {
   if (globalFrame === 0) {
     uFrameIndex.value = 0;
-    uViewMode.value === 1 ? null : (uDeltaHalf.value = bakedBank);
+    uViewMode.value === 1 ? null : (uDeltaHalf.value = 0);
     return true;
   }
 
   const gopIdx = getGopIndexForFrame(globalFrame);
+  const groupIdx = Math.floor(gopIdx / GOPS_PER_GROUP);
 
-  // Check if this frame is in the currently baked bank
-  if (bankGopIdx === gopIdx && bankFrameCount > 0) {
-    // localIdx = position of globalFrame within the GOP's baked data
-    // bankStartFrame = gop.startFrame (global frame number), so
-    // globalFrame - bankStartFrame gives the local slot index in the baked atlas
+  // Check if this frame is in the currently baked group
+  if (bakedGroupIdx === groupIdx && bankFrameCount > 0) {
     const localIdx = globalFrame - bankStartFrame;
     if (localIdx >= 0 && localIdx < bankFrameCount) {
       // Frame is pre-baked! Just update uniforms — ZERO CPU decode cost
       uFrameIndex.value = globalFrame;
-      uDeltaHalf.value = bakedBank;
-      // Tell shader which frame slot to read within the bank
+      uDeltaHalf.value = 0; // always bank 0 (single bank)
       uBakedLocalIdx.value = localIdx;
       diagStatsAccum.framesApplied++;
       return true;
     }
   }
 
-  // Frame not in baked bank — need to bake the GOP
-  // Trigger async bake (will be ready next loop iteration)
-  const gop = gopCache.get(gopIdx);
-  if (!gop) return false;
+  // Frame not in baked group — need to bake the group
+  const groupStartGop = groupIdx * GOPS_PER_GROUP;
   
   if (!bakeInProgress) {
-    diagLog('info', `Frame ${globalFrame} not in baked bank (bank GOP=${bankGopIdx}), triggering bake of GOP ${gopIdx}`);
-    bakeGopToTexture(gopIdx).then(ok => {
-      if (ok) diagLog('info', `Bake complete for GOP ${gopIdx}, frames ${bankStartFrame}..${bankStartFrame + bankFrameCount - 1}`);
-    });
+    diagLog('info', `Frame ${globalFrame} not in baked group ${bakedGroupIdx}, triggering bake of group ${groupIdx} (GOPs ${groupStartGop}..${groupStartGop + GOPS_PER_GROUP - 1})`);
+    // Check if all GOPs in the group are loaded
+    const totalGops = manifest.gop_count;
+    const groupEnd = Math.min(groupStartGop + GOPS_PER_GROUP, totalGops);
+    let allLoaded = true;
+    for (let g = groupStartGop; g < groupEnd; g++) {
+      if (!gopCache.has(g)) { allLoaded = false; break; }
+    }
+    if (allLoaded) {
+      bakeGopToTexture(groupStartGop);
+    }
   }
-  return false; // stall this frame — will be resolved after bake completes
+  return false; // stall this frame
 }
 
 // Prefetch next GOP in background (fire-and-forget async)
@@ -1448,35 +1546,55 @@ let _decompressingSet = new Set();
 
 function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
   const totalGops = manifest.gop_count;
-  const nextGop = (currentGopIdx + 1) % totalGops;
-  if (!gopCache.has(nextGop) && !gopLoadingSet.has(nextGop)) {
-    prefetchPromise = loadGop(nextGop, false);
+  const currentGroupIdx_local = Math.floor(currentGopIdx / GOPS_PER_GROUP);
+  const nextGroupStart = (currentGroupIdx_local + 1) * GOPS_PER_GROUP;
+  
+  // Prefetch all GOPs in the NEXT group (compressed only)
+  if (nextGroupStart < totalGops) {
+    const nextGroupEnd = Math.min(nextGroupStart + GOPS_PER_GROUP, totalGops);
+    for (let g = nextGroupStart; g < nextGroupEnd; g++) {
+      if (!gopCache.has(g) && !gopLoadingSet.has(g)) {
+        loadGop(g, false); // compressed only
+      }
+    }
   }
-  // Also prefetch GOP 0 when near end (for loop)
-  if (currentGopIdx >= totalGops - 2) {
-    if (!gopCache.has(0) && !gopLoadingSet.has(0)) {
-      loadGop(0, false);
+  
+  // Also prefetch group 0 when near end (for loop)
+  if (currentGroupIdx_local >= Math.floor((totalGops - 1) / GOPS_PER_GROUP)) {
+    for (let g = 0; g < Math.min(GOPS_PER_GROUP, totalGops); g++) {
+      if (!gopCache.has(g) && !gopLoadingSet.has(g)) {
+        loadGop(g, false);
+      }
     }
   }
 
-  // V4b M:N: Proactive pre-bake — immediately start baking next GOP once current
-  // GOP's bake is done (bakeInProgress === false). This gives the FULL playback
-  // duration of the current GOP (~1s at 30fps) to finish the next bake.
-  // Each work tick bakes BAKE_FRAMES_PER_WORK_TICK=5 frames, so N=ceil(M/5)=6
-  // work ticks, leaving 24 pure-consumption ticks (800ms) with zero CPU cost.
-  if (!bakeInProgress && bankGopIdx !== nextGop) {
-    const nextEntry = gopCache.get(nextGop);
-    if (nextEntry) {
-      diagLog('info', `Proactive bake: GOP ${nextGop} (immediate after current GOP bake done)`);
-      // Ensure decompressed first, then bake
-      if (!nextEntry.raw && !_decompressingSet.has(nextGop)) {
-        _decompressingSet.add(nextGop);
-        ensureGopDecompressed(nextGop).then(() => {
-          _decompressingSet.delete(nextGop);
-          bakeGopToTexture(nextGop);
-        });
-      } else if (nextEntry.raw) {
-        bakeGopToTexture(nextGop);
+  // Proactive pre-bake — start baking next group once current bake is done
+  if (!bakeInProgress && nextGroupStart < totalGops) {
+    const nextGroupIdx = currentGroupIdx_local + 1;
+    if (bakedGroupIdx !== nextGroupIdx) {
+      // Check if all GOPs in next group are loaded
+      const nextGroupEnd = Math.min(nextGroupStart + GOPS_PER_GROUP, totalGops);
+      let allLoaded = true;
+      let allDecompressed = true;
+      for (let g = nextGroupStart; g < nextGroupEnd; g++) {
+        const entry = gopCache.get(g);
+        if (!entry) { allLoaded = false; break; }
+        if (!entry.raw) allDecompressed = false;
+      }
+      
+      if (allLoaded) {
+        // Start decompressing first sub-GOP if needed, then bake
+        const firstEntry = gopCache.get(nextGroupStart);
+        if (!firstEntry.raw && !_decompressingSet.has(nextGroupStart)) {
+          _decompressingSet.add(nextGroupStart);
+          ensureGopDecompressed(nextGroupStart).then(() => {
+            _decompressingSet.delete(nextGroupStart);
+            bakeGopToTexture(nextGroupStart);
+          });
+        } else if (firstEntry.raw) {
+          diagLog('info', `Proactive group bake: group ${nextGroupIdx} (GOPs ${nextGroupStart}..${nextGroupEnd - 1})`);
+          bakeGopToTexture(nextGroupStart);
+        }
       }
     }
   }
@@ -1558,10 +1676,8 @@ async function init() {
                                out vec3 dPos, out vec3 dDC, out float dOp) {
               int sr = dIdx / K;
               int sc = (dIdx - sr * K) * 2;
-              // bankOffset = bankSel * rowsPerFrm * BAKE_BATCH_SIZE (passed as deltaHalfH * bankSel conceptually)
-              // frameOffset within bank = localFrameIdx * rowsPerFrm
-              int bankRows = rowsPerFrm * ${BAKE_BATCH_SIZE};
-              int actualRow = sr + bankSel * bankRows + localFrameIdx * rowsPerFrm;
+              // Single bank: no bank offset needed (bankSel always 0)
+              int actualRow = sr + localFrameIdx * rowsPerFrm;
               vec4 t0 = texelFetch(dTex, ivec2(sc, actualRow), 0);
               vec4 t1 = texelFetch(dTex, ivec2(sc+1, actualRow), 0);
               dPos = t0.xyz;
@@ -1634,10 +1750,19 @@ async function init() {
   }
 
   await loadGop(0, true);  // keepRaw=true — needed for baking
-  // Bake first GOP synchronously (initial load — no need to spread across ticks)
+  // Load remaining GOPs in first group (GOPs 1-4) for initial bake
+  const firstGroupEnd = Math.min(GOPS_PER_GROUP, manifest.gop_count);
+  for (let g = 1; g < firstGroupEnd; g++) {
+    await loadGop(g, true);
+  }
+  // Bake first group synchronously (initial load — blocking is OK during init)
   await bakeGopSync(0);
-  // Fire-and-forget prefetch of GOP 1 (compressed only — lazy decompress later)
-  loadGop(1, false);
+  // Fire-and-forget prefetch of next group (compressed only — lazy decompress later)
+  const nextGroupStart = GOPS_PER_GROUP;
+  const nextGroupEnd = Math.min(nextGroupStart + GOPS_PER_GROUP, manifest.gop_count);
+  for (let g = nextGroupStart; g < nextGroupEnd; g++) {
+    loadGop(g, false);
+  }
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(2.435, -2.0, -15.003);
@@ -1720,24 +1845,38 @@ async function init() {
           diagStatsAccum.stallFrames++;
           const gopIdx = getGopIndexForFrame(nextFrame);
           if (gopIdx >= 0 && !bakeInProgress) {
-            const gopEntry = gopCache.get(gopIdx);
-            if (gopEntry && gopEntry.raw) {
-              frameLabel.textContent = `Baking GOP ${gopIdx}...`;
-              bakeGopToTexture(gopIdx);
-            } else if (gopEntry && !gopEntry.raw) {
-              frameLabel.textContent = `Decompressing + Baking GOP ${gopIdx}...`;
-              if (!_decompressingSet.has(gopIdx)) {
-                _decompressingSet.add(gopIdx);
-                ensureGopDecompressed(gopIdx).then(() => {
-                  _decompressingSet.delete(gopIdx);
-                  bakeGopToTexture(gopIdx);
-                });
+            const groupIdx = Math.floor(gopIdx / GOPS_PER_GROUP);
+            const groupStart = groupIdx * GOPS_PER_GROUP;
+            const groupEnd = Math.min(groupStart + GOPS_PER_GROUP, manifest.gop_count);
+            // Check if all GOPs in group are loaded
+            let allLoaded = true;
+            let firstMissing = -1;
+            for (let g = groupStart; g < groupEnd; g++) {
+              if (!gopCache.has(g)) { allLoaded = false; firstMissing = g; break; }
+            }
+            if (allLoaded) {
+              // Ensure first sub-GOP has raw, then start bake
+              const firstEntry = gopCache.get(groupStart);
+              if (firstEntry && firstEntry.raw) {
+                frameLabel.textContent = `Baking group ${groupIdx}...`;
+                bakeGopToTexture(groupStart);
+              } else if (firstEntry && !firstEntry.raw) {
+                frameLabel.textContent = `Decompressing GOP ${groupStart}...`;
+                if (!_decompressingSet.has(groupStart)) {
+                  _decompressingSet.add(groupStart);
+                  ensureGopDecompressed(groupStart).then(() => {
+                    _decompressingSet.delete(groupStart);
+                    bakeGopToTexture(groupStart);
+                  });
+                }
               }
-            } else if (!gopEntry && !gopLoadingSet.has(gopIdx)) {
-              frameLabel.textContent = `Loading GOP ${gopIdx}...`;
-              loadGop(gopIdx, true).then(() => bakeGopToTexture(gopIdx));
             } else {
-              frameLabel.textContent = `Loading GOP ${gopIdx}...`;
+              frameLabel.textContent = `Loading GOPs for group ${groupIdx}...`;
+              for (let g = groupStart; g < groupEnd; g++) {
+                if (!gopCache.has(g) && !gopLoadingSet.has(g)) {
+                  loadGop(g, g === groupStart);
+                }
+              }
             }
           } else if (bakeInProgress) {
             frameLabel.textContent = `Baking in progress...`;
@@ -1762,7 +1901,7 @@ async function init() {
         const workTicks = bakeState ? Math.ceil(bakeState.totalFrames / bakeState.framesPerWorkTick) : 0;
         const bakeProgress = bakeState ? `${bakeState.nextFrame}/${bakeState.totalFrames} (${bakeState.framesPerWorkTick}/tick, N=${workTicks})` : '';
         const pureConsume = bankFrameCount > 0 ? bankFrameCount - Math.ceil(bankFrameCount / BAKE_FRAMES_PER_WORK_TICK) : 0;
-        dblEl.textContent = `Bank:${bakedBank} GOP:${bankGopIdx} ${bakeInProgress ? `⚙ bake ${bakeProgress}` : `✓ ${pureConsume} pure-consume ticks`}`;
+        dblEl.textContent = `Grp:${bakedGroupIdx} GOPs:${bankGopIdx}-${bankGopEndIdx-1} ${bakeInProgress ? `⚙ bake ${bakeProgress}` : `✓ ${pureConsume} pure-ticks`}`;
       }
     }
   });
@@ -1876,24 +2015,25 @@ function updateFrame(idx) {
       triggerPrefetch(gopIdx, localIdx, bankFrameCount);
     }
   } else {
-    // Frame not in baked bank — trigger async load + bake
+    // Frame not in baked group — trigger async load + bake
     const gopIdx = getGopIndexForFrame(idx);
     if (gopIdx >= 0 && !bakeInProgress) {
-      const gopEntry = gopCache.get(gopIdx);
-      if (!gopEntry) {
-        // Not cached — download, decompress, then bake
-        loadGop(gopIdx, true).then(() => {
-          bakeGopToTexture(gopIdx).then(() => {
-            if (currentFrame === idx || !isPlaying) {
-              applyFrameData(idx);
-              currentFrame = idx;
-            }
-          });
-        });
-      } else if (!gopEntry.raw) {
-        // Cached compressed — decompress then bake
-        ensureGopDecompressed(gopIdx).then(() => {
-          bakeGopToTexture(gopIdx).then(() => {
+      const groupIdx = Math.floor(gopIdx / GOPS_PER_GROUP);
+      const groupStart = groupIdx * GOPS_PER_GROUP;
+      const totalGops = manifest.gop_count;
+      const groupEnd = Math.min(groupStart + GOPS_PER_GROUP, totalGops);
+      
+      // Load all GOPs in the group
+      const loadPromises = [];
+      for (let g = groupStart; g < groupEnd; g++) {
+        if (!gopCache.has(g)) {
+          loadPromises.push(loadGop(g, g === groupStart));
+        }
+      }
+      
+      if (loadPromises.length > 0) {
+        Promise.all(loadPromises).then(() => {
+          bakeGopToTexture(groupStart).then(() => {
             if (currentFrame === idx || !isPlaying) {
               applyFrameData(idx);
               currentFrame = idx;
@@ -1901,13 +2041,25 @@ function updateFrame(idx) {
           });
         });
       } else {
-        // Has raw — just bake
-        bakeGopToTexture(gopIdx).then(() => {
-          if (currentFrame === idx || !isPlaying) {
-            applyFrameData(idx);
-            currentFrame = idx;
-          }
-        });
+        // All GOPs loaded — just ensure decompression and bake
+        const firstEntry = gopCache.get(groupStart);
+        if (!firstEntry.raw) {
+          ensureGopDecompressed(groupStart).then(() => {
+            bakeGopToTexture(groupStart).then(() => {
+              if (currentFrame === idx || !isPlaying) {
+                applyFrameData(idx);
+                currentFrame = idx;
+              }
+            });
+          });
+        } else {
+          bakeGopToTexture(groupStart).then(() => {
+            if (currentFrame === idx || !isPlaying) {
+              applyFrameData(idx);
+              currentFrame = idx;
+            }
+          });
+        }
       }
     }
   }
@@ -1931,18 +2083,32 @@ playBtn.addEventListener('click', () => {
     setTimeout(() => { updateMemoryBadge(); }, 200);
     updateMemoryBadge();
   } else {
-    // === Resume: re-acquire current GOP data and re-bake ===
+    // === Resume: re-acquire current group GOPs and re-bake ===
     const gopIdx = getGopIndexForFrame(currentFrame);
     if (gopIdx >= 0) {
-      if (!gopCache.has(gopIdx)) {
-        diagLog('info', `Playback resumed: reloading + baking GOP ${gopIdx}`);
-        loadGop(gopIdx, true).then(() => bakeGopToTexture(gopIdx));
+      const groupIdx = Math.floor(gopIdx / GOPS_PER_GROUP);
+      const groupStart = groupIdx * GOPS_PER_GROUP;
+      const totalGops = manifest.gop_count;
+      const groupEnd = Math.min(groupStart + GOPS_PER_GROUP, totalGops);
+      
+      diagLog('info', `Playback resumed: reloading + baking group ${groupIdx}`);
+      
+      // Load all GOPs in the group
+      const loadPromises = [];
+      for (let g = groupStart; g < groupEnd; g++) {
+        if (!gopCache.has(g)) {
+          loadPromises.push(loadGop(g, g === groupStart));
+        }
+      }
+      
+      if (loadPromises.length > 0) {
+        Promise.all(loadPromises).then(() => bakeGopToTexture(groupStart));
       } else {
-        const gop = gopCache.get(gopIdx);
-        if (gop && !gop.raw) {
-          ensureGopDecompressed(gopIdx).then(() => bakeGopToTexture(gopIdx));
+        const firstEntry = gopCache.get(groupStart);
+        if (firstEntry && !firstEntry.raw) {
+          ensureGopDecompressed(groupStart).then(() => bakeGopToTexture(groupStart));
         } else {
-          bakeGopToTexture(gopIdx);
+          bakeGopToTexture(groupStart);
         }
       }
     }
@@ -2006,7 +2172,7 @@ window._viewer = {
     currentFrame,
     gopCacheSize: gopCache.size,
     cacheMode: persistCache.mode,
-    dblBuf: { bakedBank, bankGopIdx, bankFrameCount, bankStartFrame, bakeInProgress, deltaTexH, rowsPerFrame },
+    dblBuf: { bakedBank, bakedGroupIdx, bankGopIdx, bankGopEndIdx, bankFrameCount, bankStartFrame, bakeInProgress, deltaTexH, rowsPerFrame, DELTA_K, BAKE_BATCH_SIZE, GOPS_PER_GROUP },
     buffers: {
       decodeOutputBuf: decodeOutputBuf ? (decodeOutputBuf.byteLength / 1024).toFixed(0) + ' KB' : 'released',
       streamPrevFrame: streamState.prevFrame ? (streamState.prevFrame.byteLength / 1024).toFixed(0) + ' KB' : 'released',
