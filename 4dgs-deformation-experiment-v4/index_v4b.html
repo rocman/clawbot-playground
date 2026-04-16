@@ -198,6 +198,7 @@ const GOPS_PER_GROUP = 5;    // M=150 / gop_size=30 = 5 GOPs per bake group
 // pure consumption = 150-30 = 120 ticks (4 seconds free @ 30fps)
 // ============================================================
 const BAKE_FRAMES_PER_WORK_TICK = 5;  // each work tick bakes exactly 5 frames
+const BAKE_TIME_BUDGET_MS = 8;         // max ms per bake tick (time-sliced)
 // N = ceil(150 / 5) = 30 work ticks for M=150
 // Pure consumption ticks = 150 - 30 = 120 ticks (4s free time)
 
@@ -1338,11 +1339,15 @@ async function startBake(groupStartGop) {
   return true;
 }
 
-// Process up to framesPerWorkTick frames (called from animate loop each work tick)
+// Process frames with time budget (called from bake scheduler, NOT from animate loop)
+// Uses BAKE_TIME_BUDGET_MS to limit per-call duration, avoiding main-thread jank
 // Handles multi-GOP group bake: automatically advances to next sub-GOP within the group
 // Returns: 'busy' | 'done' | 'idle'
-function bakeTickIncremental() {
+function bakeTickIncremental(timeBudgetMs) {
   if (!bakeState) return 'idle';
+
+  const budget = timeBudgetMs || BAKE_TIME_BUDGET_MS;
+  const tickStart = performance.now();
 
   const { groupGops, targetBank, bankYBase, totalFrames, t0, framesPerWorkTick } = bakeState;
 
@@ -1350,9 +1355,14 @@ function bakeTickIncremental() {
   const texProps = renderer.properties.get(deltaTexture);
   const glTex = texProps.__webglTexture;
 
-  const endFrame = Math.min(bakeState.nextFrame + framesPerWorkTick, totalFrames);
+  const endFrame = totalFrames; // process as many as time budget allows
   
   for (let fi = bakeState.nextFrame; fi < endFrame; fi++) {
+    // Check time budget every frame
+    if (fi > bakeState.nextFrame && (performance.now() - tickStart) >= budget) {
+      bakeState.nextFrame = fi;
+      return 'busy';
+    }
     // Determine which sub-GOP this frame belongs to
     let subGopIdx = bakeState.currentSubGopIdx;
     let subGopOffset = bakeState.subGopFrameOffset;
@@ -1465,9 +1475,13 @@ function bakeTickIncremental() {
   return 'busy';
 }
 
-// Legacy wrapper — kicks off incremental bake of a GROUP
+// Legacy wrapper — kicks off incremental bake of a GROUP + starts bake scheduler
 async function bakeGopToTexture(groupStartGop) {
-  return startBake(groupStartGop);
+  const ok = await startBake(groupStartGop);
+  if (ok && typeof ensureBakeSchedulerRunning === 'function') {
+    ensureBakeSchedulerRunning();
+  }
+  return ok;
 }
 
 // Synchronous full bake — used for initial load only (blocking is OK during init)
@@ -1487,7 +1501,7 @@ async function bakeGopSync(groupStartGop) {
         }
       }
     }
-    const status = bakeTickIncremental();
+    const status = bakeTickIncremental(1000); // no time limit for sync bake
     if (status === 'idle') break;
     // If busy due to decompression wait, yield briefly
     if (status === 'busy' && bakeState) {
@@ -1575,8 +1589,9 @@ function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
   const groupProgress = currentGroupFrames > 0 ? framesIntoGroup / currentGroupFrames : 0;
 
   // Proactive pre-bake — start baking next group once current bake is done
-  // Delay bake until 40% of current group is played to avoid jank at start
-  if (!bakeInProgress && groupProgress >= 0.4 && bakedGroupIdx !== nextGroupIdx) {
+  // Start at 30% progress: since bake runs in background via setTimeout,
+  // it won't cause jank — so we can start earlier to ensure seamless transition
+  if (!bakeInProgress && groupProgress >= 0.3 && bakedGroupIdx !== nextGroupIdx) {
     // Check if all GOPs in next group are loaded
     let allLoaded = true;
     for (let g = nextGroupStart; g < nextGroupEnd; g++) {
@@ -1795,22 +1810,51 @@ async function init() {
 
   // ============================================================
   // 30Hz Animation Loop — synchronous frame application
+  // Bake is driven OUTSIDE this loop via bakeScheduler (setTimeout)
   // ============================================================
   let frameCount = 0, lastFpsTime = performance.now();
   let lastFrameTime = performance.now();
-  let _bakeTickCounter = 0;
   const FRAME_INTERVAL = 1000 / targetFPS;
+
+  // ============================================================
+  // Independent Bake Scheduler — runs via setTimeout, NOT inside animate loop
+  // This prevents bake work from stealing frame budget and causing jank.
+  // When bake is in progress, schedules itself every ~4ms (between frames).
+  // When stalling, runs more aggressively (every 0ms) to finish ASAP.
+  // ============================================================
+  let _bakeSchedulerRunning = false;
+  let _bakeStalling = false; // true when playback is stalled waiting for bake
+
+  function bakeSchedulerTick() {
+    if (!bakeInProgress) {
+      _bakeSchedulerRunning = false;
+      return;
+    }
+    // Use larger time budget during stall (player is frozen anyway)
+    const budget = _bakeStalling ? 16 : BAKE_TIME_BUDGET_MS;
+    const status = bakeTickIncremental(budget);
+    if (status === 'busy' || status === 'done') {
+      // Schedule next tick: 0ms during stall (ASAP), 4ms during normal playback
+      const delay = _bakeStalling ? 0 : 4;
+      setTimeout(bakeSchedulerTick, delay);
+    } else {
+      _bakeSchedulerRunning = false;
+    }
+  }
+
+  function ensureBakeSchedulerRunning() {
+    if (!_bakeSchedulerRunning && bakeInProgress) {
+      _bakeSchedulerRunning = true;
+      setTimeout(bakeSchedulerTick, 0);
+    }
+  }
 
   renderer.setAnimationLoop(function animate() {
     const now = performance.now();
 
-    // Drive incremental bake forward (M:N scheduling: processes ceil(M/N) frames per work tick)
-    // Throttle bake to every other frame to reduce main-thread jank during playback
-    _bakeTickCounter = (_bakeTickCounter + 1) % 2;
-    let bakeStatus = 'idle';
-    if (_bakeTickCounter === 0) {
-      bakeStatus = bakeTickIncremental();
-    }
+    // Bake is driven by bakeSchedulerTick (setTimeout), NOT here.
+    // Just ensure the scheduler is running if bake is in progress.
+    ensureBakeSchedulerRunning();
 
     if (isPlaying && viewMode === 'animated') {
       const adjustedInterval = FRAME_INTERVAL / playbackSpeedMult;
@@ -1915,11 +1959,17 @@ async function init() {
             }
           } else if (bakeInProgress) {
             frameLabel.textContent = `Baking in progress...`;
-            // Accelerate: run extra bake ticks during stall to finish faster
-            bakeTickIncremental();
+            // Signal bake scheduler to run aggressively (stall mode)
+            _bakeStalling = true;
+            ensureBakeSchedulerRunning();
           }
         }
       }
+    }
+
+    // Clear stall flag if we're no longer stalling
+    if (_bakeStalling && !bakeInProgress) {
+      _bakeStalling = false;
     }
 
     splatMesh.updateVersion();
