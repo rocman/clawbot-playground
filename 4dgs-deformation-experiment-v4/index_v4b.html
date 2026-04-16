@@ -479,6 +479,11 @@ let bankGopIdx = -1;     // which GOP the active bank was baked from
 let bakeInProgress = false; // is a bake operation currently running
 let glTexHandle = null;  // raw WebGL texture handle for texSubImage2D
 
+// Incremental bake state machine — processes BAKE_FRAMES_PER_TICK frames per render tick
+// This avoids blocking the main thread and eliminates stutter
+const BAKE_FRAMES_PER_TICK = 2; // decode+pack+upload 2 frames per render tick
+let bakeState = null; // null = idle, otherwise: { gopIdx, targetBank, nextFrame, totalFrames, bankYBase, t0 }
+
 // Reusable texture data buffer (avoids re-allocation every frame)
 let reusableTexData = null;
 
@@ -1248,30 +1253,22 @@ window.addEventListener('resize', () => {
 });
 
 // ============================================================
-// Frame update — double-buffer with texSubImage2D
-// Write next frame into inactive half, then flip readHalf uniform
+// Frame update — incremental bake with texSubImage2D
+// Processes BAKE_FRAMES_PER_TICK frames per render tick to avoid blocking
 // ============================================================
-// ============================================================
-// Batch Bake — decode all frames of a GOP, upload each to its slot in the bank
-// Uses only per-frame reusableTexData (~1MB) instead of full bank buffer (~60MB)
-// After baking, raw GOP data and decode buffers can be released
-// ============================================================
-async function bakeGopToTexture(gopIdx) {
+
+// Start an incremental bake of a GOP into the inactive bank
+async function startBake(gopIdx) {
   if (bakeInProgress) return false;
-  bakeInProgress = true;
 
   const gop = gopCache.get(gopIdx);
-  if (!gop) { bakeInProgress = false; return false; }
+  if (!gop) return false;
 
   // Ensure decompressed
   if (!gop.raw) {
     const ok = await ensureGopDecompressed(gopIdx);
-    if (!ok) { bakeInProgress = false; return false; }
+    if (!ok) return false;
   }
-
-  const t0 = performance.now();
-  const numFrames = gop.numFrames;
-  const targetBank = 1 - bakedBank; // write to the inactive bank
 
   // Ensure decode buffers exist
   if (!streamState.prevFrame) {
@@ -1280,47 +1277,68 @@ async function bakeGopToTexture(gopIdx) {
     streamState.localIdx = -1;
   }
   if (!decodeOutputBuf) decodeOutputBuf = new Uint8Array(N * STRIDE);
-  // Ensure per-frame pack buffer exists
   if (!reusableTexData) {
     reusableTexData = new Uint16Array(deltaTexW * rowsPerFrame * 4);
   }
 
-  // Reset stream state for this GOP
+  // Reset stream state for fresh decode
   streamState.prevFrame.fill(0);
   streamState.gopIdx = -1;
   streamState.localIdx = -1;
 
+  const targetBank = 1 - bakedBank;
+  const bankYBase = targetBank * deltaTexHalfH;
+
+  bakeState = {
+    gopIdx,
+    targetBank,
+    nextFrame: 0,
+    totalFrames: gop.numFrames,
+    bankYBase,
+    t0: performance.now(),
+    framesUploaded: 0,
+  };
+  bakeInProgress = true;
+
+  diagLog('info', `Incremental bake started: GOP ${gopIdx} → bank ${targetBank} (${gop.numFrames} frames, ${BAKE_FRAMES_PER_TICK}/tick)`);
+  return true;
+}
+
+// Process up to BAKE_FRAMES_PER_TICK frames (called from animate loop each tick)
+// Returns: 'busy' | 'done' | 'idle'
+function bakeTickIncremental() {
+  if (!bakeState) return 'idle';
+
+  const { gopIdx, targetBank, bankYBase, totalFrames, t0 } = bakeState;
+  const gop = gopCache.get(gopIdx);
+  if (!gop || !gop.raw) {
+    diagLog('warn', `Bake aborted: GOP ${gopIdx} raw not available`);
+    bakeState = null;
+    bakeInProgress = false;
+    return 'idle';
+  }
+
   const gl = renderer.getContext();
   const texProps = renderer.properties.get(deltaTexture);
   const glTex = texProps.__webglTexture;
-  const bankYBase = targetBank * deltaTexHalfH;
 
-  // Decode each frame, pack to reusableTexData, upload per-frame slice via texSubImage2D
-  for (let fi = 0; fi < numFrames; fi++) {
+  const endFrame = Math.min(bakeState.nextFrame + BAKE_FRAMES_PER_TICK, totalFrames);
+  for (let fi = bakeState.nextFrame; fi < endFrame; fi++) {
     const frameData = streamDecodeFrameRange(gopIdx, fi);
     if (!frameData) continue;
 
-    // Pack this frame into reusableTexData
     packFrameToReusable(frameData);
 
-    // Upload this frame's rows to the correct slot in the bank
     const frameYOffset = bankYBase + fi * rowsPerFrame;
-
     if (glTex) {
       gl.bindTexture(gl.TEXTURE_2D, glTex);
       gl.texSubImage2D(
-        gl.TEXTURE_2D,
-        0,
-        0,
-        frameYOffset,
-        deltaTexW,
-        rowsPerFrame,
-        gl.RGBA,
-        gl.HALF_FLOAT,
+        gl.TEXTURE_2D, 0, 0, frameYOffset,
+        deltaTexW, rowsPerFrame,
+        gl.RGBA, gl.HALF_FLOAT,
         reusableTexData
       );
     } else {
-      // Fallback: write to CPU data array for initial upload
       const fullSize = deltaTexW * deltaTexH * 4;
       if (!deltaTexture.image.data || deltaTexture.image.data.length < fullSize) {
         deltaTexture.image.data = new Uint16Array(fullSize);
@@ -1328,35 +1346,55 @@ async function bakeGopToTexture(gopIdx) {
       const off = (bankYBase + fi * rowsPerFrame) * deltaTexW * 4;
       deltaTexture.image.data.set(reusableTexData, off);
     }
+    bakeState.framesUploaded++;
   }
+  bakeState.nextFrame = endFrame;
 
-  // If we used the fallback path, flag for GPU upload
-  if (!glTex) {
-    deltaTexture.needsUpdate = true;
+  if (bakeState.nextFrame >= totalFrames) {
+    if (!glTex) deltaTexture.needsUpdate = true;
+
+    bakedBank = targetBank;
+    bankFrameCount = totalFrames;
+    bankStartFrame = gop.startFrame;
+    bankGopIdx = gopIdx;
+
+    gop.raw = null;
+    if (streamState.prevFrame) {
+      streamState.prevFrame = null;
+      streamState.gopIdx = -1;
+      streamState.localIdx = -1;
+    }
+    if (decodeOutputBuf) decodeOutputBuf = null;
+
+    const ms = (performance.now() - t0).toFixed(1);
+    diagLog('info', `GOP ${gopIdx} bake complete: ${totalFrames} frames → bank ${targetBank} in ${ms}ms (${BAKE_FRAMES_PER_TICK}/tick) → raw released`);
+    reportStats();
+
+    bakeState = null;
+    bakeInProgress = false;
+    return 'done';
   }
+  return 'busy';
+}
 
-  // Activate the newly baked bank
-  bakedBank = targetBank;
-  bankFrameCount = numFrames;
-  bankStartFrame = gop.startFrame;
-  bankGopIdx = gopIdx;
+// Legacy wrapper — kicks off incremental bake
+async function bakeGopToTexture(gopIdx) {
+  return startBake(gopIdx);
+}
 
-  // Release raw data + decode buffers — this is the key memory optimization!
-  gop.raw = null;
-  if (streamState.prevFrame) {
-    streamState.prevFrame = null;
-    streamState.gopIdx = -1;
-    streamState.localIdx = -1;
+// Synchronous full bake — used for initial load only (blocking is OK during init)
+async function bakeGopSync(gopIdx) {
+  const ok = await startBake(gopIdx);
+  if (!ok) return false;
+  // Run all ticks to completion
+  while (bakeState) {
+    // Temporarily set a very high per-tick limit to process everything at once
+    const savedNextFrame = bakeState.nextFrame;
+    // Process all remaining frames
+    while (bakeState) {
+      bakeTickIncremental();
+    }
   }
-  if (decodeOutputBuf) {
-    decodeOutputBuf = null;
-  }
-
-  const ms = (performance.now() - t0).toFixed(1);
-  diagLog('info', `GOP ${gopIdx} baked ${numFrames} frames to bank ${targetBank} in ${ms}ms → raw released, CPU buffers freed`);
-  reportStats();
-
-  bakeInProgress = false;
   return true;
 }
 
@@ -1578,8 +1616,8 @@ async function init() {
 
   setLoading(85, 'Pre-baking first GOP to texture atlas...');
   await loadGop(0, true);  // keepRaw=true — needed for baking
-  // Bake first GOP immediately
-  await bakeGopToTexture(0);
+  // Bake first GOP synchronously (initial load — no need to spread across ticks)
+  await bakeGopSync(0);
   // Fire-and-forget prefetch of GOP 1 (compressed only — lazy decompress later)
   loadGop(1, false);
 
@@ -1620,6 +1658,9 @@ async function init() {
 
   renderer.setAnimationLoop(function animate() {
     const now = performance.now();
+
+    // Drive incremental bake forward (processes BAKE_FRAMES_PER_TICK frames if bake is active)
+    const bakeStatus = bakeTickIncremental();
 
     if (isPlaying && viewMode === 'animated') {
       const adjustedInterval = FRAME_INTERVAL / playbackSpeedMult;
@@ -1699,7 +1740,10 @@ async function init() {
       lastFpsTime = now;
       // Update double-buffer indicator
       const dblEl = document.getElementById('stat-dblbuf');
-      if (dblEl) dblEl.textContent = `Bank:${bakedBank} GOP:${bankGopIdx} F:${bankFrameCount} ${bakeInProgress ? '(baking...)' : ''}`;
+      if (dblEl) {
+        const bakeProgress = bakeState ? `${bakeState.nextFrame}/${bakeState.totalFrames}` : '';
+        dblEl.textContent = `Bank:${bakedBank} GOP:${bankGopIdx} F:${bankFrameCount} ${bakeInProgress ? `(baking ${bakeProgress})` : ''}`;
+      }
     }
   });
 
