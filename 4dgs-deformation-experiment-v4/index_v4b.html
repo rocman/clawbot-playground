@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V4b — Batch Pre-bake GOP Texture + Low-Frequency Update</title>
+<title>4DGS Deformation Viewer V4b — Batch Pre-bake GOP Texture + M:N Work-Tick Scheduling</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
@@ -116,14 +116,14 @@
 <body>
 
 <div id="loading-overlay">
-  <div id="loading-title">4DGS VIEWER V4b — Batch Pre-bake + Low-Freq Update</div>
+  <div id="loading-title">4DGS VIEWER V4b — Batch Pre-bake + M:N Work-Tick Scheduling</div>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
   <div id="loading-text">Initializing...</div>
 </div>
 
 <div id="title-bar">
   <h1>4DGS Viewer V4b</h1>
-  <p>V4b: Batch pre-bake GOP frames to large texture | Low-freq CPU update | GPU-only playback</p>
+  <p>V4b: Batch pre-bake GOP frames to large texture | M:N work-tick scheduling | GPU-only playback</p>
 </div>
 
 <div id="gop-progress">
@@ -188,6 +188,16 @@ const MAX_CACHED_GOPS = 2;   // raw compressed GOP cache (current + prefetch nex
 const DELTA_K = 512;         // ⚡ raised from 256: keeps atlas height ≤ 16384 (GPU MAX_TEXTURE_SIZE)
 const STRIDE = 7; // bytes per gaussian per frame: xyz(3) + dc(3) + op(1)
 const BAKE_BATCH_SIZE = 30;  // max frames to pre-bake into texture atlas (= GOP size)
+
+// ============================================================
+// M:N Work-Tick Scheduling — bake M frames over N "work ticks",
+// then enjoy (GOP_SIZE - N) pure-consumption ticks with ZERO CPU cost.
+// M = GOP size (30 frames), N = BAKE_WORK_TICKS (configurable).
+// Each work tick bakes ceil(M/N) frames. After N ticks bake is done,
+// remaining playback ticks are "free" — ideal window for GC, etc.
+// ============================================================
+const BAKE_WORK_TICKS = 10;  // N: spread bake across this many render ticks
+// Actual per-tick bake count is computed dynamically: ceil(gopFrames / BAKE_WORK_TICKS)
 
 // ============================================================
 // L2 Persistent Cache — OPFS (preferred) + IndexedDB (fallback)
@@ -479,10 +489,9 @@ let bankGopIdx = -1;     // which GOP the active bank was baked from
 let bakeInProgress = false; // is a bake operation currently running
 let glTexHandle = null;  // raw WebGL texture handle for texSubImage2D
 
-// Incremental bake state machine — processes BAKE_FRAMES_PER_TICK frames per render tick
-// This avoids blocking the main thread and eliminates stutter
-const BAKE_FRAMES_PER_TICK = 5; // decode+pack+upload 5 frames per render tick
-let bakeState = null; // null = idle, otherwise: { gopIdx, targetBank, nextFrame, totalFrames, bankYBase, t0 }
+// M:N work-tick bake state machine — processes ceil(M/N) frames per work tick
+// During bake: only work ticks run decode+pack+upload; after bake: all ticks are pure consumption
+let bakeState = null; // null = idle, otherwise: { gopIdx, targetBank, nextFrame, totalFrames, bankYBase, t0, framesPerWorkTick }
 
 // Reusable texture data buffer (avoids re-allocation every frame)
 let reusableTexData = null;
@@ -1214,8 +1223,10 @@ function updateGopStripUI(gopIdx, state) {
 
 function getGopIndexForFrame(globalFrame) {
   if (globalFrame === 0) return -1;
-  const pFrameIdx = globalFrame - 1;
-  return Math.floor(pFrameIdx / manifest.gop_size);
+  // GOP index = floor(globalFrame / gop_size), because GOP N covers
+  // global frames [N*gop_size .. (N+1)*gop_size).
+  // GOP 0: frames 0-29, GOP 1: frames 30-59, etc.
+  return Math.floor(globalFrame / manifest.gop_size);
 }
 
 // ============================================================
@@ -1235,8 +1246,8 @@ window.addEventListener('resize', () => {
 });
 
 // ============================================================
-// Frame update — incremental bake with texSubImage2D
-// Processes BAKE_FRAMES_PER_TICK frames per render tick to avoid blocking
+// Frame update — M:N work-tick bake with texSubImage2D
+// Processes ceil(M/N) frames per work tick to avoid blocking
 // ============================================================
 
 // Start an incremental bake of a GOP into the inactive bank
@@ -1271,6 +1282,9 @@ async function startBake(gopIdx) {
   const targetBank = 1 - bakedBank;
   const bankYBase = targetBank * deltaTexHalfH;
 
+  // M:N scheduling: compute how many frames to bake per work tick
+  const framesPerWorkTick = Math.ceil(gop.numFrames / BAKE_WORK_TICKS);
+
   bakeState = {
     gopIdx,
     targetBank,
@@ -1279,19 +1293,20 @@ async function startBake(gopIdx) {
     bankYBase,
     t0: performance.now(),
     framesUploaded: 0,
+    framesPerWorkTick,  // dynamic: ceil(M/N)
   };
   bakeInProgress = true;
 
-  diagLog('info', `Incremental bake started: GOP ${gopIdx} → bank ${targetBank} (${gop.numFrames} frames, ${BAKE_FRAMES_PER_TICK}/tick)`);
+  diagLog('info', `Incremental bake started: GOP ${gopIdx} → bank ${targetBank} (${gop.numFrames} frames, ${framesPerWorkTick}/tick × ${BAKE_WORK_TICKS} work ticks)`);
   return true;
 }
 
-// Process up to BAKE_FRAMES_PER_TICK frames (called from animate loop each tick)
+// Process up to framesPerWorkTick frames (called from animate loop each work tick)
 // Returns: 'busy' | 'done' | 'idle'
 function bakeTickIncremental() {
   if (!bakeState) return 'idle';
 
-  const { gopIdx, targetBank, bankYBase, totalFrames, t0 } = bakeState;
+  const { gopIdx, targetBank, bankYBase, totalFrames, t0, framesPerWorkTick } = bakeState;
   const gop = gopCache.get(gopIdx);
   if (!gop || !gop.raw) {
     diagLog('warn', `Bake aborted: GOP ${gopIdx} raw not available`);
@@ -1304,7 +1319,7 @@ function bakeTickIncremental() {
   const texProps = renderer.properties.get(deltaTexture);
   const glTex = texProps.__webglTexture;
 
-  const endFrame = Math.min(bakeState.nextFrame + BAKE_FRAMES_PER_TICK, totalFrames);
+  const endFrame = Math.min(bakeState.nextFrame + framesPerWorkTick, totalFrames);
   for (let fi = bakeState.nextFrame; fi < endFrame; fi++) {
     const frameData = streamDecodeFrameRange(gopIdx, fi);
     if (!frameData) continue;
@@ -1354,7 +1369,7 @@ function bakeTickIncremental() {
     if (decodeOutputBuf) decodeOutputBuf = null;
 
     const ms = (performance.now() - t0).toFixed(1);
-    diagLog('info', `GOP ${gopIdx} bake complete: ${totalFrames} frames → bank ${targetBank} in ${ms}ms (${BAKE_FRAMES_PER_TICK}/tick) → raw released`);
+    diagLog('info', `GOP ${gopIdx} bake complete: ${totalFrames} frames → bank ${targetBank} in ${ms}ms (${framesPerWorkTick}/tick × ${BAKE_WORK_TICKS} work ticks) → raw released`);
     reportStats();
 
     bakeState = null;
@@ -1388,11 +1403,13 @@ function applyFrameData(globalFrame) {
   }
 
   const gopIdx = getGopIndexForFrame(globalFrame);
-  const pFrameIdx = globalFrame - 1;
 
   // Check if this frame is in the currently baked bank
   if (bankGopIdx === gopIdx && bankFrameCount > 0) {
-    const localIdx = pFrameIdx - bankStartFrame;
+    // localIdx = position of globalFrame within the GOP's baked data
+    // bankStartFrame = gop.startFrame (global frame number), so
+    // globalFrame - bankStartFrame gives the local slot index in the baked atlas
+    const localIdx = globalFrame - bankStartFrame;
     if (localIdx >= 0 && localIdx < bankFrameCount) {
       // Frame is pre-baked! Just update uniforms — ZERO CPU decode cost
       uFrameIndex.value = globalFrame;
@@ -1436,24 +1453,24 @@ function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
     }
   }
 
-  // V4b: Proactive pre-bake — when nearing end of baked bank, bake next GOP
-  // Start baking 15 frames before end of current bank (gives ~500ms at 30fps)
-  const BAKE_AHEAD_FRAMES = 15;
-  if (currentGopFrames > 0 && currentLocalIdx >= currentGopFrames - BAKE_AHEAD_FRAMES) {
-    if (bankGopIdx !== nextGop && !bakeInProgress) {
-      const nextEntry = gopCache.get(nextGop);
-      if (nextEntry) {
-        diagLog('info', `Proactive bake: GOP ${nextGop} (${BAKE_AHEAD_FRAMES} frames before GOP end)`);
-        // Ensure decompressed first, then bake
-        if (!nextEntry.raw && !_decompressingSet.has(nextGop)) {
-          _decompressingSet.add(nextGop);
-          ensureGopDecompressed(nextGop).then(() => {
-            _decompressingSet.delete(nextGop);
-            bakeGopToTexture(nextGop);
-          });
-        } else if (nextEntry.raw) {
+  // V4b M:N: Proactive pre-bake — immediately start baking next GOP once current
+  // GOP's bake is done (bakeInProgress === false). This gives the FULL playback
+  // duration of the current GOP (~1s at 30fps) to finish the next bake, spread
+  // across BAKE_WORK_TICKS work ticks. The remaining ticks are pure consumption
+  // with zero CPU cost — ideal for GC and smooth rendering.
+  if (!bakeInProgress && bankGopIdx !== nextGop) {
+    const nextEntry = gopCache.get(nextGop);
+    if (nextEntry) {
+      diagLog('info', `Proactive bake: GOP ${nextGop} (immediate after current GOP bake done)`);
+      // Ensure decompressed first, then bake
+      if (!nextEntry.raw && !_decompressingSet.has(nextGop)) {
+        _decompressingSet.add(nextGop);
+        ensureGopDecompressed(nextGop).then(() => {
+          _decompressingSet.delete(nextGop);
           bakeGopToTexture(nextGop);
-        }
+        });
+      } else if (nextEntry.raw) {
+        bakeGopToTexture(nextGop);
       }
     }
   }
@@ -1654,7 +1671,8 @@ async function init() {
   renderer.setAnimationLoop(function animate() {
     const now = performance.now();
 
-    // Drive incremental bake forward (processes BAKE_FRAMES_PER_TICK frames if bake is active)
+    // Drive incremental bake forward (M:N scheduling: processes ceil(M/N) frames per work tick)
+    // When no bake is in progress, this is a no-op — pure consumption tick with ZERO CPU cost
     const bakeStatus = bakeTickIncremental();
 
     if (isPlaying && viewMode === 'animated') {
@@ -1686,9 +1704,8 @@ async function init() {
           }
           // Prefetch next GOP asynchronously (pass baked bank info for proactive bake)
           if (gopIdx >= 0) {
-            const pIdx = nextFrame - 1;
             const gopInfo = manifest.gop_index[gopIdx];
-            const localIdx = pIdx - gopInfo.start_frame;
+            const localIdx = nextFrame - gopInfo.start_frame;
             const gopFrames = gopInfo.end_frame - gopInfo.start_frame;
             triggerPrefetch(gopIdx, localIdx, gopFrames);
           }
@@ -1736,8 +1753,8 @@ async function init() {
       // Update double-buffer indicator
       const dblEl = document.getElementById('stat-dblbuf');
       if (dblEl) {
-        const bakeProgress = bakeState ? `${bakeState.nextFrame}/${bakeState.totalFrames}` : '';
-        dblEl.textContent = `Bank:${bakedBank} GOP:${bankGopIdx} F:${bankFrameCount} ${bakeInProgress ? `(baking ${bakeProgress})` : ''}`;
+        const bakeProgress = bakeState ? `${bakeState.nextFrame}/${bakeState.totalFrames} (${bakeState.framesPerWorkTick}/tick)` : '';
+        dblEl.textContent = `Bank:${bakedBank} GOP:${bankGopIdx} F:${bankFrameCount} ${bakeInProgress ? `⚙ baking ${bakeProgress}` : '✓ consuming'}`;
       }
     }
   });
@@ -1847,8 +1864,7 @@ function updateFrame(idx) {
       const activeSeg = document.getElementById(`gop-seg-${gopIdx}`);
       if (activeSeg) activeSeg.className = 'gop-seg active';
       // For v4b: use baked bank info
-      const pIdx = idx - 1;
-      const localIdx = pIdx - bankStartFrame;
+      const localIdx = idx - bankStartFrame;
       triggerPrefetch(gopIdx, localIdx, bankFrameCount);
     }
   } else {
