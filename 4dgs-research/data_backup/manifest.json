@@ -1,0 +1,158 @@
+{
+  "version": 2,
+  "dataset": "N3V coffee_martini",
+  "compression": {
+    "i_frame": "spz_v2_sh0",
+    "p_frames": "float16_gzip",
+    "dynamic_mask": "gzip"
+  },
+  "n_gaussians": 1220978,
+  "n_dynamic": 89313,
+  "floats_per_splat": 14,
+  "delta_space": "post_activation",
+  "i_frame": {
+    "file": "i_frame.spz",
+    "format": "spz_v2_sh0",
+    "size_mb": 19.2
+  },
+  "dynamic_mask": {
+    "file": "dynamic_mask.bin.gz",
+    "format": "uint8_gzip",
+    "size_kb": 77.9
+  },
+  "p_frames": [
+    {
+      "frame_idx": 1,
+      "time": 0.05,
+      "file": "p_frame_001.bin.gz",
+      "compressed_size_kb": 2167.9,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 2,
+      "time": 0.1,
+      "file": "p_frame_002.bin.gz",
+      "compressed_size_kb": 2171.9,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 3,
+      "time": 0.15,
+      "file": "p_frame_003.bin.gz",
+      "compressed_size_kb": 2173.6,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 4,
+      "time": 0.2,
+      "file": "p_frame_004.bin.gz",
+      "compressed_size_kb": 2174.0,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 5,
+      "time": 0.25,
+      "file": "p_frame_005.bin.gz",
+      "compressed_size_kb": 2175.3,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 6,
+      "time": 0.3,
+      "file": "p_frame_006.bin.gz",
+      "compressed_size_kb": 2175.5,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 7,
+      "time": 0.35,
+      "file": "p_frame_007.bin.gz",
+      "compressed_size_kb": 2175.6,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 8,
+      "time": 0.4,
+      "file": "p_frame_008.bin.gz",
+      "compressed_size_kb": 2176.0,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 9,
+      "time": 0.45,
+      "file": "p_frame_009.bin.gz",
+      "compressed_size_kb": 2175.8,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 10,
+      "time": 0.5,
+      "file": "p_frame_010.bin.gz",
+      "compressed_size_kb": 2176.2,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 11,
+      "time": 0.55,
+      "file": "p_frame_011.bin.gz",
+      "compressed_size_kb": 2176.6,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 12,
+      "time": 0.6,
+      "file": "p_frame_012.bin.gz",
+      "compressed_size_kb": 2176.3,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 13,
+      "time": 0.65,
+      "file": "p_frame_013.bin.gz",
+      "compressed_size_kb": 2176.6,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 14,
+      "time": 0.7,
+      "file": "p_frame_014.bin.gz",
+      "compressed_size_kb": 2176.2,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 15,
+      "time": 0.75,
+      "file": "p_frame_015.bin.gz",
+      "compressed_size_kb": 2176.5,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 16,
+      "time": 0.8,
+      "file": "p_frame_016.bin.gz",
+      "compressed_size_kb": 2176.3,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 17,
+      "time": 0.85,
+      "file": "p_frame_017.bin.gz",
+      "compressed_size_kb": 2177.1,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 18,
+      "time": 0.9,
+      "file": "p_frame_018.bin.gz",
+      "compressed_size_kb": 2176.7,
+      "raw_size_kb": 2442.2
+    },
+    {
+      "frame_idx": 19,
+      "time": 0.95,
+      "file": "p_frame_019.bin.gz",
+      "compressed_size_kb": 2176.8,
+      "raw_size_kb": 2442.2
+    }
+  ]
+}

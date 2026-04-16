@@ -1547,54 +1547,55 @@ let _decompressingSet = new Set();
 function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
   const totalGops = manifest.gop_count;
   const currentGroupIdx_local = Math.floor(currentGopIdx / GOPS_PER_GROUP);
-  const nextGroupStart = (currentGroupIdx_local + 1) * GOPS_PER_GROUP;
+  const totalGroups = Math.ceil(totalGops / GOPS_PER_GROUP);
+  const nextGroupIdx = (currentGroupIdx_local + 1) % totalGroups; // wrap for loop
+  const nextGroupStart = nextGroupIdx * GOPS_PER_GROUP;
   
-  // Prefetch all GOPs in the NEXT group (compressed only)
-  if (nextGroupStart < totalGops) {
-    const nextGroupEnd = Math.min(nextGroupStart + GOPS_PER_GROUP, totalGops);
-    for (let g = nextGroupStart; g < nextGroupEnd; g++) {
-      if (!gopCache.has(g) && !gopLoadingSet.has(g)) {
-        loadGop(g, false); // compressed only
-      }
-    }
-  }
-  
-  // Also prefetch group 0 when near end (for loop)
-  if (currentGroupIdx_local >= Math.floor((totalGops - 1) / GOPS_PER_GROUP)) {
-    for (let g = 0; g < Math.min(GOPS_PER_GROUP, totalGops); g++) {
-      if (!gopCache.has(g) && !gopLoadingSet.has(g)) {
-        loadGop(g, false);
-      }
+  // Prefetch all GOPs in the NEXT group (compressed only), including wrap-around for loop
+  const nextGroupEnd = Math.min(nextGroupStart + GOPS_PER_GROUP, totalGops);
+  for (let g = nextGroupStart; g < nextGroupEnd; g++) {
+    if (!gopCache.has(g) && !gopLoadingSet.has(g)) {
+      loadGop(g, false); // compressed only
     }
   }
 
+  // Calculate how far we are into the current group (0.0 to 1.0)
+  // Only start proactive bake after playing 40% of the current group
+  const currentGroupStart = currentGroupIdx_local * GOPS_PER_GROUP;
+  const currentGroupEnd = Math.min(currentGroupStart + GOPS_PER_GROUP, totalGops);
+  let currentGroupFrames = 0;
+  for (let g = currentGroupStart; g < currentGroupEnd; g++) {
+    const gi = manifest.gop_index[g];
+    currentGroupFrames += gi.end_frame - gi.start_frame;
+  }
+  const currentGroupStartFrame = manifest.gop_index[currentGroupStart].start_frame;
+  const globalFrame = manifest.gop_index[currentGopIdx].start_frame + currentLocalIdx;
+  // Approximate progress within current group
+  const framesIntoGroup = globalFrame - currentGroupStartFrame;
+  const groupProgress = currentGroupFrames > 0 ? framesIntoGroup / currentGroupFrames : 0;
+
   // Proactive pre-bake — start baking next group once current bake is done
-  if (!bakeInProgress && nextGroupStart < totalGops) {
-    const nextGroupIdx = currentGroupIdx_local + 1;
-    if (bakedGroupIdx !== nextGroupIdx) {
-      // Check if all GOPs in next group are loaded
-      const nextGroupEnd = Math.min(nextGroupStart + GOPS_PER_GROUP, totalGops);
-      let allLoaded = true;
-      let allDecompressed = true;
-      for (let g = nextGroupStart; g < nextGroupEnd; g++) {
-        const entry = gopCache.get(g);
-        if (!entry) { allLoaded = false; break; }
-        if (!entry.raw) allDecompressed = false;
-      }
-      
-      if (allLoaded) {
-        // Start decompressing first sub-GOP if needed, then bake
-        const firstEntry = gopCache.get(nextGroupStart);
-        if (!firstEntry.raw && !_decompressingSet.has(nextGroupStart)) {
-          _decompressingSet.add(nextGroupStart);
-          ensureGopDecompressed(nextGroupStart).then(() => {
-            _decompressingSet.delete(nextGroupStart);
-            bakeGopToTexture(nextGroupStart);
-          });
-        } else if (firstEntry.raw) {
-          diagLog('info', `Proactive group bake: group ${nextGroupIdx} (GOPs ${nextGroupStart}..${nextGroupEnd - 1})`);
+  // Delay bake until 40% of current group is played to avoid jank at start
+  if (!bakeInProgress && groupProgress >= 0.4 && bakedGroupIdx !== nextGroupIdx) {
+    // Check if all GOPs in next group are loaded
+    let allLoaded = true;
+    for (let g = nextGroupStart; g < nextGroupEnd; g++) {
+      const entry = gopCache.get(g);
+      if (!entry) { allLoaded = false; break; }
+    }
+    
+    if (allLoaded) {
+      // Start decompressing first sub-GOP if needed, then bake
+      const firstEntry = gopCache.get(nextGroupStart);
+      if (!firstEntry.raw && !_decompressingSet.has(nextGroupStart)) {
+        _decompressingSet.add(nextGroupStart);
+        ensureGopDecompressed(nextGroupStart).then(() => {
+          _decompressingSet.delete(nextGroupStart);
           bakeGopToTexture(nextGroupStart);
-        }
+        });
+      } else if (firstEntry.raw) {
+        diagLog('info', `Proactive group bake: group ${nextGroupIdx} (GOPs ${nextGroupStart}..${nextGroupEnd - 1})`);
+        bakeGopToTexture(nextGroupStart);
       }
     }
   }
@@ -1797,19 +1798,23 @@ async function init() {
   // ============================================================
   let frameCount = 0, lastFpsTime = performance.now();
   let lastFrameTime = performance.now();
+  let _bakeTickCounter = 0;
   const FRAME_INTERVAL = 1000 / targetFPS;
 
   renderer.setAnimationLoop(function animate() {
     const now = performance.now();
 
     // Drive incremental bake forward (M:N scheduling: processes ceil(M/N) frames per work tick)
-    // When no bake is in progress, this is a no-op — pure consumption tick with ZERO CPU cost
-    const bakeStatus = bakeTickIncremental();
+    // Throttle bake to every other frame to reduce main-thread jank during playback
+    _bakeTickCounter = (_bakeTickCounter + 1) % 2;
+    let bakeStatus = 'idle';
+    if (_bakeTickCounter === 0) {
+      bakeStatus = bakeTickIncremental();
+    }
 
     if (isPlaying && viewMode === 'animated') {
       const adjustedInterval = FRAME_INTERVAL / playbackSpeedMult;
       if (now - lastFrameTime >= adjustedInterval) {
-        lastFrameTime = now;
 
         const maxFrame = manifest.p_frame_count;
         const nextFrame = (currentFrame + 1) % (maxFrame + 1);
@@ -1817,6 +1822,7 @@ async function init() {
         // Try to apply frame data synchronously
         const applied = applyFrameData(nextFrame);
         if (applied) {
+          lastFrameTime = now; // Only update on successful frame advance
           currentFrame = nextFrame;
           timeline.value = nextFrame;
           const timeSec = (nextFrame / targetFPS).toFixed(1);
@@ -1839,6 +1845,35 @@ async function init() {
             const localIdx = nextFrame - gopInfo.start_frame;
             const gopFrames = gopInfo.end_frame - gopInfo.start_frame;
             triggerPrefetch(gopIdx, localIdx, gopFrames);
+          } else if (nextFrame === 0 && bakedGroupIdx !== 0 && !bakeInProgress) {
+            // Loop wrap: frame 0 is I-frame (gopIdx=-1), but next frame 1 needs group 0 baked.
+            // Proactively trigger group 0 bake now so frame 1 won't stall.
+            const groupStart = 0;
+            const groupEnd = Math.min(GOPS_PER_GROUP, manifest.gop_count);
+            let allLoaded = true;
+            for (let g = groupStart; g < groupEnd; g++) {
+              if (!gopCache.has(g)) { allLoaded = false; break; }
+            }
+            if (allLoaded) {
+              const firstEntry = gopCache.get(groupStart);
+              if (firstEntry && firstEntry.raw) {
+                diagLog('info', 'Loop wrap: proactive bake group 0');
+                bakeGopToTexture(groupStart);
+              } else if (firstEntry && !firstEntry.raw && !_decompressingSet.has(groupStart)) {
+                _decompressingSet.add(groupStart);
+                ensureGopDecompressed(groupStart).then(() => {
+                  _decompressingSet.delete(groupStart);
+                  bakeGopToTexture(groupStart);
+                });
+              }
+            } else {
+              // Need to load missing GOPs first
+              for (let g = groupStart; g < groupEnd; g++) {
+                if (!gopCache.has(g) && !gopLoadingSet.has(g)) {
+                  loadGop(g, g === groupStart);
+                }
+              }
+            }
           }
         } else {
           // Stall: frame not in baked bank — trigger bake
@@ -1880,6 +1915,8 @@ async function init() {
             }
           } else if (bakeInProgress) {
             frameLabel.textContent = `Baking in progress...`;
+            // Accelerate: run extra bake ticks during stall to finish faster
+            bakeTickIncremental();
           }
         }
       }
