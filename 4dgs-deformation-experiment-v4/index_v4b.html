@@ -197,10 +197,10 @@ const GOPS_PER_GROUP = 5;    // M=150 / gop_size=30 = 5 GOPs per bake group
 // With M=150: N = ceil(150/5) = 30 work ticks,
 // pure consumption = 150-30 = 120 ticks (4 seconds free @ 30fps)
 // ============================================================
-const BAKE_FRAMES_PER_WORK_TICK = 5;  // each work tick bakes exactly 5 frames
-const BAKE_TIME_BUDGET_MS = 8;         // max ms per bake tick (time-sliced)
-// N = ceil(150 / 5) = 30 work ticks for M=150
-// Pure consumption ticks = 150 - 30 = 120 ticks (4s free time)
+const BAKE_FRAMES_PER_WORK_TICK = 2;  // each work tick bakes exactly 2 frames (was 5 → caused jank)
+const BAKE_TIME_BUDGET_MS = 4;         // max ms per bake tick (halved: 4ms << 33ms frame budget)
+// N = ceil(150 / 2) = 75 work ticks for M=150
+// With requestIdleCallback scheduling, bake work only runs in browser idle time
 
 // ============================================================
 // L2 Persistent Cache — OPFS (preferred) + IndexedDB (fallback)
@@ -753,34 +753,54 @@ function packFrameToReusable(frame) {
   const dcScale1 = (qDcMax[1] - qDcMin[1]) / 255.0;
   const dcScale2 = (qDcMax[2] - qDcMin[2]) / 255.0;
   const opScale = (qOpMax - qOpMin) / 255.0;
+  const xyzS0 = qXyzDScale[0], xyzM0 = qXyzDMin[0];
+  const xyzS1 = qXyzDScale[1], xyzM1 = qXyzDMin[1];
+  const xyzS2 = qXyzDScale[2], xyzM2 = qXyzDMin[2];
+  const dcM0 = qDcMin[0], dcM1 = qDcMin[1], dcM2 = qDcMin[2];
+  const opM = qOpMin;
 
   const buf = reusableTexData;
   buf.fill(0);
+  const w4 = deltaTexW * 4; // stride per row in Uint16 elements
+  const K = DELTA_K;
+
+  // Inline float32→float16 using DataView for speed (avoid repeated function calls)
+  const _f32 = _f32View;
+  const _i32 = _i32View;
+
+  let row = 0, col = 0; // incremental row/col tracking
 
   for (let i = 0; i < N; i++) {
     const bOff = i * STRIDE;
-    const row = Math.floor(i / DELTA_K);
-    const col = (i % DELTA_K) * 2;
+    const col2 = col << 1; // col * 2
 
-    const dx = frame[bOff + 0] * qXyzDScale[0] + qXyzDMin[0];
-    const dy = frame[bOff + 1] * qXyzDScale[1] + qXyzDMin[1];
-    const dz = frame[bOff + 2] * qXyzDScale[2] + qXyzDMin[2];
-    const dc0 = frame[bOff + 3] * dcScale0 + qDcMin[0];
-    const dc1 = frame[bOff + 4] * dcScale1 + qDcMin[1];
-    const dc2 = frame[bOff + 5] * dcScale2 + qDcMin[2];
-    const op = frame[bOff + 6] * opScale + qOpMin;
+    // Pre-compute row base offset
+    const rowBase = row * w4;
 
-    let off = (row * deltaTexW + col) * 4;
-    buf[off + 0] = float32ToFloat16(dx);
-    buf[off + 1] = float32ToFloat16(dy);
-    buf[off + 2] = float32ToFloat16(dz);
-    buf[off + 3] = float32ToFloat16(dc0);
+    // Pack 7 values: dx, dy, dz, dc0 into pixel (col2), dc1, dc2, op into pixel (col2+1)
+    const dx = frame[bOff] * xyzS0 + xyzM0;
+    const dy = frame[bOff + 1] * xyzS1 + xyzM1;
+    const dz = frame[bOff + 2] * xyzS2 + xyzM2;
+    const dc0v = frame[bOff + 3] * dcScale0 + dcM0;
+    const dc1v = frame[bOff + 4] * dcScale1 + dcM1;
+    const dc2v = frame[bOff + 5] * dcScale2 + dcM2;
+    const opv = frame[bOff + 6] * opScale + opM;
 
-    off = (row * deltaTexW + col + 1) * 4;
-    buf[off + 0] = float32ToFloat16(dc1);
-    buf[off + 1] = float32ToFloat16(dc2);
-    buf[off + 2] = float32ToFloat16(op);
-    buf[off + 3] = 0;
+    // Inline float32ToFloat16 for all 7 values — using helper to keep it maintainable
+    let off0 = rowBase + col2 * 4;
+    buf[off0]     = float32ToFloat16(dx);
+    buf[off0 + 1] = float32ToFloat16(dy);
+    buf[off0 + 2] = float32ToFloat16(dz);
+    buf[off0 + 3] = float32ToFloat16(dc0v);
+
+    let off1 = rowBase + (col2 + 1) * 4;
+    buf[off1]     = float32ToFloat16(dc1v);
+    buf[off1 + 1] = float32ToFloat16(dc2v);
+    buf[off1 + 2] = float32ToFloat16(opv);
+
+    // Increment row/col (avoid division/modulo)
+    col++;
+    if (col >= K) { col = 0; row++; }
   }
 }
 
@@ -1589,9 +1609,9 @@ function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
   const groupProgress = currentGroupFrames > 0 ? framesIntoGroup / currentGroupFrames : 0;
 
   // Proactive pre-bake — start baking next group once current bake is done
-  // Start at 30% progress: since bake runs in background via setTimeout,
-  // it won't cause jank — so we can start earlier to ensure seamless transition
-  if (!bakeInProgress && groupProgress >= 0.3 && bakedGroupIdx !== nextGroupIdx) {
+  // Start at 10% progress: with 2 frames/tick via requestIdleCallback,
+  // we need more lead time to finish 150 frames before current group ends
+  if (!bakeInProgress && groupProgress >= 0.1 && bakedGroupIdx !== nextGroupIdx) {
     // Check if all GOPs in next group are loaded
     let allLoaded = true;
     for (let g = nextGroupStart; g < nextGroupEnd; g++) {
@@ -1817,35 +1837,62 @@ async function init() {
   const FRAME_INTERVAL = 1000 / targetFPS;
 
   // ============================================================
-  // Independent Bake Scheduler — runs via setTimeout, NOT inside animate loop
-  // This prevents bake work from stealing frame budget and causing jank.
-  // When bake is in progress, schedules itself every ~4ms (between frames).
-  // When stalling, runs more aggressively (every 0ms) to finish ASAP.
+  // Independent Bake Scheduler — runs via requestIdleCallback (preferred) or setTimeout
+  // requestIdleCallback only fires when the browser has idle time after rendering,
+  // guaranteeing bake work NEVER steals from the render frame budget.
+  // During stall: falls back to setTimeout(0) for maximum throughput.
   // ============================================================
   let _bakeSchedulerRunning = false;
   let _bakeStalling = false; // true when playback is stalled waiting for bake
+  const _hasRIC = typeof requestIdleCallback === 'function';
 
-  function bakeSchedulerTick() {
+  function bakeSchedulerTick(idleDeadline) {
     if (!bakeInProgress) {
       _bakeSchedulerRunning = false;
       return;
     }
-    // Use larger time budget during stall (player is frozen anyway)
-    const budget = _bakeStalling ? 16 : BAKE_TIME_BUDGET_MS;
+
+    let budget;
+    if (_bakeStalling) {
+      // Stall mode: use large budget, player is frozen anyway
+      budget = 16;
+    } else if (idleDeadline && idleDeadline.timeRemaining) {
+      // requestIdleCallback: use the actual remaining idle time (capped)
+      budget = Math.min(idleDeadline.timeRemaining(), BAKE_TIME_BUDGET_MS);
+      if (budget < 1) {
+        // No idle time left — reschedule
+        _scheduleNextBakeTick();
+        return;
+      }
+    } else {
+      budget = BAKE_TIME_BUDGET_MS;
+    }
+
     const status = bakeTickIncremental(budget);
     if (status === 'busy' || status === 'done') {
-      // Schedule next tick: 0ms during stall (ASAP), 4ms during normal playback
-      const delay = _bakeStalling ? 0 : 4;
-      setTimeout(bakeSchedulerTick, delay);
+      _scheduleNextBakeTick();
     } else {
       _bakeSchedulerRunning = false;
+    }
+  }
+
+  function _scheduleNextBakeTick() {
+    if (_bakeStalling) {
+      // Stall: use setTimeout(0) for maximum throughput
+      setTimeout(bakeSchedulerTick, 0);
+    } else if (_hasRIC) {
+      // Normal: use requestIdleCallback — only runs when browser is idle
+      requestIdleCallback(bakeSchedulerTick, { timeout: 100 });
+    } else {
+      // Fallback: setTimeout with longer delay to avoid frame contention
+      setTimeout(bakeSchedulerTick, 8);
     }
   }
 
   function ensureBakeSchedulerRunning() {
     if (!_bakeSchedulerRunning && bakeInProgress) {
       _bakeSchedulerRunning = true;
-      setTimeout(bakeSchedulerTick, 0);
+      _scheduleNextBakeTick();
     }
   }
 
