@@ -89,6 +89,7 @@
       <span><span class="dot dot-dynamic"></span> Dynamic: <span id="stat-dynamic">--</span></span>
       <span>Total: <span id="stat-total">--</span> splats</span>
       <span><span class="dot dot-fps"></span> <span id="stat-fps">--</span> FPS</span>
+      <span>DPR: <span id="stat-dpr">--</span></span>
       <span><span class="dot dot-mem"></span> Chunks: <span id="stat-gops">0/0</span></span>
       <span>Window: <span id="stat-window">--</span></span>
       <span>Cache: <span id="stat-cache">--</span></span>
@@ -647,7 +648,9 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 200);
 const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const MAX_DPR = Math.min(window.devicePixelRatio, 2);
+let currentDPR = MAX_DPR;
+renderer.setPixelRatio(currentDPR);
 document.getElementById('viewer-container').appendChild(renderer.domElement);
 window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
 
@@ -825,12 +828,27 @@ async function init() {
     controls.update();
     renderer.render(scene, camera);
 
-    // FPS counter
+    // FPS counter + adaptive DPR (auto-downscale when GPU is struggling)
     frameCount++;
     if (now - lastFpsTime > 500) {
-      document.getElementById('stat-fps').textContent = Math.round(frameCount / ((now - lastFpsTime) / 1000));
+      const measuredFps = Math.round(frameCount / ((now - lastFpsTime) / 1000));
+      document.getElementById('stat-fps').textContent = measuredFps;
       frameCount = 0; lastFpsTime = now;
       const dblEl = document.getElementById('stat-dblbuf'); if (dblEl) dblEl.textContent = `R:P${readPartition} W:P${writePartition} (${RING_PARTITIONS}-ring)`;
+
+      // Adaptive DPR: step down if FPS is low, step up if FPS is high
+      // Thresholds chosen to keep FPS ≥ 28 on mobile
+      let targetDPR = currentDPR;
+      if (measuredFps < 25 && currentDPR > 0.75) targetDPR = Math.max(0.75, currentDPR - 0.25);
+      else if (measuredFps < 35 && currentDPR > 1.0) targetDPR = Math.max(1.0, currentDPR - 0.25);
+      else if (measuredFps > 50 && currentDPR < MAX_DPR) targetDPR = Math.min(MAX_DPR, currentDPR + 0.25);
+      if (targetDPR !== currentDPR) {
+        currentDPR = targetDPR;
+        renderer.setPixelRatio(currentDPR);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        diagLog('info', `Adaptive DPR: ${currentDPR.toFixed(2)} (FPS was ${measuredFps})`);
+      }
+      const dprEl = document.getElementById('stat-dpr'); if (dprEl) dprEl.textContent = currentDPR.toFixed(2);
     }
   });
 }
