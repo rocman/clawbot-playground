@@ -774,51 +774,87 @@ async function init() {
     }, 500);
   }, 300);
 
-  // 30Hz Animation Loop
+  // ============================================================
+  // GPU-friendly Animation Loop — strictly 30fps render cap
+  // Previously: setAnimationLoop ran at 60-120Hz (device max),
+  // doing full splat sort + render EVERY frame even when paused.
+  // Now: manual rAF + hard 30fps cap. When paused & camera idle,
+  // render only on demand (near 0 GPU load → no thermal throttling).
+  // ============================================================
   let frameCount = 0, lastFpsTime = performance.now(), lastFrameTime = performance.now();
-  const FRAME_INTERVAL = 1000 / targetFPS;
-  let stallWaitingChunk = -1;  // which chunk we're stalling on (avoid re-triggering loads every frame)
+  const FRAME_INTERVAL = 1000 / targetFPS;  // ~33ms for 30fps
+  let stallWaitingChunk = -1;
+  let cameraChanged = true;  // track if camera moved (OrbitControls)
+  let needsRender = true;    // track if we need to re-render
+  let lastFrameApplied = -1; // track which frame was last rendered
 
-  renderer.setAnimationLoop(function animate() {
+  controls.addEventListener('change', () => { cameraChanged = true; });
+
+  function animate() {
+    requestAnimationFrame(animate);
     const now = performance.now();
+
+    // Hard 30fps cap — skip if not enough time has passed
+    const adjustedInterval = isPlaying ? (FRAME_INTERVAL / playbackSpeedMult) : FRAME_INTERVAL;
+    if (now - lastFrameTime < adjustedInterval) return;
+    lastFrameTime = now;
+
+    let frameDataChanged = false;
+
     if (isPlaying && viewMode === 'animated') {
-      const adjustedInterval = FRAME_INTERVAL / playbackSpeedMult;
-      if (now - lastFrameTime >= adjustedInterval) {
-        lastFrameTime = now;
-        const maxFrame = manifest.p_frame_count;
-        const nextFrame = (currentFrame + 1) % (maxFrame + 1);
-        const applied = applyFrameData(nextFrame);
-        if (applied) {
-          stallWaitingChunk = -1;  // clear stall state
-          currentFrame = nextFrame; timeline.value = nextFrame;
-          const timeSec = (nextFrame / targetFPS).toFixed(1);
-          const chunkIdx = getTexChunkForFrame(nextFrame);
-          frameLabel.textContent = nextFrame === 0 ? `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)` : `P-Frame ${nextFrame}/${maxFrame} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [Chunk ${chunkIdx}]`;
-          if (chunkIdx >= 0) {
-            gopStrip.querySelectorAll('.gop-seg').forEach(s => { if (s.classList.contains('active')) s.classList.replace('active','loaded'); });
-            const as = document.getElementById(`gop-seg-${chunkIdx}`); if (as) as.className = 'gop-seg active';
-            triggerPrefetch(chunkIdx);
-          }
-        } else {
-          diagStatsAccum.stallFrames++;
-          const chunkIdx = getTexChunkForFrame(nextFrame);
-          // Only trigger load ONCE per stall — avoid hammering every frame
-          if (chunkIdx >= 0 && stallWaitingChunk !== chunkIdx) {
-            stallWaitingChunk = chunkIdx;
-            const chunk = texChunkCache.get(chunkIdx);
-            if (chunk && !chunk.texData) { frameLabel.textContent = `Fetching Chunk ${chunkIdx} from OPFS...`; ensureTexChunkReady(chunkIdx); }
-            else if (!chunk && !texChunkLoadingSet.has(chunkIdx)) { frameLabel.textContent = `Loading Chunk ${chunkIdx}...`; loadTexChunk(chunkIdx, true); }
-            else { frameLabel.textContent = `Loading Chunk ${chunkIdx}...`; }
-          }
+      const maxFrame = manifest.p_frame_count;
+      const nextFrame = (currentFrame + 1) % (maxFrame + 1);
+      const applied = applyFrameData(nextFrame);
+      if (applied) {
+        stallWaitingChunk = -1;
+        currentFrame = nextFrame; timeline.value = nextFrame;
+        frameDataChanged = true;
+        const timeSec = (nextFrame / targetFPS).toFixed(1);
+        const chunkIdx = getTexChunkForFrame(nextFrame);
+        frameLabel.textContent = nextFrame === 0 ? `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)` : `P-Frame ${nextFrame}/${maxFrame} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [Chunk ${chunkIdx}]`;
+        if (chunkIdx >= 0) {
+          gopStrip.querySelectorAll('.gop-seg').forEach(s => { if (s.classList.contains('active')) s.classList.replace('active','loaded'); });
+          const as = document.getElementById(`gop-seg-${chunkIdx}`); if (as) as.className = 'gop-seg active';
+          triggerPrefetch(chunkIdx);
+        }
+      } else {
+        diagStatsAccum.stallFrames++;
+        const chunkIdx = getTexChunkForFrame(nextFrame);
+        if (chunkIdx >= 0 && stallWaitingChunk !== chunkIdx) {
+          stallWaitingChunk = chunkIdx;
+          const chunk = texChunkCache.get(chunkIdx);
+          if (chunk && !chunk.texData) { frameLabel.textContent = `Fetching Chunk ${chunkIdx} from OPFS...`; ensureTexChunkReady(chunkIdx); }
+          else if (!chunk && !texChunkLoadingSet.has(chunkIdx)) { frameLabel.textContent = `Loading Chunk ${chunkIdx}...`; loadTexChunk(chunkIdx, true); }
+          else { frameLabel.textContent = `Loading Chunk ${chunkIdx}...`; }
         }
       }
     }
-    splatMesh.updateVersion(); controls.update(); renderer.render(scene, camera);
-    frameCount++;
-    if (now - lastFpsTime > 500) { document.getElementById('stat-fps').textContent = Math.round(frameCount / ((now - lastFpsTime) / 1000)); frameCount = 0; lastFpsTime = now;
+
+    // Only call updateVersion (triggers expensive GPU splat sort) when frame data actually changed
+    if (frameDataChanged) {
+      splatMesh.updateVersion();
+      lastFrameApplied = currentFrame;
+      needsRender = true;
+    }
+
+    // Determine if we need to render this tick
+    const shouldRender = needsRender || cameraChanged || frameDataChanged;
+    if (shouldRender) {
+      controls.update();
+      renderer.render(scene, camera);
+      needsRender = false;
+      cameraChanged = false;
+    }
+
+    // FPS counter (counts actual renders, not rAF calls)
+    if (shouldRender) frameCount++;
+    if (now - lastFpsTime > 500) {
+      document.getElementById('stat-fps').textContent = Math.round(frameCount / ((now - lastFpsTime) / 1000));
+      frameCount = 0; lastFpsTime = now;
       const dblEl = document.getElementById('stat-dblbuf'); if (dblEl) dblEl.textContent = `R:P${readPartition} W:P${writePartition} (${RING_PARTITIONS}-ring)`;
     }
-  });
+  }
+  requestAnimationFrame(animate);
 }
 
 // Frame management
