@@ -535,7 +535,6 @@ setInterval(updateMemoryBadge, 2000);
 // ============================================================
 async function decompressGzip(buf) {
   const ds = new DecompressionStream('gzip');
-  // Use ReadableStream directly to avoid intermediate Blob allocation (~25MB)
   const reader = new ReadableStream({
     start(controller) {
       controller.enqueue(new Uint8Array(buf));
@@ -543,26 +542,43 @@ async function decompressGzip(buf) {
     }
   }).pipeThrough(ds).getReader();
   
-  const chunks = [];
+  // Pre-allocate estimated output size (gzip ~10x compression ratio typical for GOP data)
+  // If too small, we grow; this avoids many small chunk allocations
+  let capacity = buf.byteLength * 12; // generous estimate
+  let result = new Uint8Array(capacity);
   let totalLen = 0;
+  
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    chunks.push(value);
+    // Grow if needed
+    if (totalLen + value.byteLength > capacity) {
+      capacity = Math.max(capacity * 2, totalLen + value.byteLength);
+      const newBuf = new Uint8Array(capacity);
+      newBuf.set(result.subarray(0, totalLen));
+      result = newBuf;
+    }
+    result.set(value, totalLen);
     totalLen += value.byteLength;
   }
-  // Merge chunks into single ArrayBuffer
-  const result = new Uint8Array(totalLen);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.byteLength;
+  // Return exact-sized buffer (or reuse if exact match)
+  if (totalLen === capacity) {
+    return result.buffer;
   }
-  return result.buffer;
+  // Slice to exact size — single allocation instead of merge from many chunks
+  return result.buffer.slice(0, totalLen);
 }
 
+// Reusable buffer for float16→float32 conversion (avoids per-call allocation)
+let _f16toF32Buf = null;
+
 function float16ToFloat32(u16arr) {
-  const f32 = new Float32Array(u16arr.length);
+  const len = u16arr.length;
+  // Reuse buffer if large enough, otherwise grow
+  if (!_f16toF32Buf || _f16toF32Buf.length < len) {
+    _f16toF32Buf = new Float32Array(len);
+  }
+  const f32 = _f16toF32Buf;
   for (let i = 0; i < u16arr.length; i++) {
     const h = u16arr[i];
     const sign = (h >> 15) & 0x1;
@@ -605,8 +621,6 @@ function streamDecodeFrameRange(gopIdx, targetLocalIdx) {
   if (!gop) return null;
 
   const raw = gop.raw;
-  const rawView = new DataView(raw);
-  const rawU8 = new Uint8Array(raw);  // single view for all byte-level reads (no per-frame alloc)
   const numFrames = gop.numFrames;
   const gopInfo = manifest.gop_index[gopIdx];
 
@@ -619,6 +633,12 @@ function streamDecodeFrameRange(gopIdx, targetLocalIdx) {
     streamState.gopIdx = -1;
     streamState.localIdx = -1;
   }
+  // Reuse cached rawU8 view — only recreate when underlying raw buffer changes
+  if (streamState._cachedRawBuf !== raw) {
+    streamState._cachedRawU8 = new Uint8Array(raw);
+    streamState._cachedRawBuf = raw;
+  }
+  const rawU8 = streamState._cachedRawU8;
 
   // Determine start index for decoding
   let startLocalIdx = 0;
@@ -626,8 +646,8 @@ function streamDecodeFrameRange(gopIdx, targetLocalIdx) {
     // Can continue from where we left off (sequential playback optimization)
     startLocalIdx = streamState.localIdx + 1;
   } else {
-    // Must decode from the beginning of the GOP
-    streamState.prevFrame = new Uint8Array(N * STRIDE);
+    // Must decode from the beginning of the GOP — REUSE buffer (fill with 0), don't allocate new
+    streamState.prevFrame.fill(0);
     streamState.gopIdx = gopIdx;
     streamState.localIdx = -1;
   }
@@ -997,6 +1017,8 @@ function releaseGopRawAfterSlice(gopIdx) {
   if (streamState.gopIdx === gopIdx) {
     streamState.gopIdx = -1;
     streamState.localIdx = -1;
+    streamState._cachedRawBuf = null;
+    streamState._cachedRawU8 = null;
   }
   diagLog('info', `GOP ${gopIdx} raw released after slice consumption (freed ${rawMB} MB)`);
   reportStats();
@@ -1025,6 +1047,8 @@ function evictDistantGops(currentGopIdx) {
       if (streamState.gopIdx === idx) {
         streamState.gopIdx = -1;
         streamState.localIdx = -1;
+        streamState._cachedRawBuf = null;
+        streamState._cachedRawU8 = null;
       }
       updateGopStripUI(idx, 'evicted');
       evicted++;
@@ -1036,6 +1060,8 @@ function evictDistantGops(currentGopIdx) {
       if (streamState.gopIdx === idx) {
         streamState.gopIdx = -1;
         streamState.localIdx = -1;
+        streamState._cachedRawBuf = null;
+        streamState._cachedRawU8 = null;
       }
       stripped++;
       diagLog('info', `GOP ${idx} raw stripped (freed ${rawMB} MB), keeping compressed only`);
@@ -1110,10 +1136,18 @@ function releasePlaybackBuffers() {
   }
   streamState.gopIdx = -1;
   streamState.localIdx = -1;
+  streamState._cachedRawBuf = null;
+  streamState._cachedRawU8 = null;
 
   if (decodeOutputBuf) {
     freedBytes += decodeOutputBuf.byteLength;
     decodeOutputBuf = null;
+  }
+
+  // Release float16 conversion buffer
+  if (_f16toF32Buf) {
+    freedBytes += _f16toF32Buf.byteLength;
+    _f16toF32Buf = null;
   }
 
   // 3. Release reusable tex data buffer
@@ -1552,6 +1586,16 @@ async function init() {
             const localIdx = gop ? pIdx - gop.startFrame : 0;
             const gopFrames = gop ? gop.numFrames : 0;
             triggerPrefetch(gopIdx, localIdx, gopFrames);
+
+            // V4a: Aggressively release raw of PREVIOUS GOP after we've moved on
+            // This prevents ~25MB raw from lingering while the next GOP is being played
+            const prevGopIdx = gopIdx > 0 ? gopIdx - 1 : manifest.gop_count - 1;
+            if (prevGopIdx !== gopIdx) {
+              const prevGop = gopCache.get(prevGopIdx);
+              if (prevGop && prevGop.raw) {
+                releaseGopRawAfterSlice(prevGopIdx);
+              }
+            }
           }
         } else {
           // Stall: frame not available — either GOP not loaded or not decompressed
