@@ -1,5 +1,5 @@
 {
-  "version": "v4c",
+  "version": "v4c-15f",
   "base_version": "v3d",
   "total_gaussians": 128062,
   "dynamic_gaussians": 128062,

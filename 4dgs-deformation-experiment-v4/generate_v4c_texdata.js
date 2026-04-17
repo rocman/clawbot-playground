@@ -169,7 +169,7 @@ function main() {
   const opScale = (qOpMax - qOpMin) / 255.0;
 
   const v4cManifest = {
-    version: 'v4c',
+    version: 'v4c-15f',
     base_version: manifest.version,
     total_gaussians: manifest.total_gaussians,
     dynamic_gaussians: N,
