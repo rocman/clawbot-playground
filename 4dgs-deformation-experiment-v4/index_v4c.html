@@ -16,7 +16,7 @@
   #zoom-slider { -webkit-appearance: none; appearance: none; width: 120px; height: 4px; background: #333; border-radius: 2px; outline: none; cursor: pointer; }
   #zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: #7ecfff; border-radius: 50%; cursor: grab; }
   #zoom-val { font-size: 10px; color: #555; font-variant-numeric: tabular-nums; }
-  #loading-overlay { position: absolute; inset: 0; z-index: 1000; background: #0a0a0fee; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
+  #loading-overlay { position: absolute; inset: 0; z-index: 1000; background: #0a0a0fee; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s, background 0.8s; }
   #loading-overlay.hidden { opacity: 0; pointer-events: none; }
   #loading-title { font-size: 24px; font-weight: 300; letter-spacing: 2px; margin-bottom: 24px; color: #7ecfff; }
   #loading-bar-bg { width: 300px; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
@@ -150,13 +150,38 @@ let diagStatsAccum = { framesRequested: 0, framesApplied: 0, framesDropped: 0, s
 const diagLogs = []; const DIAG_LOG_MAX = 300;
 function diagLog(level, msg, data) { diagLogs.push({ ts: performance.now(), level, msg, ...(data||{}) }); if (diagLogs.length > DIAG_LOG_MAX) diagLogs.shift(); if (level==='warn'||level==='error') console.warn(`[V4c:${level}]`, msg); }
 
-async function cachedFetch(url, cacheFilename) {
+async function cachedFetch(url, cacheFilename, onProgress) {
   const ver = v4cManifest ? v4cManifest.version : (manifest ? manifest.version : 'unknown');
   const cached = await persistCache.get(ver, cacheFilename);
-  if (cached && cached.byteLength > 0) { diagStatsAccum.cacheHits++; updateCacheStatus(); return cached; }
+  if (cached && cached.byteLength > 0) { diagStatsAccum.cacheHits++; updateCacheStatus(); if (onProgress) onProgress(1.0); return cached; }
   diagStatsAccum.cacheMisses++;
   for (let attempt = 1; attempt <= 3; attempt++) {
-    try { const resp = await fetch(url); if (!resp.ok) throw new Error(`HTTP ${resp.status}`); const buf = await resp.arrayBuffer(); if (buf.byteLength === 0) throw new Error('Empty response'); persistCache.put(ver, cacheFilename, buf).catch(()=>{}); updateCacheStatus(); return buf; }
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      // Stream download with progress if callback provided and Content-Length available
+      if (onProgress && resp.body && resp.headers.get('content-length')) {
+        const total = parseInt(resp.headers.get('content-length'), 10);
+        const reader = resp.body.getReader();
+        const chunks = []; let received = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value); received += value.byteLength;
+          onProgress(Math.min(received / total, 0.99));
+        }
+        const buf = new ArrayBuffer(received); const u8 = new Uint8Array(buf); let off = 0;
+        for (const c of chunks) { u8.set(c, off); off += c.byteLength; }
+        if (buf.byteLength === 0) throw new Error('Empty response');
+        onProgress(1.0);
+        persistCache.put(ver, cacheFilename, buf).catch(()=>{}); updateCacheStatus(); return buf;
+      }
+      // Fallback: no streaming progress
+      const buf = await resp.arrayBuffer();
+      if (buf.byteLength === 0) throw new Error('Empty response');
+      if (onProgress) onProgress(1.0);
+      persistCache.put(ver, cacheFilename, buf).catch(()=>{}); updateCacheStatus(); return buf;
+    }
     catch (e) { if (attempt < 3) await new Promise(r => setTimeout(r, 500*attempt)); else throw e; }
   }
 }
@@ -708,12 +733,21 @@ async function init() {
   dynamicMask = null;
   setLoading(30, 'Loading GOP meta...');
   await loadGopMeta();
-  setLoading(50, 'Loading SPZ I-frame...');
+  setLoading(50, 'Loading SPZ I-frame... 0%');
   uFrameIndex = dyno.dynoInt(0); uViewMode = dyno.dynoInt(0);
   uDeltaHalf = dyno.dynoInt(0); uDeltaHalfH = dyno.dynoInt(deltaTexHalfH);
   deltaSampler = dyno.dynoSampler2D(deltaTexture); maskSampler = dyno.dynoSampler2D(maskTexture);
-  const iFrameBuf = await cachedFetch('data_v3d/' + manifest.i_frame, manifest.i_frame);
-  setLoading(70, 'Initializing Spark.js...');
+
+  // Download SPZ with real-time progress (50% → 70% of loading bar)
+  const iFrameBuf = await cachedFetch('data_v3d/' + manifest.i_frame, manifest.i_frame, (p) => {
+    const pct = 50 + Math.round(p * 20);  // 50% → 70%
+    setLoading(pct, `Loading SPZ I-frame... ${Math.round(p * 100)}%`);
+  });
+  setLoading(70, 'Parsing 128K gaussians...');
+
+  // Yield to let the progress bar update render before blocking Spark.js parse
+  await new Promise(r => setTimeout(r, 0));
+
   splatMesh = new SplatMesh({ fileBytes: new Uint8Array(iFrameBuf) });
 
   // Shader — same as V4a
@@ -746,15 +780,24 @@ async function init() {
   splatMesh.quaternion.set(1,0,0,0); splatMesh.position.set(0,0,0); scene.add(splatMesh);
   camera.position.set(0.5, 4.5, 15.0);
 
-  setLoading(85, 'Preloading first texture chunk...');
-  await loadTexChunk(0, true);
-  // Start background serial download queue — downloads ALL chunks to OPFS sequentially.
-  // Chunk 0 is already done; queue will start from chunk 1 and proceed in order.
-  startBackgroundDownloadQueue();
+  setLoading(75, 'Rendering I-frame preview...');
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(2.435, -2.0, -15.003); controls.enableDamping = true; controls.dampingFactor = 0.1;
   controls.screenSpacePanning = true; controls.minDistance = 0.5; controls.maxDistance = 100; controls.enableZoom = false; controls.update();
+
+  // ★ Render one frame immediately so user sees the I-frame scene behind a semi-transparent overlay
+  splatMesh.updateGenerator();
+  await new Promise(r => setTimeout(r, 0));  // yield for GPU
+  renderer.render(scene, camera);
+  // Make overlay semi-transparent to show the I-frame preview behind it
+  loadingOverlay.style.background = '#0a0a0f88';
+
+  setLoading(85, 'Preloading first animation chunk...');
+  await loadTexChunk(0, true);
+  // Start background serial download queue — downloads ALL chunks to OPFS sequentially.
+  // Chunk 0 is already done; queue will start from chunk 1 and proceed in order.
+  startBackgroundDownloadQueue();
 
   // Zoom slider
   const zoomSlider = document.getElementById('zoom-slider'), zoomVal = document.getElementById('zoom-val');
@@ -769,7 +812,7 @@ async function init() {
 
   setTimeout(() => {
     loadingOverlay.classList.add('hidden');
-    splatMesh.updateGenerator(); isPlaying = true; playBtn.textContent = '\u23F8';
+    isPlaying = true; playBtn.textContent = '\u23F8';
     setTimeout(() => { renderer.render(scene, camera);
       // Release CPU texture data
       if (deltaTexture?.image?.data?.byteLength > 0) deltaTexture.image.data = new Uint16Array(0);
