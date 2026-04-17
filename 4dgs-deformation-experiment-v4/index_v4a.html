@@ -278,7 +278,7 @@ import { SplatMesh, dyno } from "@sparkjsdev/spark";
 // ============================================================
 // Configuration — Mini-GOP Slice: partial decompress for lower peak memory
 // ============================================================
-const MAX_CACHED_GOPS = 3;   // raw compressed GOP cache (current + next + loop-back)
+const MAX_CACHED_GOPS = 2;   // raw compressed GOP cache (current + next only)
 const DELTA_K = 256;
 const STRIDE = 7; // bytes per gaussian per frame: xyz(3) + dc(3) + op(1)
 const MINI_SLICE_FRAMES = 10; // decompress only 10 frames at a time (~8MB vs ~25MB)
@@ -1126,11 +1126,11 @@ function evictDistantGops(currentGopIdx) {
   const totalGops = manifest.gop_count;
   const keepSet = new Set();
   keepSet.add(currentGopIdx);
-  // Keep next GOP for seamless playback (compressed only)
+  // Keep next GOP (compressed only) for seamless playback
   const nextGop = (currentGopIdx + 1) % totalGops;
   keepSet.add(nextGop);
-  // Always keep GOP 0 (compressed) for seamless loop-back
-  keepSet.add(0);
+  // Note: GOP 0 is NOT kept unconditionally — it will be re-loaded from
+  // OPFS/IndexedDB persistent cache when needed (instant, no network)
 
   let evicted = 0;
   let stripped = 0;
@@ -1467,10 +1467,12 @@ function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
     }
   }
 
-  // Throttle eviction to once per second (~30 frames) to reduce overhead
-  // (especially on Safari/iOS where frequent GC is costly)
-  if (!triggerPrefetch._lastEvictFrame || Math.abs(currentLocalIdx - triggerPrefetch._lastEvictFrame) > 30) {
-    triggerPrefetch._lastEvictFrame = currentLocalIdx;
+  // Throttle eviction to roughly every ~10 frames using GLOBAL frame counter
+  // (Previous bug: used localIdx which resets to 0 on GOP switch, preventing eviction)
+  const globalFrameNow = currentGopIdx * manifest.gop_size + currentLocalIdx;
+  if (triggerPrefetch._lastEvictGlobalFrame === undefined ||
+      Math.abs(globalFrameNow - triggerPrefetch._lastEvictGlobalFrame) > 10) {
+    triggerPrefetch._lastEvictGlobalFrame = globalFrameNow;
     evictDistantGops(currentGopIdx);
   }
 }
@@ -1910,13 +1912,11 @@ async function init() {
             const gopFrames = gop ? gop.numFrames : 0;
             triggerPrefetch(gopIdx, localIdx, gopFrames);
 
-            // V4a: Aggressively release raw of PREVIOUS GOP after we've moved on
-            // This prevents ~25MB raw from lingering while the next GOP is being played
-            const prevGopIdx = gopIdx > 0 ? gopIdx - 1 : manifest.gop_count - 1;
-            if (prevGopIdx !== gopIdx) {
-              const prevGop = gopCache.get(prevGopIdx);
-              if (prevGop && prevGop.raw) {
-                releaseGopRawAfterSlice(prevGopIdx);
+            // V4a: Aggressively release raw of ALL non-current GOPs
+            // Each raw ~25MB; on iPhone only 1 raw should exist at a time
+            for (const [idx, g] of gopCache) {
+              if (idx !== gopIdx && g.raw) {
+                releaseGopRawAfterSlice(idx);
               }
             }
           }
