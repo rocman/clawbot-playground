@@ -383,7 +383,8 @@ function reportStats() {
   let texB = 0, texC = 0, strippedC = 0;
   for (const [,c] of texChunkCache) { if (c.texData) { texB += c.texData.byteLength; texC++; } else strippedC++; }
   document.getElementById('stat-gops').textContent = `${loaded}/${total}`;
-  document.getElementById('stat-window').textContent = `${(texB/1024/1024).toFixed(1)} MB (${texC} active + ${strippedC} OPFS-backed)`;
+  const bgInfo = bgDownloadRunning ? ` | DL: ${bgDownloadProgress.done}/${bgDownloadProgress.total}` : (bgDownloadProgress.done >= bgDownloadProgress.total && bgDownloadProgress.total > 0 ? ' | All cached' : '');
+  document.getElementById('stat-window').textContent = `${(texB/1024/1024).toFixed(1)} MB (${texC} active + ${strippedC} OPFS-backed)${bgInfo}`;
   gopBar.style.width = (total > 0 ? Math.round(loaded / Math.min(MAX_ACTIVE_CHUNKS,total)*100) : 0) + '%';
 }
 
@@ -548,6 +549,98 @@ function triggerPrefetch(currentChunkIdx) {
 }
 
 // ============================================================
+// Background Serial Download Queue — download ALL chunks to OPFS on page load
+// Downloads chunk 0→1→2→…→N sequentially, decompress once, store raw in OPFS.
+// Does NOT keep texData in memory — only ensures OPFS has it for instant re-fetch later.
+// ============================================================
+let bgDownloadRunning = false;
+let bgDownloadProgress = { done: 0, total: 0, currentIdx: -1 };
+
+async function startBackgroundDownloadQueue() {
+  if (bgDownloadRunning) return;
+  bgDownloadRunning = true;
+  const total = v4cManifest.texframe_files.length;
+  bgDownloadProgress.total = total;
+  diagLog('info', `Background download queue started: ${total} chunks`);
+
+  for (let i = 0; i < total; i++) {
+    if (!bgDownloadRunning) break; // allow abort
+    bgDownloadProgress.currentIdx = i;
+
+    // Skip if already loaded in memory cache (texData present)
+    if (texChunkCache.has(i) && texChunkCache.get(i).texData) {
+      bgDownloadProgress.done++;
+      updateGopStripUI(i, 'loaded');
+      continue;
+    }
+
+    // Skip if already cached in OPFS (check by trying to get the raw key)
+    const chunkInfo = v4cManifest.texframe_files[i];
+    const rawKey = `v4c/${chunkInfo.filename}`.replace(/\.gz$/, '.raw');
+    const ver = v4cManifest.version;
+    const existing = await persistCache.get(ver, rawKey);
+    if (existing && existing.byteLength > 0) {
+      // Already in OPFS — just mark as "known" in cache map (without holding texData in memory)
+      if (!texChunkCache.has(i)) {
+        texChunkCache.set(i, {
+          texData: null, // NOT in memory — will be loaded from OPFS on demand
+          rawCacheKey: `v4c/${chunkInfo.filename}`,
+          numFrames: chunkInfo.num_frames,
+          startFrame: chunkInfo.start_frame,
+          endFrame: chunkInfo.end_frame,
+          lastAccess: 0,
+        });
+      }
+      bgDownloadProgress.done++;
+      updateGopStripUI(i, 'loaded');
+      diagLog('info', `BG queue: chunk ${i} already in OPFS (${(existing.byteLength/1024/1024).toFixed(1)} MB)`);
+      reportStats();
+      continue;
+    }
+
+    // Download → decompress → store to OPFS (but DON'T keep in memory!)
+    try {
+      updateGopStripUI(i, 'loading');
+      diagLog('info', `BG queue: downloading chunk ${i}/${total-1}...`);
+      const texData = await cachedFetchRaw(`${V4C_DATA_DIR}/${chunkInfo.filename}`, `v4c/${chunkInfo.filename}`);
+      // Register in cache map but strip texData immediately (unless it's actively needed)
+      const currentChunkIdx = getTexChunkForFrame(currentFrame);
+      const nextChunkIdx = (currentChunkIdx + 1) % total;
+      const shouldKeep = (i === currentChunkIdx || i === nextChunkIdx);
+      if (!texChunkCache.has(i)) {
+        texChunkCache.set(i, {
+          texData: shouldKeep ? texData : null,
+          rawCacheKey: `v4c/${chunkInfo.filename}`,
+          numFrames: chunkInfo.num_frames,
+          startFrame: chunkInfo.start_frame,
+          endFrame: chunkInfo.end_frame,
+          lastAccess: shouldKeep ? performance.now() : 0,
+        });
+      }
+      bgDownloadProgress.done++;
+      updateGopStripUI(i, 'loaded');
+      diagLog('info', `BG queue: chunk ${i} done (${(texData.byteLength/1024/1024).toFixed(1)} MB → OPFS, keepInMem=${shouldKeep})`);
+      if (shouldKeep) enforceTexDataLimit(i);
+      reportStats();
+    } catch (err) {
+      diagLog('error', `BG queue: chunk ${i} failed: ${err.message}`);
+      updateGopStripUI(i, 'error');
+      // Continue with next chunk instead of aborting the whole queue
+    }
+
+    // Small yield to avoid blocking the main thread / animation
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  bgDownloadRunning = false;
+  diagLog('info', `Background download queue complete: ${bgDownloadProgress.done}/${total} chunks in OPFS`);
+}
+
+function stopBackgroundDownloadQueue() {
+  bgDownloadRunning = false;
+}
+
+// ============================================================
 // Scene setup
 // ============================================================
 const scene = new THREE.Scene();
@@ -652,7 +745,9 @@ async function init() {
 
   setLoading(85, 'Preloading first texture chunk...');
   await loadTexChunk(0, true);
-  loadTexChunk(1, true); // prefetch next chunk WITH texData
+  // Start background serial download queue — downloads ALL chunks to OPFS sequentially.
+  // Chunk 0 is already done; queue will start from chunk 1 and proceed in order.
+  startBackgroundDownloadQueue();
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(2.435, -2.0, -15.003); controls.enableDamping = true; controls.dampingFactor = 0.1;
