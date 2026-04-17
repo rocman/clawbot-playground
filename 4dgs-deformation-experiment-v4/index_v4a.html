@@ -9,6 +9,35 @@
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; overflow-y: auto; }
   canvas { touch-action: none; display: block; }
 
+  /* Viewer container: fixed full-screen so it doesn't push content */
+  #viewer-container {
+    position: fixed; inset: 0; z-index: 1;
+  }
+  #viewer-container canvas {
+    width: 100% !important; height: 100% !important;
+  }
+
+  /* Zoom slider — right side, below title */
+  #zoom-bar {
+    position: fixed; top: 100px; right: 16px; z-index: 100;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  #zoom-bar label { font-size: 10px; color: #666; }
+  #zoom-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 120px; height: 4px;
+    background: #333; border-radius: 2px; outline: none; cursor: pointer;
+  }
+  #zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    background: #7ecfff; border-radius: 50%; cursor: grab;
+  }
+  #zoom-slider::-moz-range-thumb {
+    width: 14px; height: 14px;
+    background: #7ecfff; border-radius: 50%; cursor: grab; border: none;
+  }
+  #zoom-val { font-size: 10px; color: #555; font-variant-numeric: tabular-nums; }
+
   #loading-overlay {
     position: fixed; inset: 0; z-index: 1000;
     background: #0a0a0fee;
@@ -107,7 +136,7 @@
   @keyframes pulse { from { opacity: 0.5; } to { opacity: 1.0; } }
 
   #mem-badge {
-    position: fixed; top: 90px; right: 16px; z-index: 100;
+    position: fixed; top: 140px; right: 16px; z-index: 100;
     font-size: 11px; padding: 4px 10px; border-radius: 12px;
     background: #1a3a1a; color: #4a9; border: 1px solid #2a5a2a;
   }
@@ -115,8 +144,8 @@
   /* ===== Memory Chart Section ===== */
   #memory-chart-section {
     position: relative; z-index: 50;
-    margin-top: 100vh; /* push below viewport so user scrolls to see it */
     padding: 24px 24px 40px;
+    padding-top: calc(100vh + 24px); /* push below full-screen viewer */
     background: #0d0d14;
     border-top: 1px solid #222;
     min-height: 420px;
@@ -166,6 +195,14 @@
 </div>
 
 <div id="mem-badge">MEM: --</div>
+
+<div id="viewer-container"><!-- WebGL canvas will be appended here --></div>
+
+<div id="zoom-bar">
+  <label>Zoom</label>
+  <input type="range" id="zoom-slider" min="0.5" max="100" step="0.5" value="15">
+  <span id="zoom-val">15.0</span>
+</div>
 
 <div id="mode-bar">
   <button class="mode-btn active" data-mode="animated" title="Play animated sequence">&#9654; Animated</button>
@@ -1304,7 +1341,7 @@ const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-document.body.appendChild(renderer.domElement);
+document.getElementById('viewer-container').appendChild(renderer.domElement);
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -1761,7 +1798,40 @@ async function init() {
   controls.screenSpacePanning = true;
   controls.minDistance = 0.5;
   controls.maxDistance = 100;
+  // Disable all OrbitControls zoom (wheel + pinch) — use zoom slider instead
+  // This prevents wheel from hijacking page scroll
+  controls.enableZoom = false;
   controls.update();
+
+  // === Zoom slider: controls camera distance from target ===
+  const zoomSlider = document.getElementById('zoom-slider');
+  const zoomVal = document.getElementById('zoom-val');
+
+  function getDistance() {
+    return camera.position.distanceTo(controls.target);
+  }
+  function setDistance(d) {
+    const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+    camera.position.copy(controls.target).addScaledVector(dir, d);
+    controls.update();
+  }
+  // Sync slider to initial camera distance
+  const initDist = getDistance();
+  zoomSlider.value = Math.min(100, initDist);
+  zoomVal.textContent = initDist.toFixed(1);
+
+  zoomSlider.addEventListener('input', (e) => {
+    const d = parseFloat(e.target.value);
+    setDistance(Math.max(0.5, Math.min(100, d)));
+    zoomVal.textContent = d.toFixed(1);
+  });
+
+  // Sync zoom slider when camera moves (from OrbitControls drag/pan changing distance)
+  controls.addEventListener('change', () => {
+    const d = getDistance();
+    zoomSlider.value = Math.min(100, Math.max(0.5, d));
+    zoomVal.textContent = d.toFixed(1);
+  });
 
   setLoading(100, 'Ready!');
   const loadTime = ((performance.now() - t0) / 1000).toFixed(1);
