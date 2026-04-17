@@ -118,7 +118,7 @@ import { SplatMesh, dyno } from "@sparkjsdev/spark";
 // ============================================================
 // V4c Configuration — Pre-baked GPU Texture (Zero CPU Decode)
 // ============================================================
-const MAX_CACHED_CHUNKS = 2;
+const MAX_CACHED_CHUNKS = 3;  // current + next + one prefetching
 const DELTA_K = 256;
 const RING_PARTITIONS = 3;
 const V4C_DATA_DIR = 'data_v4c';
@@ -316,10 +316,10 @@ async function ensureTexChunkReady(chunkIdx) {
 
 function evictDistantChunks(currentChunkIdx) {
   const total = v4cManifest.texframe_files.length;
-  const keepSet = new Set([currentChunkIdx, (currentChunkIdx+1) % total]);
-  for (const [idx, chunk] of texChunkCache) {
+  const next = (currentChunkIdx + 1) % total;
+  const keepSet = new Set([currentChunkIdx, next]);
+  for (const [idx] of texChunkCache) {
     if (!keepSet.has(idx)) { texChunkCache.delete(idx); updateGopStripUI(idx, 'evicted'); }
-    else if (idx !== currentChunkIdx && chunk.texData) { chunk.texData = null; }  // strip texData, can re-fetch from OPFS instantly
   }
   reportStats();
 }
@@ -465,16 +465,46 @@ function applyFrameData(globalFrame) {
   return true;
 }
 
-// Prefetch next chunk
+// Prefetch next chunk — keeps texData in memory for seamless playback!
 function triggerPrefetch(currentChunkIdx) {
   const total = v4cManifest.texframe_files.length;
   const next = (currentChunkIdx + 1) % total;
-  if (!texChunkCache.has(next) && !texChunkLoadingSet.has(next)) loadTexChunk(next, false);
-  if (currentChunkIdx >= total - 2 && !texChunkCache.has(0) && !texChunkLoadingSet.has(0)) loadTexChunk(0, false);
-  // Evict every ~10 frames
-  if (!triggerPrefetch._lastEvictFrame || Math.abs(currentFrame - triggerPrefetch._lastEvictFrame) > 10) {
+
+  // Calculate progress within current chunk for early prefetch triggering
+  const ci = v4cManifest.texframe_files[currentChunkIdx];
+  const chunkLen = ci.end_frame - ci.start_frame;
+  const chunkProgress = chunkLen > 0 ? (currentFrame - ci.start_frame) / chunkLen : 0;
+
+  // Start prefetch when >50% through current chunk (plenty of time)
+  if (chunkProgress > 0.5 || currentChunkIdx === 0) {
+    if (!texChunkCache.has(next) && !texChunkLoadingSet.has(next)) {
+      diagLog('info', `Prefetch chunk ${next} (current ${currentChunkIdx} at ${(chunkProgress*100).toFixed(0)}%)`);
+      loadTexChunk(next, true);  // keepTexData=true!
+    }
+    // If chunk was loaded but texData was stripped, re-fetch from OPFS now
+    const nextChunk = texChunkCache.get(next);
+    if (nextChunk && !nextChunk.texData) {
+      diagLog('info', `Pre-warming chunk ${next} texData from OPFS`);
+      ensureTexChunkReady(next);
+    }
+  }
+
+  // For loop: ensure chunk 0 is prefetched when near end
+  if (currentChunkIdx >= total - 2) {
+    if (!texChunkCache.has(0) && !texChunkLoadingSet.has(0)) loadTexChunk(0, true);
+    const c0 = texChunkCache.get(0);
+    if (c0 && !c0.texData) ensureTexChunkReady(0);
+  }
+
+  // Evict distant chunks (not current, not next) — but only every ~30 frames
+  if (!triggerPrefetch._lastEvictFrame || Math.abs(currentFrame - triggerPrefetch._lastEvictFrame) > 30) {
     triggerPrefetch._lastEvictFrame = currentFrame;
-    evictDistantChunks(currentChunkIdx);
+    // Keep current + next, evict everything else
+    const keepSet = new Set([currentChunkIdx, next]);
+    for (const [idx] of texChunkCache) {
+      if (!keepSet.has(idx)) { texChunkCache.delete(idx); updateGopStripUI(idx, 'evicted'); }
+    }
+    reportStats();
   }
 }
 
@@ -583,7 +613,7 @@ async function init() {
 
   setLoading(85, 'Preloading first texture chunk...');
   await loadTexChunk(0, true);
-  loadTexChunk(1, false); // prefetch
+  loadTexChunk(1, true); // prefetch next chunk WITH texData
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(2.435, -2.0, -15.003); controls.enableDamping = true; controls.dampingFactor = 0.1;
@@ -632,8 +662,6 @@ async function init() {
             gopStrip.querySelectorAll('.gop-seg').forEach(s => { if (s.classList.contains('active')) s.classList.replace('active','loaded'); });
             const as = document.getElementById(`gop-seg-${chunkIdx}`); if (as) as.className = 'gop-seg active';
             triggerPrefetch(chunkIdx);
-            // Release texData of non-current chunks
-            for (const [idx, c] of texChunkCache) { if (idx !== chunkIdx && c.texData) c.texData = null; }
           }
         } else {
           diagStatsAccum.stallFrames++;
