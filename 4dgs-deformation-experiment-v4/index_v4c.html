@@ -802,6 +802,8 @@ async function init() {
   const CLIMB_DELAY_MS = 1000;  // wait 1s of sustained fast frames before attempting upgrade
   let dprClimbTimer = null;     // setTimeout handle for pending DPR upgrade
   let lastDropTs = 0;           // timestamp of last DPR drop (prevent rapid consecutive drops)
+  let lastClimbTs = 0;          // timestamp of last DPR climb (guard period after upgrade)
+  const CLIMB_GUARD_MS = 100;   // after a climb, ignore slow frames for 100ms (framebuffer realloc)
 
   renderer.setAnimationLoop(function animate() {
     const now = performance.now();
@@ -813,7 +815,8 @@ async function init() {
       if (dt > 0 && dt < 200) {
         if (dt > SLOW_FRAME_MS) {
           // ★ SLOW FRAME detected → immediately drop DPR if possible
-          if (currentDPR > DPR_MIN && (now - lastDropTs) > 200) {
+          // But skip if within climb guard period (framebuffer realloc after DPR upgrade causes 1 slow frame)
+          if (currentDPR > DPR_MIN && (now - lastDropTs) > 200 && (now - lastClimbTs) > CLIMB_GUARD_MS) {
             // Cancel any pending climb — we just stuttered
             if (dprClimbTimer) { clearTimeout(dprClimbTimer); dprClimbTimer = null; }
             currentDPR = Math.max(DPR_MIN, currentDPR - DPR_STEP);
@@ -830,6 +833,7 @@ async function init() {
             dprClimbTimer = null;
             if (currentDPR < MAX_DPR) {
               currentDPR = Math.min(MAX_DPR, currentDPR + DPR_STEP);
+              lastClimbTs = performance.now();
               applyDPR(currentDPR);
               diagLog('info', `DPR CLIMB → ${currentDPR.toFixed(2)} (sustained fast frames for ${CLIMB_DELAY_MS}ms)`);
             }
