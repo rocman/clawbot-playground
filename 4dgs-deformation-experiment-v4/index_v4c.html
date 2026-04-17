@@ -775,25 +775,19 @@ async function init() {
   }, 300);
 
   // ============================================================
-  // Animation Loop — 30fps frame-advance + on-demand render
-  // Frame data advances at 30fps; rendering happens at device
-  // refresh rate but ONLY when something changed (frame data
-  // or camera). When paused & camera idle → zero GPU work.
+  // Animation Loop — simple & reliable
+  // Uses renderer.setAnimationLoop (Three.js native) for maximum
+  // compatibility. Frame data advances at 30fps via a time-gate.
+  // Rendering happens every frame so OrbitControls damping works.
   // ============================================================
   let frameCount = 0, lastFpsTime = performance.now(), lastAdvanceTime = performance.now();
   const ADVANCE_INTERVAL = 1000 / targetFPS;  // ~33ms for 30fps data advance
   let stallWaitingChunk = -1;
-  let cameraChanged = true;
-  let needsRender = true;
 
-  controls.addEventListener('change', () => { cameraChanged = true; });
-
-  function animate() {
-    requestAnimationFrame(animate);
+  renderer.setAnimationLoop(function animate() {
     const now = performance.now();
-    let frameDataChanged = false;
 
-    // Advance frame data at targetFPS (30Hz) — independent of render rate
+    // Advance frame data at targetFPS (30Hz)
     if (isPlaying && viewMode === 'animated') {
       const adjustedInterval = ADVANCE_INTERVAL / playbackSpeedMult;
       if (now - lastAdvanceTime >= adjustedInterval) {
@@ -804,7 +798,6 @@ async function init() {
         if (applied) {
           stallWaitingChunk = -1;
           currentFrame = nextFrame; timeline.value = nextFrame;
-          frameDataChanged = true;
           const timeSec = (nextFrame / targetFPS).toFixed(1);
           const chunkIdx = getTexChunkForFrame(nextFrame);
           frameLabel.textContent = nextFrame === 0 ? `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)` : `P-Frame ${nextFrame}/${maxFrame} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [Chunk ${chunkIdx}]`;
@@ -827,25 +820,19 @@ async function init() {
       }
     }
 
-    // Render decision: only render when something changed
-    const shouldRender = needsRender || cameraChanged || frameDataChanged;
-    if (shouldRender) {
-      splatMesh.updateVersion();
-      controls.update();
-      renderer.render(scene, camera);
-      needsRender = false;
-      cameraChanged = false;
-    }
+    // Always render + update controls (damping needs every-frame update)
+    splatMesh.updateVersion();
+    controls.update();
+    renderer.render(scene, camera);
 
     // FPS counter
-    if (shouldRender) frameCount++;
+    frameCount++;
     if (now - lastFpsTime > 500) {
       document.getElementById('stat-fps').textContent = Math.round(frameCount / ((now - lastFpsTime) / 1000));
       frameCount = 0; lastFpsTime = now;
       const dblEl = document.getElementById('stat-dblbuf'); if (dblEl) dblEl.textContent = `R:P${readPartition} W:P${writePartition} (${RING_PARTITIONS}-ring)`;
     }
-  }
-  requestAnimationFrame(animate);
+  });
 }
 
 // Frame management
