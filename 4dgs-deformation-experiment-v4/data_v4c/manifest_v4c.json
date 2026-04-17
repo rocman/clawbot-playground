@@ -1,0 +1,141 @@
+{
+  "version": "v4c",
+  "base_version": "v3d",
+  "total_gaussians": 128062,
+  "dynamic_gaussians": 128062,
+  "total_frames": 300,
+  "p_frame_count": 299,
+  "target_fps": 30,
+  "delta_k": 256,
+  "tex_width": 512,
+  "rows_per_frame": 501,
+  "bytes_per_frame": 2052096,
+  "i_frame": "i_frame.spz",
+  "dynamic_mask": "dynamic_mask.bin.gz",
+  "gop_meta": "gop_meta.bin.gz",
+  "quantization": {
+    "mode": "precise_per_frame",
+    "description": "diff of independently quantized absolute values; decode = ref + diff = quantized_abs[i]",
+    "xyz_base": "float16",
+    "xyz_pframe": "int8_diff_of_uint8_abs",
+    "shs_dc": "int8_diff_of_uint8_abs",
+    "opacity": "int8_diff_of_uint8_abs",
+    "dc_min": [
+      -8.787779808044434,
+      -4.147754669189453,
+      -2.930145740509033
+    ],
+    "dc_max": [
+      7.004311561584473,
+      5.740636825561523,
+      7.760098934173584
+    ],
+    "opacity_min": -0.009999999776482582,
+    "opacity_max": 1.0099999904632568,
+    "xyz_abs_delta_min": [
+      -3.8912017345428467,
+      -1.5033049583435059,
+      -31.838327407836914
+    ],
+    "xyz_abs_delta_max": [
+      9.618779182434082,
+      10.853321075439453,
+      6.057809829711914
+    ]
+  },
+  "texframe_files": [
+    {
+      "index": 0,
+      "filename": "texframes_000.bin.gz",
+      "start_frame": 0,
+      "end_frame": 30,
+      "num_frames": 30,
+      "raw_bytes": 61562880,
+      "gz_bytes": 21518501
+    },
+    {
+      "index": 1,
+      "filename": "texframes_001.bin.gz",
+      "start_frame": 30,
+      "end_frame": 60,
+      "num_frames": 30,
+      "raw_bytes": 61562880,
+      "gz_bytes": 21488360
+    },
+    {
+      "index": 2,
+      "filename": "texframes_002.bin.gz",
+      "start_frame": 60,
+      "end_frame": 90,
+      "num_frames": 30,
+      "raw_bytes": 61562880,
+      "gz_bytes": 21463696
+    },
+    {
+      "index": 3,
+      "filename": "texframes_003.bin.gz",
+      "start_frame": 90,
+      "end_frame": 120,
+      "num_frames": 30,
+      "raw_bytes": 61562880,
+      "gz_bytes": 21554669
+    },
+    {
+      "index": 4,
+      "filename": "texframes_004.bin.gz",
+      "start_frame": 120,
+      "end_frame": 150,
+      "num_frames": 30,
+      "raw_bytes": 61562880,
+      "gz_bytes": 21686419
+    },
+    {
+      "index": 5,
+      "filename": "texframes_005.bin.gz",
+      "start_frame": 150,
+      "end_frame": 180,
+      "num_frames": 30,
+      "raw_bytes": 61562880,
+      "gz_bytes": 21787442
+    },
+    {
+      "index": 6,
+      "filename": "texframes_006.bin.gz",
+      "start_frame": 180,
+      "end_frame": 210,
+      "num_frames": 30,
+      "raw_bytes": 61562880,
+      "gz_bytes": 21849682
+    },
+    {
+      "index": 7,
+      "filename": "texframes_007.bin.gz",
+      "start_frame": 210,
+      "end_frame": 240,
+      "num_frames": 30,
+      "raw_bytes": 61562880,
+      "gz_bytes": 21651968
+    },
+    {
+      "index": 8,
+      "filename": "texframes_008.bin.gz",
+      "start_frame": 240,
+      "end_frame": 270,
+      "num_frames": 30,
+      "raw_bytes": 61562880,
+      "gz_bytes": 21661582
+    },
+    {
+      "index": 9,
+      "filename": "texframes_009.bin.gz",
+      "start_frame": 270,
+      "end_frame": 300,
+      "num_frames": 30,
+      "raw_bytes": 61562880,
+      "gz_bytes": 21803236
+    }
+  ],
+  "total_gz_bytes": 216465555,
+  "total_raw_bytes": 615628800,
+  "compression_ratio": "2.8"
+}

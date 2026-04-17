@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>4DGS Deformation Viewer V4c — Pre-baked GPU Texture (Zero CPU Decode)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; overflow-y: auto; }
+  canvas { display: block; }
+  #viewer-section { position: relative; width: 100%; height: 100vh; overflow: hidden; }
+  #viewer-container { position: absolute; inset: 0; z-index: 1; touch-action: none; }
+  #viewer-container canvas { width: 100% !important; height: 100% !important; }
+  #zoom-bar { position: absolute; top: 100px; right: 16px; z-index: 100; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  #zoom-bar label { font-size: 10px; color: #666; }
+  #zoom-slider { -webkit-appearance: none; appearance: none; width: 120px; height: 4px; background: #333; border-radius: 2px; outline: none; cursor: pointer; }
+  #zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: #7ecfff; border-radius: 50%; cursor: grab; }
+  #zoom-val { font-size: 10px; color: #555; font-variant-numeric: tabular-nums; }
+  #loading-overlay { position: absolute; inset: 0; z-index: 1000; background: #0a0a0fee; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
+  #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  #loading-title { font-size: 24px; font-weight: 300; letter-spacing: 2px; margin-bottom: 24px; color: #7ecfff; }
+  #loading-bar-bg { width: 300px; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+  #loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3a8bff, #7ecfff); transition: width 0.3s; }
+  #loading-text { margin-top: 12px; font-size: 13px; color: #888; }
+  #controls { position: absolute; bottom: 0; left: 0; right: 0; z-index: 100; background: linear-gradient(transparent, #0a0a0fcc 30%, #0a0a0fee); padding: 16px 24px 20px; touch-action: pan-y; }
+  #timeline-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  #play-btn { width: 36px; height: 36px; border: none; border-radius: 50%; background: #3a8bff; color: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  #timeline { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; background: #333; border-radius: 3px; outline: none; cursor: pointer; }
+  #timeline::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #7ecfff; border-radius: 50%; cursor: grab; }
+  #frame-label { font-size: 13px; color: #aaa; text-align: center; font-variant-numeric: tabular-nums; margin-bottom: 6px; }
+  #info-bar { display: flex; gap: 20px; font-size: 12px; color: #666; flex-wrap: wrap; }
+  #info-bar span { display: flex; align-items: center; gap: 4px; }
+  #info-bar .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-static { background: #4a9; } .dot-dynamic { background: #f74; } .dot-fps { background: #7ecfff; } .dot-mem { background: #c8a; }
+  #mode-bar { position: absolute; top: 16px; left: 16px; z-index: 100; display: flex; gap: 8px; flex-wrap: wrap; }
+  .mode-btn { padding: 6px 14px; border: 1px solid #444; border-radius: 16px; background: transparent; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+  .mode-btn.active { background: #3a8bff33; border-color: #3a8bff; color: #7ecfff; }
+  #speed-bar { position: absolute; top: 56px; left: 16px; z-index: 100; display: flex; gap: 6px; align-items: center; }
+  #speed-bar label { font-size: 11px; color: #666; }
+  .speed-btn { padding: 3px 10px; border: 1px solid #333; border-radius: 12px; background: transparent; color: #777; font-size: 11px; cursor: pointer; }
+  .speed-btn.active { background: #3a8bff22; border-color: #3a8bff; color: #7ecfff; }
+  #title-bar { position: absolute; top: 16px; right: 16px; z-index: 100; text-align: right; }
+  #title-bar h1 { font-size: 16px; font-weight: 400; color: #7ecfff; letter-spacing: 1px; }
+  #title-bar p { font-size: 11px; color: #666; margin-top: 4px; }
+  #gop-progress { position: absolute; top: 60px; right: 16px; z-index: 100; font-size: 11px; color: #666; text-align: right; }
+  #gop-progress .bar-bg { width: 140px; height: 3px; background: #222; border-radius: 2px; overflow: hidden; margin-top: 4px; margin-left: auto; }
+  #gop-progress .bar { height: 100%; width: 0%; background: #f74; transition: width 0.3s; }
+  #gop-strip { position: relative; height: 8px; margin: 0 0 4px 48px; display: flex; gap: 1px; border-radius: 2px; overflow: hidden; }
+  #gop-strip .gop-seg { flex: 1; height: 100%; background: #222; transition: background 0.3s; }
+  #gop-strip .gop-seg.loaded { background: #3a5; }
+  #gop-strip .gop-seg.active { background: #7ecfff; }
+  #gop-strip .gop-seg.loading { background: #f74; animation: pulse 0.8s infinite alternate; }
+  @keyframes pulse { from { opacity: 0.5; } to { opacity: 1.0; } }
+  #mem-badge { position: absolute; top: 140px; right: 16px; z-index: 100; font-size: 11px; padding: 4px 10px; border-radius: 12px; background: #1a3a1a; color: #4a9; border: 1px solid #2a5a2a; }
+  #memory-chart-section { position: relative; z-index: 50; padding: 24px 24px 40px; background: #0d0d14; border-top: 1px solid #222; min-height: 420px; }
+  #memory-chart-section h2 { font-size: 18px; font-weight: 400; color: #7ecfff; letter-spacing: 1px; margin-bottom: 8px; }
+  .chart-subtitle { font-size: 12px; color: #666; margin-bottom: 16px; }
+  #mem-chart-canvas { width: 100%; height: 320px; background: #111118; border-radius: 8px; border: 1px solid #1a1a28; }
+  #mem-chart-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; font-size: 12px; color: #999; }
+  #mem-chart-legend .legend-item { display: flex; align-items: center; gap: 6px; }
+  #mem-chart-legend .legend-swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+  #mem-chart-stats { margin-top: 12px; font-size: 12px; color: #666; display: flex; gap: 24px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div id="viewer-section">
+  <div id="loading-overlay">
+    <div id="loading-title">4DGS VIEWER V4c — Pre-baked GPU Texture</div>
+    <div id="loading-bar-bg"><div id="loading-bar"></div></div>
+    <div id="loading-text">Initializing...</div>
+  </div>
+  <div id="title-bar"><h1>4DGS Viewer V4c</h1><p>V4c: Pre-baked GPU Texture | Zero CPU Decode | Ring-Buffer (3-partition) | OPFS Cache</p></div>
+  <div id="gop-progress"><span id="gop-status">Chunks: initializing...</span><div class="bar-bg"><div class="bar" id="gop-bar"></div></div></div>
+  <div id="mem-badge">MEM: --</div>
+  <div id="viewer-container"></div>
+  <div id="zoom-bar"><label>Zoom</label><input type="range" id="zoom-slider" min="0.5" max="100" step="0.5" value="15"><span id="zoom-val">15.0</span></div>
+  <div id="mode-bar">
+    <button class="mode-btn active" data-mode="animated">&#9654; Animated</button>
+    <button class="mode-btn" data-mode="i-frame">&#9724; I-Frame</button>
+    <button class="mode-btn" data-mode="highlight">&#9681; Dynamic</button>
+  </div>
+  <div id="speed-bar"><label>Speed:</label><button class="speed-btn" data-speed="0.5">0.5x</button><button class="speed-btn active" data-speed="1">1x</button><button class="speed-btn" data-speed="2">2x</button></div>
+  <div id="controls">
+    <div id="frame-label">I-Frame (0.0s / 10.0s)</div>
+    <div id="gop-strip"></div>
+    <div id="timeline-row"><button id="play-btn">&#9654;</button><input type="range" id="timeline" min="0" max="299" step="1" value="0"></div>
+    <div id="info-bar">
+      <span><span class="dot dot-static"></span> Static: <span id="stat-static">--</span></span>
+      <span><span class="dot dot-dynamic"></span> Dynamic: <span id="stat-dynamic">--</span></span>
+      <span>Total: <span id="stat-total">--</span> splats</span>
+      <span><span class="dot dot-fps"></span> <span id="stat-fps">--</span> FPS</span>
+      <span><span class="dot dot-mem"></span> Chunks: <span id="stat-gops">0/0</span></span>
+      <span>Window: <span id="stat-window">--</span></span>
+      <span>Cache: <span id="stat-cache">--</span></span>
+      <span>RingBuf: <span id="stat-dblbuf">--</span></span>
+    </div>
+  </div>
+</div>
+<div id="memory-chart-section">
+  <h2>📊 Memory Usage Timeline</h2>
+  <div class="chart-subtitle">Real-time stacked bar chart — scroll down to view. Sampled every 500ms.</div>
+  <canvas id="mem-chart-canvas"></canvas>
+  <div id="mem-chart-legend">
+    <div class="legend-item"><span class="legend-swatch" style="background:#3a8bff"></span> Chunk Compressed</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#f74"></span> Chunk TexData (decompressed)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgba(126,207,255,0.25)"></span> JS Heap Used (overlay)</div>
+  </div>
+  <div id="mem-chart-stats"></div>
+</div>
+<script type="importmap">
+{ "imports": { "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.178.0/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/", "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.10/spark.module.js" } }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SplatMesh, dyno } from "@sparkjsdev/spark";
+
+// ============================================================
+// V4c Configuration — Pre-baked GPU Texture (Zero CPU Decode)
+// ============================================================
+const MAX_CACHED_CHUNKS = 2;
+const DELTA_K = 256;
+const RING_PARTITIONS = 3;
+const V4C_DATA_DIR = 'data_v4c';
+
+// ============================================================
+// L2 Persistent Cache (OPFS + IDB) — same as V4a
+// ============================================================
+class GopPersistCache {
+  constructor() { this._mode = null; this._opfsRoot = null; this._idbDB = null; this._ready = this._init(); }
+  async _init() {
+    try { if (navigator.storage && navigator.storage.getDirectory) { const root = await navigator.storage.getDirectory(); this._opfsRoot = await root.getDirectoryHandle('4dgs-v4c-cache', { create: true }); this._mode = 'opfs'; return; } } catch (e) {}
+    try { this._idbDB = await new Promise((resolve, reject) => { const req = indexedDB.open('4dgs-v4c-cache', 1); req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains('blobs')) req.result.createObjectStore('blobs'); }; req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); this._mode = 'idb'; } catch (e) { this._mode = null; }
+  }
+  _key(ver, fn) { return `${ver}/${fn}`; }
+  async get(ver, fn) { await this._ready; const k = this._key(ver, fn); return this._mode === 'opfs' ? this._opfsGet(k) : this._mode === 'idb' ? this._idbGet(k) : null; }
+  async put(ver, fn, buf) { await this._ready; const k = this._key(ver, fn); if (this._mode === 'opfs') return this._opfsPut(k, buf); if (this._mode === 'idb') return this._idbPut(k, buf); }
+  async _opfsGet(k) { try { const fh = await this._opfsRoot.getFileHandle(k.replace(/\//g,'__')); return await (await fh.getFile()).arrayBuffer(); } catch(e) { return null; } }
+  async _opfsPut(k, buf) { try { const fh = await this._opfsRoot.getFileHandle(k.replace(/\//g,'__'), {create:true}); const w = await fh.createWritable(); await w.write(buf); await w.close(); } catch(e) {} }
+  async _idbGet(k) { return new Promise(r => { try { const tx = this._idbDB.transaction('blobs','readonly'); const req = tx.objectStore('blobs').get(k); req.onsuccess = () => r(req.result||null); req.onerror = () => r(null); } catch(e) { r(null); } }); }
+  async _idbPut(k, buf) { return new Promise(r => { try { const tx = this._idbDB.transaction('blobs','readwrite'); tx.objectStore('blobs').put(buf,k); tx.oncomplete = () => r(); tx.onerror = () => r(); } catch(e) { r(); } }); }
+  async delete(ver, fn) { await this._ready; const k = this._key(ver,fn); if (this._mode==='opfs') try { await this._opfsRoot.removeEntry(k.replace(/\//g,'__')); } catch(e) {} else if (this._mode==='idb') try { this._idbDB.transaction('blobs','readwrite').objectStore('blobs').delete(k); } catch(e) {} }
+  async purgeOldVersions(ver) { await this._ready; const pfx = ver+'/'; if (this._mode==='opfs') try { for await (const [n] of this._opfsRoot) if (!n.startsWith(pfx.replace(/\//g,'__'))) await this._opfsRoot.removeEntry(n).catch(()=>{}); } catch(e) {} }
+  get mode() { return this._mode; }
+}
+const persistCache = new GopPersistCache();
+
+let diagStatsAccum = { framesRequested: 0, framesApplied: 0, framesDropped: 0, stallFrames: 0, cacheHits: 0, cacheMisses: 0 };
+const diagLogs = []; const DIAG_LOG_MAX = 300;
+function diagLog(level, msg, data) { diagLogs.push({ ts: performance.now(), level, msg, ...(data||{}) }); if (diagLogs.length > DIAG_LOG_MAX) diagLogs.shift(); if (level==='warn'||level==='error') console.warn(`[V4c:${level}]`, msg); }
+
+async function cachedFetch(url, cacheFilename) {
+  const ver = v4cManifest ? v4cManifest.version : (manifest ? manifest.version : 'unknown');
+  const cached = await persistCache.get(ver, cacheFilename);
+  if (cached && cached.byteLength > 0) { diagStatsAccum.cacheHits++; updateCacheStatus(); return cached; }
+  diagStatsAccum.cacheMisses++;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try { const resp = await fetch(url); if (!resp.ok) throw new Error(`HTTP ${resp.status}`); const buf = await resp.arrayBuffer(); if (buf.byteLength === 0) throw new Error('Empty response'); persistCache.put(ver, cacheFilename, buf).catch(()=>{}); updateCacheStatus(); return buf; }
+    catch (e) { if (attempt < 3) await new Promise(r => setTimeout(r, 500*attempt)); else throw e; }
+  }
+}
+function updateCacheStatus() { const el = document.getElementById('stat-cache'); if (el) el.textContent = `${(persistCache.mode||'none').toUpperCase()} ${diagStatsAccum.cacheHits}/${diagStatsAccum.cacheHits+diagStatsAccum.cacheMisses} hits`; }
+
+// ============================================================
+// State
+// ============================================================
+let manifest = null, v4cManifest = null, dynamicMask = null, splatMesh = null;
+let currentFrame = 0, isPlaying = false, viewMode = 'animated', playbackSpeedMult = 1.0, targetFPS = 30;
+let uFrameIndex = null, uViewMode = null, uDeltaHalf = null, uDeltaHalfH = null;
+let deltaSampler = null, maskSampler = null, deltaTexture = null, maskTexture = null;
+let N = 0, qXyzDMin = null, qXyzDMax = null, qXyzDScale = null, qDcMin = null, qDcMax = null, qOpMin = 0, qOpMax = 0;
+let deltaTexW = 0, deltaTexH = 0, deltaTexHalfH = 0;
+let writePartition = 0, readPartition = 0;
+const texChunkCache = new Map();
+const texChunkLoadingSet = new Set();
+const texChunkFailedSet = new Set();
+const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
+
+// DOM refs
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingBar = document.getElementById('loading-bar');
+const loadingText = document.getElementById('loading-text');
+const playBtn = document.getElementById('play-btn');
+const timeline = document.getElementById('timeline');
+const frameLabel = document.getElementById('frame-label');
+const gopStatus = document.getElementById('gop-status');
+const gopBar = document.getElementById('gop-bar');
+const gopStrip = document.getElementById('gop-strip');
+const memBadge = document.getElementById('mem-badge');
+function setLoading(pct, text) { loadingBar.style.width = pct+'%'; if (text) loadingText.textContent = text; }
+
+// Memory badge
+function updateMemoryBadge() { if (performance.memory) { memBadge.textContent = `MEM: ${(performance.memory.usedJSHeapSize/1024/1024).toFixed(0)}/${(performance.memory.totalJSHeapSize/1024/1024).toFixed(0)} MB`; } }
+setInterval(updateMemoryBadge, 2000);
+
+// ============================================================
+// Gzip decompress
+// ============================================================
+async function decompressGzip(buf) {
+  const ds = new DecompressionStream('gzip');
+  const reader = new ReadableStream({ start(c) { c.enqueue(new Uint8Array(buf)); c.close(); } }).pipeThrough(ds).getReader();
+  const chunks = []; let totalLen = 0;
+  while (true) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); totalLen += value.byteLength; }
+  const result = new ArrayBuffer(totalLen); const u8 = new Uint8Array(result); let off = 0;
+  for (const c of chunks) { u8.set(c, off); off += c.byteLength; }
+  return result;
+}
+
+// ============================================================
+// V4c: Texture Chunk Loading — ZERO CPU decode!
+// ============================================================
+async function loadTexChunk(chunkIdx, keepTexData = true) {
+  if (texChunkCache.has(chunkIdx) || texChunkLoadingSet.has(chunkIdx) || texChunkFailedSet.has(chunkIdx)) return;
+  if (chunkIdx < 0 || chunkIdx >= v4cManifest.texframe_files.length) return;
+  texChunkLoadingSet.add(chunkIdx);
+  updateGopStripUI(chunkIdx, 'loading');
+  const t0 = performance.now();
+  const chunkInfo = v4cManifest.texframe_files[chunkIdx];
+  try {
+    const compressed = await cachedFetch(`${V4C_DATA_DIR}/${chunkInfo.filename}`, `v4c/${chunkInfo.filename}`);
+    let texData = keepTexData ? await decompressGzip(compressed) : null;
+    texChunkCache.set(chunkIdx, { compressed, texData, numFrames: chunkInfo.num_frames, startFrame: chunkInfo.start_frame, endFrame: chunkInfo.end_frame, lastAccess: performance.now() });
+    texChunkLoadingSet.delete(chunkIdx);
+    diagLog('info', `TexChunk ${chunkIdx} loaded in ${(performance.now()-t0).toFixed(0)}ms (gz: ${(compressed.byteLength/1024/1024).toFixed(1)} MB${texData ? ', raw: '+(texData.byteLength/1024/1024).toFixed(1)+' MB' : ''})`);
+    updateGopStripUI(chunkIdx, 'loaded');
+    reportStats();
+  } catch (err) {
+    texChunkLoadingSet.delete(chunkIdx); texChunkFailedSet.add(chunkIdx);
+    setTimeout(() => texChunkFailedSet.delete(chunkIdx), 5000);
+    diagLog('error', `TexChunk ${chunkIdx} failed: ${err.message}`);
+    updateGopStripUI(chunkIdx, 'error');
+  }
+}
+
+async function ensureTexChunkDecompressed(chunkIdx) {
+  const chunk = texChunkCache.get(chunkIdx);
+  if (!chunk) return false; if (chunk.texData) return true;
+  const t0 = performance.now();
+  try { chunk.texData = await decompressGzip(chunk.compressed); diagLog('info', `TexChunk ${chunkIdx} decompressed in ${(performance.now()-t0).toFixed(1)}ms`); reportStats(); return true; }
+  catch (e) { diagLog('error', `TexChunk ${chunkIdx} decompress fail: ${e.message}`); return false; }
+}
+
+function evictDistantChunks(currentChunkIdx) {
+  const total = v4cManifest.texframe_files.length;
+  const keepSet = new Set([currentChunkIdx, (currentChunkIdx+1) % total]);
+  for (const [idx, chunk] of texChunkCache) {
+    if (!keepSet.has(idx)) { texChunkCache.delete(idx); updateGopStripUI(idx, 'evicted'); }
+    else if (idx !== currentChunkIdx && chunk.texData) { chunk.texData = null; }
+  }
+  reportStats();
+}
+
+function getTexChunkForFrame(globalFrame) {
+  for (const ci of v4cManifest.texframe_files) { if (globalFrame >= ci.start_frame && globalFrame < ci.end_frame) return ci.index; }
+  return -1;
+}
+
+function getFrameTexData(globalFrame) {
+  const chunkIdx = getTexChunkForFrame(globalFrame);
+  if (chunkIdx < 0) return null;
+  const chunk = texChunkCache.get(chunkIdx);
+  if (!chunk || !chunk.texData) return null;
+  chunk.lastAccess = performance.now();
+  const bpf = v4cManifest.bytes_per_frame;
+  const local = globalFrame - chunk.startFrame;
+  const byteOff = local * bpf;
+  if (byteOff + bpf > chunk.texData.byteLength) return null;
+  return new Uint16Array(chunk.texData, byteOff, bpf / 2);
+}
+
+function reportStats() {
+  const loaded = texChunkCache.size, total = v4cManifest ? v4cManifest.texframe_files.length : 0;
+  let compB = 0, texB = 0, texC = 0, compC = 0;
+  for (const [,c] of texChunkCache) { if (c.compressed) compB += c.compressed.byteLength; if (c.texData) { texB += c.texData.byteLength; texC++; } else compC++; }
+  document.getElementById('stat-gops').textContent = `${loaded}/${total}`;
+  document.getElementById('stat-window').textContent = `${((compB+texB)/1024/1024).toFixed(1)} MB (${texC} texData + ${compC} gz)`;
+  gopBar.style.width = (total > 0 ? Math.round(loaded / Math.min(MAX_CACHED_CHUNKS,total)*100) : 0) + '%';
+}
+
+// ============================================================
+// Data Loading
+// ============================================================
+async function loadManifest() {
+  setLoading(5, 'Loading manifests...');
+  const resp = await fetch('data_v3d/manifest.json');
+  manifest = await resp.json();
+  const resp2 = await fetch(`${V4C_DATA_DIR}/manifest_v4c.json`);
+  v4cManifest = await resp2.json();
+  targetFPS = manifest.target_fps || 30;
+  TOTAL_DURATION = (manifest.p_frame_count || 299) / targetFPS;
+  N = manifest.dynamic_gaussians;
+  persistCache.purgeOldVersions(v4cManifest.version).catch(()=>{});
+  document.getElementById('stat-total').textContent = manifest.total_gaussians.toLocaleString();
+  document.getElementById('stat-dynamic').textContent = manifest.dynamic_gaussians.toLocaleString();
+  document.getElementById('stat-static').textContent = (manifest.total_gaussians - manifest.dynamic_gaussians).toLocaleString();
+  timeline.max = manifest.p_frame_count;
+  gopStrip.innerHTML = '';
+  for (let i = 0; i < v4cManifest.texframe_files.length; i++) {
+    const seg = document.createElement('div'); seg.className = 'gop-seg'; seg.id = `gop-seg-${i}`;
+    seg.title = `Chunk ${i}: frames ${v4cManifest.texframe_files[i].start_frame}-${v4cManifest.texframe_files[i].end_frame-1}`;
+    gopStrip.appendChild(seg);
+  }
+}
+
+async function loadDynamicMask() {
+  const compressed = await cachedFetch('data_v3d/' + manifest.dynamic_mask, manifest.dynamic_mask);
+  const raw = await decompressGzip(compressed);
+  dynamicMask = new Uint8Array(raw, 4, new DataView(raw).getUint32(0, true));
+}
+
+async function loadGopMeta() {
+  gopStatus.textContent = 'Meta: downloading...';
+  const compressed = await cachedFetch(`data_v3d/${manifest.gop_meta}`, manifest.gop_meta);
+  const raw = await decompressGzip(compressed);
+  const v = new DataView(raw); let pos = 28;
+  qDcMin = [v.getFloat32(pos,true), v.getFloat32(pos+4,true), v.getFloat32(pos+8,true)];
+  qDcMax = [v.getFloat32(pos+12,true), v.getFloat32(pos+16,true), v.getFloat32(pos+20,true)];
+  qOpMin = v.getFloat32(pos+24,true); qOpMax = v.getFloat32(pos+28,true);
+  qXyzDMin = [v.getFloat32(pos+32,true), v.getFloat32(pos+36,true), v.getFloat32(pos+40,true)];
+  qXyzDMax = [v.getFloat32(pos+44,true), v.getFloat32(pos+48,true), v.getFloat32(pos+52,true)];
+  pos += 56;
+  qXyzDScale = [(qXyzDMax[0]-qXyzDMin[0])/255, (qXyzDMax[1]-qXyzDMin[1])/255, (qXyzDMax[2]-qXyzDMin[2])/255];
+  gopStatus.textContent = 'Meta: loaded';
+}
+
+// ============================================================
+// Textures
+// ============================================================
+function createMaskTexture() {
+  const totalN = manifest.total_gaussians, texW = Math.ceil(Math.sqrt(totalN)), texH = Math.ceil(totalN/texW);
+  const texData = new Float32Array(texW*texH*2); let dynIdx = 0;
+  for (let i = 0; i < totalN; i++) { texData[i*2] = dynamicMask[i] ? 1 : 0; texData[i*2+1] = dynamicMask[i] ? dynIdx : -1; if (dynamicMask[i]) dynIdx++; }
+  for (let i = totalN; i < texW*texH; i++) { texData[i*2] = 0; texData[i*2+1] = -1; }
+  const tex = new THREE.DataTexture(texData, texW, texH, THREE.RGFormat, THREE.FloatType);
+  tex.needsUpdate = true; tex.minFilter = THREE.NearestFilter; tex.magFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+  return { texture: tex, width: texW, height: texH };
+}
+
+function createDeltaTexture() {
+  deltaTexW = DELTA_K * 2;
+  deltaTexHalfH = Math.ceil(N / DELTA_K);
+  deltaTexH = deltaTexHalfH * RING_PARTITIONS;
+  const texData = new Uint16Array(deltaTexW * deltaTexH * 4);
+  const tex = new THREE.DataTexture(texData, deltaTexW, deltaTexH, THREE.RGBAFormat, THREE.HalfFloatType);
+  tex.needsUpdate = true; tex.minFilter = THREE.NearestFilter; tex.magFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+  console.log(`[V4c] Delta texture: ${deltaTexW}×${deltaTexH} (${RING_PARTITIONS} partitions, each: ${deltaTexHalfH} rows)`);
+  return tex;
+}
+
+// ============================================================
+// UI helpers
+// ============================================================
+function updateGopStripUI(idx, state) {
+  const seg = document.getElementById(`gop-seg-${idx}`);
+  if (!seg) return; seg.className = 'gop-seg';
+  if (state === 'loaded') seg.classList.add('loaded');
+  else if (state === 'active') seg.classList.add('active');
+  else if (state === 'loading') seg.classList.add('loading');
+}
+
+// ============================================================
+// Frame update — V4c: DIRECT texSubImage2D from pre-baked data!
+// No CPU decode, no float16 conversion, no packFrame — just memcpy to GPU!
+// ============================================================
+function applyFrameData(globalFrame) {
+  if (globalFrame === 0) { uFrameIndex.value = 0; return true; }
+
+  // V4c: get pre-baked RGBA16F data directly
+  const texData = getFrameTexData(globalFrame);
+  if (!texData) return false;
+
+  const gl = renderer.getContext();
+  const texProps = renderer.properties.get(deltaTexture);
+  const yOffset = writePartition * deltaTexHalfH;
+
+  if (!texProps.__webglTexture) {
+    // Force initial upload
+    const fullData = deltaTexture.image.data;
+    fullData.set(texData, writePartition * deltaTexW * deltaTexHalfH * 4);
+    deltaTexture.needsUpdate = true;
+  } else {
+    gl.bindTexture(gl.TEXTURE_2D, texProps.__webglTexture);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, yOffset, deltaTexW, deltaTexHalfH, gl.RGBA, gl.HALF_FLOAT, texData);
+  }
+
+  readPartition = writePartition;
+  uDeltaHalf.value = readPartition;
+  writePartition = (writePartition + 1) % RING_PARTITIONS;
+  uFrameIndex.value = globalFrame;
+  diagStatsAccum.framesApplied++;
+  return true;
+}
+
+// Prefetch next chunk
+function triggerPrefetch(currentChunkIdx) {
+  const total = v4cManifest.texframe_files.length;
+  const next = (currentChunkIdx + 1) % total;
+  if (!texChunkCache.has(next) && !texChunkLoadingSet.has(next)) loadTexChunk(next, false);
+  if (currentChunkIdx >= total - 2 && !texChunkCache.has(0) && !texChunkLoadingSet.has(0)) loadTexChunk(0, false);
+  // Evict every ~10 frames
+  if (!triggerPrefetch._lastEvictFrame || Math.abs(currentFrame - triggerPrefetch._lastEvictFrame) > 10) {
+    triggerPrefetch._lastEvictFrame = currentFrame;
+    evictDistantChunks(currentChunkIdx);
+  }
+}
+
+// ============================================================
+// Scene setup
+// ============================================================
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 200);
+const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.getElementById('viewer-container').appendChild(renderer.domElement);
+window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+// ============================================================
+// Memory chart (simplified from V4a)
+// ============================================================
+const MEM_CHART_MAX_SAMPLES = 240; const memChartSamples = []; let memChartInterval = null;
+function sampleMemory() {
+  let compB = 0, texB = 0, texC = 0;
+  for (const [,c] of texChunkCache) { if (c.compressed) compB += c.compressed.byteLength; if (c.texData) { texB += c.texData.byteLength; texC++; } }
+  memChartSamples.push({ ts: performance.now(), frame: currentFrame, compMB: compB/(1024*1024), texMB: texB/(1024*1024), jsHeapMB: performance.memory ? performance.memory.usedJSHeapSize/(1024*1024) : 0, texCount: texC, playing: isPlaying });
+  if (memChartSamples.length > MEM_CHART_MAX_SAMPLES) memChartSamples.shift();
+  renderMemChart();
+}
+function renderMemChart() {
+  const canvas = document.getElementById('mem-chart-canvas'); if (!canvas) return;
+  const rect = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio||1, W = rect.width*dpr, H = rect.height*dpr;
+  if (canvas.width !== Math.round(W) || canvas.height !== Math.round(H)) { canvas.width = Math.round(W); canvas.height = Math.round(H); }
+  const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,W,H);
+  const samples = memChartSamples; if (samples.length < 2) return;
+  const padL = 60*dpr, padR = 20*dpr, padT = 20*dpr, padB = 40*dpr, chartW = W-padL-padR, chartH = H-padT-padB;
+  const MAX_VIS = 50, visCount = Math.min(samples.length, MAX_VIS), visStart = samples.length - visCount;
+  const barGap = 1, barW = (chartW - (visCount-1)*barGap) / visCount;
+  let maxStack = 0, maxHeap = 0;
+  for (let i = visStart; i < samples.length; i++) { const s = samples[i]; const st = s.compMB + s.texMB; if (st > maxStack) maxStack = st; if (s.jsHeapMB > maxHeap) maxHeap = s.jsHeapMB; }
+  const yMax = Math.max(maxStack, maxHeap, 10) * 1.15;
+  ctx.strokeStyle = '#1a1a28'; ctx.lineWidth = 1; ctx.fillStyle = '#555'; ctx.font = `${11*dpr}px sans-serif`; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 5; i++) { const y = padT + chartH - (i/5)*chartH; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke(); ctx.fillText((yMax*i/5).toFixed(0)+' MB', padL-6*dpr, y); }
+  for (let i = visStart; i < samples.length; i++) {
+    const s = samples[i], bi = i - visStart, x = padL + bi*(barW+barGap);
+    let cumY = 0;
+    for (const [val, col] of [[s.compMB,'#3a8bff'],[s.texMB,'#f74']]) { const h = (val/yMax)*chartH; ctx.fillStyle = col; ctx.fillRect(x, padT+chartH-cumY-h, barW, Math.max(h,0)); cumY += h; }
+    if (s.jsHeapMB > 0) { const hh = (s.jsHeapMB/yMax)*chartH; ctx.fillStyle = 'rgba(126,207,255,0.25)'; ctx.fillRect(x, padT+chartH-hh, barW, hh); }
+  }
+  ctx.fillStyle = '#555'; ctx.font = `${10*dpr}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const lblStep = Math.max(1, Math.ceil(70*dpr/(barW+barGap)));
+  for (let i = visStart; i < samples.length; i += lblStep) { const bi = i-visStart, x = padL+bi*(barW+barGap)+barW/2; ctx.fillText(`${((samples[i].ts-samples[0].ts)/1000).toFixed(0)}s`, x, padT+chartH+6*dpr); ctx.fillText(`f${samples[i].frame}`, x, padT+chartH+18*dpr); }
+  const statsEl = document.getElementById('mem-chart-stats');
+  if (statsEl && samples.length > 0) { const l = samples[samples.length-1]; const tot = l.compMB+l.texMB; statsEl.textContent = `Current: ${tot.toFixed(1)} MB | Compressed: ${l.compMB.toFixed(1)} MB | TexData: ${l.texMB.toFixed(1)} MB (${l.texCount} chunks) | ${l.jsHeapMB > 0 ? 'JS Heap: '+l.jsHeapMB.toFixed(0)+' MB | ' : ''}Frame: ${l.frame}`; }
+}
+function startMemChart() { if (memChartInterval) clearInterval(memChartInterval); memChartInterval = setInterval(sampleMemory, 500); window.addEventListener('resize', () => { if (memChartSamples.length > 0) renderMemChart(); }); }
+
+// ============================================================
+// Init
+// ============================================================
+async function init() {
+  const t0 = performance.now();
+  await loadManifest();
+  setLoading(10, 'Loading dynamic mask...');
+  await loadDynamicMask();
+  setLoading(20, 'Creating textures...');
+  deltaTexture = createDeltaTexture();
+  const maskInfo = createMaskTexture();
+  maskTexture = maskInfo.texture;
+  dynamicMask = null;
+  setLoading(30, 'Loading GOP meta...');
+  await loadGopMeta();
+  setLoading(50, 'Loading SPZ I-frame...');
+  uFrameIndex = dyno.dynoInt(0); uViewMode = dyno.dynoInt(0);
+  uDeltaHalf = dyno.dynoInt(0); uDeltaHalfH = dyno.dynoInt(deltaTexHalfH);
+  deltaSampler = dyno.dynoSampler2D(deltaTexture); maskSampler = dyno.dynoSampler2D(maskTexture);
+  const iFrameBuf = await cachedFetch('data_v3d/' + manifest.i_frame, manifest.i_frame);
+  setLoading(70, 'Initializing Spark.js...');
+  splatMesh = new SplatMesh({ fileBytes: new Uint8Array(iFrameBuf) });
+
+  // Shader — same as V4a
+  splatMesh.objectModifier = dyno.dynoBlock({ gsplat: dyno.Gsplat }, { gsplat: dyno.Gsplat }, ({ gsplat }) => {
+    const d = new dyno.Dyno({
+      inTypes: { gsplat: dyno.Gsplat, frameIdx: "int", mode: "int", deltaTex: "sampler2D", maskTex: "sampler2D", maskW: "int", deltaK: "int", deltaHalf: "int", deltaHalfH: "int" },
+      outTypes: { gsplat: dyno.Gsplat },
+      globals: () => [dyno.unindent(`
+        vec2 lookupMaskV4(sampler2D mTex, int idx, int mW) { int r = idx / mW; int c = idx - r * mW; return texelFetch(mTex, ivec2(c, r), 0).rg; }
+        void fetchDeltaV4(sampler2D dTex, int dIdx, int K, int halfSel, int halfH, out vec3 dPos, out vec3 dDC, out float dOp) {
+          int sr = dIdx / K; int sc = (dIdx - sr * K) * 2; int actualRow = sr + halfSel * halfH;
+          vec4 t0 = texelFetch(dTex, ivec2(sc, actualRow), 0); vec4 t1 = texelFetch(dTex, ivec2(sc+1, actualRow), 0);
+          dPos = t0.xyz; dDC = vec3(t0.w, t1.xy); dOp = t1.z;
+        }
+      `)],
+      statements: ({ inputs, outputs }) => dyno.unindentLines(`
+        ${outputs.gsplat} = ${inputs.gsplat}; int sIdx = ${inputs.gsplat}.index;
+        vec2 md = lookupMaskV4(${inputs.maskTex}, sIdx, ${inputs.maskW}); float isDyn = md.r; int dIdx = int(md.g);
+        if (${inputs.mode} == 2) { if (isDyn > 0.5) ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(1.0,0.5,0.2), 0.6); else ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(0.2,0.7,0.6), 0.4); }
+        if (${inputs.mode} == 0 && ${inputs.frameIdx} > 0 && isDyn > 0.5 && dIdx >= 0) {
+          vec3 dp, ddc; float dop;
+          fetchDeltaV4(${inputs.deltaTex}, dIdx, ${inputs.deltaK}, ${inputs.deltaHalf}, ${inputs.deltaHalfH}, dp, ddc, dop);
+          float SH_C0 = 0.28209479177; ${outputs.gsplat}.center += dp; ${outputs.gsplat}.rgba.rgb = SH_C0 * ddc + 0.5; ${outputs.gsplat}.rgba.a = dop;
+        }
+      `)
+    });
+    gsplat = d.apply({ gsplat, frameIdx: uFrameIndex, mode: uViewMode, deltaTex: deltaSampler, maskTex: maskSampler, maskW: dyno.dynoInt(maskInfo.width), deltaK: dyno.dynoInt(DELTA_K), deltaHalf: uDeltaHalf, deltaHalfH: uDeltaHalfH }).gsplat;
+    return { gsplat };
+  });
+  splatMesh.quaternion.set(1,0,0,0); splatMesh.position.set(0,0,0); scene.add(splatMesh);
+  camera.position.set(0.5, 4.5, 15.0);
+
+  setLoading(85, 'Preloading first texture chunk...');
+  await loadTexChunk(0, true);
+  loadTexChunk(1, false); // prefetch
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(2.435, -2.0, -15.003); controls.enableDamping = true; controls.dampingFactor = 0.1;
+  controls.screenSpacePanning = true; controls.minDistance = 0.5; controls.maxDistance = 100; controls.enableZoom = false; controls.update();
+
+  // Zoom slider
+  const zoomSlider = document.getElementById('zoom-slider'), zoomVal = document.getElementById('zoom-val');
+  function getDist() { return camera.position.distanceTo(controls.target); }
+  function setDist(d) { const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize(); camera.position.copy(controls.target).addScaledVector(dir, d); controls.update(); }
+  zoomSlider.value = Math.min(100, getDist()); zoomVal.textContent = getDist().toFixed(1);
+  zoomSlider.addEventListener('input', e => { setDist(Math.max(0.5, Math.min(100, parseFloat(e.target.value)))); zoomVal.textContent = parseFloat(e.target.value).toFixed(1); });
+  controls.addEventListener('change', () => { const d = getDist(); zoomSlider.value = Math.min(100, Math.max(0.5, d)); zoomVal.textContent = d.toFixed(1); });
+
+  setLoading(100, 'Ready!');
+  console.log(`[V4c] Ready in ${((performance.now()-t0)/1000).toFixed(1)}s — ZERO CPU decode mode`);
+
+  setTimeout(() => {
+    loadingOverlay.classList.add('hidden');
+    splatMesh.updateGenerator(); isPlaying = true; playBtn.textContent = '\u23F8';
+    setTimeout(() => { renderer.render(scene, camera);
+      // Release CPU texture data
+      if (deltaTexture?.image?.data?.byteLength > 0) deltaTexture.image.data = new Uint16Array(0);
+      if (maskTexture?.image?.data?.byteLength > 0) maskTexture.image.data = new Float32Array(0);
+    }, 500);
+  }, 300);
+
+  // 30Hz Animation Loop
+  let frameCount = 0, lastFpsTime = performance.now(), lastFrameTime = performance.now();
+  const FRAME_INTERVAL = 1000 / targetFPS;
+
+  renderer.setAnimationLoop(function animate() {
+    const now = performance.now();
+    if (isPlaying && viewMode === 'animated') {
+      const adjustedInterval = FRAME_INTERVAL / playbackSpeedMult;
+      if (now - lastFrameTime >= adjustedInterval) {
+        lastFrameTime = now;
+        const maxFrame = manifest.p_frame_count;
+        const nextFrame = (currentFrame + 1) % (maxFrame + 1);
+        const applied = applyFrameData(nextFrame);
+        if (applied) {
+          currentFrame = nextFrame; timeline.value = nextFrame;
+          const timeSec = (nextFrame / targetFPS).toFixed(1);
+          const chunkIdx = getTexChunkForFrame(nextFrame);
+          frameLabel.textContent = nextFrame === 0 ? `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)` : `P-Frame ${nextFrame}/${maxFrame} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [Chunk ${chunkIdx}]`;
+          if (chunkIdx >= 0) {
+            gopStrip.querySelectorAll('.gop-seg').forEach(s => { if (s.classList.contains('active')) s.classList.replace('active','loaded'); });
+            const as = document.getElementById(`gop-seg-${chunkIdx}`); if (as) as.className = 'gop-seg active';
+            triggerPrefetch(chunkIdx);
+            // Release texData of non-current chunks
+            for (const [idx, c] of texChunkCache) { if (idx !== chunkIdx && c.texData) c.texData = null; }
+          }
+        } else {
+          diagStatsAccum.stallFrames++;
+          const chunkIdx = getTexChunkForFrame(nextFrame);
+          if (chunkIdx >= 0) {
+            const chunk = texChunkCache.get(chunkIdx);
+            if (chunk && !chunk.texData) { frameLabel.textContent = `Decompressing Chunk ${chunkIdx}...`; ensureTexChunkDecompressed(chunkIdx); }
+            else if (!chunk && !texChunkLoadingSet.has(chunkIdx)) { frameLabel.textContent = `Loading Chunk ${chunkIdx}...`; loadTexChunk(chunkIdx); }
+            else { frameLabel.textContent = `Loading Chunk ${chunkIdx}...`; }
+          }
+        }
+      }
+    }
+    splatMesh.updateVersion(); controls.update(); renderer.render(scene, camera);
+    frameCount++;
+    if (now - lastFpsTime > 500) { document.getElementById('stat-fps').textContent = Math.round(frameCount / ((now - lastFpsTime) / 1000)); frameCount = 0; lastFpsTime = now;
+      const dblEl = document.getElementById('stat-dblbuf'); if (dblEl) dblEl.textContent = `R:P${readPartition} W:P${writePartition} (${RING_PARTITIONS}-ring)`;
+    }
+  });
+}
+
+// Frame management
+function updateFrame(idx) {
+  const applied = applyFrameData(idx);
+  if (applied) { currentFrame = idx; timeline.value = idx;
+    const timeSec = (idx/targetFPS).toFixed(1); const ci = getTexChunkForFrame(idx);
+    frameLabel.textContent = idx === 0 ? `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)` : `P-Frame ${idx}/${manifest.p_frame_count} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [Chunk ${ci}]`;
+    if (ci >= 0) triggerPrefetch(ci);
+  } else {
+    const ci = getTexChunkForFrame(idx);
+    if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData) ensureTexChunkDecompressed(ci).then(() => { applyFrameData(idx); currentFrame = idx; }); else if (!c) loadTexChunk(ci).then(() => { applyFrameData(idx); currentFrame = idx; }); }
+  }
+  diagStatsAccum.framesRequested++;
+}
+
+// UI events
+playBtn.addEventListener('click', () => {
+  isPlaying = !isPlaying; playBtn.textContent = isPlaying ? '\u23F8' : '\u25B6';
+  if (!isPlaying) { let freed = 0; for (const [idx,c] of texChunkCache) { if (c.texData) freed += c.texData.byteLength; if (c.compressed) freed += c.compressed.byteLength; updateGopStripUI(idx,'evicted'); } texChunkCache.clear(); reportStats(); }
+  else { const ci = getTexChunkForFrame(currentFrame); if (ci >= 0 && !texChunkCache.has(ci)) loadTexChunk(ci, true); }
+});
+timeline.addEventListener('input', e => { isPlaying = false; playBtn.textContent = '\u25B6'; updateFrame(parseInt(e.target.value)); });
+document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+  viewMode = btn.dataset.mode;
+  if (viewMode === 'animated') uViewMode.value = 0;
+  else if (viewMode === 'i-frame') { uViewMode.value = 1; uFrameIndex.value = 0; currentFrame = 0; timeline.value = 0; isPlaying = false; playBtn.textContent = '\u25B6'; }
+  else if (viewMode === 'highlight') { uViewMode.value = 2; uFrameIndex.value = 0; isPlaying = false; playBtn.textContent = '\u25B6'; }
+  splatMesh.updateGenerator();
+}));
+document.querySelectorAll('.speed-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); playbackSpeedMult = parseFloat(btn.dataset.speed); }));
+document.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); playBtn.click(); } else if (e.key === 'ArrowRight') updateFrame(Math.min(currentFrame+1, manifest.p_frame_count)); else if (e.key === 'ArrowLeft') updateFrame(Math.max(currentFrame-1, 0)); });
+
+init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
+startMemChart();
+</script>
+</body>
+</html>
