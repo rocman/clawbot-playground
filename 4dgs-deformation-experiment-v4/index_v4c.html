@@ -118,7 +118,7 @@ import { SplatMesh, dyno } from "@sparkjsdev/spark";
 // ============================================================
 // V4c Configuration — Pre-baked GPU Texture (Zero CPU Decode)
 // ============================================================
-const MAX_CACHED_CHUNKS = 3;  // current + next + one prefetching
+const MAX_ACTIVE_CHUNKS = 2;  // STRICT limit: only current + next may hold texData in memory
 const DELTA_K = 256;
 const RING_PARTITIONS = 3;
 const V4C_DATA_DIR = 'data_v4c';
@@ -281,6 +281,8 @@ async function loadTexChunk(chunkIdx, keepTexData = true) {
     const rawMB = (texData.byteLength/1024/1024).toFixed(1);
     diagLog('info', `TexChunk ${chunkIdx} ready in ${(performance.now()-t0).toFixed(0)}ms (raw: ${rawMB} MB, keepTexData=${keepTexData})`);
     updateGopStripUI(chunkIdx, 'loaded');
+    // IMMEDIATELY enforce memory limit — strip oldest texData if too many active
+    enforceTexDataLimit(chunkIdx);
     reportStats();
   } catch (err) {
     texChunkLoadingSet.delete(chunkIdx); texChunkFailedSet.add(chunkIdx);
@@ -304,6 +306,7 @@ async function ensureTexChunkReady(chunkIdx) {
     chunk.texData = raw;
     chunk.lastAccess = performance.now();
     diagLog('info', `TexChunk ${chunkIdx} re-fetched from OPFS in ${(performance.now()-t0).toFixed(1)}ms (${(raw.byteLength/1024/1024).toFixed(1)} MB, zero decompress)`);
+    enforceTexDataLimit(chunkIdx);
     reportStats();
     return true;
   }
@@ -312,6 +315,39 @@ async function ensureTexChunkReady(chunkIdx) {
   texChunkCache.delete(chunkIdx);
   await loadTexChunk(chunkIdx, true);
   return texChunkCache.has(chunkIdx) && texChunkCache.get(chunkIdx).texData != null;
+}
+
+// STRICT memory enforcement — ensure at most MAX_ACTIVE_CHUNKS have texData in memory.
+// Instead of deleting cache entries, we STRIP texData (set to null) from least-recently-used chunks.
+// The cache entry remains so we know it's in OPFS and can re-fetch instantly when needed.
+function enforceTexDataLimit(justLoadedIdx) {
+  // Gather all chunks that currently hold texData
+  const active = [];
+  for (const [idx, c] of texChunkCache) {
+    if (c.texData) active.push({ idx, lastAccess: c.lastAccess || 0 });
+  }
+  if (active.length <= MAX_ACTIVE_CHUNKS) return;
+
+  // Sort by lastAccess ascending (oldest first), but never strip the justLoaded one or currentFrame's chunk
+  const currentChunkIdx = getTexChunkForFrame(currentFrame);
+  const protect = new Set([currentChunkIdx, justLoadedIdx]);
+
+  active.sort((a, b) => a.lastAccess - b.lastAccess);
+
+  let stripped = 0;
+  for (const entry of active) {
+    if (active.length - stripped <= MAX_ACTIVE_CHUNKS) break;
+    if (protect.has(entry.idx)) continue;
+    const c = texChunkCache.get(entry.idx);
+    if (c && c.texData) {
+      const mb = (c.texData.byteLength / 1024 / 1024).toFixed(1);
+      c.texData = null;  // Release the ~60MB buffer; OPFS still has it
+      stripped++;
+      diagLog('info', `Memory limit: stripped texData from chunk ${entry.idx} (${mb} MB freed)`);
+      updateGopStripUI(entry.idx, 'loaded');  // still "loaded" in OPFS, just not in RAM
+    }
+  }
+  if (stripped > 0) reportStats();
 }
 
 function evictDistantChunks(currentChunkIdx) {
@@ -348,7 +384,7 @@ function reportStats() {
   for (const [,c] of texChunkCache) { if (c.texData) { texB += c.texData.byteLength; texC++; } else strippedC++; }
   document.getElementById('stat-gops').textContent = `${loaded}/${total}`;
   document.getElementById('stat-window').textContent = `${(texB/1024/1024).toFixed(1)} MB (${texC} active + ${strippedC} OPFS-backed)`;
-  gopBar.style.width = (total > 0 ? Math.round(loaded / Math.min(MAX_CACHED_CHUNKS,total)*100) : 0) + '%';
+  gopBar.style.width = (total > 0 ? Math.round(loaded / Math.min(MAX_ACTIVE_CHUNKS,total)*100) : 0) + '%';
 }
 
 // ============================================================
@@ -504,16 +540,10 @@ function triggerPrefetch(currentChunkIdx) {
     }
   }
 
-  // Evict distant chunks — but only every ~30 frames to reduce overhead
-  if (!triggerPrefetch._lastEvictFrame || Math.abs(currentFrame - triggerPrefetch._lastEvictFrame) > 30) {
+  // Evict excess texData — enforce strict memory limit every ~15 frames
+  if (!triggerPrefetch._lastEvictFrame || Math.abs(currentFrame - triggerPrefetch._lastEvictFrame) > 15) {
     triggerPrefetch._lastEvictFrame = currentFrame;
-    // Keep current + next + loop targets, evict everything else
-    const keepSet = new Set([currentChunkIdx, next]);
-    if (currentChunkIdx >= total - 3) { keepSet.add(0); keepSet.add(1); }
-    for (const [idx] of texChunkCache) {
-      if (!keepSet.has(idx)) { texChunkCache.delete(idx); updateGopStripUI(idx, 'evicted'); }
-    }
-    reportStats();
+    enforceTexDataLimit(currentChunkIdx);
   }
 }
 
