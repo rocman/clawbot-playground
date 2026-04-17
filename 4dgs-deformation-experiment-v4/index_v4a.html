@@ -9,9 +9,16 @@
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; overflow-y: auto; }
   canvas { touch-action: none; display: block; }
 
-  /* Viewer container: fixed full-screen so it doesn't push content */
+  /* ===== Viewer Section: self-contained 100vh block ===== */
+  #viewer-section {
+    position: relative;
+    width: 100%; height: 100vh;
+    overflow: hidden;
+  }
+
+  /* WebGL canvas container: fills the viewer section */
   #viewer-container {
-    position: fixed; inset: 0; z-index: 1;
+    position: absolute; inset: 0; z-index: 1;
   }
   #viewer-container canvas {
     width: 100% !important; height: 100% !important;
@@ -19,7 +26,7 @@
 
   /* Zoom slider — right side, below title */
   #zoom-bar {
-    position: fixed; top: 100px; right: 16px; z-index: 100;
+    position: absolute; top: 100px; right: 16px; z-index: 100;
     display: flex; flex-direction: column; align-items: center; gap: 4px;
   }
   #zoom-bar label { font-size: 10px; color: #666; }
@@ -39,7 +46,7 @@
   #zoom-val { font-size: 10px; color: #555; font-variant-numeric: tabular-nums; }
 
   #loading-overlay {
-    position: fixed; inset: 0; z-index: 1000;
+    position: absolute; inset: 0; z-index: 1000;
     background: #0a0a0fee;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     transition: opacity 0.5s;
@@ -51,7 +58,7 @@
   #loading-text { margin-top: 12px; font-size: 13px; color: #888; }
 
   #controls {
-    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 100;
     background: linear-gradient(transparent, #0a0a0fcc 30%, #0a0a0fee);
     padding: 16px 24px 20px;
   }
@@ -82,7 +89,7 @@
   .dot-mem { background: #c8a; }
 
   #mode-bar {
-    position: fixed; top: 16px; left: 16px; z-index: 100;
+    position: absolute; top: 16px; left: 16px; z-index: 100;
     display: flex; gap: 8px; flex-wrap: wrap;
   }
   .mode-btn {
@@ -94,7 +101,7 @@
   .mode-btn:hover { border-color: #666; }
 
   #speed-bar {
-    position: fixed; top: 56px; left: 16px; z-index: 100;
+    position: absolute; top: 56px; left: 16px; z-index: 100;
     display: flex; gap: 6px; align-items: center;
   }
   #speed-bar label { font-size: 11px; color: #666; }
@@ -106,14 +113,14 @@
   .speed-btn.active { background: #3a8bff22; border-color: #3a8bff; color: #7ecfff; }
 
   #title-bar {
-    position: fixed; top: 16px; right: 16px; z-index: 100;
+    position: absolute; top: 16px; right: 16px; z-index: 100;
     text-align: right;
   }
   #title-bar h1 { font-size: 16px; font-weight: 400; color: #7ecfff; letter-spacing: 1px; }
   #title-bar p { font-size: 11px; color: #666; margin-top: 4px; }
 
   #gop-progress {
-    position: fixed; top: 60px; right: 16px; z-index: 100;
+    position: absolute; top: 60px; right: 16px; z-index: 100;
     font-size: 11px; color: #666; text-align: right;
     transition: opacity 0.5s;
   }
@@ -136,16 +143,15 @@
   @keyframes pulse { from { opacity: 0.5; } to { opacity: 1.0; } }
 
   #mem-badge {
-    position: fixed; top: 140px; right: 16px; z-index: 100;
+    position: absolute; top: 140px; right: 16px; z-index: 100;
     font-size: 11px; padding: 4px 10px; border-radius: 12px;
     background: #1a3a1a; color: #4a9; border: 1px solid #2a5a2a;
   }
 
-  /* ===== Memory Chart Section ===== */
+  /* ===== Memory Chart Section — sits below #viewer-section in normal flow ===== */
   #memory-chart-section {
     position: relative; z-index: 50;
     padding: 24px 24px 40px;
-    padding-top: calc(100vh + 24px); /* push below full-screen viewer */
     background: #0d0d14;
     border-top: 1px solid #222;
     min-height: 420px;
@@ -177,6 +183,8 @@
 </style>
 </head>
 <body>
+
+<div id="viewer-section">
 
 <div id="loading-overlay">
   <div id="loading-title">4DGS VIEWER V4a — Mini-GOP Slice + Ring-Buffer</div>
@@ -235,6 +243,8 @@
     <span>RingBuf: <span id="stat-dblbuf">--</span></span>
   </div>
 </div>
+
+</div><!-- end #viewer-section -->
 
 <div id="memory-chart-section">
   <h2>📊 Memory Usage Timeline</h2>
