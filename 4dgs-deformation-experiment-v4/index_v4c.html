@@ -966,7 +966,10 @@ playBtn.addEventListener('click', () => {
   // Resume: ensure current chunk is ready
   if (isPlaying) { const ci = getTexChunkForFrame(currentFrame); if (ci >= 0 && !texChunkCache.has(ci)) loadTexChunk(ci, true); else if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData) ensureTexChunkReady(ci); } }
 });
-timeline.addEventListener('input', e => { isPlaying = false; playBtn.textContent = '\u25B6'; updateFrame(parseInt(e.target.value)); });
+let wasPlayingBeforeSeek = false, isSeeking = false;
+timeline.addEventListener('pointerdown', () => { wasPlayingBeforeSeek = isPlaying; isSeeking = true; isPlaying = false; });
+timeline.addEventListener('input', e => { updateFrame(parseInt(e.target.value)); });
+timeline.addEventListener('pointerup', () => { if (isSeeking) { isSeeking = false; if (wasPlayingBeforeSeek) { isPlaying = true; playBtn.textContent = '\u23F8'; const ci = getTexChunkForFrame(currentFrame); if (ci >= 0 && !texChunkCache.has(ci)) loadTexChunk(ci, true); else if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData) ensureTexChunkReady(ci); } } } });
 document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => {
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
   viewMode = btn.dataset.mode;
