@@ -799,7 +799,7 @@ async function init() {
   const DPR_MIN = 0.5;
   const SLOW_FRAME_MS = 18;     // >18ms → clearly missed 60fps vsync → instant downgrade
   const FAST_FRAME_MS = 17;     // <17ms → hitting 60fps vsync (~16.67ms) → qualifies for upgrade
-  const CLIMB_DELAY_MS = 5000;  // wait 5s of sustained fast frames before attempting upgrade
+  const CLIMB_DELAY_MS = 1000;  // wait 1s of sustained fast frames before attempting upgrade
   let dprClimbTimer = null;     // setTimeout handle for pending DPR upgrade
   let lastDropTs = 0;           // timestamp of last DPR drop (prevent rapid consecutive drops)
 
