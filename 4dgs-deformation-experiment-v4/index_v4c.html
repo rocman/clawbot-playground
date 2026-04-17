@@ -475,11 +475,11 @@ function triggerPrefetch(currentChunkIdx) {
   const chunkLen = ci.end_frame - ci.start_frame;
   const chunkProgress = chunkLen > 0 ? (currentFrame - ci.start_frame) / chunkLen : 0;
 
-  // Start prefetch when >50% through current chunk (plenty of time)
-  if (chunkProgress > 0.5 || currentChunkIdx === 0) {
+  // Start prefetch when >30% through current chunk (gives plenty of time for OPFS reads + network)
+  if (chunkProgress > 0.3 || currentChunkIdx === 0) {
     if (!texChunkCache.has(next) && !texChunkLoadingSet.has(next)) {
       diagLog('info', `Prefetch chunk ${next} (current ${currentChunkIdx} at ${(chunkProgress*100).toFixed(0)}%)`);
-      loadTexChunk(next, true);  // keepTexData=true!
+      loadTexChunk(next, true);
     }
     // If chunk was loaded but texData was stripped, re-fetch from OPFS now
     const nextChunk = texChunkCache.get(next);
@@ -489,18 +489,27 @@ function triggerPrefetch(currentChunkIdx) {
     }
   }
 
-  // For loop: ensure chunk 0 is prefetched when near end
-  if (currentChunkIdx >= total - 2) {
-    if (!texChunkCache.has(0) && !texChunkLoadingSet.has(0)) loadTexChunk(0, true);
+  // For loop: ensure chunk 0 is pre-fetched well before the end
+  // Start at chunk total-3 (gives 3 chunks worth of playback time)
+  if (currentChunkIdx >= total - 3) {
+    if (!texChunkCache.has(0) && !texChunkLoadingSet.has(0)) {
+      diagLog('info', `Loop prefetch: loading chunk 0 (currently at chunk ${currentChunkIdx})`);
+      loadTexChunk(0, true);
+    }
     const c0 = texChunkCache.get(0);
     if (c0 && !c0.texData) ensureTexChunkReady(0);
+    // Also prefetch chunk 1 for seamless loop continuation
+    if (currentChunkIdx >= total - 2) {
+      if (!texChunkCache.has(1) && !texChunkLoadingSet.has(1)) loadTexChunk(1, true);
+    }
   }
 
-  // Evict distant chunks (not current, not next) — but only every ~30 frames
+  // Evict distant chunks — but only every ~30 frames to reduce overhead
   if (!triggerPrefetch._lastEvictFrame || Math.abs(currentFrame - triggerPrefetch._lastEvictFrame) > 30) {
     triggerPrefetch._lastEvictFrame = currentFrame;
-    // Keep current + next, evict everything else
+    // Keep current + next + loop targets, evict everything else
     const keepSet = new Set([currentChunkIdx, next]);
+    if (currentChunkIdx >= total - 3) { keepSet.add(0); keepSet.add(1); }
     for (const [idx] of texChunkCache) {
       if (!keepSet.has(idx)) { texChunkCache.delete(idx); updateGopStripUI(idx, 'evicted'); }
     }
@@ -643,6 +652,7 @@ async function init() {
   // 30Hz Animation Loop
   let frameCount = 0, lastFpsTime = performance.now(), lastFrameTime = performance.now();
   const FRAME_INTERVAL = 1000 / targetFPS;
+  let stallWaitingChunk = -1;  // which chunk we're stalling on (avoid re-triggering loads every frame)
 
   renderer.setAnimationLoop(function animate() {
     const now = performance.now();
@@ -654,6 +664,7 @@ async function init() {
         const nextFrame = (currentFrame + 1) % (maxFrame + 1);
         const applied = applyFrameData(nextFrame);
         if (applied) {
+          stallWaitingChunk = -1;  // clear stall state
           currentFrame = nextFrame; timeline.value = nextFrame;
           const timeSec = (nextFrame / targetFPS).toFixed(1);
           const chunkIdx = getTexChunkForFrame(nextFrame);
@@ -666,10 +677,12 @@ async function init() {
         } else {
           diagStatsAccum.stallFrames++;
           const chunkIdx = getTexChunkForFrame(nextFrame);
-          if (chunkIdx >= 0) {
+          // Only trigger load ONCE per stall — avoid hammering every frame
+          if (chunkIdx >= 0 && stallWaitingChunk !== chunkIdx) {
+            stallWaitingChunk = chunkIdx;
             const chunk = texChunkCache.get(chunkIdx);
             if (chunk && !chunk.texData) { frameLabel.textContent = `Fetching Chunk ${chunkIdx} from OPFS...`; ensureTexChunkReady(chunkIdx); }
-            else if (!chunk && !texChunkLoadingSet.has(chunkIdx)) { frameLabel.textContent = `Loading Chunk ${chunkIdx}...`; loadTexChunk(chunkIdx); }
+            else if (!chunk && !texChunkLoadingSet.has(chunkIdx)) { frameLabel.textContent = `Loading Chunk ${chunkIdx}...`; loadTexChunk(chunkIdx, true); }
             else { frameLabel.textContent = `Loading Chunk ${chunkIdx}...`; }
           }
         }
@@ -700,8 +713,8 @@ function updateFrame(idx) {
 // UI events
 playBtn.addEventListener('click', () => {
   isPlaying = !isPlaying; playBtn.textContent = isPlaying ? '\u23F8' : '\u25B6';
-  if (!isPlaying) { let freed = 0; for (const [idx,c] of texChunkCache) { if (c.texData) freed += c.texData.byteLength; updateGopStripUI(idx,'evicted'); } texChunkCache.clear(); reportStats(); }
-  else { const ci = getTexChunkForFrame(currentFrame); if (ci >= 0 && !texChunkCache.has(ci)) loadTexChunk(ci, true); }
+  // Resume: ensure current chunk is ready
+  if (isPlaying) { const ci = getTexChunkForFrame(currentFrame); if (ci >= 0 && !texChunkCache.has(ci)) loadTexChunk(ci, true); else if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData) ensureTexChunkReady(ci); } }
 });
 timeline.addEventListener('input', e => { isPlaying = false; playBtn.textContent = '\u25B6'; updateFrame(parseInt(e.target.value)); });
 document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => {
