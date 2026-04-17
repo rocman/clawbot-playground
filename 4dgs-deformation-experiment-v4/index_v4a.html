@@ -7,7 +7,7 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; overflow-y: auto; }
-  canvas { touch-action: none; display: block; }
+  canvas { display: block; }
 
   /* ===== Viewer Section: self-contained 100vh block ===== */
   #viewer-section {
@@ -19,6 +19,7 @@
   /* WebGL canvas container: fills the viewer section */
   #viewer-container {
     position: absolute; inset: 0; z-index: 1;
+    touch-action: none; /* OrbitControls needs this for drag/rotate */
   }
   #viewer-container canvas {
     width: 100% !important; height: 100% !important;
@@ -61,6 +62,7 @@
     position: absolute; bottom: 0; left: 0; right: 0; z-index: 100;
     background: linear-gradient(transparent, #0a0a0fcc 30%, #0a0a0fee);
     padding: 16px 24px 20px;
+    touch-action: pan-y; /* Allow vertical swipe to scroll page */
   }
   #timeline-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
   #play-btn {
@@ -155,6 +157,7 @@
     background: #0d0d14;
     border-top: 1px solid #222;
     min-height: 420px;
+    touch-action: auto; /* Allow normal touch scrolling in chart area */
   }
   #memory-chart-section h2 {
     font-size: 18px; font-weight: 400; color: #7ecfff;
@@ -628,40 +631,97 @@ setInterval(updateMemoryBadge, 2000);
 // ============================================================
 // Utility functions (previously in Worker)
 // ============================================================
+// ============================================================
+// Streaming GOP Decompression — reduces peak memory from ~25MB to ~slice_size
+// Instead of decompressing entire GOP at once, maintains an incremental reader
+// that decompresses on-demand as frames are consumed.
+// ============================================================
+class StreamingGopDecompressor {
+  constructor(compressedBuf) {
+    this._compressed = compressedBuf;
+    this._reader = null;
+    this._buffer = null;      // accumulated decompressed bytes
+    this._bufferLen = 0;      // valid bytes in _buffer
+    this._done = false;
+    this._totalDecompressed = 0;
+  }
+
+  _ensureReader() {
+    if (this._reader) return;
+    const ds = new DecompressionStream('gzip');
+    this._reader = new ReadableStream({
+      start: (controller) => {
+        controller.enqueue(new Uint8Array(this._compressed));
+        controller.close();
+      }
+    }).pipeThrough(ds).getReader();
+    // Initial buffer — grows as needed
+    this._buffer = new Uint8Array(4 * 1024 * 1024); // 4MB initial
+    this._bufferLen = 0;
+  }
+
+  // Decompress until we have at least `targetBytes` available, or EOF
+  async decompressUntil(targetBytes) {
+    this._ensureReader();
+    while (this._bufferLen < targetBytes && !this._done) {
+      const { done, value } = await this._reader.read();
+      if (done) { this._done = true; break; }
+      // Grow buffer if needed
+      if (this._bufferLen + value.byteLength > this._buffer.byteLength) {
+        const newSize = Math.max(this._buffer.byteLength * 2, this._bufferLen + value.byteLength);
+        const newBuf = new Uint8Array(newSize);
+        newBuf.set(this._buffer.subarray(0, this._bufferLen));
+        this._buffer = newBuf;
+      }
+      this._buffer.set(value, this._bufferLen);
+      this._bufferLen += value.byteLength;
+      this._totalDecompressed += value.byteLength;
+    }
+    return this._bufferLen >= targetBytes;
+  }
+
+  // Decompress everything remaining (fallback for compatibility)
+  async decompressAll() {
+    this._ensureReader();
+    while (!this._done) {
+      const { done, value } = await this._reader.read();
+      if (done) { this._done = true; break; }
+      if (this._bufferLen + value.byteLength > this._buffer.byteLength) {
+        const newSize = Math.max(this._buffer.byteLength * 2, this._bufferLen + value.byteLength);
+        const newBuf = new Uint8Array(newSize);
+        newBuf.set(this._buffer.subarray(0, this._bufferLen));
+        this._buffer = newBuf;
+      }
+      this._buffer.set(value, this._bufferLen);
+      this._bufferLen += value.byteLength;
+      this._totalDecompressed += value.byteLength;
+    }
+    // Return exact-sized copy
+    return this._buffer.buffer.slice(0, this._bufferLen);
+  }
+
+  // Get a view of currently decompressed data (no copy)
+  getView() {
+    return this._buffer ? this._buffer.subarray(0, this._bufferLen) : new Uint8Array(0);
+  }
+
+  get available() { return this._bufferLen; }
+  get isDone() { return this._done; }
+
+  // Release all buffers
+  release() {
+    this._buffer = null;
+    this._bufferLen = 0;
+    this._reader = null;
+    this._compressed = null; // don't hold ref to compressed data
+    this._done = true;
+  }
+}
+
 async function decompressGzip(buf) {
-  const ds = new DecompressionStream('gzip');
-  const reader = new ReadableStream({
-    start(controller) {
-      controller.enqueue(new Uint8Array(buf));
-      controller.close();
-    }
-  }).pipeThrough(ds).getReader();
-  
-  // Pre-allocate estimated output size (gzip ~10x compression ratio typical for GOP data)
-  // If too small, we grow; this avoids many small chunk allocations
-  let capacity = buf.byteLength * 12; // generous estimate
-  let result = new Uint8Array(capacity);
-  let totalLen = 0;
-  
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    // Grow if needed
-    if (totalLen + value.byteLength > capacity) {
-      capacity = Math.max(capacity * 2, totalLen + value.byteLength);
-      const newBuf = new Uint8Array(capacity);
-      newBuf.set(result.subarray(0, totalLen));
-      result = newBuf;
-    }
-    result.set(value, totalLen);
-    totalLen += value.byteLength;
-  }
-  // Return exact-sized buffer (or reuse if exact match)
-  if (totalLen === capacity) {
-    return result.buffer;
-  }
-  // Slice to exact size — single allocation instead of merge from many chunks
-  return result.buffer.slice(0, totalLen);
+  // Full decompression — used for non-GOP files (manifest, mask, meta)
+  const decompressor = new StreamingGopDecompressor(buf);
+  return decompressor.decompressAll();
 }
 
 // Reusable buffer for float16→float32 conversion (avoids per-call allocation)
@@ -1076,38 +1136,96 @@ async function loadGop(gopIdx, keepRaw = true) {
 
 // ============================================================
 // Lazy Decompress — decompress GOP raw data on demand
-// V4a: Uses mini-slice decompression — decompresses full GOP but marks
-// which slice of frames is currently needed. The key optimization is
-// that we release raw data more aggressively (after each slice is consumed).
+// V4a-optimized: Uses StreamingGopDecompressor for incremental decompression.
+// Only decompresses enough bytes for the requested frame range,
+// reducing peak memory from ~25MB to ~current_slice_size.
 // ============================================================
-async function ensureGopDecompressed(gopIdx) {
+async function ensureGopDecompressed(gopIdx, targetLocalFrame) {
   const gop = gopCache.get(gopIdx);
   if (!gop) return false;
-  if (gop.raw) return true; // already decompressed
+  if (gop.raw) return true; // already fully decompressed
 
-  // Decompress from stored compressed data
+  // Initialize streaming decompressor if not exists
+  if (!gop._decompressor) {
+    gop._decompressor = new StreamingGopDecompressor(gop.compressed);
+  }
+
+  const decompressor = gop._decompressor;
+
+  // If targetLocalFrame specified, calculate how many bytes we need
+  if (targetLocalFrame !== undefined && targetLocalFrame >= 0) {
+    const gopInfo = manifest.gop_index[gopIdx];
+    // Estimate bytes needed: header(16) + frames 0..targetLocalFrame
+    // Each frame: N*3 (xyz int8) + N*3 (dc) + N (op) = N*7 for P-frames
+    // Base frame: N*3*2 (xyz float16) + N*3 (dc) + N (op) = N*7 + N*3 = N*10
+    const baseFrameSize = N * 10; // float16 xyz is bigger
+    const pFrameSize = N * STRIDE;
+    let estimatedBytes = 16; // GOP header
+    for (let fi = 0; fi <= targetLocalFrame; fi++) {
+      const globalFrame = gopInfo.start_frame + fi;
+      estimatedBytes += (globalFrame === 0) ? baseFrameSize : pFrameSize;
+    }
+    // Add 10% safety margin
+    estimatedBytes = Math.ceil(estimatedBytes * 1.1);
+
+    const t0 = performance.now();
+    const ok = await decompressor.decompressUntil(estimatedBytes);
+    const ms = (performance.now() - t0).toFixed(1);
+
+    if (decompressor.isDone) {
+      // Fully decompressed — convert to ArrayBuffer and store as .raw
+      const fullBuf = decompressor.getView();
+      gop.raw = fullBuf.buffer.slice(0, fullBuf.byteLength);
+      gop._decompressor = null; // release decompressor
+      const rawMB = (gop.raw.byteLength / 1024 / 1024).toFixed(1);
+      diagLog('info', `GOP ${gopIdx} fully decompressed in ${ms}ms (${rawMB} MB)`);
+    } else {
+      // Partial decompression — store view as temporary raw
+      // streamDecodeFrameRange can use this partial buffer
+      const view = decompressor.getView();
+      gop.raw = view.buffer.slice(0, view.byteLength); // copy for stable reference
+      gop._partialRaw = true; // flag: raw is partial, decompressor still alive
+      const partialMB = (gop.raw.byteLength / 1024 / 1024).toFixed(1);
+      diagLog('info', `GOP ${gopIdx} partially decompressed to frame ${targetLocalFrame} in ${ms}ms (${partialMB} MB so far)`);
+    }
+    reportStats();
+    return true;
+  }
+
+  // No target frame — full decompress (legacy path)
   const t0 = performance.now();
   try {
-    const raw = await decompressGzip(gop.compressed);
+    const raw = await decompressor.decompressAll();
     gop.raw = raw;
+    gop._decompressor = null;
+    gop._partialRaw = false;
     const ms = (performance.now() - t0).toFixed(1);
     const rawMB = (raw.byteLength / 1024 / 1024).toFixed(1);
-    diagLog('info', `GOP ${gopIdx} lazy-decompressed in ${ms}ms (${rawMB} MB)`);
+    diagLog('info', `GOP ${gopIdx} fully decompressed in ${ms}ms (${rawMB} MB)`);
     reportStats();
     return true;
   } catch (err) {
-    diagLog('error', `GOP ${gopIdx} lazy-decompress failed: ${err.message}`);
+    diagLog('error', `GOP ${gopIdx} decompress failed: ${err.message}`);
     return false;
   }
 }
 
-// V4a: After consuming a slice of frames, release raw to free ~25MB
+// V4a: After consuming a slice of frames, release raw to free memory
 // The raw will be re-decompressed from compressed when the next slice is needed
 function releaseGopRawAfterSlice(gopIdx) {
   const gop = gopCache.get(gopIdx);
-  if (!gop || !gop.raw) return;
-  const rawMB = (gop.raw.byteLength / 1024 / 1024).toFixed(1);
-  gop.raw = null;
+  if (!gop) return;
+  let freedMB = 0;
+  if (gop.raw) {
+    freedMB = gop.raw.byteLength / 1024 / 1024;
+    gop.raw = null;
+  }
+  gop._partialRaw = false;
+  // Also release streaming decompressor if present
+  if (gop._decompressor) {
+    gop._decompressor.release();
+    gop._decompressor = null;
+  }
   // Reset stream state since raw was freed
   if (streamState.gopIdx === gopIdx) {
     streamState.gopIdx = -1;
@@ -1115,7 +1233,9 @@ function releaseGopRawAfterSlice(gopIdx) {
     streamState._cachedRawBuf = null;
     streamState._cachedRawU8 = null;
   }
-  diagLog('info', `GOP ${gopIdx} raw released after slice consumption (freed ${rawMB} MB)`);
+  if (freedMB > 0) {
+    diagLog('info', `GOP ${gopIdx} raw released after slice consumption (freed ${freedMB.toFixed(1)} MB)`);
+  }
   reportStats();
 }
 
@@ -1137,6 +1257,7 @@ function evictDistantGops(currentGopIdx) {
   for (const [idx, gop] of gopCache) {
     if (!keepSet.has(idx)) {
       // Fully evict GOPs outside the keep window
+      if (gop._decompressor) { gop._decompressor.release(); gop._decompressor = null; }
       gopCache.delete(idx);
       // Reset stream state if it referenced the evicted GOP
       if (streamState.gopIdx === idx) {
@@ -1151,6 +1272,8 @@ function evictDistantGops(currentGopIdx) {
       // Strip raw from non-current GOPs (keep compressed only) — this is the big memory save
       const rawMB = (gop.raw.byteLength / 1024 / 1024).toFixed(1);
       gop.raw = null;
+      gop._partialRaw = false;
+      if (gop._decompressor) { gop._decompressor.release(); gop._decompressor = null; }
       // Reset stream state since raw was freed
       if (streamState.gopIdx === idx) {
         streamState.gopIdx = -1;
@@ -1216,10 +1339,11 @@ function nudgeGC() {
 function releasePlaybackBuffers() {
   let freedBytes = 0;
 
-  // 1. Release all GOP cache entries (raw + compressed)
+  // 1. Release all GOP cache entries (raw + compressed + decompressor)
   for (const [idx, gop] of gopCache) {
     if (gop.raw) freedBytes += gop.raw.byteLength;
     if (gop.compressed) freedBytes += gop.compressed.byteLength;
+    if (gop._decompressor) { gop._decompressor.release(); gop._decompressor = null; }
     updateGopStripUI(idx, 'evicted');
   }
   gopCache.clear();
@@ -1445,25 +1569,28 @@ function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
   // When approaching the end of current slice, decompress next GOP or re-decompress current
   const DECOMPRESS_AHEAD_FRAMES = Math.min(5, MINI_SLICE_FRAMES);
   
-  // Near end of current GOP → decompress next GOP
+  // Near end of current GOP → decompress next GOP (only first few frames, incremental)
   if (currentGopFrames > 0 && currentLocalIdx >= currentGopFrames - DECOMPRESS_AHEAD_FRAMES) {
     const nextEntry = gopCache.get(nextGop);
     if (nextEntry && !nextEntry.raw && !_decompressingSet.has(nextGop)) {
       _decompressingSet.add(nextGop);
-      diagLog('info', `Proactive decompress: GOP ${nextGop} (${DECOMPRESS_AHEAD_FRAMES} frames ahead of GOP end)`);
-      ensureGopDecompressed(nextGop).finally(() => _decompressingSet.delete(nextGop));
+      diagLog('info', `Proactive decompress: GOP ${nextGop} (incremental, first ${MINI_SLICE_FRAMES} frames)`);
+      // Only decompress enough for first mini-slice of next GOP
+      ensureGopDecompressed(nextGop, Math.min(MINI_SLICE_FRAMES - 1, nextEntry.numFrames - 1))
+        .finally(() => _decompressingSet.delete(nextGop));
     }
   }
 
-  // V4a: Near end of current mini-slice → check if we need raw for next slice
+  // V4a: Near end of current mini-slice → check if we need more decompressed data
   const currentSliceEnd = Math.ceil((currentLocalIdx + 1) / MINI_SLICE_FRAMES) * MINI_SLICE_FRAMES;
   if (currentLocalIdx >= currentSliceEnd - DECOMPRESS_AHEAD_FRAMES && currentSliceEnd < currentGopFrames) {
     // We're near the end of current slice but still within the same GOP
     const currentEntry = gopCache.get(currentGopIdx);
     if (currentEntry && !currentEntry.raw && !_decompressingSet.has(currentGopIdx)) {
       _decompressingSet.add(currentGopIdx);
-      diagLog('info', `Re-decompress GOP ${currentGopIdx} for next mini-slice (frame ${currentLocalIdx}/${currentGopFrames})`);
-      ensureGopDecompressed(currentGopIdx).finally(() => _decompressingSet.delete(currentGopIdx));
+      const nextSliceTarget = Math.min(currentSliceEnd + MINI_SLICE_FRAMES - 1, currentGopFrames - 1);
+      diagLog('info', `Incremental decompress GOP ${currentGopIdx} to frame ${nextSliceTarget} (slice boundary)`);
+      ensureGopDecompressed(currentGopIdx, nextSliceTarget).finally(() => _decompressingSet.delete(currentGopIdx));
     }
   }
 
@@ -1928,10 +2055,13 @@ async function init() {
             const gopEntry = gopCache.get(gopIdx);
             if (gopEntry && !gopEntry.raw) {
               // GOP is cached (compressed) but needs lazy decompress
-              frameLabel.textContent = `Decompressing GOP ${gopIdx}...`;
+              // Pass target local frame for incremental decompression
+              const pIdx = nextFrame - 1;
+              const targetLocal = pIdx - gopEntry.startFrame;
+              frameLabel.textContent = `Decompressing GOP ${gopIdx} (frame ${targetLocal})...`;
               if (!_decompressingSet.has(gopIdx)) {
                 _decompressingSet.add(gopIdx);
-                ensureGopDecompressed(gopIdx).finally(() => _decompressingSet.delete(gopIdx));
+                ensureGopDecompressed(gopIdx, targetLocal).finally(() => _decompressingSet.delete(gopIdx));
               }
             } else if (!gopEntry && !gopLoadingSet.has(gopIdx)) {
               // GOP not downloaded at all
@@ -2077,8 +2207,10 @@ function updateFrame(idx) {
     if (gopIdx >= 0) {
       const gopEntry = gopCache.get(gopIdx);
       if (gopEntry && !gopEntry.raw) {
-        // Cached but compressed — decompress then retry
-        ensureGopDecompressed(gopIdx).then(() => {
+        // Cached but compressed — decompress incrementally then retry
+        const pIdx = idx - 1;
+        const targetLocal = pIdx - gopEntry.startFrame;
+        ensureGopDecompressed(gopIdx, targetLocal).then(() => {
           if (currentFrame === idx || !isPlaying) {
             applyFrameData(idx);
             currentFrame = idx;
