@@ -123,7 +123,7 @@
 
 <div id="title-bar">
   <h1>4DGS Viewer V4a</h1>
-  <p>V4a: Mini-GOP Slice (10-frame partial decompress) | Ring-Buffer (3-partition) | OPFS Cache</p>
+  <p>V4a: Mini-GOP Slice (10-frame partial decompress) | Ring-Buffer (3-partition) | OPFS Cache | Safari-optimized</p>
 </div>
 
 <div id="gop-progress">
@@ -183,7 +183,7 @@ import { SplatMesh, dyno } from "@sparkjsdev/spark";
 // ============================================================
 // Configuration — Mini-GOP Slice: partial decompress for lower peak memory
 // ============================================================
-const MAX_CACHED_GOPS = 2;   // raw compressed GOP cache (current + prefetch next)
+const MAX_CACHED_GOPS = 3;   // raw compressed GOP cache (current + next + loop-back)
 const DELTA_K = 256;
 const STRIDE = 7; // bytes per gaussian per frame: xyz(3) + dc(3) + op(1)
 const MINI_SLICE_FRAMES = 10; // decompress only 10 frames at a time (~8MB vs ~25MB)
@@ -744,30 +744,39 @@ function packFrameToHalfFloat(frame, partitionIdx) {
   const texData = reusableTexData;
   texData.fill(0);
 
+  // Pre-compute scales for dequantization
+  const xyzScale0 = qXyzDScale[0], xyzMin0 = qXyzDMin[0];
+  const xyzScale1 = qXyzDScale[1], xyzMin1 = qXyzDMin[1];
+  const xyzScale2 = qXyzDScale[2], xyzMin2 = qXyzDMin[2];
+
+  // Use incremental row/col to avoid Math.floor and modulo in hot loop
+  let row = 0, col = 0;
   for (let i = 0; i < N; i++) {
     const bOff = i * STRIDE;
-    const row = Math.floor(i / DELTA_K);  // row within the partition
-    const col = (i % DELTA_K) * 2;
 
-    const dx = frame[bOff + 0] * qXyzDScale[0] + qXyzDMin[0];
-    const dy = frame[bOff + 1] * qXyzDScale[1] + qXyzDMin[1];
-    const dz = frame[bOff + 2] * qXyzDScale[2] + qXyzDMin[2];
+    const dx = frame[bOff + 0] * xyzScale0 + xyzMin0;
+    const dy = frame[bOff + 1] * xyzScale1 + xyzMin1;
+    const dz = frame[bOff + 2] * xyzScale2 + xyzMin2;
     const dc0 = frame[bOff + 3] * dcScale0 + qDcMin[0];
     const dc1 = frame[bOff + 4] * dcScale1 + qDcMin[1];
     const dc2 = frame[bOff + 5] * dcScale2 + qDcMin[2];
     const op = frame[bOff + 6] * opScale + qOpMin;
 
-    let off = (row * deltaTexW + col) * 4;
+    const sc = col * 2;
+    let off = (row * deltaTexW + sc) * 4;
     texData[off + 0] = float32ToFloat16(dx);
     texData[off + 1] = float32ToFloat16(dy);
     texData[off + 2] = float32ToFloat16(dz);
     texData[off + 3] = float32ToFloat16(dc0);
 
-    off = (row * deltaTexW + col + 1) * 4;
+    off = (row * deltaTexW + sc + 1) * 4;
     texData[off + 0] = float32ToFloat16(dc1);
     texData[off + 1] = float32ToFloat16(dc2);
     texData[off + 2] = float32ToFloat16(op);
     texData[off + 3] = 0;
+
+    col++;
+    if (col >= DELTA_K) { col = 0; row++; }
   }
   // yOffset for texSubImage2D: partition 0 → row 0, partition 1 → deltaTexHalfH, etc.
   const yOffset = partitionIdx * deltaTexHalfH;
@@ -1003,6 +1012,8 @@ function evictDistantGops(currentGopIdx) {
   // Keep next GOP for seamless playback (compressed only)
   const nextGop = (currentGopIdx + 1) % totalGops;
   keepSet.add(nextGop);
+  // Always keep GOP 0 (compressed) for seamless loop-back
+  keepSet.add(0);
 
   let evicted = 0;
   let stripped = 0;
@@ -1032,8 +1043,6 @@ function evictDistantGops(currentGopIdx) {
   }
   if (evicted > 0 || stripped > 0) {
     diagLog('info', `Eviction: removed ${evicted}, stripped-raw ${stripped}, kept: [${[...keepSet].sort((a,b)=>a-b).join(',')}] (current=${currentGopIdx})`);
-    // Nudge GC after freeing large raw buffers
-    if (stripped > 0) nudgeGC();
   }
   reportStats();
 }
@@ -1068,27 +1077,14 @@ function reportStats() {
 }
 
 // ============================================================
-// GC Nudge — encourage V8 to run garbage collection
-// We can't call gc() directly, but allocating+discarding a large
-// temporary buffer creates memory pressure that triggers Major GC.
+// GC Nudge — REMOVED
+// Previously allocated 32+16MB temp buffers to trigger V8 GC.
+// This is harmful on Safari/JSC (creates memory pressure instead of relieving it)
+// and on iOS causes WebKit to throttle the page to 15fps.
+// Modern engines handle GC automatically; manual nudging is counterproductive.
 // ============================================================
 function nudgeGC() {
-  try {
-    // Allocate ~32MB temporary buffer — enough to trigger V8's GC heuristic
-    // The allocation itself plus immediate discard signals memory pressure
-    const pressure = new ArrayBuffer(32 * 1024 * 1024);
-    // Reference it briefly to prevent dead-code elimination
-    if (pressure.byteLength === 0) console.log('noop');
-  } catch (e) {
-    // OOM — GC will definitely run now
-  }
-  // Schedule a second nudge on next microtask to catch any stragglers
-  Promise.resolve().then(() => {
-    try {
-      const p2 = new ArrayBuffer(16 * 1024 * 1024);
-      if (p2.byteLength === 0) console.log('noop');
-    } catch (e) {}
-  });
+  // no-op: removed to fix Safari/iOS frame-rate drops
 }
 
 // ============================================================
@@ -1342,7 +1338,12 @@ function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
     }
   }
 
-  evictDistantGops(currentGopIdx);
+  // Throttle eviction to once per second (~30 frames) to reduce overhead
+  // (especially on Safari/iOS where frequent GC is costly)
+  if (!triggerPrefetch._lastEvictFrame || Math.abs(currentLocalIdx - triggerPrefetch._lastEvictFrame) > 30) {
+    triggerPrefetch._lastEvictFrame = currentLocalIdx;
+    evictDistantGops(currentGopIdx);
+  }
 }
 
 // ============================================================
@@ -1743,9 +1744,6 @@ playBtn.addEventListener('click', () => {
     const freedMB = releasePlaybackBuffers();
     diagLog('info', `Playback paused: released ${freedMB.toFixed(1)} MB of playback buffers`);
     reportStats();
-    // Nudge GC to actually reclaim the freed memory (not just null the refs)
-    nudgeGC();
-    setTimeout(() => { nudgeGC(); updateMemoryBadge(); }, 200);
     updateMemoryBadge();
   } else {
     // === Resume: re-acquire current GOP data for playback ===
