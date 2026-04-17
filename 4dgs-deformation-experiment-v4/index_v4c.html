@@ -142,7 +142,7 @@ class GopPersistCache {
   async _idbGet(k) { return new Promise(r => { try { const tx = this._idbDB.transaction('blobs','readonly'); const req = tx.objectStore('blobs').get(k); req.onsuccess = () => r(req.result||null); req.onerror = () => r(null); } catch(e) { r(null); } }); }
   async _idbPut(k, buf) { return new Promise(r => { try { const tx = this._idbDB.transaction('blobs','readwrite'); tx.objectStore('blobs').put(buf,k); tx.oncomplete = () => r(); tx.onerror = () => r(); } catch(e) { r(); } }); }
   async delete(ver, fn) { await this._ready; const k = this._key(ver,fn); if (this._mode==='opfs') try { await this._opfsRoot.removeEntry(k.replace(/\//g,'__')); } catch(e) {} else if (this._mode==='idb') try { this._idbDB.transaction('blobs','readwrite').objectStore('blobs').delete(k); } catch(e) {} }
-  async purgeOldVersions(ver) { await this._ready; const pfx = ver+'/'; if (this._mode==='opfs') try { for await (const [n] of this._opfsRoot) if (!n.startsWith(pfx.replace(/\//g,'__'))) await this._opfsRoot.removeEntry(n).catch(()=>{}); } catch(e) {} }
+  async purgeOldVersions(ver) { await this._ready; const pfx = ver+'/'; const protectedPfx = 'spz-static/'; if (this._mode==='opfs') try { for await (const [n] of this._opfsRoot) { const nn = n.replace(/__/g,'/'); if (!nn.startsWith(pfx) && !nn.startsWith(protectedPfx)) await this._opfsRoot.removeEntry(n).catch(()=>{}); } } catch(e) {} }
   get mode() { return this._mode; }
 }
 const persistCache = new GopPersistCache();
@@ -151,8 +151,8 @@ let diagStatsAccum = { framesRequested: 0, framesApplied: 0, framesDropped: 0, s
 const diagLogs = []; const DIAG_LOG_MAX = 300;
 function diagLog(level, msg, data) { diagLogs.push({ ts: performance.now(), level, msg, ...(data||{}) }); if (diagLogs.length > DIAG_LOG_MAX) diagLogs.shift(); if (level==='warn'||level==='error') console.warn(`[V4c:${level}]`, msg); }
 
-async function cachedFetch(url, cacheFilename, onProgress) {
-  const ver = v4cManifest ? v4cManifest.version : (manifest ? manifest.version : 'unknown');
+async function cachedFetch(url, cacheFilename, onProgress, fixedVersion) {
+  const ver = fixedVersion || (v4cManifest ? v4cManifest.version : (manifest ? manifest.version : 'unknown'));
   const cached = await persistCache.get(ver, cacheFilename);
   if (cached && cached.byteLength > 0) { diagStatsAccum.cacheHits++; updateCacheStatus(); if (onProgress) onProgress(1.0); return cached; }
   diagStatsAccum.cacheMisses++;
@@ -441,14 +441,14 @@ async function loadManifest() {
 }
 
 async function loadDynamicMask() {
-  const compressed = await cachedFetch('data_v3d/' + manifest.dynamic_mask, manifest.dynamic_mask);
+  const compressed = await cachedFetch('data_v3d/' + manifest.dynamic_mask, manifest.dynamic_mask, null, 'spz-static');
   const raw = await decompressGzip(compressed);
   dynamicMask = new Uint8Array(raw, 4, new DataView(raw).getUint32(0, true));
 }
 
 async function loadGopMeta() {
   gopStatus.textContent = 'Meta: downloading...';
-  const compressed = await cachedFetch(`data_v3d/${manifest.gop_meta}`, manifest.gop_meta);
+  const compressed = await cachedFetch(`data_v3d/${manifest.gop_meta}`, manifest.gop_meta, null, 'spz-static');
   const raw = await decompressGzip(compressed);
   const v = new DataView(raw); let pos = 28;
   qDcMin = [v.getFloat32(pos,true), v.getFloat32(pos+4,true), v.getFloat32(pos+8,true)];
@@ -740,10 +740,11 @@ async function init() {
   deltaSampler = dyno.dynoSampler2D(deltaTexture); maskSampler = dyno.dynoSampler2D(maskTexture);
 
   // Download SPZ with real-time progress (50% → 70% of loading bar)
+  // Use fixed version key 'spz-static' so I-frame cache survives v4c version bumps
   const iFrameBuf = await cachedFetch('data_v3d/' + manifest.i_frame, manifest.i_frame, (p) => {
     const pct = 50 + Math.round(p * 20);  // 50% → 70%
     setLoading(pct, `Loading SPZ I-frame... ${Math.round(p * 100)}%`);
-  });
+  }, 'spz-static');
   setLoading(70, 'Parsing 128K gaussians...');
 
   // Yield to let the progress bar update render before blocking Spark.js parse
