@@ -1540,20 +1540,24 @@ function renderMemChart() {
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
-  // Compute Y-axis max (auto-scale)
+  // Compute Y-axis max (auto-scale, based on visible range only)
   let maxStackMB = 0;
   let maxHeapMB = 0;
-  for (const s of samples) {
+  for (let si = visibleStart; si < samples.length; si++) {
+    const s = samples[si];
     const stack = s.gopCompressedMB + s.gopRawMB + s.decodeBufMB + s.texBufMB;
     if (stack > maxStackMB) maxStackMB = stack;
     if (s.jsHeapMB > maxHeapMB) maxHeapMB = s.jsHeapMB;
   }
   const yMax = Math.max(maxStackMB, maxHeapMB, 10) * 1.15; // 15% headroom
 
-  // Bar width — fill chart width based on actual visible sample count
-  const visibleCount = samples.length;
+  // Bar width — minimum 5px per bar; if samples exceed capacity, show most recent only
   const barGap = 1;
-  const barW = Math.max(3, (chartW - (visibleCount - 1) * barGap) / visibleCount);
+  const minBarW = 5 * dpr;
+  const maxVisibleBars = Math.max(1, Math.floor(chartW / (minBarW + barGap)));
+  const visibleStart = Math.max(0, samples.length - maxVisibleBars);
+  const visibleCount = samples.length - visibleStart;
+  const barW = Math.max(minBarW, (chartW - (visibleCount - 1) * barGap) / visibleCount);
 
   // Colors
   const colors = {
@@ -1582,10 +1586,11 @@ function renderMemChart() {
     ctx.fillText(val + ' MB', padL - 6 * dpr, y);
   }
 
-  // Draw bars — all samples, fill entire chart width
-  for (let i = 0; i < samples.length; i++) {
+  // Draw bars — visible range only, fill entire chart width
+  for (let i = visibleStart; i < samples.length; i++) {
     const s = samples[i];
-    const x = padL + i * (barW + barGap);
+    const bi = i - visibleStart; // bar index within visible range
+    const x = padL + bi * (barW + barGap);
 
     // Stacked segments (bottom to top)
     const segs = [
@@ -1620,8 +1625,9 @@ function renderMemChart() {
   ctx.textBaseline = 'top';
   const minLabelSpacingPx = 70 * dpr; // minimum pixels between labels
   const labelStep = Math.max(1, Math.ceil(minLabelSpacingPx / (barW + barGap)));
-  for (let i = 0; i < samples.length; i += labelStep) {
-    const x = padL + i * (barW + barGap) + barW / 2;
+  for (let i = visibleStart; i < samples.length; i += labelStep) {
+    const bi = i - visibleStart;
+    const x = padL + bi * (barW + barGap) + barW / 2;
     const sec = ((samples[i].ts - samples[0].ts) / 1000).toFixed(0);
     ctx.fillText(`${sec}s`, x, padT + chartH + 6 * dpr);
     ctx.fillText(`f${samples[i].frame}`, x, padT + chartH + 18 * dpr);
