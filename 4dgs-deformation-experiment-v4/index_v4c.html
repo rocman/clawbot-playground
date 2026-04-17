@@ -652,7 +652,7 @@ const MAX_DPR = Math.min(window.devicePixelRatio, 2);
 let currentDPR = MAX_DPR;
 renderer.setPixelRatio(currentDPR);
 document.getElementById('viewer-container').appendChild(renderer.domElement);
-window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(currentDPR); });
 
 // ============================================================
 // Memory chart (simplified from V4a)
@@ -787,8 +787,30 @@ async function init() {
   const ADVANCE_INTERVAL = 1000 / targetFPS;  // ~33ms for 30fps data advance
   let stallWaitingChunk = -1;
 
+  // Adaptive DPR — based on per-frame rAF interval (EMA smoothed)
+  // Much more responsive than 500ms averaged FPS stats.
+  let prevFrameTs = 0;          // timestamp of previous rAF callback
+  let emaFrameMs = 16.67;       // EMA of per-frame interval (start at ~60fps)
+  const EMA_ALPHA = 0.15;       // smoothing factor: higher = more responsive (0.15 ≈ last ~7 frames)
+  let dprCooldownUntil = 0;     // timestamp: don't change DPR again until this time (avoid flicker)
+  const DPR_COOLDOWN_MS = 800;  // minimum interval between DPR changes
+  const DPR_STEP = 0.25;        // step size for DPR changes
+  const DPR_MIN = 0.5;          // absolute minimum DPR
+  const FPS_FLOOR = 28;         // below this → step DOWN
+  const FPS_CEILING = 50;       // above this → step UP
+
   renderer.setAnimationLoop(function animate() {
     const now = performance.now();
+
+    // ---- Per-frame interval tracking (EMA) ----
+    if (prevFrameTs > 0) {
+      const dt = now - prevFrameTs;
+      // Ignore outliers from tab-switch / background throttle (>200ms = <5fps)
+      if (dt > 0 && dt < 200) {
+        emaFrameMs = EMA_ALPHA * dt + (1 - EMA_ALPHA) * emaFrameMs;
+      }
+    }
+    prevFrameTs = now;
 
     // Advance frame data at targetFPS (30Hz)
     if (isPlaying && viewMode === 'animated') {
@@ -828,26 +850,38 @@ async function init() {
     controls.update();
     renderer.render(scene, camera);
 
-    // FPS counter + adaptive DPR (auto-downscale when GPU is struggling)
+    // ---- Adaptive DPR: per-frame EMA-based, no setSize (avoids black flash) ----
+    const instantFps = emaFrameMs > 0 ? 1000 / emaFrameMs : 60;
+    if (now > dprCooldownUntil) {
+      let targetDPR = currentDPR;
+      if (instantFps < FPS_FLOOR && currentDPR > DPR_MIN) {
+        targetDPR = Math.max(DPR_MIN, currentDPR - DPR_STEP);
+      } else if (instantFps > FPS_CEILING && currentDPR < MAX_DPR) {
+        targetDPR = Math.min(MAX_DPR, currentDPR + DPR_STEP);
+      }
+      if (targetDPR !== currentDPR) {
+        currentDPR = targetDPR;
+        // Only setPixelRatio — do NOT call setSize() which clears the framebuffer → black flash!
+        // Three.js will use the new DPR on the next render() call automatically
+        // since the canvas physical size hasn't changed, just the internal resolution.
+        renderer.setPixelRatio(currentDPR);
+        // Manually update the internal render target size to match new DPR without clearing:
+        const w = window.innerWidth, h = window.innerHeight;
+        renderer.domElement.width = Math.floor(w * currentDPR);
+        renderer.domElement.height = Math.floor(h * currentDPR);
+        renderer.getContext().viewport(0, 0, renderer.domElement.width, renderer.domElement.height);
+        dprCooldownUntil = now + DPR_COOLDOWN_MS;
+        diagLog('info', `Adaptive DPR: ${currentDPR.toFixed(2)} (EMA fps=${instantFps.toFixed(1)})`);
+      }
+    }
+
+    // FPS counter (for display only, DPR decisions use EMA above)
     frameCount++;
     if (now - lastFpsTime > 500) {
       const measuredFps = Math.round(frameCount / ((now - lastFpsTime) / 1000));
       document.getElementById('stat-fps').textContent = measuredFps;
       frameCount = 0; lastFpsTime = now;
       const dblEl = document.getElementById('stat-dblbuf'); if (dblEl) dblEl.textContent = `R:P${readPartition} W:P${writePartition} (${RING_PARTITIONS}-ring)`;
-
-      // Adaptive DPR: step down if FPS is low, step up if FPS is high
-      // Thresholds chosen to keep FPS ≥ 28 on mobile
-      let targetDPR = currentDPR;
-      if (measuredFps < 25 && currentDPR > 0.75) targetDPR = Math.max(0.75, currentDPR - 0.25);
-      else if (measuredFps < 35 && currentDPR > 1.0) targetDPR = Math.max(1.0, currentDPR - 0.25);
-      else if (measuredFps > 50 && currentDPR < MAX_DPR) targetDPR = Math.min(MAX_DPR, currentDPR + 0.25);
-      if (targetDPR !== currentDPR) {
-        currentDPR = targetDPR;
-        renderer.setPixelRatio(currentDPR);
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        diagLog('info', `Adaptive DPR: ${currentDPR.toFixed(2)} (FPS was ${measuredFps})`);
-      }
       const dprEl = document.getElementById('stat-dpr'); if (dprEl) dprEl.textContent = currentDPR.toFixed(2);
     }
   });
