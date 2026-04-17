@@ -69,7 +69,7 @@
     <div id="loading-bar-bg"><div id="loading-bar"></div></div>
     <div id="loading-text">Initializing...</div>
   </div>
-  <div id="title-bar"><h1>4DGS Viewer V4c</h1><p>V4c: Pre-baked GPU Texture | Zero CPU Decode | Ring-Buffer (3-partition) | OPFS Cache</p></div>
+  <div id="title-bar"><h1>4DGS Viewer V4c</h1><p>V4c: Pre-baked GPU Texture | Zero CPU Decode | OPFS Raw Cache (decompress once) | Ring-Buffer (3-partition)</p></div>
   <div id="gop-progress"><span id="gop-status">Chunks: initializing...</span><div class="bar-bg"><div class="bar" id="gop-bar"></div></div></div>
   <div id="mem-badge">MEM: --</div>
   <div id="viewer-container"></div>
@@ -101,8 +101,8 @@
   <div class="chart-subtitle">Real-time stacked bar chart — scroll down to view. Sampled every 500ms.</div>
   <canvas id="mem-chart-canvas"></canvas>
   <div id="mem-chart-legend">
-    <div class="legend-item"><span class="legend-swatch" style="background:#3a8bff"></span> Chunk Compressed</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#f74"></span> Chunk TexData (decompressed)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#f74"></span> TexData (GPU-ready, in memory)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#3a5"></span> OPFS-backed (evictable, instant re-fetch)</div>
     <div class="legend-item"><span class="legend-swatch" style="background:rgba(126,207,255,0.25)"></span> JS Heap Used (overlay)</div>
   </div>
   <div id="mem-chart-stats"></div>
@@ -159,6 +159,55 @@ async function cachedFetch(url, cacheFilename) {
     catch (e) { if (attempt < 3) await new Promise(r => setTimeout(r, 500*attempt)); else throw e; }
   }
 }
+
+// V4c: Fetch .gz from network, decompress ONCE, cache the RAW result in OPFS.
+// On subsequent loads, OPFS returns raw directly — ZERO decompression!
+async function cachedFetchRaw(gzUrl, cacheFilenameGz) {
+  const ver = v4cManifest ? v4cManifest.version : (manifest ? manifest.version : 'unknown');
+  const rawKey = cacheFilenameGz.replace(/\.gz$/, '.raw');
+
+  // 1. Check OPFS for pre-decompressed raw data
+  const cachedRaw = await persistCache.get(ver, rawKey);
+  if (cachedRaw && cachedRaw.byteLength > 0) {
+    diagStatsAccum.cacheHits++;
+    updateCacheStatus();
+    diagLog('info', `OPFS raw cache hit: ${rawKey} (${(cachedRaw.byteLength/1024/1024).toFixed(1)} MB)`);
+    return cachedRaw;
+  }
+
+  // 2. Check OPFS for compressed .gz (legacy cache from previous version)
+  const cachedGz = await persistCache.get(ver, cacheFilenameGz);
+  let gzBuf = null;
+  if (cachedGz && cachedGz.byteLength > 0) {
+    diagStatsAccum.cacheHits++;
+    gzBuf = cachedGz;
+    diagLog('info', `OPFS gz cache hit (legacy): ${cacheFilenameGz}, will decompress & upgrade to raw`);
+  } else {
+    // 3. Download from network
+    diagStatsAccum.cacheMisses++;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const resp = await fetch(gzUrl);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        gzBuf = await resp.arrayBuffer();
+        if (gzBuf.byteLength === 0) throw new Error('Empty response');
+        break;
+      } catch (e) { if (attempt < 3) await new Promise(r => setTimeout(r, 500*attempt)); else throw e; }
+    }
+  }
+
+  // 4. Decompress ONCE
+  const rawBuf = await decompressGzip(gzBuf);
+
+  // 5. Store raw in OPFS (not the gz!) — future loads skip decompression entirely
+  persistCache.put(ver, rawKey, rawBuf).catch(() => {});
+  // Clean up legacy gz cache entry
+  persistCache.delete(ver, cacheFilenameGz).catch(() => {});
+
+  updateCacheStatus();
+  return rawBuf;
+}
+
 function updateCacheStatus() { const el = document.getElementById('stat-cache'); if (el) el.textContent = `${(persistCache.mode||'none').toUpperCase()} ${diagStatsAccum.cacheHits}/${diagStatsAccum.cacheHits+diagStatsAccum.cacheMisses} hits`; }
 
 // ============================================================
@@ -208,6 +257,7 @@ async function decompressGzip(buf) {
 
 // ============================================================
 // V4c: Texture Chunk Loading — ZERO CPU decode!
+// Now also ZERO repeated decompression — OPFS stores raw texData!
 // ============================================================
 async function loadTexChunk(chunkIdx, keepTexData = true) {
   if (texChunkCache.has(chunkIdx) || texChunkLoadingSet.has(chunkIdx) || texChunkFailedSet.has(chunkIdx)) return;
@@ -217,11 +267,19 @@ async function loadTexChunk(chunkIdx, keepTexData = true) {
   const t0 = performance.now();
   const chunkInfo = v4cManifest.texframe_files[chunkIdx];
   try {
-    const compressed = await cachedFetch(`${V4C_DATA_DIR}/${chunkInfo.filename}`, `v4c/${chunkInfo.filename}`);
-    let texData = keepTexData ? await decompressGzip(compressed) : null;
-    texChunkCache.set(chunkIdx, { compressed, texData, numFrames: chunkInfo.num_frames, startFrame: chunkInfo.start_frame, endFrame: chunkInfo.end_frame, lastAccess: performance.now() });
+    // Fetch raw texData directly (OPFS caches decompressed data, gz decompression happens only ONCE ever)
+    const texData = await cachedFetchRaw(`${V4C_DATA_DIR}/${chunkInfo.filename}`, `v4c/${chunkInfo.filename}`);
+    texChunkCache.set(chunkIdx, {
+      texData: keepTexData ? texData : null,
+      rawCacheKey: `v4c/${chunkInfo.filename}`,  // for re-fetch from OPFS if texData was stripped
+      numFrames: chunkInfo.num_frames,
+      startFrame: chunkInfo.start_frame,
+      endFrame: chunkInfo.end_frame,
+      lastAccess: performance.now(),
+    });
     texChunkLoadingSet.delete(chunkIdx);
-    diagLog('info', `TexChunk ${chunkIdx} loaded in ${(performance.now()-t0).toFixed(0)}ms (gz: ${(compressed.byteLength/1024/1024).toFixed(1)} MB${texData ? ', raw: '+(texData.byteLength/1024/1024).toFixed(1)+' MB' : ''})`);
+    const rawMB = (texData.byteLength/1024/1024).toFixed(1);
+    diagLog('info', `TexChunk ${chunkIdx} ready in ${(performance.now()-t0).toFixed(0)}ms (raw: ${rawMB} MB, keepTexData=${keepTexData})`);
     updateGopStripUI(chunkIdx, 'loaded');
     reportStats();
   } catch (err) {
@@ -232,12 +290,28 @@ async function loadTexChunk(chunkIdx, keepTexData = true) {
   }
 }
 
-async function ensureTexChunkDecompressed(chunkIdx) {
+// Re-fetch texData from OPFS (no decompression needed!)
+async function ensureTexChunkReady(chunkIdx) {
   const chunk = texChunkCache.get(chunkIdx);
-  if (!chunk) return false; if (chunk.texData) return true;
+  if (!chunk) return false;
+  if (chunk.texData) return true;
+  // texData was stripped to save memory — re-fetch from OPFS (instant, no decompress!)
   const t0 = performance.now();
-  try { chunk.texData = await decompressGzip(chunk.compressed); diagLog('info', `TexChunk ${chunkIdx} decompressed in ${(performance.now()-t0).toFixed(1)}ms`); reportStats(); return true; }
-  catch (e) { diagLog('error', `TexChunk ${chunkIdx} decompress fail: ${e.message}`); return false; }
+  const ver = v4cManifest ? v4cManifest.version : 'unknown';
+  const rawKey = (chunk.rawCacheKey || '').replace(/\.gz$/, '.raw');
+  const raw = await persistCache.get(ver, rawKey);
+  if (raw && raw.byteLength > 0) {
+    chunk.texData = raw;
+    chunk.lastAccess = performance.now();
+    diagLog('info', `TexChunk ${chunkIdx} re-fetched from OPFS in ${(performance.now()-t0).toFixed(1)}ms (${(raw.byteLength/1024/1024).toFixed(1)} MB, zero decompress)`);
+    reportStats();
+    return true;
+  }
+  // Fallback: re-download
+  diagLog('warn', `TexChunk ${chunkIdx} OPFS miss on re-fetch, re-downloading...`);
+  texChunkCache.delete(chunkIdx);
+  await loadTexChunk(chunkIdx, true);
+  return texChunkCache.has(chunkIdx) && texChunkCache.get(chunkIdx).texData != null;
 }
 
 function evictDistantChunks(currentChunkIdx) {
@@ -245,7 +319,7 @@ function evictDistantChunks(currentChunkIdx) {
   const keepSet = new Set([currentChunkIdx, (currentChunkIdx+1) % total]);
   for (const [idx, chunk] of texChunkCache) {
     if (!keepSet.has(idx)) { texChunkCache.delete(idx); updateGopStripUI(idx, 'evicted'); }
-    else if (idx !== currentChunkIdx && chunk.texData) { chunk.texData = null; }
+    else if (idx !== currentChunkIdx && chunk.texData) { chunk.texData = null; }  // strip texData, can re-fetch from OPFS instantly
   }
   reportStats();
 }
@@ -270,10 +344,10 @@ function getFrameTexData(globalFrame) {
 
 function reportStats() {
   const loaded = texChunkCache.size, total = v4cManifest ? v4cManifest.texframe_files.length : 0;
-  let compB = 0, texB = 0, texC = 0, compC = 0;
-  for (const [,c] of texChunkCache) { if (c.compressed) compB += c.compressed.byteLength; if (c.texData) { texB += c.texData.byteLength; texC++; } else compC++; }
+  let texB = 0, texC = 0, strippedC = 0;
+  for (const [,c] of texChunkCache) { if (c.texData) { texB += c.texData.byteLength; texC++; } else strippedC++; }
   document.getElementById('stat-gops').textContent = `${loaded}/${total}`;
-  document.getElementById('stat-window').textContent = `${((compB+texB)/1024/1024).toFixed(1)} MB (${texC} texData + ${compC} gz)`;
+  document.getElementById('stat-window').textContent = `${(texB/1024/1024).toFixed(1)} MB (${texC} active + ${strippedC} OPFS-backed)`;
   gopBar.style.width = (total > 0 ? Math.round(loaded / Math.min(MAX_CACHED_CHUNKS,total)*100) : 0) + '%';
 }
 
@@ -420,9 +494,9 @@ window.addEventListener('resize', () => { camera.aspect = window.innerWidth/wind
 // ============================================================
 const MEM_CHART_MAX_SAMPLES = 240; const memChartSamples = []; let memChartInterval = null;
 function sampleMemory() {
-  let compB = 0, texB = 0, texC = 0;
-  for (const [,c] of texChunkCache) { if (c.compressed) compB += c.compressed.byteLength; if (c.texData) { texB += c.texData.byteLength; texC++; } }
-  memChartSamples.push({ ts: performance.now(), frame: currentFrame, compMB: compB/(1024*1024), texMB: texB/(1024*1024), jsHeapMB: performance.memory ? performance.memory.usedJSHeapSize/(1024*1024) : 0, texCount: texC, playing: isPlaying });
+  let texB = 0, texC = 0;
+  for (const [,c] of texChunkCache) { if (c.texData) { texB += c.texData.byteLength; texC++; } }
+  memChartSamples.push({ ts: performance.now(), frame: currentFrame, compMB: 0, texMB: texB/(1024*1024), jsHeapMB: performance.memory ? performance.memory.usedJSHeapSize/(1024*1024) : 0, texCount: texC, playing: isPlaying });
   if (memChartSamples.length > MEM_CHART_MAX_SAMPLES) memChartSamples.shift();
   renderMemChart();
 }
@@ -566,7 +640,7 @@ async function init() {
           const chunkIdx = getTexChunkForFrame(nextFrame);
           if (chunkIdx >= 0) {
             const chunk = texChunkCache.get(chunkIdx);
-            if (chunk && !chunk.texData) { frameLabel.textContent = `Decompressing Chunk ${chunkIdx}...`; ensureTexChunkDecompressed(chunkIdx); }
+            if (chunk && !chunk.texData) { frameLabel.textContent = `Fetching Chunk ${chunkIdx} from OPFS...`; ensureTexChunkReady(chunkIdx); }
             else if (!chunk && !texChunkLoadingSet.has(chunkIdx)) { frameLabel.textContent = `Loading Chunk ${chunkIdx}...`; loadTexChunk(chunkIdx); }
             else { frameLabel.textContent = `Loading Chunk ${chunkIdx}...`; }
           }
@@ -590,7 +664,7 @@ function updateFrame(idx) {
     if (ci >= 0) triggerPrefetch(ci);
   } else {
     const ci = getTexChunkForFrame(idx);
-    if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData) ensureTexChunkDecompressed(ci).then(() => { applyFrameData(idx); currentFrame = idx; }); else if (!c) loadTexChunk(ci).then(() => { applyFrameData(idx); currentFrame = idx; }); }
+    if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData) ensureTexChunkReady(ci).then(() => { applyFrameData(idx); currentFrame = idx; }); else if (!c) loadTexChunk(ci).then(() => { applyFrameData(idx); currentFrame = idx; }); }
   }
   diagStatsAccum.framesRequested++;
 }
@@ -598,7 +672,7 @@ function updateFrame(idx) {
 // UI events
 playBtn.addEventListener('click', () => {
   isPlaying = !isPlaying; playBtn.textContent = isPlaying ? '\u23F8' : '\u25B6';
-  if (!isPlaying) { let freed = 0; for (const [idx,c] of texChunkCache) { if (c.texData) freed += c.texData.byteLength; if (c.compressed) freed += c.compressed.byteLength; updateGopStripUI(idx,'evicted'); } texChunkCache.clear(); reportStats(); }
+  if (!isPlaying) { let freed = 0; for (const [idx,c] of texChunkCache) { if (c.texData) freed += c.texData.byteLength; updateGopStripUI(idx,'evicted'); } texChunkCache.clear(); reportStats(); }
   else { const ci = getTexChunkForFrame(currentFrame); if (ci >= 0 && !texChunkCache.has(ci)) loadTexChunk(ci, true); }
 });
 timeline.addEventListener('input', e => { isPlaying = false; playBtn.textContent = '\u25B6'; updateFrame(parseInt(e.target.value)); });
