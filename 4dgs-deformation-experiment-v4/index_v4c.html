@@ -788,16 +788,15 @@ async function init() {
   let stallWaitingChunk = -1;
 
   // Adaptive DPR — "easy down, hard up" strategy based on raw rAF interval.
-  // - If a single frame takes too long → IMMEDIATELY drop DPR (no averaging delay)
-  // - After dropping, schedule a timeout to TRY climbing back up (e.g. 3s later)
-  // - If another slow frame arrives before the timeout fires → CANCEL the climb
-  // - Result: DPR drops instantly on any stutter, only recovers after sustained smooth frames.
+  // Core idea: drop DPR the moment ANY frame exceeds the threshold (>17ms = not 60fps),
+  // but only climb back after sustained fast frames for a long timeout period.
+  // A slow frame during the timeout cancels the climb → DPR stays low.
   let prevFrameTs = 0;
   const DPR_STEP = 0.25;
   const DPR_MIN = 0.5;
-  const SLOW_FRAME_MS = 38;     // >38ms = <26fps → trigger instant downgrade
-  const FAST_FRAME_MS = 20;     // <20ms = >50fps → qualifies as "fast" for upgrade consideration
-  const CLIMB_DELAY_MS = 3000;  // wait 3s of no slow frames before attempting upgrade
+  const SLOW_FRAME_MS = 17;     // >17ms = <59fps → trigger instant downgrade (any dropped frame)
+  const FAST_FRAME_MS = 14;     // <14ms = >71fps → qualifies as "fast" for upgrade consideration
+  const CLIMB_DELAY_MS = 5000;  // wait 5s of sustained fast frames before attempting upgrade
   let dprClimbTimer = null;     // setTimeout handle for pending DPR upgrade
   let lastDropTs = 0;           // timestamp of last DPR drop (prevent rapid consecutive drops)
 
@@ -811,7 +810,7 @@ async function init() {
       if (dt > 0 && dt < 200) {
         if (dt > SLOW_FRAME_MS) {
           // ★ SLOW FRAME detected → immediately drop DPR if possible
-          if (currentDPR > DPR_MIN && (now - lastDropTs) > 500) {
+          if (currentDPR > DPR_MIN && (now - lastDropTs) > 200) {
             // Cancel any pending climb — we just stuttered
             if (dprClimbTimer) { clearTimeout(dprClimbTimer); dprClimbTimer = null; }
             currentDPR = Math.max(DPR_MIN, currentDPR - DPR_STEP);
