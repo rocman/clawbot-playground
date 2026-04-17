@@ -1540,6 +1540,13 @@ function renderMemChart() {
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
+  // Visible bar range — cap at 50 bars max, show most recent
+  const MAX_VISIBLE_BARS = 50;
+  const barGap = 1;
+  const visibleCount = Math.min(samples.length, MAX_VISIBLE_BARS);
+  const visibleStart = samples.length - visibleCount;
+  const barW = (chartW - (visibleCount - 1) * barGap) / visibleCount;
+
   // Compute Y-axis max (auto-scale, based on visible range only)
   let maxStackMB = 0;
   let maxHeapMB = 0;
@@ -1550,14 +1557,6 @@ function renderMemChart() {
     if (s.jsHeapMB > maxHeapMB) maxHeapMB = s.jsHeapMB;
   }
   const yMax = Math.max(maxStackMB, maxHeapMB, 10) * 1.15; // 15% headroom
-
-  // Bar width — minimum 5px per bar; if samples exceed capacity, show most recent only
-  const barGap = 1;
-  const minBarW = 5 * dpr;
-  const maxVisibleBars = Math.max(1, Math.floor(chartW / (minBarW + barGap)));
-  const visibleStart = Math.max(0, samples.length - maxVisibleBars);
-  const visibleCount = samples.length - visibleStart;
-  const barW = Math.max(minBarW, (chartW - (visibleCount - 1) * barGap) / visibleCount);
 
   // Colors
   const colors = {
