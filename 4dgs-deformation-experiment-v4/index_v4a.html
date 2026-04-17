@@ -1550,9 +1550,10 @@ function renderMemChart() {
   }
   const yMax = Math.max(maxStackMB, maxHeapMB, 10) * 1.15; // 15% headroom
 
-  // Bar width
-  const barW = Math.max(2, chartW / MEM_CHART_MAX_SAMPLES - 1);
+  // Bar width — fill chart width based on actual visible sample count
+  const visibleCount = samples.length;
   const barGap = 1;
+  const barW = Math.max(3, (chartW - (visibleCount - 1) * barGap) / visibleCount);
 
   // Colors
   const colors = {
@@ -1581,12 +1582,10 @@ function renderMemChart() {
     ctx.fillText(val + ' MB', padL - 6 * dpr, y);
   }
 
-  // Draw bars
-  const startIdx = Math.max(0, samples.length - Math.floor(chartW / (barW + barGap)));
-  for (let i = startIdx; i < samples.length; i++) {
+  // Draw bars — all samples, fill entire chart width
+  for (let i = 0; i < samples.length; i++) {
     const s = samples[i];
-    const barIdx = i - startIdx;
-    const x = padL + barIdx * (barW + barGap);
+    const x = padL + i * (barW + barGap);
 
     // Stacked segments (bottom to top)
     const segs = [
@@ -1614,18 +1613,17 @@ function renderMemChart() {
     }
   }
 
-  // X-axis: frame numbers every ~20 bars
+  // X-axis: labels with minimum pixel spacing to avoid overlap
   ctx.fillStyle = '#555';
   ctx.font = `${10 * dpr}px 'Segoe UI', sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  const labelInterval = Math.max(1, Math.floor((samples.length - startIdx) / 10));
-  for (let i = startIdx; i < samples.length; i += labelInterval) {
-    const barIdx = i - startIdx;
-    const x = padL + barIdx * (barW + barGap) + barW / 2;
+  const minLabelSpacingPx = 70 * dpr; // minimum pixels between labels
+  const labelStep = Math.max(1, Math.ceil(minLabelSpacingPx / (barW + barGap)));
+  for (let i = 0; i < samples.length; i += labelStep) {
+    const x = padL + i * (barW + barGap) + barW / 2;
     const sec = ((samples[i].ts - samples[0].ts) / 1000).toFixed(0);
     ctx.fillText(`${sec}s`, x, padT + chartH + 6 * dpr);
-    // Also show frame number
     ctx.fillText(`f${samples[i].frame}`, x, padT + chartH + 18 * dpr);
   }
 
