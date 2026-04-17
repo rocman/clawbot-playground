@@ -6,7 +6,7 @@
 <title>4DGS Deformation Viewer V4a — Mini-GOP Slice + Ring-Buffer Texture</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; overflow-y: auto; }
   canvas { touch-action: none; display: block; }
 
   #loading-overlay {
@@ -111,6 +111,40 @@
     font-size: 11px; padding: 4px 10px; border-radius: 12px;
     background: #1a3a1a; color: #4a9; border: 1px solid #2a5a2a;
   }
+
+  /* ===== Memory Chart Section ===== */
+  #memory-chart-section {
+    position: relative; z-index: 50;
+    margin-top: 100vh; /* push below viewport so user scrolls to see it */
+    padding: 24px 24px 40px;
+    background: #0d0d14;
+    border-top: 1px solid #222;
+    min-height: 420px;
+  }
+  #memory-chart-section h2 {
+    font-size: 18px; font-weight: 400; color: #7ecfff;
+    letter-spacing: 1px; margin-bottom: 8px;
+  }
+  #memory-chart-section .chart-subtitle {
+    font-size: 12px; color: #666; margin-bottom: 16px;
+  }
+  #mem-chart-canvas {
+    width: 100%; height: 320px;
+    background: #111118; border-radius: 8px; border: 1px solid #1a1a28;
+  }
+  #mem-chart-legend {
+    display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; font-size: 12px; color: #999;
+  }
+  #mem-chart-legend .legend-item {
+    display: flex; align-items: center; gap: 6px;
+  }
+  #mem-chart-legend .legend-swatch {
+    width: 14px; height: 14px; border-radius: 3px; display: inline-block;
+  }
+  #mem-chart-stats {
+    margin-top: 12px; font-size: 12px; color: #666;
+    display: flex; gap: 24px; flex-wrap: wrap;
+  }
 </style>
 </head>
 <body>
@@ -163,6 +197,20 @@
     <span>Cache: <span id="stat-cache">--</span></span>
     <span>RingBuf: <span id="stat-dblbuf">--</span></span>
   </div>
+</div>
+
+<div id="memory-chart-section">
+  <h2>📊 Memory Usage Timeline</h2>
+  <div class="chart-subtitle">Real-time stacked bar chart — scroll down to view. Sampled every 500ms.</div>
+  <canvas id="mem-chart-canvas"></canvas>
+  <div id="mem-chart-legend">
+    <div class="legend-item"><span class="legend-swatch" style="background:#3a8bff"></span> GOP Compressed</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#f74"></span> GOP Raw (decompressed)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#4a9"></span> Decode Buffers</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#c8a"></span> Texture Buffers</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgba(126,207,255,0.25)"></span> JS Heap Used (overlay)</div>
+  </div>
+  <div id="mem-chart-stats"></div>
 </div>
 
 <script type="importmap">
@@ -1381,6 +1429,198 @@ function triggerPrefetch(currentGopIdx, currentLocalIdx, currentGopFrames) {
 }
 
 // ============================================================
+// 📊 Memory Chart — stacked bar chart on Canvas
+// ============================================================
+const MEM_CHART_MAX_SAMPLES = 240; // ~2 min at 500ms interval
+const memChartSamples = [];
+let memChartInterval = null;
+
+function sampleMemory() {
+  // Gather component memory sizes
+  let gopCompressedBytes = 0;
+  let gopRawBytes = 0;
+  let gopRawCount = 0;
+  for (const [, gop] of gopCache) {
+    if (gop.compressed) gopCompressedBytes += gop.compressed.byteLength;
+    if (gop.raw) { gopRawBytes += gop.raw.byteLength; gopRawCount++; }
+  }
+  const decodeBufBytes = (decodeOutputBuf ? decodeOutputBuf.byteLength : 0) +
+                         (streamState.prevFrame ? streamState.prevFrame.byteLength : 0);
+  const texBufBytes = reusableTexData ? reusableTexData.byteLength : 0;
+
+  // JS Heap (Chrome only, 0 on Safari)
+  const jsHeapUsed = performance.memory ? performance.memory.usedJSHeapSize : 0;
+
+  const sample = {
+    ts: performance.now(),
+    frame: currentFrame,
+    gopCompressedMB: gopCompressedBytes / (1024 * 1024),
+    gopRawMB: gopRawBytes / (1024 * 1024),
+    decodeBufMB: decodeBufBytes / (1024 * 1024),
+    texBufMB: texBufBytes / (1024 * 1024),
+    jsHeapMB: jsHeapUsed / (1024 * 1024),
+    gopRawCount,
+    playing: isPlaying,
+  };
+
+  memChartSamples.push(sample);
+  if (memChartSamples.length > MEM_CHART_MAX_SAMPLES) memChartSamples.shift();
+
+  renderMemChart();
+}
+
+function renderMemChart() {
+  const canvas = document.getElementById('mem-chart-canvas');
+  if (!canvas) return;
+
+  // High-DPI support
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const W = rect.width * dpr;
+  const H = rect.height * dpr;
+  if (canvas.width !== Math.round(W) || canvas.height !== Math.round(H)) {
+    canvas.width = Math.round(W);
+    canvas.height = Math.round(H);
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const samples = memChartSamples;
+  if (samples.length < 2) return;
+
+  // Layout
+  const padL = 60 * dpr, padR = 20 * dpr, padT = 20 * dpr, padB = 40 * dpr;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  // Compute Y-axis max (auto-scale)
+  let maxStackMB = 0;
+  let maxHeapMB = 0;
+  for (const s of samples) {
+    const stack = s.gopCompressedMB + s.gopRawMB + s.decodeBufMB + s.texBufMB;
+    if (stack > maxStackMB) maxStackMB = stack;
+    if (s.jsHeapMB > maxHeapMB) maxHeapMB = s.jsHeapMB;
+  }
+  const yMax = Math.max(maxStackMB, maxHeapMB, 10) * 1.15; // 15% headroom
+
+  // Bar width
+  const barW = Math.max(2, chartW / MEM_CHART_MAX_SAMPLES - 1);
+  const barGap = 1;
+
+  // Colors
+  const colors = {
+    compressed: '#3a8bff',
+    raw: '#f74',
+    decode: '#4a9',
+    tex: '#c8a',
+    heap: 'rgba(126,207,255,0.25)',
+  };
+
+  // Y-axis grid lines
+  ctx.strokeStyle = '#1a1a28';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#555';
+  ctx.font = `${11 * dpr}px 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  const gridSteps = 5;
+  for (let i = 0; i <= gridSteps; i++) {
+    const y = padT + chartH - (i / gridSteps) * chartH;
+    const val = (yMax * i / gridSteps).toFixed(0);
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(W - padR, y);
+    ctx.stroke();
+    ctx.fillText(val + ' MB', padL - 6 * dpr, y);
+  }
+
+  // Draw bars
+  const startIdx = Math.max(0, samples.length - Math.floor(chartW / (barW + barGap)));
+  for (let i = startIdx; i < samples.length; i++) {
+    const s = samples[i];
+    const barIdx = i - startIdx;
+    const x = padL + barIdx * (barW + barGap);
+
+    // Stacked segments (bottom to top)
+    const segs = [
+      { val: s.gopCompressedMB, color: colors.compressed },
+      { val: s.gopRawMB, color: colors.raw },
+      { val: s.decodeBufMB, color: colors.decode },
+      { val: s.texBufMB, color: colors.tex },
+    ];
+
+    let cumY = 0;
+    for (const seg of segs) {
+      const h = (seg.val / yMax) * chartH;
+      const y = padT + chartH - cumY - h;
+      ctx.fillStyle = seg.color;
+      ctx.fillRect(x, y, barW, Math.max(h, 0));
+      cumY += h;
+    }
+
+    // JS Heap overlay (line-like thin bar on top)
+    if (s.jsHeapMB > 0) {
+      const heapH = (s.jsHeapMB / yMax) * chartH;
+      const heapY = padT + chartH - heapH;
+      ctx.fillStyle = colors.heap;
+      ctx.fillRect(x, heapY, barW, heapH);
+    }
+  }
+
+  // X-axis: frame numbers every ~20 bars
+  ctx.fillStyle = '#555';
+  ctx.font = `${10 * dpr}px 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const labelInterval = Math.max(1, Math.floor((samples.length - startIdx) / 10));
+  for (let i = startIdx; i < samples.length; i += labelInterval) {
+    const barIdx = i - startIdx;
+    const x = padL + barIdx * (barW + barGap) + barW / 2;
+    const sec = ((samples[i].ts - samples[0].ts) / 1000).toFixed(0);
+    ctx.fillText(`${sec}s`, x, padT + chartH + 6 * dpr);
+    // Also show frame number
+    ctx.fillText(`f${samples[i].frame}`, x, padT + chartH + 18 * dpr);
+  }
+
+  // Y-axis label
+  ctx.save();
+  ctx.translate(14 * dpr, padT + chartH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = '#666';
+  ctx.font = `${11 * dpr}px 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('Memory (MB)', 0, 0);
+  ctx.restore();
+
+  // Stats text
+  const statsEl = document.getElementById('mem-chart-stats');
+  if (statsEl && samples.length > 0) {
+    const last = samples[samples.length - 1];
+    const totalTracked = last.gopCompressedMB + last.gopRawMB + last.decodeBufMB + last.texBufMB;
+    const elapsed = ((last.ts - samples[0].ts) / 1000).toFixed(0);
+    statsEl.textContent =
+      `Current: ${totalTracked.toFixed(1)} MB tracked | ` +
+      `Compressed: ${last.gopCompressedMB.toFixed(1)} MB | ` +
+      `Raw: ${last.gopRawMB.toFixed(1)} MB (${last.gopRawCount} GOPs) | ` +
+      `Decode: ${last.decodeBufMB.toFixed(1)} MB | ` +
+      `Tex: ${last.texBufMB.toFixed(1)} MB | ` +
+      (last.jsHeapMB > 0 ? `JS Heap: ${last.jsHeapMB.toFixed(0)} MB | ` : '') +
+      `Samples: ${samples.length} over ${elapsed}s | ` +
+      `Frame: ${last.frame}`;
+  }
+}
+
+// Start sampling after init completes
+function startMemChart() {
+  if (memChartInterval) clearInterval(memChartInterval);
+  memChartInterval = setInterval(sampleMemory, 500);
+  // Also handle canvas resize
+  window.addEventListener('resize', () => {
+    if (memChartSamples.length > 0) renderMemChart();
+  });
+}
+
+// ============================================================
 // Init
 // ============================================================
 async function init() {
@@ -1876,6 +2116,7 @@ window._viewer = {
 };
 
 init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
+startMemChart();
 </script>
 </body>
 </html>
