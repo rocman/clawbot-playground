@@ -291,7 +291,7 @@ function main() {
   console.log(`\nTotal frames processed: ${allFrameTextures.length}`);
 
   // 5. Write output: group frames into chunks (same GOP boundaries as original)
-  const FRAMES_PER_CHUNK = gopSize; // 30 frames per output file
+  const FRAMES_PER_CHUNK = 15; // 15 frames per output file (half GOP → ~29 MB/chunk → 2 active ≈ 58 MB < 80 MB target)
   const bytesPerFrame = texW * rowsPerFrame * 4 * 2;
   let totalGzBytes = 0;
 

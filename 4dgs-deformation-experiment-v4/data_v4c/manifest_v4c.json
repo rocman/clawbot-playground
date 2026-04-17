@@ -48,94 +48,184 @@
       "index": 0,
       "filename": "texframes_000.bin.gz",
       "start_frame": 0,
-      "end_frame": 30,
-      "num_frames": 30,
-      "raw_bytes": 61562880,
-      "gz_bytes": 21518501
+      "end_frame": 15,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10733338
     },
     {
       "index": 1,
       "filename": "texframes_001.bin.gz",
-      "start_frame": 30,
-      "end_frame": 60,
-      "num_frames": 30,
-      "raw_bytes": 61562880,
-      "gz_bytes": 21488360
+      "start_frame": 15,
+      "end_frame": 30,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10786145
     },
     {
       "index": 2,
       "filename": "texframes_002.bin.gz",
-      "start_frame": 60,
-      "end_frame": 90,
-      "num_frames": 30,
-      "raw_bytes": 61562880,
-      "gz_bytes": 21463696
+      "start_frame": 30,
+      "end_frame": 45,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10836389
     },
     {
       "index": 3,
       "filename": "texframes_003.bin.gz",
-      "start_frame": 90,
-      "end_frame": 120,
-      "num_frames": 30,
-      "raw_bytes": 61562880,
-      "gz_bytes": 21554669
+      "start_frame": 45,
+      "end_frame": 60,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10653003
     },
     {
       "index": 4,
       "filename": "texframes_004.bin.gz",
-      "start_frame": 120,
-      "end_frame": 150,
-      "num_frames": 30,
-      "raw_bytes": 61562880,
-      "gz_bytes": 21686419
+      "start_frame": 60,
+      "end_frame": 75,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10726989
     },
     {
       "index": 5,
       "filename": "texframes_005.bin.gz",
-      "start_frame": 150,
-      "end_frame": 180,
-      "num_frames": 30,
-      "raw_bytes": 61562880,
-      "gz_bytes": 21787442
+      "start_frame": 75,
+      "end_frame": 90,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10737380
     },
     {
       "index": 6,
       "filename": "texframes_006.bin.gz",
-      "start_frame": 180,
-      "end_frame": 210,
-      "num_frames": 30,
-      "raw_bytes": 61562880,
-      "gz_bytes": 21849682
+      "start_frame": 90,
+      "end_frame": 105,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10768457
     },
     {
       "index": 7,
       "filename": "texframes_007.bin.gz",
-      "start_frame": 210,
-      "end_frame": 240,
-      "num_frames": 30,
-      "raw_bytes": 61562880,
-      "gz_bytes": 21651968
+      "start_frame": 105,
+      "end_frame": 120,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10787522
     },
     {
       "index": 8,
       "filename": "texframes_008.bin.gz",
-      "start_frame": 240,
-      "end_frame": 270,
-      "num_frames": 30,
-      "raw_bytes": 61562880,
-      "gz_bytes": 21661582
+      "start_frame": 120,
+      "end_frame": 135,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10826974
     },
     {
       "index": 9,
       "filename": "texframes_009.bin.gz",
+      "start_frame": 135,
+      "end_frame": 150,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10860572
+    },
+    {
+      "index": 10,
+      "filename": "texframes_010.bin.gz",
+      "start_frame": 150,
+      "end_frame": 165,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10862736
+    },
+    {
+      "index": 11,
+      "filename": "texframes_011.bin.gz",
+      "start_frame": 165,
+      "end_frame": 180,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10925792
+    },
+    {
+      "index": 12,
+      "filename": "texframes_012.bin.gz",
+      "start_frame": 180,
+      "end_frame": 195,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10940469
+    },
+    {
+      "index": 13,
+      "filename": "texframes_013.bin.gz",
+      "start_frame": 195,
+      "end_frame": 210,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10910301
+    },
+    {
+      "index": 14,
+      "filename": "texframes_014.bin.gz",
+      "start_frame": 210,
+      "end_frame": 225,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10832720
+    },
+    {
+      "index": 15,
+      "filename": "texframes_015.bin.gz",
+      "start_frame": 225,
+      "end_frame": 240,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10820510
+    },
+    {
+      "index": 16,
+      "filename": "texframes_016.bin.gz",
+      "start_frame": 240,
+      "end_frame": 255,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10796309
+    },
+    {
+      "index": 17,
+      "filename": "texframes_017.bin.gz",
+      "start_frame": 255,
+      "end_frame": 270,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10866414
+    },
+    {
+      "index": 18,
+      "filename": "texframes_018.bin.gz",
       "start_frame": 270,
+      "end_frame": 285,
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10923306
+    },
+    {
+      "index": 19,
+      "filename": "texframes_019.bin.gz",
+      "start_frame": 285,
       "end_frame": 300,
-      "num_frames": 30,
-      "raw_bytes": 61562880,
-      "gz_bytes": 21803236
+      "num_frames": 15,
+      "raw_bytes": 30781440,
+      "gz_bytes": 10881028
     }
   ],
-  "total_gz_bytes": 216465555,
+  "total_gz_bytes": 216476354,
   "total_raw_bytes": 615628800,
   "compression_ratio": "2.8"
 }
