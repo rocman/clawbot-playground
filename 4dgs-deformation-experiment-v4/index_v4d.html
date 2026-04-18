@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-10'; // bump: fix GOP duplicate fetch + dry-run skip when all OPFS cached
+const V4D_VERSION = 'v4d-11'; // bump: deferred GOP eviction — eliminate duplicate fetch on cold OPFS
 
 // DOM refs
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -427,12 +427,15 @@ function packFrameToHalfFloat(frame) {
 // Maps gopIdx → Promise<ArrayBuffer> (decompressed). Shared across all generateTexChunkFromGOPs calls.
 // Each entry tracks reference count; when no chunk generation needs this GOP, it's evicted.
 // ============================================================
-const _gopFetchCache = new Map(); // gopIdx → { promise, refCount }
+const _gopFetchCache = new Map(); // gopIdx → { promise, refCount, purgeTimer }
+const GOP_RELEASE_DELAY_MS = 30000; // 30s grace period before evicting unreferenced GOPs
 
 function fetchAndDecompressGOP(gopIdx) {
   if (_gopFetchCache.has(gopIdx)) {
     const entry = _gopFetchCache.get(gopIdx);
     entry.refCount++;
+    // Cancel pending purge if re-referenced
+    if (entry.purgeTimer) { clearTimeout(entry.purgeTimer); entry.purgeTimer = null; }
     return entry.promise;
   }
   const gopInfo = manifest.gop_index[gopIdx];
@@ -442,7 +445,7 @@ function fetchAndDecompressGOP(gopIdx) {
     const compressed = await resp.arrayBuffer();
     return decompressGzip(compressed);
   })();
-  _gopFetchCache.set(gopIdx, { promise, refCount: 1 });
+  _gopFetchCache.set(gopIdx, { promise, refCount: 1, purgeTimer: null });
   return promise;
 }
 
@@ -451,8 +454,14 @@ function releaseGOP(gopIdx) {
   if (!entry) return;
   entry.refCount--;
   if (entry.refCount <= 0) {
-    _gopFetchCache.delete(gopIdx);
-    diagLog('info', `GOP ${gopIdx} released from memory`);
+    // Delay actual eviction — the same GOP is often needed by the next sequential step
+    entry.purgeTimer = setTimeout(() => {
+      // Only purge if still unreferenced
+      if (entry.refCount <= 0) {
+        _gopFetchCache.delete(gopIdx);
+        diagLog('info', `GOP ${gopIdx} released from memory (after ${GOP_RELEASE_DELAY_MS/1000}s grace)`);
+      }
+    }, GOP_RELEASE_DELAY_MS);
   }
 }
 
@@ -1043,6 +1052,7 @@ function pauseReleaseMemory() {
 
   // 4. Flush GOP fetch cache (any in-flight GOPs that finished)
   for (const [gopIdx, entry] of _gopFetchCache) {
+    if (entry.purgeTimer) clearTimeout(entry.purgeTimer);
     _gopFetchCache.delete(gopIdx);
   }
 
