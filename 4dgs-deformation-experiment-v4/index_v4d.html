@@ -405,11 +405,16 @@ function packFrameToHalfFloat(frame) {
 // ============================================================
 // V4d: Module-level GOP download cache — ensures each GOP file is fetched only once
 // Maps gopIdx → Promise<ArrayBuffer> (decompressed). Shared across all generateTexChunkFromGOPs calls.
+// Each entry tracks reference count; when no chunk generation needs this GOP, it's evicted.
 // ============================================================
-const _gopFetchCache = new Map(); // gopIdx → Promise<ArrayBuffer>
+const _gopFetchCache = new Map(); // gopIdx → { promise, refCount }
 
 function fetchAndDecompressGOP(gopIdx) {
-  if (_gopFetchCache.has(gopIdx)) return _gopFetchCache.get(gopIdx);
+  if (_gopFetchCache.has(gopIdx)) {
+    const entry = _gopFetchCache.get(gopIdx);
+    entry.refCount++;
+    return entry.promise;
+  }
   const gopInfo = manifest.gop_index[gopIdx];
   const promise = (async () => {
     const resp = await fetch(`data_v3d/${gopInfo.filename}`);
@@ -417,8 +422,18 @@ function fetchAndDecompressGOP(gopIdx) {
     const compressed = await resp.arrayBuffer();
     return decompressGzip(compressed);
   })();
-  _gopFetchCache.set(gopIdx, promise);
+  _gopFetchCache.set(gopIdx, { promise, refCount: 1 });
   return promise;
+}
+
+function releaseGOP(gopIdx) {
+  const entry = _gopFetchCache.get(gopIdx);
+  if (!entry) return;
+  entry.refCount--;
+  if (entry.refCount <= 0) {
+    _gopFetchCache.delete(gopIdx);
+    diagLog('info', `GOP ${gopIdx} released from memory`);
+  }
 }
 
 // ============================================================
@@ -485,6 +500,12 @@ async function generateTexChunkFromGOPs(chunkIdx) {
     // Yield every few frames to avoid blocking
     if (fi % 5 === 4) await new Promise(r => setTimeout(r, 0));
   }
+
+  // Release GOP references — if no other chunk generation holds them, memory is freed
+  for (const gopIdx of gopRawCache.keys()) {
+    releaseGOP(gopIdx);
+  }
+  gopRawCache.clear();
 
   return frameBuf;
 }
