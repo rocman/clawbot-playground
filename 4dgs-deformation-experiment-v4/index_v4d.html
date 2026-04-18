@@ -179,12 +179,12 @@ async function cachedFetch(url, cacheFilename, onProgress, fixedVersion) {
         for (const c of chunks) { u8.set(c, off); off += c.byteLength; }
         if (buf.byteLength === 0) throw new Error('Empty response');
         onProgress(1.0);
-        persistCache.put(ver, cacheFilename, buf).catch(()=>{}); updateCacheStatus(); return buf;
+        await persistCache.put(ver, cacheFilename, buf); updateCacheStatus(); return buf;
       }
       const buf = await resp.arrayBuffer();
       if (buf.byteLength === 0) throw new Error('Empty response');
       if (onProgress) onProgress(1.0);
-      persistCache.put(ver, cacheFilename, buf).catch(()=>{}); updateCacheStatus(); return buf;
+      await persistCache.put(ver, cacheFilename, buf); updateCacheStatus(); return buf;
     }
     catch (e) { if (attempt < 3) await new Promise(r => setTimeout(r, 500*attempt)); else throw e; }
   }
@@ -435,7 +435,7 @@ async function generateTexChunkFromGOPs(chunkIdx) {
   const endFrame = ci.endFrame;
   const numFrames = ci.numFrames;
 
-  // Determine which GOPs we need and pre-download+decompress them
+  // Determine which GOPs we need and download+decompress them (no OPFS cache — GOPs are intermediate)
   const gopSize = manifest.gop_size;
   const gopRawCache = new Map(); // gopIdx → decompressed ArrayBuffer
 
@@ -445,7 +445,9 @@ async function generateTexChunkFromGOPs(chunkIdx) {
     const gopIdx = Math.floor(globalFrame / gopSize);
     if (!gopRawCache.has(gopIdx)) {
       const gopInfo = manifest.gop_index[gopIdx];
-      const compressed = await cachedFetch(`data_v3d/${gopInfo.filename}`, gopInfo.filename, null, 'spz-static');
+      const resp = await fetch(`data_v3d/${gopInfo.filename}`);
+      if (!resp.ok) throw new Error(`GOP ${gopIdx} fetch failed: HTTP ${resp.status}`);
+      const compressed = await resp.arrayBuffer();
       const gopRaw = await decompressGzip(compressed);
       gopRawCache.set(gopIdx, gopRaw);
     }
