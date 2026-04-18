@@ -200,6 +200,7 @@ let currentFrame = 0, isPlaying = false, viewMode = 'animated', playbackSpeedMul
 let uFrameIndex = null, uViewMode = null, uDeltaHalf = null, uDeltaHalfH = null;
 let deltaSampler = null, maskSampler = null, deltaTexture = null, maskTexture = null;
 let N = 0, qXyzDMin = null, qXyzDMax = null, qXyzDScale = null, qDcMin = null, qDcMax = null, qOpMin = 0, qOpMax = 0;
+let baseData = null; // Uint8Array(N * STRIDE) — frame 0 quantized, used as reference for refresh frames
 let deltaTexW = 0, deltaTexH = 0, deltaTexHalfH = 0, rowsPerFrame = 0;
 let writePartition = 0, readPartition = 0;
 // V4d: chunk info is computed from manifest.gop_index, not from a separate v4c manifest
@@ -359,7 +360,7 @@ function streamDecodeFrameRange(gopIdx, gopRaw, targetLocalIdx) {
       const opOff = pos; pos += opBytes;
       // For refresh frames, we'd need baseData; but in V4d we always decode sequentially from frame 0 within each GOP
       // so prevFrame always has the correct reference
-      const ref = prevFrame;
+      const ref = isRefresh ? baseData : prevFrame;
       for (let i = 0; i < N; i++) {
         const bOff = i * STRIDE;
         const i3 = i * 3;
@@ -434,12 +435,26 @@ async function generateTexChunkFromGOPs(chunkIdx) {
   const endFrame = ci.endFrame;
   const numFrames = ci.numFrames;
 
-  // Determine which GOPs we need
+  // Determine which GOPs we need and pre-download+decompress them
   const gopSize = manifest.gop_size;
+  const gopRawCache = new Map(); // gopIdx → decompressed ArrayBuffer
+
+  for (let fi = 0; fi < numFrames; fi++) {
+    const globalFrame = startFrame + fi;
+    if (globalFrame === 0) continue; // I-frame, no GOP needed
+    const gopIdx = Math.floor(globalFrame / gopSize);
+    if (!gopRawCache.has(gopIdx)) {
+      const gopInfo = manifest.gop_index[gopIdx];
+      const compressed = await cachedFetch(`data_v3d/${gopInfo.filename}`, gopInfo.filename, null, 'spz-static');
+      const gopRaw = await decompressGzip(compressed);
+      gopRawCache.set(gopIdx, gopRaw);
+    }
+  }
+
   const frameBuf = new ArrayBuffer(numFrames * bytesPerFrame);
   const frameBufU8 = new Uint8Array(frameBuf);
 
-  // Reset stream decoder state — we need to decode sequentially from GOP start
+  // Reset stream decoder state for this chunk generation
   streamState.gopIdx = -1;
   streamState.localIdx = -1;
 
@@ -447,7 +462,6 @@ async function generateTexChunkFromGOPs(chunkIdx) {
     const globalFrame = startFrame + fi;
     if (globalFrame === 0) {
       // Frame 0 = I-frame, no delta data needed — fill zeros (shader skips delta for frame 0)
-      // Actually packFrameToHalfFloat needs something; let's just write zeros
       const zeroTex = new Uint16Array(deltaTexW * rowsPerFrame * 4);
       const zeroU8 = new Uint8Array(zeroTex.buffer);
       frameBufU8.set(zeroU8, fi * bytesPerFrame);
@@ -457,11 +471,7 @@ async function generateTexChunkFromGOPs(chunkIdx) {
     // Find which GOP contains this frame
     const gopIdx = Math.floor(globalFrame / gopSize);
     const localIdx = globalFrame - manifest.gop_index[gopIdx].start_frame;
-
-    // Load and decompress the GOP (use cached version if available)
-    const gopInfo = manifest.gop_index[gopIdx];
-    const compressed = await cachedFetch(`data_v3d/${gopInfo.filename}`, gopInfo.filename, null, 'spz-static');
-    const gopRaw = await decompressGzip(compressed);
+    const gopRaw = gopRawCache.get(gopIdx);
 
     // Decode frame
     const decoded = streamDecodeFrameRange(gopIdx, gopRaw, localIdx);
@@ -671,7 +681,36 @@ async function loadGopMeta() {
   qXyzDMax = [v.getFloat32(pos+44,true), v.getFloat32(pos+48,true), v.getFloat32(pos+52,true)];
   pos += 56;
   qXyzDScale = [(qXyzDMax[0]-qXyzDMin[0])/255, (qXyzDMax[1]-qXyzDMin[1])/255, (qXyzDMax[2]-qXyzDMin[2])/255];
+
+  // Skip SPZ baseline
+  const spzSize = v.getUint32(pos, true);
+  pos += 4 + spzSize;
+
+  // Parse base frame (frame 0 quantized data — used as reference for refresh frames)
+  const xyzBytesBase = N * 3 * 2;
+  const dcBytes = N * 3;
+  const baseXyz16 = new Uint16Array(raw, pos, N * 3);
+  const baseXyzDelta = float16ToFloat32Array(baseXyz16);
+  pos += xyzBytesBase;
+  const baseDcRaw = new Uint8Array(raw, pos, N * 3);
+  pos += dcBytes;
+  const baseOpRaw = new Uint8Array(raw, pos, N);
+
+  baseData = new Uint8Array(N * STRIDE);
+  for (let i = 0; i < N; i++) {
+    for (let c = 0; c < 3; c++) {
+      const scale = 255.0 / (qXyzDMax[c] - qXyzDMin[c] + 1e-10);
+      let q = Math.round((baseXyzDelta[i * 3 + c] - qXyzDMin[c]) * scale);
+      baseData[i * STRIDE + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
+    }
+    baseData[i * STRIDE + 3] = baseDcRaw[i * 3];
+    baseData[i * STRIDE + 4] = baseDcRaw[i * 3 + 1];
+    baseData[i * STRIDE + 5] = baseDcRaw[i * 3 + 2];
+    baseData[i * STRIDE + 6] = baseOpRaw[i];
+  }
+
   gopStatus.textContent = 'Meta: loaded';
+  diagLog('info', 'GOP meta loaded, baseData parsed');
 }
 
 // ============================================================
