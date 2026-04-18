@@ -103,8 +103,8 @@
   <div class="chart-subtitle">Real-time stacked bar chart — scroll down to view. Sampled every 500ms.</div>
   <canvas id="mem-chart-canvas"></canvas>
   <div id="mem-chart-legend">
-    <div class="legend-item"><span class="legend-swatch" style="background:#f74"></span> Frame TexData (in memory)</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#3a5"></span> Chunk Buffer (OPFS read cache)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#f74"></span> Frame TexData (in memory, ~2MB/frame × 3 max)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#3a5"></span> (No chunk buffer — per-frame OPFS slice read)</div>
     <div class="legend-item"><span class="legend-swatch" style="background:rgba(126,207,255,0.25)"></span> JS Heap Used (overlay)</div>
   </div>
   <div id="mem-chart-stats"></div>
@@ -139,8 +139,12 @@ class GopPersistCache {
   }
   _key(ver, fn) { return `${ver}/${fn}`; }
   async get(ver, fn) { await this._ready; const k = this._key(ver, fn); return this._mode === 'opfs' ? this._opfsGet(k) : this._mode === 'idb' ? this._idbGet(k) : null; }
+  async getSlice(ver, fn, byteOffset, byteLength) { await this._ready; const k = this._key(ver, fn); return this._mode === 'opfs' ? this._opfsGetSlice(k, byteOffset, byteLength) : null; /* IDB does not support slice */ }
+  async getSize(ver, fn) { await this._ready; const k = this._key(ver, fn); return this._mode === 'opfs' ? this._opfsGetSize(k) : -1; }
   async put(ver, fn, buf) { await this._ready; const k = this._key(ver, fn); if (this._mode === 'opfs') return this._opfsPut(k, buf); if (this._mode === 'idb') return this._idbPut(k, buf); }
   async _opfsGet(k) { try { const fh = await this._opfsRoot.getFileHandle(k.replace(/\//g,'__')); return await (await fh.getFile()).arrayBuffer(); } catch(e) { return null; } }
+  async _opfsGetSlice(k, byteOffset, byteLength) { try { const fh = await this._opfsRoot.getFileHandle(k.replace(/\//g,'__')); const file = await fh.getFile(); if (byteOffset + byteLength > file.size) return null; return await file.slice(byteOffset, byteOffset + byteLength).arrayBuffer(); } catch(e) { return null; } }
+  async _opfsGetSize(k) { try { const fh = await this._opfsRoot.getFileHandle(k.replace(/\//g,'__')); return (await fh.getFile()).size; } catch(e) { return -1; } }
   async _opfsPut(k, buf) { try { const fh = await this._opfsRoot.getFileHandle(k.replace(/\//g,'__'), {create:true}); const w = await fh.createWritable(); await w.write(buf); await w.close(); } catch(e) {} }
   async _idbGet(k) { return new Promise(r => { try { const tx = this._idbDB.transaction('blobs','readonly'); const req = tx.objectStore('blobs').get(k); req.onsuccess = () => r(req.result||null); req.onerror = () => r(null); } catch(e) { r(null); } }); }
   async _idbPut(k, buf) { return new Promise(r => { try { const tx = this._idbDB.transaction('blobs','readwrite'); tx.objectStore('blobs').put(buf,k); tx.oncomplete = () => r(); tx.onerror = () => r(); } catch(e) { r(); } }); }
@@ -210,7 +214,7 @@ const texChunkLoadingSet = new Set(); // unified guard: covers both download+gen
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
 const V4D_VERSION = 'v4d-19'; // OPFS namespace — shares V4d's cached data!
-const V5_VERSION = 'v5-1'; // Display version for V5
+const V5_VERSION = 'v5-2'; // Display version for V5 — true per-frame slice read from OPFS
 const V4D_COMMIT = null; // resolved at runtime from GitHub API
 
 // V5: Per-frame read state — instead of holding entire chunk texData in memory,
@@ -637,10 +641,8 @@ async function loadTexChunk(chunkIdx) {
 
 // ============================================================
 // V5: Per-frame OPFS read — read single frame from OPFS chunk
-// Returns Uint16Array for the requested frame, or null if not available
+// Uses File.slice() to read only the needed bytes (~2MB), NOT the entire chunk (~29MB)
 // ============================================================
-const _chunkBufCache = new Map(); // chunkIdx → { buf: ArrayBuffer, lastAccess: number }
-const CHUNK_BUF_CACHE_MAX = 2; // keep at most 2 chunk ArrayBuffers (~60MB max, but typically 1)
 
 async function readFrameFromOPFS(globalFrame) {
   const chunkIdx = getTexChunkForFrame(globalFrame);
@@ -648,32 +650,22 @@ async function readFrameFromOPFS(globalFrame) {
   const ci = chunkInfoList[chunkIdx];
   if (!ci) return null;
 
-  // Check if we already have this chunk's raw buffer cached
-  let chunkEntry = _chunkBufCache.get(chunkIdx);
-  if (!chunkEntry) {
-    // Read chunk from OPFS
-    const raw = await persistCache.get(V4D_VERSION, ci.rawCacheKey);
-    if (!raw || raw.byteLength === 0) return null;
-    chunkEntry = { buf: raw, lastAccess: performance.now() };
-    _chunkBufCache.set(chunkIdx, chunkEntry);
-
-    // Evict old chunk buffers if we have too many
-    if (_chunkBufCache.size > CHUNK_BUF_CACHE_MAX) {
-      let oldestIdx = -1, oldestTime = Infinity;
-      for (const [idx, e] of _chunkBufCache) {
-        if (idx !== chunkIdx && e.lastAccess < oldestTime) { oldestTime = e.lastAccess; oldestIdx = idx; }
-      }
-      if (oldestIdx >= 0) _chunkBufCache.delete(oldestIdx);
-    }
-  } else {
-    chunkEntry.lastAccess = performance.now();
-  }
-
-  // Extract single frame from chunk buffer
   const local = globalFrame - ci.startFrame;
   const byteOff = local * bytesPerFrame;
-  if (byteOff + bytesPerFrame > chunkEntry.buf.byteLength) return null;
-  return new Uint16Array(chunkEntry.buf, byteOff, bytesPerFrame / 2);
+
+  // Try slice read first (OPFS only — much lower memory)
+  const slice = await persistCache.getSlice(V4D_VERSION, ci.rawCacheKey, byteOff, bytesPerFrame);
+  if (slice) return new Uint16Array(slice);
+
+  // Fallback: full read (IDB or slice not supported) — read entire chunk, extract frame, discard
+  const raw = await persistCache.get(V4D_VERSION, ci.rawCacheKey);
+  if (!raw || raw.byteLength === 0) return null;
+  if (byteOff + bytesPerFrame > raw.byteLength) return null;
+  // Extract just the one frame and let the full buffer be GC'd
+  const frameSlice = new Uint16Array(raw, byteOff, bytesPerFrame / 2);
+  const copy = new Uint16Array(frameSlice.length);
+  copy.set(frameSlice);
+  return copy;
 }
 
 // V5: Synchronous frame read — check frameTexCache for pre-loaded frame
@@ -688,21 +680,16 @@ async function prefetchFrame(globalFrame) {
   if (frameTexCache.has(globalFrame)) return true;
   const texData = await readFrameFromOPFS(globalFrame);
   if (!texData) return false;
-  // Store a copy so the chunk buffer can be evicted independently
-  const copy = new Uint16Array(texData.length);
-  copy.set(texData);
-  frameTexCache.set(globalFrame, copy);
+  // readFrameFromOPFS already returns an independent copy, store directly
+  frameTexCache.set(globalFrame, texData);
   // Evict old frames if cache is too large
   if (frameTexCache.size > FRAME_CACHE_MAX) {
-    let oldestFrame = -1, oldestInsertOrder = Infinity;
-    // Simple eviction: remove the frame furthest from current
     for (const key of frameTexCache.keys()) {
       if (key !== globalFrame && key !== currentFrame) {
-        const dist = Math.abs(key - globalFrame);
-        if (dist > 0) { oldestFrame = key; break; } // remove first non-current non-target
+        frameTexCache.delete(key);
+        break;
       }
     }
-    if (oldestFrame >= 0) frameTexCache.delete(oldestFrame);
   }
   return true;
 }
@@ -737,11 +724,9 @@ function getTexChunkForFrame(globalFrame) {
 function reportStats() {
   const loaded = texChunkCache.size, total = chunkInfoList.length;
   const frameCacheBytes = frameTexCache.size * bytesPerFrame;
-  let chunkBufBytes = 0;
-  for (const [,e] of _chunkBufCache) chunkBufBytes += e.buf.byteLength;
   document.getElementById('stat-gops').textContent = `${loaded}/${total}`;
   const bgInfo = bgDownloadRunning ? ` | Gen: ${bgDownloadProgress.done}/${bgDownloadProgress.total}` : (bgDownloadProgress.done >= bgDownloadProgress.total && bgDownloadProgress.total > 0 ? ' | All cached' : '');
-  document.getElementById('stat-window').textContent = `${((frameCacheBytes + chunkBufBytes)/1024/1024).toFixed(1)} MB (${frameTexCache.size} frames cached)${bgInfo}`;
+  document.getElementById('stat-window').textContent = `${(frameCacheBytes/1024/1024).toFixed(1)} MB (${frameTexCache.size} frames cached)${bgInfo}`;
   gopBar.style.width = (total > 0 ? Math.round(loaded / Math.min(2,total)*100) : 0) + '%';
 }
 
@@ -1060,16 +1045,10 @@ function pauseReleaseMemory() {
   }
   frameTexCache.clear();
 
-  // 3. V5: Clear chunk buffer cache (OPFS read buffers)
-  for (const [, entry] of _chunkBufCache) {
-    freedBytes += entry.buf.byteLength;
-  }
-  _chunkBufCache.clear();
-
-  // 4. Release decode buffers (only needed during active decode)
+  // 3. Release decode buffers (only needed during active decode)
   if (decodeOutputBuf) { freedBytes += decodeOutputBuf.byteLength; decodeOutputBuf = null; }
 
-  // 5. Flush GOP fetch cache (any in-flight GOPs that finished)
+  // 4. Flush GOP fetch cache (any in-flight GOPs that finished)
   for (const [gopIdx, entry] of _gopFetchCache) {
     if (entry.purgeTimer) clearTimeout(entry.purgeTimer);
     _gopFetchCache.delete(gopIdx);
@@ -1144,9 +1123,7 @@ const MEM_CHART_MAX_SAMPLES = 240; const memChartSamples = []; let memChartInter
 function sampleMemory() {
   let frameCacheB = 0;
   for (const [, texData] of frameTexCache) { frameCacheB += texData.byteLength; }
-  let chunkBufB = 0;
-  for (const [, e] of _chunkBufCache) { chunkBufB += e.buf.byteLength; }
-  memChartSamples.push({ ts: performance.now(), frame: currentFrame, compMB: chunkBufB/(1024*1024), texMB: frameCacheB/(1024*1024), jsHeapMB: performance.memory ? performance.memory.usedJSHeapSize/(1024*1024) : 0, texCount: frameTexCache.size, playing: isPlaying });
+  memChartSamples.push({ ts: performance.now(), frame: currentFrame, compMB: 0, texMB: frameCacheB/(1024*1024), jsHeapMB: performance.memory ? performance.memory.usedJSHeapSize/(1024*1024) : 0, texCount: frameTexCache.size, playing: isPlaying });
   if (memChartSamples.length > MEM_CHART_MAX_SAMPLES) memChartSamples.shift();
   renderMemChart();
 }
@@ -1174,7 +1151,7 @@ function renderMemChart() {
   const lblStep = Math.max(1, Math.ceil(70*dpr/(barW+barGap)));
   for (let i = visStart; i < samples.length; i += lblStep) { const bi = i-visStart, x = padL+bi*(barW+barGap)+barW/2; ctx.fillText(`${((samples[i].ts-samples[0].ts)/1000).toFixed(0)}s`, x, padT+chartH+6*dpr); ctx.fillText(`f${samples[i].frame}`, x, padT+chartH+18*dpr); }
   const statsEl = document.getElementById('mem-chart-stats');
-  if (statsEl && samples.length > 0) { const l = samples[samples.length-1]; const tot = l.compMB+l.texMB; statsEl.textContent = `Current: ${tot.toFixed(1)} MB | ChunkBuf: ${l.compMB.toFixed(1)} MB | FrameCache: ${l.texMB.toFixed(1)} MB (${l.texCount} frames) | ${l.jsHeapMB > 0 ? 'JS Heap: '+l.jsHeapMB.toFixed(0)+' MB | ' : ''}Frame: ${l.frame}`; }
+  if (statsEl && samples.length > 0) { const l = samples[samples.length-1]; const tot = l.texMB; statsEl.textContent = `Current: ${tot.toFixed(1)} MB | FrameCache: ${l.texMB.toFixed(1)} MB (${l.texCount} frames) | ${l.jsHeapMB > 0 ? 'JS Heap: '+l.jsHeapMB.toFixed(0)+' MB | ' : ''}Frame: ${l.frame}`; }
 }
 function startMemChart() { if (memChartInterval) clearInterval(memChartInterval); memChartInterval = setInterval(sampleMemory, 500); window.addEventListener('resize', () => { if (memChartSamples.length > 0) renderMemChart(); }); }
 
