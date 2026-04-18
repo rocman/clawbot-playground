@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-18'; // bump: fix async loads bypassing pause memory release
+const V4D_VERSION = 'v4d-19'; // bump: default paused — defer GOP meta & chunk loading until first play
 const V4D_COMMIT = null; // resolved at runtime from GitHub API
 
 // DOM refs
@@ -1065,6 +1065,27 @@ function pauseReleaseMemory() {
   reportStats();
 }
 
+// ============================================================
+// First-play initialization — deferred from init() to reduce startup cost.
+// Loads GOP meta + first chunk + starts background queue on first play click.
+// ============================================================
+let _firstPlayDone = false;
+let _firstPlayRunning = false;
+async function firstPlayInit() {
+  if (_firstPlayDone || _firstPlayRunning) return;
+  _firstPlayRunning = true;
+  diagLog('info', 'First play: loading GOP meta + first chunk...');
+  gopStatus.textContent = 'First play: loading meta...';
+
+  await loadGopMeta();
+  await loadTexChunk(0, true);
+  startBackgroundGenerateQueue();
+
+  _firstPlayDone = true;
+  _firstPlayRunning = false;
+  diagLog('info', 'First play init complete');
+}
+
 function restoreAfterResume() {
   // Reset time-driven playback clock to current frame
   playbackStartTime = performance.now();
@@ -1153,8 +1174,8 @@ async function init() {
   uDeltaHalf = dyno.dynoInt(0); uDeltaHalfH = dyno.dynoInt(deltaTexHalfH);
   deltaSampler = dyno.dynoSampler2D(deltaTexture); maskSampler = dyno.dynoSampler2D(maskTexture);
 
-  // Parallel: SPZ I-frame (needed for first render) + GOP meta (needed for animation decode)
-  const gopMetaPromise = loadGopMeta();
+  // Parallel: SPZ I-frame (needed for first render)
+  // GOP meta is deferred until first play — saves ~500KB+ network + decode work at startup.
   const iFrameBuf = await cachedFetch('data_v3d/' + manifest.i_frame, manifest.i_frame, (p) => {
     const pct = 30 + Math.round(p * 35);
     setLoading(pct, `Loading SPZ I-frame... ${Math.round(p * 100)}%`);
@@ -1252,10 +1273,9 @@ async function init() {
   renderer.render(scene, camera);
   loadingOverlay.style.background = '#0a0a0f88';
 
-  setLoading(85, 'Waiting for GOP meta + Pre-generating first animation chunk...');
-  await gopMetaPromise; // ensure baseData is ready before generating texData from GOPs
-  await loadTexChunk(0, true);
-  startBackgroundGenerateQueue();
+  setLoading(85, 'Rendering I-frame...');
+  // GOP meta, chunk loading, and background queue are all deferred until first play.
+  // At this point we have a fully rendered static I-frame scene — zero animation overhead.
 
   // Zoom slider
   const zoomSlider = document.getElementById('zoom-slider'), zoomVal = document.getElementById('zoom-val');
@@ -1280,8 +1300,8 @@ async function init() {
 
   setTimeout(() => {
     loadingOverlay.classList.add('hidden');
-    isPlaying = true; playBtn.textContent = '\u23F8';
-    playbackStartTime = performance.now(); playbackStartFrame = 0;
+    // Default: paused. User must click play to start animation.
+    isPlaying = false; playBtn.textContent = '\u25B6';
     setTimeout(() => { renderer.render(scene, camera);
       if (deltaTexture?.image?.data?.byteLength > 0) deltaTexture.image.data = new Uint16Array(0);
       if (maskTexture?.image?.data?.byteLength > 0) maskTexture.image.data = new Float32Array(0);
@@ -1408,17 +1428,32 @@ function updateFrame(idx) {
 }
 
 // UI events
-playBtn.addEventListener('click', () => {
-  isPlaying = !isPlaying; playBtn.textContent = isPlaying ? '\u23F8' : '\u25B6';
-  if (isPlaying) {
+playBtn.addEventListener('click', async () => {
+  if (!isPlaying) {
+    // Starting playback
+    if (!_firstPlayDone) {
+      // First play: need to load GOP meta + chunk 0
+      playBtn.textContent = '\u23F3'; // hourglass
+      playBtn.disabled = true;
+      await firstPlayInit();
+      playBtn.disabled = false;
+    }
+    isPlaying = true; playBtn.textContent = '\u23F8';
     restoreAfterResume();
   } else {
+    isPlaying = false; playBtn.textContent = '\u25B6';
     pauseReleaseMemory();
   }
 });
 let wasPlayingBeforeSeek = false, isSeeking = false, seekGeneration = 0;
 timeline.addEventListener('pointerdown', () => { wasPlayingBeforeSeek = isPlaying; isSeeking = true; isPlaying = false; });
-timeline.addEventListener('input', e => { updateFrame(parseInt(e.target.value)); });
+timeline.addEventListener('input', async e => {
+  if (!_firstPlayDone) {
+    if (!_firstPlayRunning) await firstPlayInit();
+    else return; // still loading, skip this seek frame
+  }
+  updateFrame(parseInt(e.target.value));
+});
 timeline.addEventListener('pointerup', () => {
   if (!isSeeking) return;
   isSeeking = false;
@@ -1448,7 +1483,7 @@ document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('clic
   splatMesh.updateGenerator();
 }));
 document.querySelectorAll('.speed-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); playbackSpeedMult = parseFloat(btn.dataset.speed); playbackStartTime = performance.now(); playbackStartFrame = currentFrame; }));
-document.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); playBtn.click(); } else if (e.key === 'ArrowRight') updateFrame(Math.min(currentFrame+1, manifest.p_frame_count)); else if (e.key === 'ArrowLeft') updateFrame(Math.max(currentFrame-1, 0)); });
+document.addEventListener('keydown', async e => { if (e.key === ' ') { e.preventDefault(); playBtn.click(); } else if (e.key === 'ArrowRight') { if (!_firstPlayDone) return; updateFrame(Math.min(currentFrame+1, manifest.p_frame_count)); } else if (e.key === 'ArrowLeft') { if (!_firstPlayDone) return; updateFrame(Math.max(currentFrame-1, 0)); } });
 
 init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
 startMemChart();
