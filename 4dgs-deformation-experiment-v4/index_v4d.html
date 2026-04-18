@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-7'; // bump this when decode/pack logic changes to invalidate OPFS cache
+const V4D_VERSION = 'v4d-8'; // bump: fix cross-chunk decoder state continuity (Method B)
 
 // DOM refs
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -307,11 +307,25 @@ function streamDecodeFrameRange(gopIdx, gopRaw, targetLocalIdx) {
 
   let startLocalIdx = 0;
   if (streamState.gopIdx === gopIdx && streamState.localIdx >= 0 && streamState.localIdx < targetLocalIdx) {
+    // Same GOP, continue from where we left off
     startLocalIdx = streamState.localIdx + 1;
+  } else if (streamState.gopIdx === gopIdx - 1 && streamState.localIdx >= 0) {
+    // Check if previous GOP was fully decoded (last localIdx == num_frames-1)
+    const prevGopExpectedLastIdx = manifest.gop_index[streamState.gopIdx].num_frames - 1;
+    if (streamState.localIdx >= prevGopExpectedLastIdx) {
+      // Sequential GOP transition: previous GOP was fully decoded, prevFrame holds
+      // the last decoded frame — correct reference for this GOP's first frame.
+      streamState.gopIdx = gopIdx;
+      streamState.localIdx = -1;
+    } else {
+      // Previous GOP was NOT fully decoded — prevFrame is stale, must reset.
+      streamState.prevFrame = new Uint8Array(N * STRIDE);
+      if (baseData) streamState.prevFrame.set(baseData);
+      streamState.gopIdx = gopIdx;
+      streamState.localIdx = -1;
+    }
   } else {
-    // Initialize prevFrame from baseData (frame 0 quantized values) so that
-    // the first P-frame in any GOP has the correct reference — especially
-    // important for GOP 0 where frame 0 was removed from the binary data.
+    // Non-sequential jump or first decode — must rebuild from baseData.
     streamState.prevFrame = new Uint8Array(N * STRIDE);
     if (baseData) streamState.prevFrame.set(baseData);
     streamState.gopIdx = gopIdx;
@@ -464,9 +478,10 @@ async function generateTexChunkFromGOPs(chunkIdx) {
   const frameBuf = new ArrayBuffer(numFrames * bytesPerFrame);
   const frameBufU8 = new Uint8Array(frameBuf);
 
-  // Reset stream decoder state for this chunk generation
-  streamState.gopIdx = -1;
-  streamState.localIdx = -1;
+  // NOTE: Do NOT reset streamState here. For sequential chunk generation
+  // (background queue), we need prevFrame to carry over from the previous chunk
+  // so that cross-chunk GOP boundaries decode correctly (Method B: no refresh).
+  // streamState will be reset once at the start of the background queue.
 
   for (let fi = 0; fi < numFrames; fi++) {
     const globalFrame = startFrame + fi;
@@ -508,6 +523,27 @@ async function generateTexChunkFromGOPs(chunkIdx) {
   gopRawCache.clear();
 
   return frameBuf;
+}
+
+// ============================================================
+// V4d: Dry-run decode — advance streamState without producing texData.
+// Called when a chunk is already in OPFS but we need to maintain decoder
+// continuity for subsequent chunks (Method B: no refresh frames).
+// ============================================================
+async function dryRunDecodeChunk(chunkIdx) {
+  const ci = chunkInfoList[chunkIdx];
+  const gopSize = manifest.gop_size;
+
+  for (let fi = 0; fi < ci.numFrames; fi++) {
+    const globalFrame = ci.startFrame + fi;
+    if (globalFrame === 0) continue;
+    const gopIdx = Math.floor(globalFrame / gopSize);
+    const localIdx = globalFrame - manifest.gop_index[gopIdx].start_frame;
+    const gopRaw = await fetchAndDecompressGOP(gopIdx);
+    streamDecodeFrameRange(gopIdx, gopRaw, localIdx);
+    // Yield periodically
+    if (fi % 10 === 9) await new Promise(r => setTimeout(r, 0));
+  }
 }
 
 // ============================================================
@@ -837,21 +873,28 @@ async function startBackgroundGenerateQueue() {
   bgDownloadProgress.total = total;
   diagLog('info', `Background generate queue started: ${total} chunks`);
 
+  // Reset stream decoder state once at the start — sequential generation
+  // will maintain continuity across chunk boundaries from here on.
+  streamState.gopIdx = -1;
+  streamState.localIdx = -1;
+
   for (let i = 0; i < total; i++) {
     if (!bgDownloadRunning) break;
     bgDownloadProgress.currentIdx = i;
 
-    // Skip if already in memory
+    // Skip if already in memory — but still advance streamState for decoder continuity
     if (texChunkCache.has(i) && texChunkCache.get(i).texData) {
+      await dryRunDecodeChunk(i);
       bgDownloadProgress.done++;
       updateGopStripUI(i, 'loaded');
       continue;
     }
 
-    // Skip if already in OPFS
+    // Skip if already in OPFS — but still advance streamState for decoder continuity
     const ci = chunkInfoList[i];
     const existing = await persistCache.get(V4D_VERSION, ci.rawCacheKey);
     if (existing && existing.byteLength > 0) {
+      await dryRunDecodeChunk(i);
       if (!texChunkCache.has(i)) {
         texChunkCache.set(i, {
           texData: null,
@@ -864,7 +907,7 @@ async function startBackgroundGenerateQueue() {
       }
       bgDownloadProgress.done++;
       updateGopStripUI(i, 'loaded');
-      diagLog('info', `BG: chunk ${i} already in OPFS`);
+      diagLog('info', `BG: chunk ${i} already in OPFS (dry-run decode for continuity)`);
       reportStats();
       continue;
     }
