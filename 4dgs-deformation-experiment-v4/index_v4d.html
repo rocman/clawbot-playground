@@ -493,7 +493,13 @@ async function generateTexChunkFromGOPs(chunkIdx) {
     // Decode frame
     const decoded = streamDecodeFrameRange(gopIdx, gopRaw, localIdx);
     if (!decoded) {
-      diagLog('error', `Failed to decode frame ${globalFrame} (GOP ${gopIdx}, local ${localIdx})`);
+      // Frame data not in GOP (e.g. last frame off-by-one) — reuse previous frame's texData
+      diagLog('warn', `Frame ${globalFrame} not in GOP ${gopIdx} (localIdx=${localIdx}), reusing previous frame`);
+      if (fi > 0) {
+        // Copy previous frame's packed data
+        const prevOffset = (fi - 1) * bytesPerFrame;
+        frameBufU8.copyWithin(fi * bytesPerFrame, prevOffset, prevOffset + bytesPerFrame);
+      }
       continue;
     }
 
