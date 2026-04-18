@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-11'; // bump: deferred GOP eviction — eliminate duplicate fetch on cold OPFS
+const V4D_VERSION = 'v4d-12'; // bump: two-finger scroll passthrough on canvas
 
 // DOM refs
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -1193,6 +1193,60 @@ async function init() {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(2.435, -2.0, -15.003); controls.enableDamping = true; controls.dampingFactor = 0.1;
   controls.screenSpacePanning = true; controls.minDistance = 0.5; controls.maxDistance = 100; controls.enableZoom = true; controls.update();
+
+  // === Two-finger scroll passthrough ===
+  // touch-action:none on #viewer-container blocks native scroll.
+  // Detect two-finger vertical pan (not pinch) and manually scroll the page.
+  {
+    const el = renderer.domElement;
+    let twoFingerState = null; // { startTouches, lastY, decided, isScroll }
+    const DECISION_THRESHOLD = 8; // px — movement needed to decide pinch vs scroll
+
+    el.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        const t0 = e.touches[0], t1 = e.touches[1];
+        const midY = (t0.clientY + t1.clientY) / 2;
+        const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+        twoFingerState = { lastY: midY, initDist: dist, decided: false, isScroll: false };
+      } else {
+        twoFingerState = null;
+      }
+    }, { passive: true });
+
+    el.addEventListener('touchmove', e => {
+      if (!twoFingerState || e.touches.length !== 2) { twoFingerState = null; return; }
+      const t0 = e.touches[0], t1 = e.touches[1];
+      const midY = (t0.clientY + t1.clientY) / 2;
+      const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+      const deltaY = midY - twoFingerState.lastY;
+
+      if (!twoFingerState.decided) {
+        // Decide: if finger-distance changed significantly → pinch (zoom), else → scroll
+        const distDelta = Math.abs(dist - twoFingerState.initDist);
+        const panDelta = Math.abs(deltaY);
+        if (distDelta > DECISION_THRESHOLD) {
+          twoFingerState.decided = true; twoFingerState.isScroll = false; // pinch → let OrbitControls handle
+        } else if (panDelta > DECISION_THRESHOLD) {
+          twoFingerState.decided = true; twoFingerState.isScroll = true;
+          controls.enabled = false; // disable OrbitControls during scroll
+        }
+      }
+
+      if (twoFingerState.decided && twoFingerState.isScroll) {
+        window.scrollBy(0, -deltaY);
+        twoFingerState.lastY = midY;
+      }
+    }, { passive: true });
+
+    const endTwoFinger = () => {
+      if (twoFingerState && twoFingerState.isScroll) {
+        controls.enabled = true; // re-enable OrbitControls
+      }
+      twoFingerState = null;
+    };
+    el.addEventListener('touchend', endTwoFinger, { passive: true });
+    el.addEventListener('touchcancel', endTwoFinger, { passive: true });
+  }
 
   splatMesh.updateGenerator();
   await new Promise(r => setTimeout(r, 0));
