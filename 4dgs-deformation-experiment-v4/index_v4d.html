@@ -425,6 +425,25 @@ function packFrameToHalfFloat(frame) {
 }
 
 // ============================================================
+// V4d: Module-level GOP download cache — ensures each GOP file is fetched only once
+// Maps gopIdx → Promise<ArrayBuffer> (decompressed). Shared across all generateTexChunkFromGOPs calls.
+// ============================================================
+const _gopFetchCache = new Map(); // gopIdx → Promise<ArrayBuffer>
+
+function fetchAndDecompressGOP(gopIdx) {
+  if (_gopFetchCache.has(gopIdx)) return _gopFetchCache.get(gopIdx);
+  const gopInfo = manifest.gop_index[gopIdx];
+  const promise = (async () => {
+    const resp = await fetch(`data_v3d/${gopInfo.filename}`);
+    if (!resp.ok) throw new Error(`GOP ${gopIdx} fetch failed: HTTP ${resp.status}`);
+    const compressed = await resp.arrayBuffer();
+    return decompressGzip(compressed);
+  })();
+  _gopFetchCache.set(gopIdx, promise);
+  return promise;
+}
+
+// ============================================================
 // V4d: Generate texData chunk from GOP data
 // Downloads GOP .gz → decompress → sequentially decode each frame → pack to HalfFloat → concatenate → return raw buffer
 // The raw buffer is then cached in OPFS for zero-decode on subsequent visits.
@@ -435,20 +454,16 @@ async function generateTexChunkFromGOPs(chunkIdx) {
   const endFrame = ci.endFrame;
   const numFrames = ci.numFrames;
 
-  // Determine which GOPs we need and download+decompress them (no OPFS cache — GOPs are intermediate)
+  // Determine which GOPs we need and download+decompress them (shared cache prevents duplicate fetches)
   const gopSize = manifest.gop_size;
-  const gopRawCache = new Map(); // gopIdx → decompressed ArrayBuffer
+  const gopRawCache = new Map(); // gopIdx → decompressed ArrayBuffer (local to this call)
 
   for (let fi = 0; fi < numFrames; fi++) {
     const globalFrame = startFrame + fi;
     if (globalFrame === 0) continue; // I-frame, no GOP needed
     const gopIdx = Math.floor(globalFrame / gopSize);
     if (!gopRawCache.has(gopIdx)) {
-      const gopInfo = manifest.gop_index[gopIdx];
-      const resp = await fetch(`data_v3d/${gopInfo.filename}`);
-      if (!resp.ok) throw new Error(`GOP ${gopIdx} fetch failed: HTTP ${resp.status}`);
-      const compressed = await resp.arrayBuffer();
-      const gopRaw = await decompressGzip(compressed);
+      const gopRaw = await fetchAndDecompressGOP(gopIdx);
       gopRawCache.set(gopIdx, gopRaw);
     }
   }
