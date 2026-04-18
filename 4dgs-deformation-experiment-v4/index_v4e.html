@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>4DGS Deformation Viewer V4d — Client-side Pre-generate (Small Transfer)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; overflow-y: auto; }
+  canvas { display: block; }
+  #viewer-section { position: relative; width: 100%; height: 100vh; overflow: hidden; }
+  #viewer-container { position: absolute; inset: 0; z-index: 1; }
+  #viewer-container canvas { width: 100% !important; height: 100% !important; }
+  #zoom-bar { position: absolute; top: 100px; right: 16px; z-index: 100; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  #zoom-bar label { font-size: 10px; color: #666; }
+  #zoom-slider { -webkit-appearance: none; appearance: none; width: 120px; height: 4px; background: #333; border-radius: 2px; outline: none; cursor: pointer; }
+  #zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: #7ecfff; border-radius: 50%; cursor: grab; }
+  #zoom-val { font-size: 10px; color: #555; font-variant-numeric: tabular-nums; }
+  #loading-overlay { position: absolute; inset: 0; z-index: 1000; background: #0a0a0fee; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s, background 0.8s; }
+  #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  #loading-title { font-size: 24px; font-weight: 300; letter-spacing: 2px; margin-bottom: 24px; color: #7ecfff; }
+  #loading-bar-bg { width: 300px; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+  #loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3a8bff, #7ecfff); transition: width 0.3s; }
+  #loading-text { margin-top: 12px; font-size: 13px; color: #888; }
+  #controls { position: absolute; bottom: 0; left: 0; right: 0; z-index: 100; background: linear-gradient(transparent, #0a0a0fcc 30%, #0a0a0fee); padding: 16px 24px 20px; touch-action: pan-y; }
+  #timeline-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  #play-btn { width: 36px; height: 36px; border: none; border-radius: 50%; background: #3a8bff; color: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  #timeline { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; background: #333; border-radius: 3px; outline: none; cursor: pointer; }
+  #timeline::-webkit-slider-thumb { -webkit-appearance: none; width: 32px; height: 32px; background: radial-gradient(circle, #7ecfff 8px, transparent 8px); border-radius: 50%; cursor: grab; border: none; }
+  #timeline::-moz-range-thumb { width: 32px; height: 32px; background: radial-gradient(circle, #7ecfff 8px, transparent 8px); border-radius: 50%; cursor: grab; border: none; }
+  #frame-label { font-size: 13px; color: #aaa; text-align: center; font-variant-numeric: tabular-nums; margin-bottom: 6px; }
+  #info-bar { display: flex; gap: 20px; font-size: 12px; color: #666; flex-wrap: wrap; }
+  #info-bar span { display: flex; align-items: center; gap: 4px; }
+  #info-bar .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-static { background: #4a9; } .dot-dynamic { background: #f74; } .dot-fps { background: #7ecfff; } .dot-mem { background: #c8a; }
+  #mode-bar { position: absolute; top: 16px; left: 16px; z-index: 100; display: flex; gap: 8px; flex-wrap: wrap; }
+  .mode-btn { padding: 6px 14px; border: 1px solid #444; border-radius: 16px; background: transparent; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+  .mode-btn.active { background: #3a8bff33; border-color: #3a8bff; color: #7ecfff; }
+  #speed-bar { position: absolute; top: 56px; left: 16px; z-index: 100; display: flex; gap: 6px; align-items: center; }
+  #speed-bar label { font-size: 11px; color: #666; }
+  .speed-btn { padding: 3px 10px; border: 1px solid #333; border-radius: 12px; background: transparent; color: #777; font-size: 11px; cursor: pointer; }
+  .speed-btn.active { background: #3a8bff22; border-color: #3a8bff; color: #7ecfff; }
+  #title-bar { position: absolute; top: 16px; right: 16px; z-index: 100; text-align: right; }
+  #title-bar h1 { font-size: 16px; font-weight: 400; color: #7ecfff; letter-spacing: 1px; }
+  #title-bar p { font-size: 11px; color: #666; margin-top: 4px; }
+  #gop-progress { position: absolute; top: 60px; right: 16px; z-index: 100; font-size: 11px; color: #666; text-align: right; }
+  #gop-progress .bar-bg { width: 140px; height: 3px; background: #222; border-radius: 2px; overflow: hidden; margin-top: 4px; margin-left: auto; }
+  #gop-progress .bar { height: 100%; width: 0%; background: #f74; transition: width 0.3s; }
+  #gop-strip { position: relative; height: 8px; margin: 0 0 4px 48px; display: flex; gap: 1px; border-radius: 2px; overflow: hidden; }
+  #gop-strip .gop-seg { flex: 1; height: 100%; background: #222; transition: background 0.3s; }
+  #gop-strip .gop-seg.loaded { background: #3a5; }
+  #gop-strip .gop-seg.active { background: #7ecfff; }
+  #gop-strip .gop-seg.loading { background: #f74; animation: pulse 0.8s infinite alternate; }
+  @keyframes pulse { from { opacity: 0.5; } to { opacity: 1.0; } }
+  #mem-badge { position: absolute; top: 140px; right: 16px; z-index: 100; font-size: 11px; padding: 4px 10px; border-radius: 12px; background: #1a3a1a; color: #4a9; border: 1px solid #2a5a2a; }
+  #memory-chart-section { position: relative; z-index: 50; padding: 24px 24px 40px; background: #0d0d14; border-top: 1px solid #222; min-height: 420px; }
+  #memory-chart-section h2 { font-size: 18px; font-weight: 400; color: #7ecfff; letter-spacing: 1px; margin-bottom: 8px; }
+  .chart-subtitle { font-size: 12px; color: #666; margin-bottom: 16px; }
+  #mem-chart-canvas { width: 100%; height: 320px; background: #111118; border-radius: 8px; border: 1px solid #1a1a28; }
+  #mem-chart-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; font-size: 12px; color: #999; }
+  #mem-chart-legend .legend-item { display: flex; align-items: center; gap: 6px; }
+  #mem-chart-legend .legend-swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+  #mem-chart-stats { margin-top: 12px; font-size: 12px; color: #666; display: flex; gap: 24px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div id="viewer-section">
+  <div id="loading-overlay">
+    <div id="loading-title">4DGS VIEWER V4d — Client-side Pre-generate</div>
+    <div id="loading-bar-bg"><div id="loading-bar"></div></div>
+    <div id="loading-text">Initializing...</div>
+  </div>
+  <div id="title-bar"><h1 id="title-h1">4DGS Viewer</h1><p>V4d: GOP→TexData client-gen | ~7MB transfer | OPFS raw cache | Ring-Buffer (3-partition)</p></div>
+  <div id="gop-progress"><span id="gop-status">Chunks: initializing...</span><div class="bar-bg"><div class="bar" id="gop-bar"></div></div></div>
+  <div id="mem-badge">MEM: --</div>
+  <div id="viewer-container"></div>
+  <div id="zoom-bar"><label>Zoom</label><input type="range" id="zoom-slider" min="0.5" max="100" step="0.5" value="15"><span id="zoom-val">15.0</span></div>
+  <div id="mode-bar">
+    <button class="mode-btn active" data-mode="animated">&#9654; Animated</button>
+    <button class="mode-btn" data-mode="i-frame">&#9724; I-Frame</button>
+    <button class="mode-btn" data-mode="highlight">&#9681; Dynamic</button>
+  </div>
+  <div id="speed-bar"><label>Speed:</label><button class="speed-btn" data-speed="0.5">0.5x</button><button class="speed-btn active" data-speed="1">1x</button><button class="speed-btn" data-speed="2">2x</button></div>
+  <div id="controls">
+    <div id="frame-label">I-Frame (0.0s / 10.0s)</div>
+    <div id="gop-strip"></div>
+    <div id="timeline-row"><button id="play-btn">&#9654;</button><input type="range" id="timeline" min="0" max="299" step="1" value="0"></div>
+    <div id="info-bar">
+      <span><span class="dot dot-static"></span> Static: <span id="stat-static">--</span></span>
+      <span><span class="dot dot-dynamic"></span> Dynamic: <span id="stat-dynamic">--</span></span>
+      <span>Total: <span id="stat-total">--</span> splats</span>
+      <span><span class="dot dot-fps"></span> <span id="stat-fps">--</span> FPS</span>
+      <span>DPR: <span id="stat-dpr">--</span></span>
+      <span><span class="dot dot-mem"></span> Chunks: <span id="stat-gops">0/0</span></span>
+      <span>Window: <span id="stat-window">--</span></span>
+      <span>Cache: <span id="stat-cache">--</span></span>
+      <span>RingBuf: <span id="stat-dblbuf">--</span></span>
+    </div>
+  </div>
+</div>
+<div id="memory-chart-section">
+  <h2>📊 Memory Usage Timeline</h2>
+  <div class="chart-subtitle">Real-time stacked bar chart — scroll down to view. Sampled every 500ms.</div>
+  <canvas id="mem-chart-canvas"></canvas>
+  <div id="mem-chart-legend">
+    <div class="legend-item"><span class="legend-swatch" style="background:#f74"></span> TexData (GPU-ready, in memory)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#3a5"></span> OPFS-backed (evictable, instant re-fetch)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgba(126,207,255,0.25)"></span> JS Heap Used (overlay)</div>
+  </div>
+  <div id="mem-chart-stats"></div>
+</div>
+<script type="importmap">
+{ "imports": { "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.178.0/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/", "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.10/spark.module.js" } }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SplatMesh, dyno } from "@sparkjsdev/spark";
+
+// ============================================================
+// V4d Configuration — Client-side Pre-generate from GOP data
+// Downloads small GOP files (~500KB each, ~7MB total) from data_v3d/,
+// decodes + packs to GPU-ready RGBA16F texData on client,
+// caches raw texData in OPFS for zero-decode on subsequent visits.
+// ============================================================
+const MAX_ACTIVE_CHUNKS = 1;
+const DELTA_K = 256;
+const RING_PARTITIONS = 3;
+const STRIDE = 7; // bytes per gaussian per frame: xyz(3) + dc(3) + op(1)
+const FRAMES_PER_CHUNK = 15; // match V4c chunk size for memory compatibility
+
+// ============================================================
+// L2 Persistent Cache (OPFS + IDB)
+// ============================================================
+class GopPersistCache {
+  constructor() { this._mode = null; this._opfsRoot = null; this._idbDB = null; this._ready = this._init(); }
+  async _init() {
+    try { if (navigator.storage && navigator.storage.getDirectory) { const root = await navigator.storage.getDirectory(); this._opfsRoot = await root.getDirectoryHandle('4dgs-v4d-cache', { create: true }); this._mode = 'opfs'; return; } } catch (e) {}
+    try { this._idbDB = await new Promise((resolve, reject) => { const req = indexedDB.open('4dgs-v4d-cache', 1); req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains('blobs')) req.result.createObjectStore('blobs'); }; req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); this._mode = 'idb'; } catch (e) { this._mode = null; }
+  }
+  _key(ver, fn) { return `${ver}/${fn}`; }
+  async get(ver, fn) { await this._ready; const k = this._key(ver, fn); return this._mode === 'opfs' ? this._opfsGet(k) : this._mode === 'idb' ? this._idbGet(k) : null; }
+  async put(ver, fn, buf) { await this._ready; const k = this._key(ver, fn); if (this._mode === 'opfs') return this._opfsPut(k, buf); if (this._mode === 'idb') return this._idbPut(k, buf); }
+  async _opfsGet(k) { try { const fh = await this._opfsRoot.getFileHandle(k.replace(/\//g,'__')); return await (await fh.getFile()).arrayBuffer(); } catch(e) { return null; } }
+  async _opfsPut(k, buf) { try { const fh = await this._opfsRoot.getFileHandle(k.replace(/\//g,'__'), {create:true}); const w = await fh.createWritable(); await w.write(buf); await w.close(); } catch(e) {} }
+  async _idbGet(k) { return new Promise(r => { try { const tx = this._idbDB.transaction('blobs','readonly'); const req = tx.objectStore('blobs').get(k); req.onsuccess = () => r(req.result||null); req.onerror = () => r(null); } catch(e) { r(null); } }); }
+  async _idbPut(k, buf) { return new Promise(r => { try { const tx = this._idbDB.transaction('blobs','readwrite'); tx.objectStore('blobs').put(buf,k); tx.oncomplete = () => r(); tx.onerror = () => r(); } catch(e) { r(); } }); }
+  async delete(ver, fn) { await this._ready; const k = this._key(ver,fn); if (this._mode==='opfs') try { await this._opfsRoot.removeEntry(k.replace(/\//g,'__')); } catch(e) {} else if (this._mode==='idb') try { this._idbDB.transaction('blobs','readwrite').objectStore('blobs').delete(k); } catch(e) {} }
+  async purgeOldVersions(ver) { await this._ready; const pfx = ver+'/'; const protectedPfx = 'spz-static/'; if (this._mode==='opfs') try { for await (const [n] of this._opfsRoot) { const nn = n.replace(/__/g,'/'); if (!nn.startsWith(pfx) && !nn.startsWith(protectedPfx)) await this._opfsRoot.removeEntry(n).catch(()=>{}); } } catch(e) {} }
+  get mode() { return this._mode; }
+}
+const persistCache = new GopPersistCache();
+
+let diagStatsAccum = { framesRequested: 0, framesApplied: 0, framesDropped: 0, stallFrames: 0, cacheHits: 0, cacheMisses: 0 };
+const diagLogs = []; const DIAG_LOG_MAX = 300;
+function diagLog(level, msg, data) { diagLogs.push({ ts: performance.now(), level, msg, ...(data||{}) }); if (diagLogs.length > DIAG_LOG_MAX) diagLogs.shift(); if (level==='warn'||level==='error') console.warn(`[V4d:${level}]`, msg); }
+
+// Simple cachedFetch for non-generated files (SPZ, mask, meta, GOP compressed)
+async function cachedFetch(url, cacheFilename, onProgress, fixedVersion) {
+  const ver = fixedVersion || (manifest ? manifest.version : 'unknown');
+  const cached = await persistCache.get(ver, cacheFilename);
+  if (cached && cached.byteLength > 0) { diagStatsAccum.cacheHits++; updateCacheStatus(); if (onProgress) onProgress(1.0); return cached; }
+  diagStatsAccum.cacheMisses++;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (onProgress && resp.body && resp.headers.get('content-length')) {
+        const total = parseInt(resp.headers.get('content-length'), 10);
+        const reader = resp.body.getReader();
+        const chunks = []; let received = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value); received += value.byteLength;
+          onProgress(Math.min(received / total, 0.99));
+        }
+        const buf = new ArrayBuffer(received); const u8 = new Uint8Array(buf); let off = 0;
+        for (const c of chunks) { u8.set(c, off); off += c.byteLength; }
+        if (buf.byteLength === 0) throw new Error('Empty response');
+        onProgress(1.0);
+        await persistCache.put(ver, cacheFilename, buf); updateCacheStatus(); return buf;
+      }
+      const buf = await resp.arrayBuffer();
+      if (buf.byteLength === 0) throw new Error('Empty response');
+      if (onProgress) onProgress(1.0);
+      await persistCache.put(ver, cacheFilename, buf); updateCacheStatus(); return buf;
+    }
+    catch (e) { if (attempt < 3) await new Promise(r => setTimeout(r, 500*attempt)); else throw e; }
+  }
+}
+
+function updateCacheStatus() { const el = document.getElementById('stat-cache'); if (el) el.textContent = `${(persistCache.mode||'none').toUpperCase()} ${diagStatsAccum.cacheHits}/${diagStatsAccum.cacheHits+diagStatsAccum.cacheMisses} hits`; }
+
+// ============================================================
+// State
+// ============================================================
+let manifest = null, dynamicMask = null, splatMesh = null;
+let currentFrame = 0, isPlaying = false, viewMode = 'animated', playbackSpeedMult = 1.0, targetFPS = 30;
+let uFrameIndex = null, uViewMode = null, uDeltaHalf = null, uDeltaHalfH = null;
+let deltaSampler = null, maskSampler = null, deltaTexture = null, maskTexture = null;
+let N = 0, qXyzDMin = null, qXyzDMax = null, qXyzDScale = null, qDcMin = null, qDcMax = null, qOpMin = 0, qOpMax = 0;
+let baseData = null; // Uint8Array(N * STRIDE) — frame 0 quantized, used to init prevFrame on GOP switch
+let deltaTexW = 0, deltaTexH = 0, deltaTexHalfH = 0, rowsPerFrame = 0;
+let writePartition = 0, readPartition = 0;
+// V4d: chunk info is computed from manifest.gop_index, not from a separate v4c manifest
+let chunkInfoList = []; // [{index, startFrame, endFrame, numFrames, rawCacheKey}]
+let bytesPerFrame = 0;  // computed after N is known
+const texChunkCache = new Map();
+const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
+const texChunkFailedSet = new Set();
+const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
+const V4D_VERSION = 'v4e-1'; // experiment: MAX_ACTIVE_CHUNKS=1 (single chunk memory)
+const V4D_COMMIT = null; // resolved at runtime from GitHub API
+
+// DOM refs
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingBar = document.getElementById('loading-bar');
+const loadingText = document.getElementById('loading-text');
+const playBtn = document.getElementById('play-btn');
+const timeline = document.getElementById('timeline');
+const frameLabel = document.getElementById('frame-label');
+const gopStatus = document.getElementById('gop-status');
+const gopBar = document.getElementById('gop-bar');
+const gopStrip = document.getElementById('gop-strip');
+const memBadge = document.getElementById('mem-badge');
+function setLoading(pct, text) { loadingBar.style.width = pct+'%'; if (text) loadingText.textContent = text; }
+
+function updateMemoryBadge() { if (performance.memory) { memBadge.textContent = `MEM: ${(performance.memory.usedJSHeapSize/1024/1024).toFixed(0)}/${(performance.memory.totalJSHeapSize/1024/1024).toFixed(0)} MB`; } }
+setInterval(updateMemoryBadge, 2000);
+
+// ============================================================
+// Gzip decompress
+// ============================================================
+async function decompressGzip(buf) {
+  const ds = new DecompressionStream('gzip');
+  const reader = new ReadableStream({ start(c) { c.enqueue(new Uint8Array(buf)); c.close(); } }).pipeThrough(ds).getReader();
+  const chunks = []; let totalLen = 0;
+  while (true) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); totalLen += value.byteLength; }
+  const result = new ArrayBuffer(totalLen); const u8 = new Uint8Array(result); let off = 0;
+  for (const c of chunks) { u8.set(c, off); off += c.byteLength; }
+  return result;
+}
+
+// ============================================================
+// Float16 ↔ Float32 conversion helpers
+// ============================================================
+const _f16Buf = new ArrayBuffer(4);
+const _f32View = new Float32Array(_f16Buf);
+const _i32View = new Int32Array(_f16Buf);
+
+function float32ToFloat16(val) {
+  _f32View[0] = val;
+  const f = _i32View[0];
+  const sign = (f >> 31) & 0x1;
+  let exp = ((f >> 23) & 0xff) - 127 + 15;
+  let mant = (f >> 13) & 0x3ff;
+  if (exp <= 0) {
+    if (exp < -10) return sign << 15;
+    mant = (mant | 0x400) >> (1 - exp);
+    return (sign << 15) | mant;
+  }
+  if (exp >= 31) return (sign << 15) | (31 << 10) | (mant ? 1 : 0);
+  return (sign << 15) | (exp << 10) | mant;
+}
+
+function float16ToFloat32Array(f16arr) {
+  const len = f16arr.length;
+  const f32 = new Float32Array(len);
+  for (let i = 0; i < len; i++) {
+    const h = f16arr[i];
+    const sign = (h >> 15) & 0x1;
+    const exp = (h >> 10) & 0x1f;
+    const mant = h & 0x3ff;
+    if (exp === 0) {
+      if (mant === 0) { f32[i] = sign ? -0 : 0; }
+      else { let e = -14, m = mant; while (!(m & 0x400)) { m <<= 1; e--; } m &= 0x3ff; _i32View[0] = (sign << 31) | ((e + 127) << 23) | (m << 13); f32[i] = _f32View[0]; }
+    } else if (exp === 31) {
+      f32[i] = mant ? NaN : (sign ? -Infinity : Infinity);
+    } else {
+      _i32View[0] = (sign << 31) | ((exp - 15 + 127) << 23) | (mant << 13);
+      f32[i] = _f32View[0];
+    }
+  }
+  return f32;
+}
+
+// ============================================================
+// Stream Decoder — decode frames from raw GOP binary
+// Accepts an explicit `state` object for sequential P-frame decoding.
+// Each caller (background queue, prefetch, etc.) should use its own state
+// to avoid concurrency conflicts on the single-threaded async event loop.
+// ============================================================
+let decodeOutputBuf = null;
+
+function makeStreamState() {
+  return { prevFrame: null, gopIdx: -1, localIdx: -1 };
+}
+
+function streamDecodeFrameRange(state, gopIdx, gopRaw, targetLocalIdx) {
+  const gopView = new DataView(gopRaw);
+  const gopU8 = new Uint8Array(gopRaw);
+  const numFrames = gopView.getUint32(8, true);
+  const gopInfo = manifest.gop_index[gopIdx];
+  if (targetLocalIdx < 0 || targetLocalIdx >= numFrames) return null;
+
+  if (!decodeOutputBuf) decodeOutputBuf = new Uint8Array(N * STRIDE);
+  if (!state.prevFrame) {
+    state.prevFrame = new Uint8Array(N * STRIDE);
+    if (baseData) state.prevFrame.set(baseData);
+    state.gopIdx = -1;
+    state.localIdx = -1;
+  }
+
+  let startLocalIdx = 0;
+  if (state.gopIdx === gopIdx && state.localIdx >= 0 && state.localIdx < targetLocalIdx) {
+    // Same GOP, continue from where we left off
+    startLocalIdx = state.localIdx + 1;
+  } else if (state.gopIdx === gopIdx - 1 && state.localIdx >= 0) {
+    // Check if previous GOP was fully decoded (last localIdx == num_frames-1)
+    const prevGopExpectedLastIdx = manifest.gop_index[state.gopIdx].num_frames - 1;
+    if (state.localIdx >= prevGopExpectedLastIdx) {
+      // Sequential GOP transition: previous GOP was fully decoded, prevFrame holds
+      // the last decoded frame — correct reference for this GOP's first frame.
+      state.gopIdx = gopIdx;
+      state.localIdx = -1;
+    } else {
+      // Previous GOP was NOT fully decoded — prevFrame is stale, must reset.
+      state.prevFrame = new Uint8Array(N * STRIDE);
+      if (baseData) state.prevFrame.set(baseData);
+      state.gopIdx = gopIdx;
+      state.localIdx = -1;
+    }
+  } else {
+    // Non-sequential jump or first decode — must rebuild from baseData.
+    state.prevFrame = new Uint8Array(N * STRIDE);
+    if (baseData) state.prevFrame.set(baseData);
+    state.gopIdx = gopIdx;
+    state.localIdx = -1;
+  }
+
+  const xyzBytesInt8 = N * 3;
+  const dcBytes = N * 3;
+  const opBytes = N;
+
+  let pos = 16;
+  for (let fi = 0; fi < startLocalIdx; fi++) {
+    pos += xyzBytesInt8 + dcBytes + opBytes;
+  }
+
+  const outFrame = decodeOutputBuf;
+  const prevFrame = state.prevFrame;
+
+  for (let fi = startLocalIdx; fi <= targetLocalIdx; fi++) {
+    const globalFrameIdx = gopInfo.start_frame + fi;
+
+    {
+      const xyzOff = pos; pos += xyzBytesInt8;
+      const dcOff = pos; pos += dcBytes;
+      const opOff = pos; pos += opBytes;
+      // Method B: always diff vs prev (no refresh needed, encoder tracks decoder state)
+      const ref = prevFrame;
+      for (let i = 0; i < N; i++) {
+        const bOff = i * STRIDE;
+        const i3 = i * 3;
+        for (let c = 0; c < 3; c++) {
+          let v = gopU8[xyzOff + i3 + c];
+          if (v > 127) v -= 256;
+          let q = ref[bOff + c] + v;
+          outFrame[bOff + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
+        }
+        for (let c = 0; c < 3; c++) {
+          let v = gopU8[dcOff + i3 + c];
+          if (v > 127) v -= 256;
+          let q = ref[bOff + 3 + c] + v;
+          outFrame[bOff + 3 + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
+        }
+        let v = gopU8[opOff + i];
+        if (v > 127) v -= 256;
+        let q = ref[bOff + 6] + v;
+        outFrame[bOff + 6] = q < 0 ? 0 : (q > 255 ? 255 : q);
+      }
+    }
+    prevFrame.set(outFrame);
+    state.localIdx = fi;
+  }
+  return outFrame;
+}
+
+// ============================================================
+// Pack decoded frame → HalfFloat GPU texture data (single frame)
+// ============================================================
+function packFrameToHalfFloat(frame) {
+  const texData = new Uint16Array(deltaTexW * rowsPerFrame * 4);
+  const dcScale0 = (qDcMax[0] - qDcMin[0]) / 255.0;
+  const dcScale1 = (qDcMax[1] - qDcMin[1]) / 255.0;
+  const dcScale2 = (qDcMax[2] - qDcMin[2]) / 255.0;
+  const opScale = (qOpMax - qOpMin) / 255.0;
+  let row = 0, col = 0;
+  for (let i = 0; i < N; i++) {
+    const bOff = i * STRIDE;
+    const dx = frame[bOff] * qXyzDScale[0] + qXyzDMin[0];
+    const dy = frame[bOff + 1] * qXyzDScale[1] + qXyzDMin[1];
+    const dz = frame[bOff + 2] * qXyzDScale[2] + qXyzDMin[2];
+    const dc0 = frame[bOff + 3] * dcScale0 + qDcMin[0];
+    const dc1 = frame[bOff + 4] * dcScale1 + qDcMin[1];
+    const dc2 = frame[bOff + 5] * dcScale2 + qDcMin[2];
+    const op = frame[bOff + 6] * opScale + qOpMin;
+    const sc = col * 2;
+    let off = (row * deltaTexW + sc) * 4;
+    texData[off] = float32ToFloat16(dx);
+    texData[off + 1] = float32ToFloat16(dy);
+    texData[off + 2] = float32ToFloat16(dz);
+    texData[off + 3] = float32ToFloat16(dc0);
+    off = (row * deltaTexW + sc + 1) * 4;
+    texData[off] = float32ToFloat16(dc1);
+    texData[off + 1] = float32ToFloat16(dc2);
+    texData[off + 2] = float32ToFloat16(op);
+    texData[off + 3] = 0;
+    col++;
+    if (col >= DELTA_K) { col = 0; row++; }
+  }
+  return texData;
+}
+
+// ============================================================
+// V4d: Module-level GOP download cache — ensures each GOP file is fetched only once
+// Maps gopIdx → Promise<ArrayBuffer> (decompressed). Shared across all generateTexChunkFromGOPs calls.
+// Each entry tracks reference count; when no chunk generation needs this GOP, it's evicted.
+// ============================================================
+const _gopFetchCache = new Map(); // gopIdx → { promise, refCount, purgeTimer }
+const GOP_RELEASE_DELAY_MS = 30000; // 30s grace period before evicting unreferenced GOPs
+
+function fetchAndDecompressGOP(gopIdx) {
+  if (_gopFetchCache.has(gopIdx)) {
+    const entry = _gopFetchCache.get(gopIdx);
+    entry.refCount++;
+    // Cancel pending purge if re-referenced
+    if (entry.purgeTimer) { clearTimeout(entry.purgeTimer); entry.purgeTimer = null; }
+    return entry.promise;
+  }
+  const gopInfo = manifest.gop_index[gopIdx];
+  const promise = (async () => {
+    const resp = await fetch(`data_v3d/${gopInfo.filename}`);
+    if (!resp.ok) throw new Error(`GOP ${gopIdx} fetch failed: HTTP ${resp.status}`);
+    const compressed = await resp.arrayBuffer();
+    return decompressGzip(compressed);
+  })();
+  _gopFetchCache.set(gopIdx, { promise, refCount: 1, purgeTimer: null });
+  return promise;
+}
+
+function releaseGOP(gopIdx) {
+  const entry = _gopFetchCache.get(gopIdx);
+  if (!entry) return;
+  entry.refCount--;
+  if (entry.refCount <= 0) {
+    // Delay actual eviction — the same GOP is often needed by the next sequential step
+    entry.purgeTimer = setTimeout(() => {
+      // Only purge if still unreferenced
+      if (entry.refCount <= 0) {
+        _gopFetchCache.delete(gopIdx);
+        diagLog('info', `GOP ${gopIdx} released from memory (after ${GOP_RELEASE_DELAY_MS/1000}s grace)`);
+      }
+    }, GOP_RELEASE_DELAY_MS);
+  }
+}
+
+// ============================================================
+// V4d: Generate texData chunk from GOP data
+// Downloads GOP .gz → decompress → sequentially decode each frame → pack to HalfFloat → concatenate → return raw buffer
+// The raw buffer is then cached in OPFS for zero-decode on subsequent visits.
+// ============================================================
+async function generateTexChunkFromGOPs(chunkIdx, state) {
+  const ci = chunkInfoList[chunkIdx];
+  const startFrame = ci.startFrame;
+  const endFrame = ci.endFrame;
+  const numFrames = ci.numFrames;
+
+  // Determine which GOPs we need and download+decompress them (shared cache prevents duplicate fetches)
+  const gopSize = manifest.gop_size;
+  const gopRawCache = new Map(); // gopIdx → decompressed ArrayBuffer (local to this call)
+
+  for (let fi = 0; fi < numFrames; fi++) {
+    const globalFrame = startFrame + fi;
+    if (globalFrame === 0) continue; // I-frame, no GOP decode needed
+    const gopIdx = Math.floor(globalFrame / gopSize);
+    if (!gopRawCache.has(gopIdx)) {
+      const gopRaw = await fetchAndDecompressGOP(gopIdx);
+      gopRawCache.set(gopIdx, gopRaw);
+    }
+  }
+
+  const frameBuf = new ArrayBuffer(numFrames * bytesPerFrame);
+  const frameBufU8 = new Uint8Array(frameBuf);
+
+  // NOTE: Do NOT reset stream state here. For sequential chunk generation
+  // (background queue), we need prevFrame to carry over from the previous chunk
+  // so that cross-chunk GOP boundaries decode correctly (Method B: no refresh).
+  // The caller passes its own `state` object which maintains continuity.
+
+  for (let fi = 0; fi < numFrames; fi++) {
+    const globalFrame = startFrame + fi;
+
+    // Frame 0 = I-frame, delta texture not used by shader → fill zeros, skip decode
+    if (globalFrame === 0) continue;
+
+    // Find which GOP contains this frame
+    const gopIdx = Math.floor(globalFrame / gopSize);
+    const localIdx = globalFrame - manifest.gop_index[gopIdx].start_frame;
+    const gopRaw = gopRawCache.get(gopIdx);
+
+    // Decode frame
+    const decoded = streamDecodeFrameRange(state, gopIdx, gopRaw, localIdx);
+    if (!decoded) {
+      // Frame data not in GOP (e.g. last frame off-by-one) — reuse previous frame's texData
+      diagLog('warn', `Frame ${globalFrame} not in GOP ${gopIdx} (localIdx=${localIdx}), reusing previous frame`);
+      if (fi > 0) {
+        // Copy previous frame's packed data
+        const prevOffset = (fi - 1) * bytesPerFrame;
+        frameBufU8.copyWithin(fi * bytesPerFrame, prevOffset, prevOffset + bytesPerFrame);
+      }
+      continue;
+    }
+
+    // Pack to HalfFloat
+    const texData = packFrameToHalfFloat(decoded);
+    const texU8 = new Uint8Array(texData.buffer);
+    frameBufU8.set(texU8, fi * bytesPerFrame);
+
+    // Yield every few frames to avoid blocking
+    if (fi % 5 === 4) await new Promise(r => setTimeout(r, 0));
+  }
+
+  // Release GOP references — if no other chunk generation holds them, memory is freed
+  for (const gopIdx of gopRawCache.keys()) {
+    releaseGOP(gopIdx);
+  }
+  gopRawCache.clear();
+
+  return frameBuf;
+}
+
+// ============================================================
+// V4d: Dry-run decode — advance a stream state without producing texData.
+// Called when a chunk is already in OPFS but we need to maintain decoder
+// continuity for subsequent chunks (Method B: no refresh frames).
+// ============================================================
+async function dryRunDecodeChunk(chunkIdx, state) {
+  const ci = chunkInfoList[chunkIdx];
+  const gopSize = manifest.gop_size;
+  const usedGops = new Set();
+
+  for (let fi = 0; fi < ci.numFrames; fi++) {
+    const globalFrame = ci.startFrame + fi;
+    if (globalFrame === 0) continue;
+    const gopIdx = Math.floor(globalFrame / gopSize);
+    const localIdx = globalFrame - manifest.gop_index[gopIdx].start_frame;
+    usedGops.add(gopIdx);
+    const gopRaw = await fetchAndDecompressGOP(gopIdx);
+    streamDecodeFrameRange(state, gopIdx, gopRaw, localIdx);
+    // Yield periodically
+    if (fi % 10 === 9) await new Promise(r => setTimeout(r, 0));
+  }
+  // Release GOP references to avoid memory leaks
+  for (const gopIdx of usedGops) releaseGOP(gopIdx);
+}
+
+// ============================================================
+// V4d: Texture Chunk Loading — with unified guard to prevent duplicate requests
+// Flow: check OPFS raw cache → hit: use directly | miss: download GOPs → generate → store OPFS
+// ============================================================
+async function loadTexChunk(chunkIdx, keepTexData = true) {
+  if (texChunkCache.has(chunkIdx) || texChunkLoadingSet.has(chunkIdx) || texChunkFailedSet.has(chunkIdx)) return;
+  if (chunkIdx < 0 || chunkIdx >= chunkInfoList.length) return;
+  texChunkLoadingSet.add(chunkIdx);
+  updateGopStripUI(chunkIdx, 'loading');
+  const t0 = performance.now();
+  const ci = chunkInfoList[chunkIdx];
+
+  try {
+    // 1. Check OPFS for pre-generated raw texData
+    const rawKey = ci.rawCacheKey;
+    const cachedRaw = await persistCache.get(V4D_VERSION, rawKey);
+    let texData;
+
+    if (cachedRaw && cachedRaw.byteLength > 0) {
+      diagStatsAccum.cacheHits++;
+      texData = cachedRaw;
+      diagLog('info', `Chunk ${chunkIdx} OPFS hit in ${(performance.now()-t0).toFixed(0)}ms (${(texData.byteLength/1024/1024).toFixed(1)} MB)`);
+    } else {
+      // 2. Generate from GOP data
+      diagStatsAccum.cacheMisses++;
+      diagLog('info', `Chunk ${chunkIdx} generating from GOP data (frames ${ci.startFrame}-${ci.endFrame-1})...`);
+      // Use a fresh independent state — this chunk may be generated out-of-order
+      // (e.g. prefetch or stall recovery), so we cannot share the background queue's state.
+      // We must warm up the state by decoding all frames from frame 1 to this chunk's startFrame.
+      const localState = makeStreamState();
+      if (ci.startFrame > 1) {
+        // Warm up: decode frames 1..(startFrame-1) to build correct prevFrame
+        const gopSize = manifest.gop_size;
+        const warmupGops = new Set();
+        for (let wf = 1; wf < ci.startFrame; wf++) {
+          const wGopIdx = Math.floor(wf / gopSize);
+          const wLocalIdx = wf - manifest.gop_index[wGopIdx].start_frame;
+          warmupGops.add(wGopIdx);
+          const wGopRaw = await fetchAndDecompressGOP(wGopIdx);
+          streamDecodeFrameRange(localState, wGopIdx, wGopRaw, wLocalIdx);
+        }
+        // Release warm-up GOP references to avoid leaks
+        for (const gIdx of warmupGops) releaseGOP(gIdx);
+      }
+      texData = await generateTexChunkFromGOPs(chunkIdx, localState);
+      // 3. Store in OPFS
+      persistCache.put(V4D_VERSION, rawKey, texData).catch(() => {});
+      diagLog('info', `Chunk ${chunkIdx} generated+cached in ${(performance.now()-t0).toFixed(0)}ms (${(texData.byteLength/1024/1024).toFixed(1)} MB)`);
+    }
+
+    texChunkCache.set(chunkIdx, {
+      texData: keepTexData ? texData : null,
+      rawCacheKey: rawKey,
+      numFrames: ci.numFrames,
+      startFrame: ci.startFrame,
+      endFrame: ci.endFrame,
+      lastAccess: performance.now(),
+    });
+    texChunkLoadingSet.delete(chunkIdx);
+    updateGopStripUI(chunkIdx, 'loaded');
+    enforceTexDataLimit(chunkIdx);
+    updateCacheStatus();
+    reportStats();
+  } catch (err) {
+    texChunkLoadingSet.delete(chunkIdx);
+    texChunkFailedSet.add(chunkIdx);
+    setTimeout(() => texChunkFailedSet.delete(chunkIdx), 5000);
+    diagLog('error', `Chunk ${chunkIdx} failed: ${err.message}`);
+    updateGopStripUI(chunkIdx, 'error');
+  }
+}
+
+// Re-fetch texData from OPFS
+async function ensureTexChunkReady(chunkIdx) {
+  const chunk = texChunkCache.get(chunkIdx);
+  if (!chunk) return false;
+  if (chunk.texData) return true;
+  if (texChunkLoadingSet.has(chunkIdx)) return false; // already being loaded
+  texChunkLoadingSet.add(chunkIdx);
+  const t0 = performance.now();
+  const raw = await persistCache.get(V4D_VERSION, chunk.rawCacheKey);
+  texChunkLoadingSet.delete(chunkIdx);
+  if (raw && raw.byteLength > 0) {
+    chunk.texData = raw;
+    chunk.lastAccess = performance.now();
+    diagLog('info', `Chunk ${chunkIdx} re-fetched from OPFS in ${(performance.now()-t0).toFixed(1)}ms`);
+    enforceTexDataLimit(chunkIdx);
+    reportStats();
+    return true;
+  }
+  // Fallback: re-generate
+  diagLog('warn', `Chunk ${chunkIdx} OPFS miss, re-generating...`);
+  texChunkCache.delete(chunkIdx);
+  await loadTexChunk(chunkIdx, true);
+  return texChunkCache.has(chunkIdx) && texChunkCache.get(chunkIdx).texData != null;
+}
+
+// STRICT memory enforcement
+function enforceTexDataLimit(justLoadedIdx) {
+  const active = [];
+  for (const [idx, c] of texChunkCache) {
+    if (c.texData) active.push({ idx, lastAccess: c.lastAccess || 0 });
+  }
+  if (active.length <= MAX_ACTIVE_CHUNKS) return;
+  const currentChunkIdx = getTexChunkForFrame(currentFrame);
+  const protect = new Set([currentChunkIdx, justLoadedIdx]);
+  active.sort((a, b) => a.lastAccess - b.lastAccess);
+  let stripped = 0;
+  for (const entry of active) {
+    if (active.length - stripped <= MAX_ACTIVE_CHUNKS) break;
+    if (protect.has(entry.idx)) continue;
+    const c = texChunkCache.get(entry.idx);
+    if (c && c.texData) {
+      c.texData = null;
+      stripped++;
+      diagLog('info', `Memory limit: stripped chunk ${entry.idx}`);
+      updateGopStripUI(entry.idx, 'loaded');
+    }
+  }
+  if (stripped > 0) reportStats();
+}
+
+function getTexChunkForFrame(globalFrame) {
+  for (const ci of chunkInfoList) { if (globalFrame >= ci.startFrame && globalFrame < ci.endFrame) return ci.index; }
+  return -1;
+}
+
+function getFrameTexData(globalFrame) {
+  const chunkIdx = getTexChunkForFrame(globalFrame);
+  if (chunkIdx < 0) return null;
+  const chunk = texChunkCache.get(chunkIdx);
+  if (!chunk || !chunk.texData) return null;
+  chunk.lastAccess = performance.now();
+  const local = globalFrame - chunk.startFrame;
+  const byteOff = local * bytesPerFrame;
+  if (byteOff + bytesPerFrame > chunk.texData.byteLength) return null;
+  return new Uint16Array(chunk.texData, byteOff, bytesPerFrame / 2);
+}
+
+function reportStats() {
+  const loaded = texChunkCache.size, total = chunkInfoList.length;
+  let texB = 0, texC = 0, strippedC = 0;
+  for (const [,c] of texChunkCache) { if (c.texData) { texB += c.texData.byteLength; texC++; } else strippedC++; }
+  document.getElementById('stat-gops').textContent = `${loaded}/${total}`;
+  const bgInfo = bgDownloadRunning ? ` | Gen: ${bgDownloadProgress.done}/${bgDownloadProgress.total}` : (bgDownloadProgress.done >= bgDownloadProgress.total && bgDownloadProgress.total > 0 ? ' | All cached' : '');
+  document.getElementById('stat-window').textContent = `${(texB/1024/1024).toFixed(1)} MB (${texC} active + ${strippedC} OPFS-backed)${bgInfo}`;
+  gopBar.style.width = (total > 0 ? Math.round(loaded / Math.min(MAX_ACTIVE_CHUNKS,total)*100) : 0) + '%';
+}
+
+// ============================================================
+// Data Loading
+// ============================================================
+async function loadManifest() {
+  setLoading(5, 'Loading manifest...');
+  const resp = await fetch('data_v3d/manifest.json');
+  manifest = await resp.json();
+  targetFPS = manifest.target_fps || 30;
+  TOTAL_DURATION = (manifest.p_frame_count || 299) / targetFPS;
+  N = manifest.dynamic_gaussians;
+
+  // Build chunk info from manifest.gop_index (frame 0 included in chunk 0)
+  const totalFrames = manifest.p_frame_count + 1; // 0 to 299 inclusive = 300 frames
+  chunkInfoList = [];
+  for (let startFrame = 0; startFrame < totalFrames; startFrame += FRAMES_PER_CHUNK) {
+    const endFrame = Math.min(startFrame + FRAMES_PER_CHUNK, totalFrames);
+    const idx = chunkInfoList.length;
+    chunkInfoList.push({
+      index: idx,
+      startFrame,
+      endFrame,
+      numFrames: endFrame - startFrame,
+      rawCacheKey: `v4d/texchunk_${String(idx).padStart(3,'0')}.raw`,
+    });
+  }
+
+  persistCache.purgeOldVersions(V4D_VERSION).catch(()=>{});
+
+  document.getElementById('stat-total').textContent = manifest.total_gaussians.toLocaleString();
+  document.getElementById('stat-dynamic').textContent = manifest.dynamic_gaussians.toLocaleString();
+  document.getElementById('stat-static').textContent = (manifest.total_gaussians - manifest.dynamic_gaussians).toLocaleString();
+  timeline.max = manifest.p_frame_count;
+  gopStrip.innerHTML = '';
+  for (let i = 0; i < chunkInfoList.length; i++) {
+    const seg = document.createElement('div'); seg.className = 'gop-seg'; seg.id = `gop-seg-${i}`;
+    seg.title = `Chunk ${i}: frames ${chunkInfoList[i].startFrame}-${chunkInfoList[i].endFrame-1}`;
+    gopStrip.appendChild(seg);
+  }
+}
+
+async function loadDynamicMask() {
+  const compressed = await cachedFetch('data_v3d/' + manifest.dynamic_mask, manifest.dynamic_mask, null, 'spz-static');
+  const raw = await decompressGzip(compressed);
+  dynamicMask = new Uint8Array(raw, 4, new DataView(raw).getUint32(0, true));
+}
+
+async function loadGopMeta() {
+  gopStatus.textContent = 'Meta: downloading...';
+  const compressed = await cachedFetch(`data_v3d/${manifest.gop_meta}`, manifest.gop_meta, null, 'spz-static');
+  const raw = await decompressGzip(compressed);
+  const v = new DataView(raw); let pos = 28;
+  qDcMin = [v.getFloat32(pos,true), v.getFloat32(pos+4,true), v.getFloat32(pos+8,true)];
+  qDcMax = [v.getFloat32(pos+12,true), v.getFloat32(pos+16,true), v.getFloat32(pos+20,true)];
+  qOpMin = v.getFloat32(pos+24,true); qOpMax = v.getFloat32(pos+28,true);
+  qXyzDMin = [v.getFloat32(pos+32,true), v.getFloat32(pos+36,true), v.getFloat32(pos+40,true)];
+  qXyzDMax = [v.getFloat32(pos+44,true), v.getFloat32(pos+48,true), v.getFloat32(pos+52,true)];
+  pos += 56;
+  qXyzDScale = [(qXyzDMax[0]-qXyzDMin[0])/255, (qXyzDMax[1]-qXyzDMin[1])/255, (qXyzDMax[2]-qXyzDMin[2])/255];
+
+  // Skip SPZ baseline
+  const spzSize = v.getUint32(pos, true);
+  pos += 4 + spzSize;
+
+  // Parse base frame (frame 0 quantized data — used to init prevFrame on GOP switch)
+  const xyzBytesBase = N * 3 * 2;
+  const dcBytes = N * 3;
+  const baseXyz16 = new Uint16Array(raw, pos, N * 3);
+  const baseXyzDelta = float16ToFloat32Array(baseXyz16);
+  pos += xyzBytesBase;
+  const baseDcRaw = new Uint8Array(raw, pos, N * 3);
+  pos += dcBytes;
+  const baseOpRaw = new Uint8Array(raw, pos, N);
+
+  baseData = new Uint8Array(N * STRIDE);
+  for (let i = 0; i < N; i++) {
+    for (let c = 0; c < 3; c++) {
+      const scale = 255.0 / (qXyzDMax[c] - qXyzDMin[c] + 1e-10);
+      let q = Math.round((baseXyzDelta[i * 3 + c] - qXyzDMin[c]) * scale);
+      baseData[i * STRIDE + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
+    }
+    baseData[i * STRIDE + 3] = baseDcRaw[i * 3];
+    baseData[i * STRIDE + 4] = baseDcRaw[i * 3 + 1];
+    baseData[i * STRIDE + 5] = baseDcRaw[i * 3 + 2];
+    baseData[i * STRIDE + 6] = baseOpRaw[i];
+  }
+
+  gopStatus.textContent = 'Meta: loaded';
+  diagLog('info', 'GOP meta loaded, baseData parsed');
+}
+
+// ============================================================
+// Textures
+// ============================================================
+function createMaskTexture() {
+  const totalN = manifest.total_gaussians, texW = Math.ceil(Math.sqrt(totalN)), texH = Math.ceil(totalN/texW);
+  const texData = new Float32Array(texW*texH*2); let dynIdx = 0;
+  for (let i = 0; i < totalN; i++) { texData[i*2] = dynamicMask[i] ? 1 : 0; texData[i*2+1] = dynamicMask[i] ? dynIdx : -1; if (dynamicMask[i]) dynIdx++; }
+  for (let i = totalN; i < texW*texH; i++) { texData[i*2] = 0; texData[i*2+1] = -1; }
+  const tex = new THREE.DataTexture(texData, texW, texH, THREE.RGFormat, THREE.FloatType);
+  tex.needsUpdate = true; tex.minFilter = THREE.NearestFilter; tex.magFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+  return { texture: tex, width: texW, height: texH };
+}
+
+function createDeltaTexture() {
+  deltaTexW = DELTA_K * 2;
+  rowsPerFrame = Math.ceil(N / DELTA_K);
+  deltaTexHalfH = rowsPerFrame;
+  deltaTexH = deltaTexHalfH * RING_PARTITIONS;
+  bytesPerFrame = deltaTexW * rowsPerFrame * 4 * 2; // 4 channels × 2 bytes (float16)
+  const texData = new Uint16Array(deltaTexW * deltaTexH * 4);
+  const tex = new THREE.DataTexture(texData, deltaTexW, deltaTexH, THREE.RGBAFormat, THREE.HalfFloatType);
+  tex.needsUpdate = true; tex.minFilter = THREE.NearestFilter; tex.magFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+  console.log(`[V4d] Delta texture: ${deltaTexW}×${deltaTexH} (${RING_PARTITIONS} partitions, each: ${deltaTexHalfH} rows, ${bytesPerFrame} bytes/frame)`);
+  return tex;
+}
+
+// ============================================================
+// UI helpers
+// ============================================================
+function updateGopStripUI(idx, state) {
+  const seg = document.getElementById(`gop-seg-${idx}`);
+  if (!seg) return; seg.className = 'gop-seg';
+  if (state === 'loaded') seg.classList.add('loaded');
+  else if (state === 'active') seg.classList.add('active');
+  else if (state === 'loading') seg.classList.add('loading');
+}
+
+// ============================================================
+// Frame update — same as V4c: DIRECT texSubImage2D from pre-baked data
+// ============================================================
+function applyFrameData(globalFrame) {
+  if (globalFrame === 0) { uFrameIndex.value = 0; return true; }
+  const texData = getFrameTexData(globalFrame);
+  if (!texData) return false;
+  const gl = renderer.getContext();
+  const texProps = renderer.properties.get(deltaTexture);
+  const yOffset = writePartition * deltaTexHalfH;
+  if (!texProps.__webglTexture) {
+    const fullData = deltaTexture.image.data;
+    fullData.set(texData, writePartition * deltaTexW * deltaTexHalfH * 4);
+    deltaTexture.needsUpdate = true;
+  } else {
+    gl.bindTexture(gl.TEXTURE_2D, texProps.__webglTexture);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, yOffset, deltaTexW, deltaTexHalfH, gl.RGBA, gl.HALF_FLOAT, texData);
+  }
+  readPartition = writePartition;
+  uDeltaHalf.value = readPartition;
+  writePartition = (writePartition + 1) % RING_PARTITIONS;
+  uFrameIndex.value = globalFrame;
+  diagStatsAccum.framesApplied++;
+  return true;
+}
+
+// Prefetch
+function triggerPrefetch(currentChunkIdx) {
+  const total = chunkInfoList.length;
+  const next = (currentChunkIdx + 1) % total;
+  const ci = chunkInfoList[currentChunkIdx];
+  const chunkLen = ci.endFrame - ci.startFrame;
+  const chunkProgress = chunkLen > 0 ? (currentFrame - ci.startFrame) / chunkLen : 0;
+  if (chunkProgress > 0.7 || currentChunkIdx === 0) {
+    if (!texChunkCache.has(next) && !texChunkLoadingSet.has(next)) {
+      diagLog('info', `Prefetch chunk ${next}`);
+      loadTexChunk(next, true);
+    }
+    const nextChunk = texChunkCache.get(next);
+    if (nextChunk && !nextChunk.texData && !texChunkLoadingSet.has(next)) ensureTexChunkReady(next);
+  }
+  if (currentChunkIdx >= total - 3) {
+    if (!texChunkCache.has(0) && !texChunkLoadingSet.has(0)) loadTexChunk(0, true);
+    const c0 = texChunkCache.get(0);
+    if (c0 && !c0.texData && !texChunkLoadingSet.has(0)) ensureTexChunkReady(0);
+    if (currentChunkIdx >= total - 2) {
+      if (!texChunkCache.has(1) && !texChunkLoadingSet.has(1)) loadTexChunk(1, true);
+    }
+  }
+  if (!triggerPrefetch._lastEvictFrame || Math.abs(currentFrame - triggerPrefetch._lastEvictFrame) > 15) {
+    triggerPrefetch._lastEvictFrame = currentFrame;
+    enforceTexDataLimit(currentChunkIdx);
+  }
+}
+
+// ============================================================
+// Background Pre-generate Queue
+// Sequentially generates ALL chunks (GOP download → decode → pack → OPFS)
+// ============================================================
+let bgDownloadRunning = false;
+let bgDownloadProgress = { done: 0, total: 0, currentIdx: -1 };
+
+async function startBackgroundGenerateQueue() {
+  if (bgDownloadRunning) return;
+  bgDownloadRunning = true;
+  const total = chunkInfoList.length;
+  bgDownloadProgress.total = total;
+  diagLog('info', `Background generate queue started: ${total} chunks`);
+
+  // Create a dedicated stream decoder state for the background queue.
+  // This state is maintained sequentially across all chunks (0, 1, 2, ...),
+  // ensuring correct cross-chunk GOP boundary decoding (Method B: no refresh).
+  // It is NOT shared with loadTexChunk/prefetch — those use their own state.
+  const bgState = makeStreamState();
+
+  // Pre-scan: check which chunks already exist in OPFS to determine if dry-run is needed.
+  // Dry-run is ONLY needed to maintain bgState continuity for subsequent chunks that
+  // require actual generation. If all remaining chunks are in OPFS, skip dry-run entirely.
+  const chunkInOPFS = new Array(total);
+  for (let i = 0; i < total; i++) {
+    if (texChunkCache.has(i)) {
+      chunkInOPFS[i] = true;
+    } else {
+      const ci = chunkInfoList[i];
+      const existing = await persistCache.get(V4D_VERSION, ci.rawCacheKey);
+      chunkInOPFS[i] = !!(existing && existing.byteLength > 0);
+    }
+  }
+
+  // Helper: check if all chunks from index `from` to end are already cached
+  function allCachedFrom(from) {
+    for (let j = from; j < total; j++) if (!chunkInOPFS[j]) return false;
+    return true;
+  }
+
+  for (let i = 0; i < total; i++) {
+    if (!bgDownloadRunning) break;
+    bgDownloadProgress.currentIdx = i;
+
+    // Already in memory with texData
+    if (texChunkCache.has(i) && texChunkCache.get(i).texData) {
+      // Only dry-run if there's a future chunk that needs generation
+      if (!allCachedFrom(i + 1)) {
+        await dryRunDecodeChunk(i, bgState);
+      }
+      bgDownloadProgress.done++;
+      updateGopStripUI(i, 'loaded');
+      continue;
+    }
+
+    // Already in OPFS
+    if (chunkInOPFS[i]) {
+      // Only dry-run if there's a future chunk that needs generation
+      if (!allCachedFrom(i + 1)) {
+        await dryRunDecodeChunk(i, bgState);
+      }
+      if (!texChunkCache.has(i)) {
+        const ci = chunkInfoList[i];
+        texChunkCache.set(i, {
+          texData: null,
+          rawCacheKey: ci.rawCacheKey,
+          numFrames: ci.numFrames,
+          startFrame: ci.startFrame,
+          endFrame: ci.endFrame,
+          lastAccess: 0,
+        });
+      }
+      bgDownloadProgress.done++;
+      updateGopStripUI(i, 'loaded');
+      diagLog('info', `BG: chunk ${i} already in OPFS${allCachedFrom(i + 1) ? ' (skip dry-run: all remaining cached)' : ' (dry-run for continuity)'}`);
+      reportStats();
+      continue;
+    }
+
+    // Skip if another path is already loading this chunk
+    if (texChunkLoadingSet.has(i)) {
+      // Wait for it to finish, then dry-run to maintain bgState continuity
+      while (texChunkLoadingSet.has(i)) await new Promise(r => setTimeout(r, 100));
+      await dryRunDecodeChunk(i, bgState);
+      chunkInOPFS[i] = true; // mark as cached now
+      bgDownloadProgress.done++;
+      reportStats();
+      continue;
+    }
+
+    // Generate
+    try {
+      updateGopStripUI(i, 'loading');
+      diagLog('info', `BG: generating chunk ${i}/${total-1}...`);
+      texChunkLoadingSet.add(i);
+      const texData = await generateTexChunkFromGOPs(i, bgState);
+      const ci = chunkInfoList[i];
+      persistCache.put(V4D_VERSION, ci.rawCacheKey, texData).catch(() => {});
+      chunkInOPFS[i] = true; // mark as cached now
+
+      const currentChunkIdx = getTexChunkForFrame(currentFrame);
+      const nextChunkIdx = (currentChunkIdx + 1) % total;
+      const shouldKeep = (i === currentChunkIdx || i === nextChunkIdx);
+      if (!texChunkCache.has(i)) {
+        texChunkCache.set(i, {
+          texData: shouldKeep ? texData : null,
+          rawCacheKey: ci.rawCacheKey,
+          numFrames: ci.numFrames,
+          startFrame: ci.startFrame,
+          endFrame: ci.endFrame,
+          lastAccess: shouldKeep ? performance.now() : 0,
+        });
+      }
+      texChunkLoadingSet.delete(i);
+      bgDownloadProgress.done++;
+      updateGopStripUI(i, 'loaded');
+      if (shouldKeep) enforceTexDataLimit(i);
+      reportStats();
+    } catch (err) {
+      texChunkLoadingSet.delete(i);
+      diagLog('error', `BG: chunk ${i} failed: ${err.message}`);
+      updateGopStripUI(i, 'error');
+    }
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  bgDownloadRunning = false;
+  diagLog('info', `Background generate queue complete: ${bgDownloadProgress.done}/${total}`);
+}
+
+// ============================================================
+// Pause Memory Release — free non-essential memory when playback is paused
+// ============================================================
+function pauseReleaseMemory() {
+  // Invalidate any in-flight async loads
+  seekGeneration++;
+  // 1. Stop background generate queue
+  bgDownloadRunning = false;
+  diagLog('info', 'Pause: stopped background generate queue');
+
+  // 2. Strip texData from all chunks EXCEPT the one containing currentFrame
+  const currentChunkIdx = getTexChunkForFrame(currentFrame);
+  let freedBytes = 0;
+  for (const [idx, c] of texChunkCache) {
+    if (idx !== currentChunkIdx && c.texData) {
+      freedBytes += c.texData.byteLength;
+      c.texData = null;
+      updateGopStripUI(idx, 'loaded');
+    }
+  }
+
+  // 3. Release decode buffers (only needed during active decode)
+  if (decodeOutputBuf) { freedBytes += decodeOutputBuf.byteLength; decodeOutputBuf = null; }
+  // Note: per-caller stream states (bgState, localState) are scoped to their functions
+  // and will be GC'd when those functions complete or restart.
+
+  // 4. Flush GOP fetch cache (any in-flight GOPs that finished)
+  for (const [gopIdx, entry] of _gopFetchCache) {
+    if (entry.purgeTimer) clearTimeout(entry.purgeTimer);
+    _gopFetchCache.delete(gopIdx);
+  }
+
+  if (freedBytes > 0) {
+    diagLog('info', `Pause: freed ${(freedBytes / 1024 / 1024).toFixed(1)} MB`);
+  }
+  reportStats();
+}
+
+// ============================================================
+// First-play initialization — deferred from init() to reduce startup cost.
+// Loads GOP meta + first chunk + starts background queue on first play click.
+// ============================================================
+let _firstPlayDone = false;
+let _firstPlayRunning = false;
+async function firstPlayInit() {
+  if (_firstPlayDone || _firstPlayRunning) return;
+  _firstPlayRunning = true;
+  diagLog('info', 'First play: loading GOP meta + first chunk...');
+  gopStatus.textContent = 'First play: loading meta...';
+
+  await loadGopMeta();
+  await loadTexChunk(0, true);
+  startBackgroundGenerateQueue();
+
+  _firstPlayDone = true;
+  _firstPlayRunning = false;
+  diagLog('info', 'First play init complete');
+}
+
+function restoreAfterResume() {
+  // Reset time-driven playback clock to current frame
+  playbackStartTime = performance.now();
+  playbackStartFrame = currentFrame;
+  // Ensure current chunk is ready
+  const ci = getTexChunkForFrame(currentFrame);
+  if (ci >= 0) {
+    const chunk = texChunkCache.get(ci);
+    if (!chunk) {
+      loadTexChunk(ci, true);
+    } else if (!chunk.texData && !texChunkLoadingSet.has(ci)) {
+      ensureTexChunkReady(ci);
+    }
+  }
+  // Restart background generate queue
+  startBackgroundGenerateQueue();
+}
+
+// ============================================================
+// Scene setup
+// ============================================================
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 200);
+const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+const MAX_DPR = Math.min(window.devicePixelRatio, 2);
+let currentDPR = MAX_DPR;
+renderer.setPixelRatio(currentDPR);
+document.getElementById('viewer-container').appendChild(renderer.domElement);
+window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(currentDPR); });
+
+// ============================================================
+// Memory chart
+// ============================================================
+const MEM_CHART_MAX_SAMPLES = 240; const memChartSamples = []; let memChartInterval = null;
+function sampleMemory() {
+  let texB = 0, texC = 0;
+  for (const [,c] of texChunkCache) { if (c.texData) { texB += c.texData.byteLength; texC++; } }
+  memChartSamples.push({ ts: performance.now(), frame: currentFrame, compMB: 0, texMB: texB/(1024*1024), jsHeapMB: performance.memory ? performance.memory.usedJSHeapSize/(1024*1024) : 0, texCount: texC, playing: isPlaying });
+  if (memChartSamples.length > MEM_CHART_MAX_SAMPLES) memChartSamples.shift();
+  renderMemChart();
+}
+function renderMemChart() {
+  const canvas = document.getElementById('mem-chart-canvas'); if (!canvas) return;
+  const rect = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio||1, W = rect.width*dpr, H = rect.height*dpr;
+  if (canvas.width !== Math.round(W) || canvas.height !== Math.round(H)) { canvas.width = Math.round(W); canvas.height = Math.round(H); }
+  const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,W,H);
+  const samples = memChartSamples; if (samples.length < 2) return;
+  const padL = 60*dpr, padR = 20*dpr, padT = 20*dpr, padB = 40*dpr, chartW = W-padL-padR, chartH = H-padT-padB;
+  const MAX_VIS = 50, visCount = Math.min(samples.length, MAX_VIS), visStart = samples.length - visCount;
+  const barGap = 1, barW = (chartW - (visCount-1)*barGap) / visCount;
+  let maxStack = 0, maxHeap = 0;
+  for (let i = visStart; i < samples.length; i++) { const s = samples[i]; const st = s.compMB + s.texMB; if (st > maxStack) maxStack = st; if (s.jsHeapMB > maxHeap) maxHeap = s.jsHeapMB; }
+  const yMax = Math.max(maxStack, maxHeap, 10) * 1.15;
+  ctx.strokeStyle = '#1a1a28'; ctx.lineWidth = 1; ctx.fillStyle = '#555'; ctx.font = `${11*dpr}px sans-serif`; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 5; i++) { const y = padT + chartH - (i/5)*chartH; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke(); ctx.fillText((yMax*i/5).toFixed(0)+' MB', padL-6*dpr, y); }
+  for (let i = visStart; i < samples.length; i++) {
+    const s = samples[i], bi = i - visStart, x = padL + bi*(barW+barGap);
+    let cumY = 0;
+    for (const [val, col] of [[s.compMB,'#3a8bff'],[s.texMB,'#f74']]) { const h = (val/yMax)*chartH; ctx.fillStyle = col; ctx.fillRect(x, padT+chartH-cumY-h, barW, Math.max(h,0)); cumY += h; }
+    if (s.jsHeapMB > 0) { const hh = (s.jsHeapMB/yMax)*chartH; ctx.fillStyle = 'rgba(126,207,255,0.25)'; ctx.fillRect(x, padT+chartH-hh, barW, hh); }
+  }
+  ctx.fillStyle = '#555'; ctx.font = `${10*dpr}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const lblStep = Math.max(1, Math.ceil(70*dpr/(barW+barGap)));
+  for (let i = visStart; i < samples.length; i += lblStep) { const bi = i-visStart, x = padL+bi*(barW+barGap)+barW/2; ctx.fillText(`${((samples[i].ts-samples[0].ts)/1000).toFixed(0)}s`, x, padT+chartH+6*dpr); ctx.fillText(`f${samples[i].frame}`, x, padT+chartH+18*dpr); }
+  const statsEl = document.getElementById('mem-chart-stats');
+  if (statsEl && samples.length > 0) { const l = samples[samples.length-1]; const tot = l.compMB+l.texMB; statsEl.textContent = `Current: ${tot.toFixed(1)} MB | Compressed: ${l.compMB.toFixed(1)} MB | TexData: ${l.texMB.toFixed(1)} MB (${l.texCount} chunks) | ${l.jsHeapMB > 0 ? 'JS Heap: '+l.jsHeapMB.toFixed(0)+' MB | ' : ''}Frame: ${l.frame}`; }
+}
+function startMemChart() { if (memChartInterval) clearInterval(memChartInterval); memChartInterval = setInterval(sampleMemory, 500); window.addEventListener('resize', () => { if (memChartSamples.length > 0) renderMemChart(); }); }
+
+// ============================================================
+// Init
+// ============================================================
+async function init() {
+  const t0 = performance.now();
+  await loadManifest();
+  setLoading(10, 'Loading dynamic mask...');
+  await loadDynamicMask();
+  setLoading(20, 'Creating textures...');
+  deltaTexture = createDeltaTexture();
+  const maskInfo = createMaskTexture();
+  maskTexture = maskInfo.texture;
+  dynamicMask = null;
+  setLoading(30, 'Loading SPZ I-frame + GOP meta...');
+  uFrameIndex = dyno.dynoInt(0); uViewMode = dyno.dynoInt(0);
+  uDeltaHalf = dyno.dynoInt(0); uDeltaHalfH = dyno.dynoInt(deltaTexHalfH);
+  deltaSampler = dyno.dynoSampler2D(deltaTexture); maskSampler = dyno.dynoSampler2D(maskTexture);
+
+  // Parallel: SPZ I-frame (needed for first render)
+  // GOP meta is deferred until first play — saves ~500KB+ network + decode work at startup.
+  const iFrameBuf = await cachedFetch('data_v3d/' + manifest.i_frame, manifest.i_frame, (p) => {
+    const pct = 30 + Math.round(p * 35);
+    setLoading(pct, `Loading SPZ I-frame... ${Math.round(p * 100)}%`);
+  }, 'spz-static');
+  setLoading(70, 'Parsing 128K gaussians...');
+  await new Promise(r => setTimeout(r, 0));
+
+  splatMesh = new SplatMesh({ fileBytes: new Uint8Array(iFrameBuf) });
+  splatMesh.objectModifier = dyno.dynoBlock({ gsplat: dyno.Gsplat }, { gsplat: dyno.Gsplat }, ({ gsplat }) => {
+    const d = new dyno.Dyno({
+      inTypes: { gsplat: dyno.Gsplat, frameIdx: "int", mode: "int", deltaTex: "sampler2D", maskTex: "sampler2D", maskW: "int", deltaK: "int", deltaHalf: "int", deltaHalfH: "int" },
+      outTypes: { gsplat: dyno.Gsplat },
+      globals: () => [dyno.unindent(`
+        vec2 lookupMaskV4(sampler2D mTex, int idx, int mW) { int r = idx / mW; int c = idx - r * mW; return texelFetch(mTex, ivec2(c, r), 0).rg; }
+        void fetchDeltaV4(sampler2D dTex, int dIdx, int K, int halfSel, int halfH, out vec3 dPos, out vec3 dDC, out float dOp) {
+          int sr = dIdx / K; int sc = (dIdx - sr * K) * 2; int actualRow = sr + halfSel * halfH;
+          vec4 t0 = texelFetch(dTex, ivec2(sc, actualRow), 0); vec4 t1 = texelFetch(dTex, ivec2(sc+1, actualRow), 0);
+          dPos = t0.xyz; dDC = vec3(t0.w, t1.xy); dOp = t1.z;
+        }
+      `)],
+      statements: ({ inputs, outputs }) => dyno.unindentLines(`
+        ${outputs.gsplat} = ${inputs.gsplat}; int sIdx = ${inputs.gsplat}.index;
+        vec2 md = lookupMaskV4(${inputs.maskTex}, sIdx, ${inputs.maskW}); float isDyn = md.r; int dIdx = int(md.g);
+        if (${inputs.mode} == 2) { if (isDyn > 0.5) ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(1.0,0.5,0.2), 0.6); else ${outputs.gsplat}.rgba.rgb = mix(${inputs.gsplat}.rgba.rgb, vec3(0.2,0.7,0.6), 0.4); }
+        if (${inputs.mode} == 0 && ${inputs.frameIdx} > 0 && isDyn > 0.5 && dIdx >= 0) {
+          vec3 dp, ddc; float dop;
+          fetchDeltaV4(${inputs.deltaTex}, dIdx, ${inputs.deltaK}, ${inputs.deltaHalf}, ${inputs.deltaHalfH}, dp, ddc, dop);
+          float SH_C0 = 0.28209479177; ${outputs.gsplat}.center += dp; ${outputs.gsplat}.rgba.rgb = SH_C0 * ddc + 0.5; ${outputs.gsplat}.rgba.a = dop;
+        }
+      `)
+    });
+    gsplat = d.apply({ gsplat, frameIdx: uFrameIndex, mode: uViewMode, deltaTex: deltaSampler, maskTex: maskSampler, maskW: dyno.dynoInt(maskInfo.width), deltaK: dyno.dynoInt(DELTA_K), deltaHalf: uDeltaHalf, deltaHalfH: uDeltaHalfH }).gsplat;
+    return { gsplat };
+  });
+  splatMesh.quaternion.set(1,0,0,0); splatMesh.position.set(0,0,0); scene.add(splatMesh);
+  camera.position.set(0.5, 4.5, 15.0);
+
+  setLoading(75, 'Rendering I-frame preview...');
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(2.435, -2.0, -15.003); controls.enableDamping = true; controls.dampingFactor = 0.1;
+  controls.screenSpacePanning = true; controls.minDistance = 0.5; controls.maxDistance = 100; controls.enableZoom = true; controls.update();
+
+  // === Pointer-events gate: canvas only receives events while pressed ===
+  // Default: pointer-events:none → browser handles native scroll/gestures.
+  // On pointerdown (detected by an overlay): switch to pointer-events:auto so
+  // OrbitControls can handle rotate/pan. On pointerup: revert to none.
+  {
+    const canvas = renderer.domElement;
+    canvas.style.pointerEvents = 'none'; // default: events pass through to page
+
+    // Transparent overlay sits on top, catches the initial pointerdown
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:absolute;inset:0;z-index:2;touch-action:auto;';
+    canvas.parentElement.appendChild(overlay);
+
+    let activePointerIds = new Set();
+
+    overlay.addEventListener('pointerdown', e => {
+      activePointerIds.add(e.pointerId);
+      // Only engage canvas on single-pointer (mouse click or single finger)
+      if (activePointerIds.size === 1) {
+        canvas.style.pointerEvents = 'auto';
+        overlay.style.pointerEvents = 'none'; // let subsequent events go to canvas
+        // Re-dispatch this pointerdown to the canvas so OrbitControls sees it
+        canvas.dispatchEvent(new PointerEvent('pointerdown', {
+          pointerId: e.pointerId, pointerType: e.pointerType,
+          clientX: e.clientX, clientY: e.clientY,
+          screenX: e.screenX, screenY: e.screenY,
+          button: e.button, buttons: e.buttons,
+          isPrimary: e.isPrimary, bubbles: true
+        }));
+      }
+      // If 2+ fingers land on overlay → don't engage canvas, let browser scroll
+    });
+
+    // Listen on window for pointerup (canvas or overlay could have capture)
+    window.addEventListener('pointerup', e => {
+      activePointerIds.delete(e.pointerId);
+      if (activePointerIds.size === 0) {
+        canvas.style.pointerEvents = 'none';
+        overlay.style.pointerEvents = 'auto';
+      }
+    });
+    window.addEventListener('pointercancel', e => {
+      activePointerIds.delete(e.pointerId);
+      if (activePointerIds.size === 0) {
+        canvas.style.pointerEvents = 'none';
+        overlay.style.pointerEvents = 'auto';
+      }
+    });
+  }
+
+  splatMesh.updateGenerator();
+  await new Promise(r => setTimeout(r, 0));
+  renderer.render(scene, camera);
+  loadingOverlay.style.background = '#0a0a0f88';
+
+  setLoading(85, 'Rendering I-frame...');
+  // GOP meta, chunk loading, and background queue are all deferred until first play.
+  // At this point we have a fully rendered static I-frame scene — zero animation overhead.
+
+  // Zoom slider
+  const zoomSlider = document.getElementById('zoom-slider'), zoomVal = document.getElementById('zoom-val');
+  function getDist() { return camera.position.distanceTo(controls.target); }
+  function setDist(d) { const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize(); camera.position.copy(controls.target).addScaledVector(dir, d); controls.update(); }
+  zoomSlider.value = Math.min(100, getDist()); zoomVal.textContent = getDist().toFixed(1);
+  zoomSlider.addEventListener('input', e => { setDist(Math.max(0.5, Math.min(100, parseFloat(e.target.value)))); zoomVal.textContent = parseFloat(e.target.value).toFixed(1); });
+  controls.addEventListener('change', () => { const d = getDist(); zoomSlider.value = Math.min(100, Math.max(0.5, d)); zoomVal.textContent = d.toFixed(1); });
+
+  setLoading(100, 'Ready!');
+  // Show version + commit in title bar h1
+  const titleH1 = document.getElementById('title-h1');
+  if (titleH1) {
+    titleH1.textContent = `4DGS Viewer - ${V4D_VERSION}`;
+    // Fetch latest commit hash from GitHub API (non-blocking)
+    fetch('https://api.github.com/repos/rocman/clawbot-playground/commits/pages', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data && data.sha) titleH1.textContent = `4DGS Viewer - ${V4D_VERSION} · ${data.sha.substring(0,7)}`; })
+      .catch(() => {}); // silently ignore if GitHub API fails
+  }
+  console.log(`[V4d] Ready in ${((performance.now()-t0)/1000).toFixed(1)}s — Client-side pre-generate mode`);
+
+  setTimeout(() => {
+    loadingOverlay.classList.add('hidden');
+    // Default: paused. User must click play to start animation.
+    isPlaying = false; playBtn.textContent = '\u25B6';
+    setTimeout(() => { renderer.render(scene, camera);
+      if (deltaTexture?.image?.data?.byteLength > 0) deltaTexture.image.data = new Uint16Array(0);
+      if (maskTexture?.image?.data?.byteLength > 0) maskTexture.image.data = new Float32Array(0);
+    }, 500);
+  }, 300);
+
+  // ============================================================
+  // Animation Loop
+  // ============================================================
+  let frameCount = 0, lastFpsTime = performance.now();
+  const ADVANCE_INTERVAL = 1000 / targetFPS;
+  let stallWaitingChunk = -1;
+  let playbackStartTime = performance.now(); // wall-clock time when playback started/resumed
+  let playbackStartFrame = 0;               // the frame number at that moment
+
+  // Adaptive DPR
+  let prevFrameTs = 0;
+  const DPR_STEP = 0.25, DPR_MIN = 0.5;
+  const SLOW_FRAME_MS = 18, FAST_FRAME_MS = 17, CLIMB_DELAY_MS = 1000;
+  let dprClimbTimer = null, lastDropTs = 0, lastClimbTs = 0;
+  const CLIMB_GUARD_MS = 100;
+
+  renderer.setAnimationLoop(function animate() {
+    const now = performance.now();
+    if (prevFrameTs > 0) {
+      const dt = now - prevFrameTs;
+      if (dt > 0 && dt < 200) {
+        if (dt > SLOW_FRAME_MS) {
+          if (currentDPR > DPR_MIN && (now - lastDropTs) > 200 && (now - lastClimbTs) > CLIMB_GUARD_MS) {
+            if (dprClimbTimer) { clearTimeout(dprClimbTimer); dprClimbTimer = null; }
+            currentDPR = Math.max(DPR_MIN, currentDPR - DPR_STEP);
+            lastDropTs = now;
+            applyDPR(currentDPR);
+          } else if (dprClimbTimer) { clearTimeout(dprClimbTimer); dprClimbTimer = null; }
+        } else if (dt < FAST_FRAME_MS && currentDPR < MAX_DPR && !dprClimbTimer) {
+          dprClimbTimer = setTimeout(() => {
+            dprClimbTimer = null;
+            if (currentDPR < MAX_DPR) {
+              currentDPR = Math.min(MAX_DPR, currentDPR + DPR_STEP);
+              lastClimbTs = performance.now();
+              applyDPR(currentDPR);
+            }
+          }, CLIMB_DELAY_MS);
+        }
+      }
+    }
+    prevFrameTs = now;
+
+    if (isPlaying && viewMode === 'animated') {
+      // Time-driven frame number: compute the target frame from elapsed wall-clock time.
+      // This avoids drift caused by rAF jitter and ensures smooth, constant-rate playback.
+      const maxFrame = manifest.p_frame_count;
+      const elapsed = (now - playbackStartTime) * playbackSpeedMult;
+      const totalFrames = maxFrame + 1;
+      const targetFrame = (playbackStartFrame + Math.floor(elapsed / ADVANCE_INTERVAL)) % totalFrames;
+
+      if (targetFrame !== currentFrame) {
+        const applied = applyFrameData(targetFrame);
+        if (applied) {
+          stallWaitingChunk = -1;
+          currentFrame = targetFrame; timeline.value = targetFrame;
+          const timeSec = (targetFrame / targetFPS).toFixed(1);
+          const chunkIdx = getTexChunkForFrame(targetFrame);
+          frameLabel.textContent = targetFrame === 0 ? `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)` : `P-Frame ${targetFrame}/${maxFrame} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [Chunk ${chunkIdx}]`;
+          if (chunkIdx >= 0) {
+            gopStrip.querySelectorAll('.gop-seg').forEach(s => { if (s.classList.contains('active')) s.classList.replace('active','loaded'); });
+            const as = document.getElementById(`gop-seg-${chunkIdx}`); if (as) as.className = 'gop-seg active';
+            triggerPrefetch(chunkIdx);
+          }
+        } else {
+          // Stall: data not ready — pause the clock so we don't skip frames when data arrives
+          playbackStartTime = now;
+          playbackStartFrame = currentFrame;
+          diagStatsAccum.stallFrames++;
+          const chunkIdx = getTexChunkForFrame(targetFrame);
+          if (chunkIdx >= 0 && stallWaitingChunk !== chunkIdx) {
+            stallWaitingChunk = chunkIdx;
+            const chunk = texChunkCache.get(chunkIdx);
+            if (chunk && !chunk.texData && !texChunkLoadingSet.has(chunkIdx)) { frameLabel.textContent = `Fetching Chunk ${chunkIdx} from OPFS...`; ensureTexChunkReady(chunkIdx); }
+            else if (!chunk && !texChunkLoadingSet.has(chunkIdx)) { frameLabel.textContent = `Generating Chunk ${chunkIdx}...`; loadTexChunk(chunkIdx, true); }
+            else { frameLabel.textContent = `Generating Chunk ${chunkIdx}...`; }
+          }
+        }
+      }
+    }
+
+    splatMesh.updateVersion();
+    controls.update();
+    renderer.render(scene, camera);
+
+    function applyDPR(dpr) {
+      renderer.setPixelRatio(dpr);
+      const w = window.innerWidth, h = window.innerHeight;
+      renderer.domElement.width = Math.floor(w * dpr);
+      renderer.domElement.height = Math.floor(h * dpr);
+      renderer.getContext().viewport(0, 0, renderer.domElement.width, renderer.domElement.height);
+    }
+
+    frameCount++;
+    if (now - lastFpsTime > 500) {
+      const measuredFps = Math.round(frameCount / ((now - lastFpsTime) / 1000));
+      document.getElementById('stat-fps').textContent = measuredFps;
+      frameCount = 0; lastFpsTime = now;
+      const dblEl = document.getElementById('stat-dblbuf'); if (dblEl) dblEl.textContent = `R:P${readPartition} W:P${writePartition} (${RING_PARTITIONS}-ring)`;
+      const dprEl = document.getElementById('stat-dpr'); if (dprEl) dprEl.textContent = currentDPR.toFixed(2);
+    }
+  });
+}
+
+// Frame management
+function updateFrame(idx) {
+  const applied = applyFrameData(idx);
+  if (applied) { currentFrame = idx; timeline.value = idx;
+    playbackStartTime = performance.now(); playbackStartFrame = idx;
+    const timeSec = (idx/targetFPS).toFixed(1); const ci = getTexChunkForFrame(idx);
+    frameLabel.textContent = idx === 0 ? `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)` : `P-Frame ${idx}/${manifest.p_frame_count} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [Chunk ${ci}]`;
+    if (ci >= 0 && !isSeeking) triggerPrefetch(ci); // skip prefetch during seek scrub
+  } else {
+    const ci = getTexChunkForFrame(idx);
+    const gen = seekGeneration; // capture generation before async
+    if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData && !texChunkLoadingSet.has(ci)) ensureTexChunkReady(ci).then(() => { if (seekGeneration !== gen) return; applyFrameData(idx); currentFrame = idx; }); else if (!c && !texChunkLoadingSet.has(ci)) loadTexChunk(ci).then(() => { if (seekGeneration !== gen) return; applyFrameData(idx); currentFrame = idx; }); }
+  }
+  diagStatsAccum.framesRequested++;
+}
+
+// UI events
+playBtn.addEventListener('click', async () => {
+  if (!isPlaying) {
+    // Starting playback
+    if (!_firstPlayDone) {
+      // First play: need to load GOP meta + chunk 0
+      playBtn.textContent = '\u23F3'; // hourglass
+      playBtn.disabled = true;
+      await firstPlayInit();
+      playBtn.disabled = false;
+    }
+    isPlaying = true; playBtn.textContent = '\u23F8';
+    restoreAfterResume();
+  } else {
+    isPlaying = false; playBtn.textContent = '\u25B6';
+    pauseReleaseMemory();
+  }
+});
+let wasPlayingBeforeSeek = false, isSeeking = false, seekGeneration = 0;
+timeline.addEventListener('pointerdown', () => { wasPlayingBeforeSeek = isPlaying; isSeeking = true; isPlaying = false; });
+timeline.addEventListener('input', async e => {
+  if (!_firstPlayDone) {
+    if (!_firstPlayRunning) await firstPlayInit();
+    else return; // still loading, skip this seek frame
+  }
+  updateFrame(parseInt(e.target.value));
+});
+timeline.addEventListener('pointerup', () => {
+  if (!isSeeking) return;
+  isSeeking = false;
+  if (wasPlayingBeforeSeek) {
+    // Resume playback
+    isPlaying = true; playBtn.textContent = '\u23F8';
+    playbackStartTime = performance.now(); playbackStartFrame = currentFrame;
+    const ci = getTexChunkForFrame(currentFrame);
+    if (ci >= 0 && !texChunkCache.has(ci)) loadTexChunk(ci, true);
+    else if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData && !texChunkLoadingSet.has(ci)) ensureTexChunkReady(ci); }
+  } else {
+    // Still paused after seek — release memory loaded during scrub
+    seekGeneration++; // invalidate any in-flight async loads from scrub
+    pauseReleaseMemory();
+    // Delayed second release: catch any async loads that completed after first release
+    const gen = seekGeneration;
+    setTimeout(() => { if (!isPlaying && seekGeneration === gen) pauseReleaseMemory(); }, 500);
+    setTimeout(() => { if (!isPlaying && seekGeneration === gen) pauseReleaseMemory(); }, 2000);
+  }
+});
+document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+  viewMode = btn.dataset.mode;
+  if (viewMode === 'animated') uViewMode.value = 0;
+  else if (viewMode === 'i-frame') { uViewMode.value = 1; uFrameIndex.value = 0; currentFrame = 0; timeline.value = 0; isPlaying = false; playBtn.textContent = '\u25B6'; }
+  else if (viewMode === 'highlight') { uViewMode.value = 2; uFrameIndex.value = 0; isPlaying = false; playBtn.textContent = '\u25B6'; }
+  splatMesh.updateGenerator();
+}));
+document.querySelectorAll('.speed-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); playbackSpeedMult = parseFloat(btn.dataset.speed); playbackStartTime = performance.now(); playbackStartFrame = currentFrame; }));
+document.addEventListener('keydown', async e => { if (e.key === ' ') { e.preventDefault(); playBtn.click(); } else if (e.key === 'ArrowRight') { if (!_firstPlayDone) return; updateFrame(Math.min(currentFrame+1, manifest.p_frame_count)); } else if (e.key === 'ArrowLeft') { if (!_firstPlayDone) return; updateFrame(Math.max(currentFrame-1, 0)); } });
+
+init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
+startMemChart();
+</script>
+</body>
+</html>
