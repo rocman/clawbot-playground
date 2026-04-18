@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-17'; // bump: release memory after seek-scrub while paused
+const V4D_VERSION = 'v4d-18'; // bump: fix async loads bypassing pause memory release
 const V4D_COMMIT = null; // resolved at runtime from GitHub API
 
 // DOM refs
@@ -1031,6 +1031,8 @@ async function startBackgroundGenerateQueue() {
 // Pause Memory Release — free non-essential memory when playback is paused
 // ============================================================
 function pauseReleaseMemory() {
+  // Invalidate any in-flight async loads
+  seekGeneration++;
   // 1. Stop background generate queue
   bgDownloadRunning = false;
   diagLog('info', 'Pause: stopped background generate queue');
@@ -1399,7 +1401,8 @@ function updateFrame(idx) {
     if (ci >= 0 && !isSeeking) triggerPrefetch(ci); // skip prefetch during seek scrub
   } else {
     const ci = getTexChunkForFrame(idx);
-    if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData && !texChunkLoadingSet.has(ci)) ensureTexChunkReady(ci).then(() => { applyFrameData(idx); currentFrame = idx; }); else if (!c && !texChunkLoadingSet.has(ci)) loadTexChunk(ci).then(() => { applyFrameData(idx); currentFrame = idx; }); }
+    const gen = seekGeneration; // capture generation before async
+    if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData && !texChunkLoadingSet.has(ci)) ensureTexChunkReady(ci).then(() => { if (seekGeneration !== gen) return; applyFrameData(idx); currentFrame = idx; }); else if (!c && !texChunkLoadingSet.has(ci)) loadTexChunk(ci).then(() => { if (seekGeneration !== gen) return; applyFrameData(idx); currentFrame = idx; }); }
   }
   diagStatsAccum.framesRequested++;
 }
@@ -1413,7 +1416,7 @@ playBtn.addEventListener('click', () => {
     pauseReleaseMemory();
   }
 });
-let wasPlayingBeforeSeek = false, isSeeking = false;
+let wasPlayingBeforeSeek = false, isSeeking = false, seekGeneration = 0;
 timeline.addEventListener('pointerdown', () => { wasPlayingBeforeSeek = isPlaying; isSeeking = true; isPlaying = false; });
 timeline.addEventListener('input', e => { updateFrame(parseInt(e.target.value)); });
 timeline.addEventListener('pointerup', () => {
@@ -1428,7 +1431,12 @@ timeline.addEventListener('pointerup', () => {
     else if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData && !texChunkLoadingSet.has(ci)) ensureTexChunkReady(ci); }
   } else {
     // Still paused after seek — release memory loaded during scrub
+    seekGeneration++; // invalidate any in-flight async loads from scrub
     pauseReleaseMemory();
+    // Delayed second release: catch any async loads that completed after first release
+    const gen = seekGeneration;
+    setTimeout(() => { if (!isPlaying && seekGeneration === gen) pauseReleaseMemory(); }, 500);
+    setTimeout(() => { if (!isPlaying && seekGeneration === gen) pauseReleaseMemory(); }, 2000);
   }
 });
 document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => {
