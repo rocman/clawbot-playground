@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-3'; // bump this when decode/pack logic changes to invalidate OPFS cache
+const V4D_VERSION = 'v4d-4'; // bump this when decode/pack logic changes to invalidate OPFS cache
 
 // DOM refs
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -309,7 +309,11 @@ function streamDecodeFrameRange(gopIdx, gopRaw, targetLocalIdx) {
   if (streamState.gopIdx === gopIdx && streamState.localIdx >= 0 && streamState.localIdx < targetLocalIdx) {
     startLocalIdx = streamState.localIdx + 1;
   } else {
+    // Initialize prevFrame from baseData (frame 0 quantized values) so that
+    // the first P-frame in any GOP has the correct reference — especially
+    // important for GOP 0 where frame 0 was removed from the binary data.
     streamState.prevFrame = new Uint8Array(N * STRIDE);
+    if (baseData) streamState.prevFrame.set(baseData);
     streamState.gopIdx = gopIdx;
     streamState.localIdx = -1;
   }
