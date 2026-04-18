@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-5'; // bump this when decode/pack logic changes to invalidate OPFS cache
+const V4D_VERSION = 'v4d-6'; // bump this when decode/pack logic changes to invalidate OPFS cache
 
 // DOM refs
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -917,6 +917,57 @@ async function startBackgroundGenerateQueue() {
 }
 
 // ============================================================
+// Pause Memory Release — free non-essential memory when playback is paused
+// ============================================================
+function pauseReleaseMemory() {
+  // 1. Stop background generate queue
+  bgDownloadRunning = false;
+  diagLog('info', 'Pause: stopped background generate queue');
+
+  // 2. Strip texData from all chunks EXCEPT the one containing currentFrame
+  const currentChunkIdx = getTexChunkForFrame(currentFrame);
+  let freedBytes = 0;
+  for (const [idx, c] of texChunkCache) {
+    if (idx !== currentChunkIdx && c.texData) {
+      freedBytes += c.texData.byteLength;
+      c.texData = null;
+      updateGopStripUI(idx, 'loaded');
+    }
+  }
+
+  // 3. Release decode buffers (only needed during active decode)
+  if (decodeOutputBuf) { freedBytes += decodeOutputBuf.byteLength; decodeOutputBuf = null; }
+  if (streamState.prevFrame) { freedBytes += streamState.prevFrame.byteLength; streamState.prevFrame = null; }
+  streamState.gopIdx = -1;
+  streamState.localIdx = -1;
+
+  // 4. Flush GOP fetch cache (any in-flight GOPs that finished)
+  for (const [gopIdx, entry] of _gopFetchCache) {
+    _gopFetchCache.delete(gopIdx);
+  }
+
+  if (freedBytes > 0) {
+    diagLog('info', `Pause: freed ${(freedBytes / 1024 / 1024).toFixed(1)} MB`);
+  }
+  reportStats();
+}
+
+function restoreAfterResume() {
+  // Ensure current chunk is ready
+  const ci = getTexChunkForFrame(currentFrame);
+  if (ci >= 0) {
+    const chunk = texChunkCache.get(ci);
+    if (!chunk) {
+      loadTexChunk(ci, true);
+    } else if (!chunk.texData && !texChunkLoadingSet.has(ci)) {
+      ensureTexChunkReady(ci);
+    }
+  }
+  // Restart background generate queue
+  startBackgroundGenerateQueue();
+}
+
+// ============================================================
 // Scene setup
 // ============================================================
 const scene = new THREE.Scene();
@@ -1172,7 +1223,11 @@ function updateFrame(idx) {
 // UI events
 playBtn.addEventListener('click', () => {
   isPlaying = !isPlaying; playBtn.textContent = isPlaying ? '\u23F8' : '\u25B6';
-  if (isPlaying) { const ci = getTexChunkForFrame(currentFrame); if (ci >= 0 && !texChunkCache.has(ci)) loadTexChunk(ci, true); else if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData && !texChunkLoadingSet.has(ci)) ensureTexChunkReady(ci); } }
+  if (isPlaying) {
+    restoreAfterResume();
+  } else {
+    pauseReleaseMemory();
+  }
 });
 let wasPlayingBeforeSeek = false, isSeeking = false;
 timeline.addEventListener('pointerdown', () => { wasPlayingBeforeSeek = isPlaying; isSeeking = true; isPlaying = false; });
