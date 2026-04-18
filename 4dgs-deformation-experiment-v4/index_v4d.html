@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-2'; // bump this when decode/pack logic changes to invalidate OPFS cache
+const V4D_VERSION = 'v4d-3'; // bump this when decode/pack logic changes to invalidate OPFS cache
 
 // DOM refs
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -435,6 +435,7 @@ async function generateTexChunkFromGOPs(chunkIdx) {
 
   for (let fi = 0; fi < numFrames; fi++) {
     const globalFrame = startFrame + fi;
+    if (globalFrame === 0) continue; // I-frame, no GOP decode needed
     const gopIdx = Math.floor(globalFrame / gopSize);
     if (!gopRawCache.has(gopIdx)) {
       const gopRaw = await fetchAndDecompressGOP(gopIdx);
@@ -451,6 +452,9 @@ async function generateTexChunkFromGOPs(chunkIdx) {
 
   for (let fi = 0; fi < numFrames; fi++) {
     const globalFrame = startFrame + fi;
+
+    // Frame 0 = I-frame, delta texture not used by shader → fill zeros, skip decode
+    if (globalFrame === 0) continue;
 
     // Find which GOP contains this frame
     const gopIdx = Math.floor(globalFrame / gopSize);
