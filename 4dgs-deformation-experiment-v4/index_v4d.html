@@ -9,7 +9,7 @@
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; overflow-y: auto; }
   canvas { display: block; }
   #viewer-section { position: relative; width: 100%; height: 100vh; overflow: hidden; }
-  #viewer-container { position: absolute; inset: 0; z-index: 1; touch-action: none; }
+  #viewer-container { position: absolute; inset: 0; z-index: 1; touch-action: pan-y; }
   #viewer-container canvas { width: 100% !important; height: 100% !important; }
   #zoom-bar { position: absolute; top: 100px; right: 16px; z-index: 100; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   #zoom-bar label { font-size: 10px; color: #666; }
@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-14'; // bump: block 2nd pointer from OrbitControls + commit in h1
+const V4D_VERSION = 'v4d-15'; // bump: touch-action:pan-y + disable OrbitControls two-finger touch
 const V4D_COMMIT = null; // resolved at runtime from GitHub API
 
 // DOM refs
@@ -1195,86 +1195,14 @@ async function init() {
   controls.target.set(2.435, -2.0, -15.003); controls.enableDamping = true; controls.dampingFactor = 0.1;
   controls.screenSpacePanning = true; controls.minDistance = 0.5; controls.maxDistance = 100; controls.enableZoom = true; controls.update();
 
-  // === Two-finger scroll passthrough ===
-  // Problem: touch-action:none + OrbitControls = all two-finger gestures become dolly/rotate.
-  // Solution: intercept at pointer-event capture phase. When the 2nd finger lands, block it
-  // from reaching OrbitControls (which would setPointerCapture and start dolly). Then we
-  // decide: vertical pan → window.scrollBy, pinch → re-dispatch to OrbitControls.
-  {
-    const el = renderer.domElement;
-    const activePtrs = new Map(); // pointerId → { x, y }
-    let gesture = null; // null | { decided, mode:'scroll'|'pinch'|null, lastMidY, initDist, secondId }
-    const THRESHOLD = 10; // px to decide scroll vs pinch
-
-    function mid() {
-      const pts = [...activePtrs.values()];
-      return { y: (pts[0].y + pts[1].y) / 2, dist: Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y) };
-    }
-
-    // --- pointerdown: capture phase, non-passive so we can stopPropagation ---
-    el.addEventListener('pointerdown', e => {
-      activePtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (activePtrs.size === 2) {
-        // 2nd finger down → block OrbitControls from seeing it (prevents dolly mode)
-        e.stopPropagation();
-        e.preventDefault(); // prevent setPointerCapture by OrbitControls
-        const m = mid();
-        gesture = { decided: false, mode: null, lastMidY: m.y, initDist: m.dist, secondId: e.pointerId };
-      }
-    }, { capture: true });
-
-    // --- pointermove: capture phase ---
-    el.addEventListener('pointermove', e => {
-      if (!activePtrs.has(e.pointerId)) return;
-      activePtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (!gesture || activePtrs.size !== 2) return;
-
-      const m = mid();
-      const deltaY = m.y - gesture.lastMidY;
-
-      if (!gesture.decided) {
-        const distDelta = Math.abs(m.dist - gesture.initDist);
-        const panDelta = Math.abs(deltaY);
-        if (distDelta > THRESHOLD) {
-          gesture.decided = true; gesture.mode = 'pinch';
-          // pinch decided: let OrbitControls handle zoom via its own wheel fallback
-          // We won't forward pointer events; user can pinch-zoom via zoom slider or wheel
-        } else if (panDelta > THRESHOLD) {
-          gesture.decided = true; gesture.mode = 'scroll';
-          controls.enabled = false; // freeze OrbitControls rotation during scroll
-        }
-      }
-
-      if (gesture.decided && gesture.mode === 'scroll') {
-        e.stopPropagation();
-        window.scrollBy(0, -deltaY);
-        gesture.lastMidY = m.y;
-      } else if (gesture.decided && gesture.mode === 'pinch') {
-        // For pinch: simulate wheel events so OrbitControls zoom works
-        const scale = m.dist / gesture.initDist;
-        if (Math.abs(scale - 1) > 0.01) {
-          const wheelDelta = (scale > 1 ? -1 : 1) * Math.abs(m.dist - gesture.initDist) * 0.5;
-          el.dispatchEvent(new WheelEvent('wheel', { deltaY: wheelDelta, clientX: e.clientX, clientY: e.clientY, bubbles: true }));
-          gesture.initDist = m.dist; // reset for next delta
-        }
-        e.stopPropagation(); // still block raw pointer from OrbitControls
-      }
-    }, { capture: true });
-
-    // --- pointerup / pointercancel: capture phase ---
-    const endPtr = (e) => {
-      const hadGesture = gesture && activePtrs.size >= 2;
-      activePtrs.delete(e.pointerId);
-      if (hadGesture) {
-        e.stopPropagation();
-        if (gesture && gesture.mode === 'scroll') controls.enabled = true;
-        gesture = null;
-      }
-      if (activePtrs.size < 2) gesture = null;
-    };
-    el.addEventListener('pointerup', endPtr, { capture: true });
-    el.addEventListener('pointercancel', endPtr, { capture: true });
-  }
+  // === Touch scrolling fix ===
+  // Let the browser handle two-finger vertical scroll natively.
+  // Disable OrbitControls' two-finger dolly/pan so it doesn't hijack the gesture.
+  // Zoom is still available via the on-screen slider + mouse wheel (desktop).
+  controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: undefined };
+  // OrbitControls sets canvas.style.touchAction = 'none' in its constructor.
+  // Override it to 'pan-y' so the browser allows native vertical scrolling.
+  renderer.domElement.style.touchAction = 'pan-y';
 
   splatMesh.updateGenerator();
   await new Promise(r => setTimeout(r, 0));
