@@ -961,15 +961,15 @@ async function init() {
   const maskInfo = createMaskTexture();
   maskTexture = maskInfo.texture;
   dynamicMask = null;
-  setLoading(30, 'Loading GOP meta...');
-  await loadGopMeta();
-  setLoading(50, 'Loading SPZ I-frame... 0%');
+  setLoading(30, 'Loading SPZ I-frame + GOP meta...');
   uFrameIndex = dyno.dynoInt(0); uViewMode = dyno.dynoInt(0);
   uDeltaHalf = dyno.dynoInt(0); uDeltaHalfH = dyno.dynoInt(deltaTexHalfH);
   deltaSampler = dyno.dynoSampler2D(deltaTexture); maskSampler = dyno.dynoSampler2D(maskTexture);
 
+  // Parallel: SPZ I-frame (needed for first render) + GOP meta (needed for animation decode)
+  const gopMetaPromise = loadGopMeta();
   const iFrameBuf = await cachedFetch('data_v3d/' + manifest.i_frame, manifest.i_frame, (p) => {
-    const pct = 50 + Math.round(p * 20);
+    const pct = 30 + Math.round(p * 35);
     setLoading(pct, `Loading SPZ I-frame... ${Math.round(p * 100)}%`);
   }, 'spz-static');
   setLoading(70, 'Parsing 128K gaussians...');
@@ -1015,7 +1015,8 @@ async function init() {
   renderer.render(scene, camera);
   loadingOverlay.style.background = '#0a0a0f88';
 
-  setLoading(85, 'Pre-generating first animation chunk...');
+  setLoading(85, 'Waiting for GOP meta + Pre-generating first animation chunk...');
+  await gopMetaPromise; // ensure baseData is ready before generating texData from GOPs
   await loadTexChunk(0, true);
   startBackgroundGenerateQueue();
 
