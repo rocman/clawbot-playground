@@ -41,9 +41,9 @@
       6.057809829711914
     ]
   },
-  "delta_mode": "precise_per_frame_diff",
-  "delta_description": "V3c precise per-frame reconstruction: frame[0] = base delta vs SPZ I-frame (xyz:float16, dc:uint8, op:uint8); frame[i%30==0, i>0] = refresh diff vs quantized_abs[base] (all int8); frame[else] = inter-frame diff of quantized absolutes (all int8); key insight: diff = quant_abs[i] - quant_abs[ref], so decode(ref + diff) == quant_abs[i], NO cumulative error",
-  "refresh_interval": 30,
+  "delta_mode": "method_b_track_decoder",
+  "delta_description": "V3c Method B (track decoder state): frame[0] = base delta vs SPZ I-frame (xyz:float16, dc:uint8, op:uint8); frame[i>0] = int8 diff vs decoder's reconstructed prev frame; encoder tracks decoder state so clipping is auto-compensated in next frame; NO cumulative error, NO refresh frames needed",
+  "refresh_interval": null,
   "spz_baseline_embedded": true,
   "frame_indices": [
     1,
@@ -374,10 +374,10 @@
   },
   "v3c_stats": {
     "raw_bundle_bytes": 269190000,
-    "gz_bundle_bytes": 7593698,
-    "compression_ratio": 35.4,
-    "encoding_method": "diff_int8_with_refresh",
-    "total_clipping": 1919,
+    "gz_bundle_bytes": 6876370,
+    "compression_ratio": 39.1,
+    "encoding_method": "method_b_track_decoder_no_refresh",
+    "total_clipping": 13,
     "max_xyz_error": 0.14861230289234834,
     "max_dc_error": 0,
     "max_op_error": 0,
@@ -387,7 +387,7 @@
   "gop_meta_size": 1805779,
   "gop_size": 30,
   "gop_count": 10,
-  "gop_total_gz_bytes": 5780009,
+  "gop_total_gz_bytes": 5066855,
   "gop_index": [
     {
       "index": 0,
@@ -395,7 +395,7 @@
       "end_frame": 30,
       "num_frames": 29,
       "filename": "gop_000.bin.gz",
-      "gz_bytes": 409877
+      "gz_bytes": 410571
     },
     {
       "index": 1,
@@ -403,7 +403,7 @@
       "end_frame": 60,
       "num_frames": 30,
       "filename": "gop_001.bin.gz",
-      "gz_bytes": 551862
+      "gz_bytes": 470647
     },
     {
       "index": 2,
@@ -411,7 +411,7 @@
       "end_frame": 90,
       "num_frames": 30,
       "filename": "gop_002.bin.gz",
-      "gz_bytes": 504335
+      "gz_bytes": 441643
     },
     {
       "index": 3,
@@ -419,7 +419,7 @@
       "end_frame": 120,
       "num_frames": 30,
       "filename": "gop_003.bin.gz",
-      "gz_bytes": 589219
+      "gz_bytes": 518150
     },
     {
       "index": 4,
@@ -427,7 +427,7 @@
       "end_frame": 150,
       "num_frames": 30,
       "filename": "gop_004.bin.gz",
-      "gz_bytes": 594425
+      "gz_bytes": 515341
     },
     {
       "index": 5,
@@ -435,7 +435,7 @@
       "end_frame": 180,
       "num_frames": 30,
       "filename": "gop_005.bin.gz",
-      "gz_bytes": 597711
+      "gz_bytes": 504038
     },
     {
       "index": 6,
@@ -443,7 +443,7 @@
       "end_frame": 210,
       "num_frames": 30,
       "filename": "gop_006.bin.gz",
-      "gz_bytes": 584363
+      "gz_bytes": 499055
     },
     {
       "index": 7,
@@ -451,7 +451,7 @@
       "end_frame": 240,
       "num_frames": 30,
       "filename": "gop_007.bin.gz",
-      "gz_bytes": 586348
+      "gz_bytes": 506768
     },
     {
       "index": 8,
@@ -459,7 +459,7 @@
       "end_frame": 270,
       "num_frames": 30,
       "filename": "gop_008.bin.gz",
-      "gz_bytes": 766301
+      "gz_bytes": 690002
     },
     {
       "index": 9,
@@ -467,7 +467,7 @@
       "end_frame": 299,
       "num_frames": 29,
       "filename": "gop_009.bin.gz",
-      "gz_bytes": 595568
+      "gz_bytes": 510640
     }
   ],
   "sliding_window": {
@@ -480,10 +480,10 @@
   "v3d_stats": {
     "gop_count": 10,
     "gop_size": 30,
-    "total_gop_gz_bytes": 5780009,
+    "total_gop_gz_bytes": 5066855,
     "meta_gz_bytes": 1805779,
-    "total_transfer_bytes": 10838799,
-    "avg_gop_gz_kb": 675.4,
-    "overhead_vs_v3c": 14.9
+    "total_transfer_bytes": 10125645,
+    "avg_gop_gz_kb": 494.8,
+    "overhead_vs_v3c": -0.1
   }
 }

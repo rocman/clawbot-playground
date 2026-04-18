@@ -200,7 +200,7 @@ let currentFrame = 0, isPlaying = false, viewMode = 'animated', playbackSpeedMul
 let uFrameIndex = null, uViewMode = null, uDeltaHalf = null, uDeltaHalfH = null;
 let deltaSampler = null, maskSampler = null, deltaTexture = null, maskTexture = null;
 let N = 0, qXyzDMin = null, qXyzDMax = null, qXyzDScale = null, qDcMin = null, qDcMax = null, qOpMin = 0, qOpMax = 0;
-let baseData = null; // Uint8Array(N * STRIDE) — frame 0 quantized, used as reference for refresh frames
+let baseData = null; // Uint8Array(N * STRIDE) — frame 0 quantized, used to init prevFrame on GOP switch
 let deltaTexW = 0, deltaTexH = 0, deltaTexHalfH = 0, rowsPerFrame = 0;
 let writePartition = 0, readPartition = 0;
 // V4d: chunk info is computed from manifest.gop_index, not from a separate v4c manifest
@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-4'; // bump this when decode/pack logic changes to invalidate OPFS cache
+const V4D_VERSION = 'v4d-5'; // bump this when decode/pack logic changes to invalidate OPFS cache
 
 // DOM refs
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -329,17 +329,16 @@ function streamDecodeFrameRange(gopIdx, gopRaw, targetLocalIdx) {
 
   const outFrame = decodeOutputBuf;
   const prevFrame = streamState.prevFrame;
-  const gopSize = manifest.gop_size;
 
   for (let fi = startLocalIdx; fi <= targetLocalIdx; fi++) {
     const globalFrameIdx = gopInfo.start_frame + fi;
-    const isRefresh = (globalFrameIdx % gopSize === 0);
 
     {
       const xyzOff = pos; pos += xyzBytesInt8;
       const dcOff = pos; pos += dcBytes;
       const opOff = pos; pos += opBytes;
-      const ref = isRefresh ? baseData : prevFrame;
+      // Method B: always diff vs prev (no refresh needed, encoder tracks decoder state)
+      const ref = prevFrame;
       for (let i = 0; i < N; i++) {
         const bOff = i * STRIDE;
         const i3 = i * 3;
@@ -684,7 +683,7 @@ async function loadGopMeta() {
   const spzSize = v.getUint32(pos, true);
   pos += 4 + spzSize;
 
-  // Parse base frame (frame 0 quantized data — used as reference for refresh frames)
+  // Parse base frame (frame 0 quantized data — used to init prevFrame on GOP switch)
   const xyzBytesBase = N * 3 * 2;
   const dcBytes = N * 3;
   const baseXyz16 = new Uint16Array(raw, pos, N * 3);
