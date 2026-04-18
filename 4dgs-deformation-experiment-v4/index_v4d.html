@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-6'; // bump this when decode/pack logic changes to invalidate OPFS cache
+const V4D_VERSION = 'v4d-7'; // bump this when decode/pack logic changes to invalidate OPFS cache
 
 // DOM refs
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -953,6 +953,9 @@ function pauseReleaseMemory() {
 }
 
 function restoreAfterResume() {
+  // Reset time-driven playback clock to current frame
+  playbackStartTime = performance.now();
+  playbackStartFrame = currentFrame;
   // Ensure current chunk is ready
   const ci = getTexChunkForFrame(currentFrame);
   if (ci >= 0) {
@@ -1105,6 +1108,7 @@ async function init() {
   setTimeout(() => {
     loadingOverlay.classList.add('hidden');
     isPlaying = true; playBtn.textContent = '\u23F8';
+    playbackStartTime = performance.now(); playbackStartFrame = 0;
     setTimeout(() => { renderer.render(scene, camera);
       if (deltaTexture?.image?.data?.byteLength > 0) deltaTexture.image.data = new Uint16Array(0);
       if (maskTexture?.image?.data?.byteLength > 0) maskTexture.image.data = new Float32Array(0);
@@ -1114,9 +1118,11 @@ async function init() {
   // ============================================================
   // Animation Loop
   // ============================================================
-  let frameCount = 0, lastFpsTime = performance.now(), lastAdvanceTime = performance.now();
+  let frameCount = 0, lastFpsTime = performance.now();
   const ADVANCE_INTERVAL = 1000 / targetFPS;
   let stallWaitingChunk = -1;
+  let playbackStartTime = performance.now(); // wall-clock time when playback started/resumed
+  let playbackStartFrame = 0;               // the frame number at that moment
 
   // Adaptive DPR
   let prevFrameTs = 0;
@@ -1152,26 +1158,32 @@ async function init() {
     prevFrameTs = now;
 
     if (isPlaying && viewMode === 'animated') {
-      const adjustedInterval = ADVANCE_INTERVAL / playbackSpeedMult;
-      if (now - lastAdvanceTime >= adjustedInterval) {
-        lastAdvanceTime = now;
-        const maxFrame = manifest.p_frame_count;
-        const nextFrame = (currentFrame + 1) % (maxFrame + 1);
-        const applied = applyFrameData(nextFrame);
+      // Time-driven frame number: compute the target frame from elapsed wall-clock time.
+      // This avoids drift caused by rAF jitter and ensures smooth, constant-rate playback.
+      const maxFrame = manifest.p_frame_count;
+      const elapsed = (now - playbackStartTime) * playbackSpeedMult;
+      const totalFrames = maxFrame + 1;
+      const targetFrame = (playbackStartFrame + Math.floor(elapsed / ADVANCE_INTERVAL)) % totalFrames;
+
+      if (targetFrame !== currentFrame) {
+        const applied = applyFrameData(targetFrame);
         if (applied) {
           stallWaitingChunk = -1;
-          currentFrame = nextFrame; timeline.value = nextFrame;
-          const timeSec = (nextFrame / targetFPS).toFixed(1);
-          const chunkIdx = getTexChunkForFrame(nextFrame);
-          frameLabel.textContent = nextFrame === 0 ? `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)` : `P-Frame ${nextFrame}/${maxFrame} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [Chunk ${chunkIdx}]`;
+          currentFrame = targetFrame; timeline.value = targetFrame;
+          const timeSec = (targetFrame / targetFPS).toFixed(1);
+          const chunkIdx = getTexChunkForFrame(targetFrame);
+          frameLabel.textContent = targetFrame === 0 ? `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)` : `P-Frame ${targetFrame}/${maxFrame} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [Chunk ${chunkIdx}]`;
           if (chunkIdx >= 0) {
             gopStrip.querySelectorAll('.gop-seg').forEach(s => { if (s.classList.contains('active')) s.classList.replace('active','loaded'); });
             const as = document.getElementById(`gop-seg-${chunkIdx}`); if (as) as.className = 'gop-seg active';
             triggerPrefetch(chunkIdx);
           }
         } else {
+          // Stall: data not ready — pause the clock so we don't skip frames when data arrives
+          playbackStartTime = now;
+          playbackStartFrame = currentFrame;
           diagStatsAccum.stallFrames++;
-          const chunkIdx = getTexChunkForFrame(nextFrame);
+          const chunkIdx = getTexChunkForFrame(targetFrame);
           if (chunkIdx >= 0 && stallWaitingChunk !== chunkIdx) {
             stallWaitingChunk = chunkIdx;
             const chunk = texChunkCache.get(chunkIdx);
@@ -1210,6 +1222,7 @@ async function init() {
 function updateFrame(idx) {
   const applied = applyFrameData(idx);
   if (applied) { currentFrame = idx; timeline.value = idx;
+    playbackStartTime = performance.now(); playbackStartFrame = idx;
     const timeSec = (idx/targetFPS).toFixed(1); const ci = getTexChunkForFrame(idx);
     frameLabel.textContent = idx === 0 ? `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)` : `P-Frame ${idx}/${manifest.p_frame_count} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [Chunk ${ci}]`;
     if (ci >= 0) triggerPrefetch(ci);
@@ -1232,7 +1245,7 @@ playBtn.addEventListener('click', () => {
 let wasPlayingBeforeSeek = false, isSeeking = false;
 timeline.addEventListener('pointerdown', () => { wasPlayingBeforeSeek = isPlaying; isSeeking = true; isPlaying = false; });
 timeline.addEventListener('input', e => { updateFrame(parseInt(e.target.value)); });
-timeline.addEventListener('pointerup', () => { if (isSeeking) { isSeeking = false; if (wasPlayingBeforeSeek) { isPlaying = true; playBtn.textContent = '\u23F8'; const ci = getTexChunkForFrame(currentFrame); if (ci >= 0 && !texChunkCache.has(ci)) loadTexChunk(ci, true); else if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData && !texChunkLoadingSet.has(ci)) ensureTexChunkReady(ci); } } } });
+timeline.addEventListener('pointerup', () => { if (isSeeking) { isSeeking = false; if (wasPlayingBeforeSeek) { isPlaying = true; playBtn.textContent = '\u23F8'; playbackStartTime = performance.now(); playbackStartFrame = currentFrame; const ci = getTexChunkForFrame(currentFrame); if (ci >= 0 && !texChunkCache.has(ci)) loadTexChunk(ci, true); else if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData && !texChunkLoadingSet.has(ci)) ensureTexChunkReady(ci); } } } });
 document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => {
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
   viewMode = btn.dataset.mode;
@@ -1241,7 +1254,7 @@ document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('clic
   else if (viewMode === 'highlight') { uViewMode.value = 2; uFrameIndex.value = 0; isPlaying = false; playBtn.textContent = '\u25B6'; }
   splatMesh.updateGenerator();
 }));
-document.querySelectorAll('.speed-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); playbackSpeedMult = parseFloat(btn.dataset.speed); }));
+document.querySelectorAll('.speed-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); playbackSpeedMult = parseFloat(btn.dataset.speed); playbackStartTime = performance.now(); playbackStartFrame = currentFrame; }));
 document.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); playBtn.click(); } else if (e.key === 'ArrowRight') updateFrame(Math.min(currentFrame+1, manifest.p_frame_count)); else if (e.key === 'ArrowLeft') updateFrame(Math.max(currentFrame-1, 0)); });
 
 init().catch(err => { console.error('Init failed:', err); loadingText.textContent = 'Error: ' + err.message; });
