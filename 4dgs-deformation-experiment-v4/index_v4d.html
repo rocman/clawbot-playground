@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-9'; // bump: fix decoder state concurrency (per-caller isolation)
+const V4D_VERSION = 'v4d-10'; // bump: fix GOP duplicate fetch + dry-run skip when all OPFS cached
 
 // DOM refs
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -539,17 +539,21 @@ async function generateTexChunkFromGOPs(chunkIdx, state) {
 async function dryRunDecodeChunk(chunkIdx, state) {
   const ci = chunkInfoList[chunkIdx];
   const gopSize = manifest.gop_size;
+  const usedGops = new Set();
 
   for (let fi = 0; fi < ci.numFrames; fi++) {
     const globalFrame = ci.startFrame + fi;
     if (globalFrame === 0) continue;
     const gopIdx = Math.floor(globalFrame / gopSize);
     const localIdx = globalFrame - manifest.gop_index[gopIdx].start_frame;
+    usedGops.add(gopIdx);
     const gopRaw = await fetchAndDecompressGOP(gopIdx);
     streamDecodeFrameRange(state, gopIdx, gopRaw, localIdx);
     // Yield periodically
     if (fi % 10 === 9) await new Promise(r => setTimeout(r, 0));
   }
+  // Release GOP references to avoid memory leaks
+  for (const gopIdx of usedGops) releaseGOP(gopIdx);
 }
 
 // ============================================================
@@ -585,12 +589,16 @@ async function loadTexChunk(chunkIdx, keepTexData = true) {
       if (ci.startFrame > 1) {
         // Warm up: decode frames 1..(startFrame-1) to build correct prevFrame
         const gopSize = manifest.gop_size;
+        const warmupGops = new Set();
         for (let wf = 1; wf < ci.startFrame; wf++) {
           const wGopIdx = Math.floor(wf / gopSize);
           const wLocalIdx = wf - manifest.gop_index[wGopIdx].start_frame;
+          warmupGops.add(wGopIdx);
           const wGopRaw = await fetchAndDecompressGOP(wGopIdx);
           streamDecodeFrameRange(localState, wGopIdx, wGopRaw, wLocalIdx);
         }
+        // Release warm-up GOP references to avoid leaks
+        for (const gIdx of warmupGops) releaseGOP(gIdx);
       }
       texData = await generateTexChunkFromGOPs(chunkIdx, localState);
       // 3. Store in OPFS
@@ -899,24 +907,49 @@ async function startBackgroundGenerateQueue() {
   // It is NOT shared with loadTexChunk/prefetch — those use their own state.
   const bgState = makeStreamState();
 
+  // Pre-scan: check which chunks already exist in OPFS to determine if dry-run is needed.
+  // Dry-run is ONLY needed to maintain bgState continuity for subsequent chunks that
+  // require actual generation. If all remaining chunks are in OPFS, skip dry-run entirely.
+  const chunkInOPFS = new Array(total);
+  for (let i = 0; i < total; i++) {
+    if (texChunkCache.has(i)) {
+      chunkInOPFS[i] = true;
+    } else {
+      const ci = chunkInfoList[i];
+      const existing = await persistCache.get(V4D_VERSION, ci.rawCacheKey);
+      chunkInOPFS[i] = !!(existing && existing.byteLength > 0);
+    }
+  }
+
+  // Helper: check if all chunks from index `from` to end are already cached
+  function allCachedFrom(from) {
+    for (let j = from; j < total; j++) if (!chunkInOPFS[j]) return false;
+    return true;
+  }
+
   for (let i = 0; i < total; i++) {
     if (!bgDownloadRunning) break;
     bgDownloadProgress.currentIdx = i;
 
-    // Skip if already in memory — but still advance bgState for decoder continuity
+    // Already in memory with texData
     if (texChunkCache.has(i) && texChunkCache.get(i).texData) {
-      await dryRunDecodeChunk(i, bgState);
+      // Only dry-run if there's a future chunk that needs generation
+      if (!allCachedFrom(i + 1)) {
+        await dryRunDecodeChunk(i, bgState);
+      }
       bgDownloadProgress.done++;
       updateGopStripUI(i, 'loaded');
       continue;
     }
 
-    // Skip if already in OPFS — but still advance bgState for decoder continuity
-    const ci = chunkInfoList[i];
-    const existing = await persistCache.get(V4D_VERSION, ci.rawCacheKey);
-    if (existing && existing.byteLength > 0) {
-      await dryRunDecodeChunk(i, bgState);
+    // Already in OPFS
+    if (chunkInOPFS[i]) {
+      // Only dry-run if there's a future chunk that needs generation
+      if (!allCachedFrom(i + 1)) {
+        await dryRunDecodeChunk(i, bgState);
+      }
       if (!texChunkCache.has(i)) {
+        const ci = chunkInfoList[i];
         texChunkCache.set(i, {
           texData: null,
           rawCacheKey: ci.rawCacheKey,
@@ -928,7 +961,7 @@ async function startBackgroundGenerateQueue() {
       }
       bgDownloadProgress.done++;
       updateGopStripUI(i, 'loaded');
-      diagLog('info', `BG: chunk ${i} already in OPFS (dry-run decode for continuity)`);
+      diagLog('info', `BG: chunk ${i} already in OPFS${allCachedFrom(i + 1) ? ' (skip dry-run: all remaining cached)' : ' (dry-run for continuity)'}`);
       reportStats();
       continue;
     }
@@ -938,6 +971,7 @@ async function startBackgroundGenerateQueue() {
       // Wait for it to finish, then dry-run to maintain bgState continuity
       while (texChunkLoadingSet.has(i)) await new Promise(r => setTimeout(r, 100));
       await dryRunDecodeChunk(i, bgState);
+      chunkInOPFS[i] = true; // mark as cached now
       bgDownloadProgress.done++;
       reportStats();
       continue;
@@ -949,7 +983,9 @@ async function startBackgroundGenerateQueue() {
       diagLog('info', `BG: generating chunk ${i}/${total-1}...`);
       texChunkLoadingSet.add(i);
       const texData = await generateTexChunkFromGOPs(i, bgState);
+      const ci = chunkInfoList[i];
       persistCache.put(V4D_VERSION, ci.rawCacheKey, texData).catch(() => {});
+      chunkInOPFS[i] = true; // mark as cached now
 
       const currentChunkIdx = getTexChunkForFrame(currentFrame);
       const nextChunkIdx = (currentChunkIdx + 1) % total;
