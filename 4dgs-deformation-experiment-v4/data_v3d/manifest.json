@@ -387,15 +387,15 @@
   "gop_meta_size": 1805779,
   "gop_size": 30,
   "gop_count": 10,
-  "gop_total_gz_bytes": 6915716,
+  "gop_total_gz_bytes": 5780009,
   "gop_index": [
     {
       "index": 0,
-      "start_frame": 0,
+      "start_frame": 1,
       "end_frame": 30,
-      "num_frames": 30,
+      "num_frames": 29,
       "filename": "gop_000.bin.gz",
-      "gz_bytes": 1545584
+      "gz_bytes": 409877
     },
     {
       "index": 1,
@@ -480,9 +480,9 @@
   "v3d_stats": {
     "gop_count": 10,
     "gop_size": 30,
-    "total_gop_gz_bytes": 6915716,
+    "total_gop_gz_bytes": 5780009,
     "meta_gz_bytes": 1805779,
-    "total_transfer_bytes": 11974506,
+    "total_transfer_bytes": 10838799,
     "avg_gop_gz_kb": 675.4,
     "overhead_vs_v3c": 14.9
   }

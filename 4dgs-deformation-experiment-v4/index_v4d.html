@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-1'; // bump this when decode/pack logic changes to invalidate OPFS cache
+const V4D_VERSION = 'v4d-2'; // bump this when decode/pack logic changes to invalidate OPFS cache
 
 // DOM refs
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -314,16 +314,13 @@ function streamDecodeFrameRange(gopIdx, gopRaw, targetLocalIdx) {
     streamState.localIdx = -1;
   }
 
-  const xyzBytesBase = N * 3 * 2;
   const xyzBytesInt8 = N * 3;
   const dcBytes = N * 3;
   const opBytes = N;
 
   let pos = 16;
   for (let fi = 0; fi < startLocalIdx; fi++) {
-    const globalFrameIdx = gopInfo.start_frame + fi;
-    if (globalFrameIdx === 0) pos += xyzBytesBase + dcBytes + opBytes;
-    else pos += xyzBytesInt8 + dcBytes + opBytes;
+    pos += xyzBytesInt8 + dcBytes + opBytes;
   }
 
   const outFrame = decodeOutputBuf;
@@ -332,34 +329,12 @@ function streamDecodeFrameRange(gopIdx, gopRaw, targetLocalIdx) {
 
   for (let fi = startLocalIdx; fi <= targetLocalIdx; fi++) {
     const globalFrameIdx = gopInfo.start_frame + fi;
-    const isBaseFrame = globalFrameIdx === 0;
-    const isRefresh = !isBaseFrame && (globalFrameIdx % gopSize === 0);
+    const isRefresh = (globalFrameIdx % gopSize === 0);
 
-    if (isBaseFrame) {
-      const fXyz16 = new Uint16Array(gopRaw, pos, N * 3);
-      const fXyzDelta = float16ToFloat32Array(fXyz16);
-      pos += xyzBytesBase;
-      const dcOff = pos; pos += dcBytes;
-      const opOff = pos; pos += opBytes;
-      for (let i = 0; i < N; i++) {
-        const bOff = i * STRIDE;
-        for (let c = 0; c < 3; c++) {
-          const scale = 255.0 / (qXyzDMax[c] - qXyzDMin[c] + 1e-10);
-          let q = Math.round((fXyzDelta[i * 3 + c] - qXyzDMin[c]) * scale);
-          outFrame[bOff + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
-        }
-        const i3 = i * 3;
-        outFrame[bOff + 3] = gopU8[dcOff + i3];
-        outFrame[bOff + 4] = gopU8[dcOff + i3 + 1];
-        outFrame[bOff + 5] = gopU8[dcOff + i3 + 2];
-        outFrame[bOff + 6] = gopU8[opOff + i];
-      }
-    } else {
+    {
       const xyzOff = pos; pos += xyzBytesInt8;
       const dcOff = pos; pos += dcBytes;
       const opOff = pos; pos += opBytes;
-      // For refresh frames, we'd need baseData; but in V4d we always decode sequentially from frame 0 within each GOP
-      // so prevFrame always has the correct reference
       const ref = isRefresh ? baseData : prevFrame;
       for (let i = 0; i < N; i++) {
         const bOff = i * STRIDE;
@@ -460,7 +435,6 @@ async function generateTexChunkFromGOPs(chunkIdx) {
 
   for (let fi = 0; fi < numFrames; fi++) {
     const globalFrame = startFrame + fi;
-    if (globalFrame === 0) continue; // I-frame, no GOP needed
     const gopIdx = Math.floor(globalFrame / gopSize);
     if (!gopRawCache.has(gopIdx)) {
       const gopRaw = await fetchAndDecompressGOP(gopIdx);
@@ -477,13 +451,6 @@ async function generateTexChunkFromGOPs(chunkIdx) {
 
   for (let fi = 0; fi < numFrames; fi++) {
     const globalFrame = startFrame + fi;
-    if (globalFrame === 0) {
-      // Frame 0 = I-frame, no delta data needed — fill zeros (shader skips delta for frame 0)
-      const zeroTex = new Uint16Array(deltaTexW * rowsPerFrame * 4);
-      const zeroU8 = new Uint8Array(zeroTex.buffer);
-      frameBufU8.set(zeroU8, fi * bytesPerFrame);
-      continue;
-    }
 
     // Find which GOP contains this frame
     const gopIdx = Math.floor(globalFrame / gopSize);
