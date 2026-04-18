@@ -214,7 +214,7 @@ const texChunkLoadingSet = new Set(); // unified guard: covers both download+gen
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
 const V4D_VERSION = 'v4d-19'; // OPFS namespace — shares V4d's cached data!
-const V5_VERSION = 'v5-2'; // Display version for V5 — true per-frame slice read from OPFS
+const V5_VERSION = 'v5-3'; // fix: touch event gate — delay engage for multi-finger detection + OPFS slice read
 const V4D_COMMIT = null; // resolved at runtime from GitHub API
 
 // V5: Per-frame read state — instead of holding entire chunk texData in memory,
@@ -1221,6 +1221,8 @@ async function init() {
   // Default: pointer-events:none → browser handles native scroll/gestures.
   // On pointerdown (detected by an overlay): switch to pointer-events:auto so
   // OrbitControls can handle rotate/pan. On pointerup: revert to none.
+  // For touch: use a short delay to distinguish single-finger (rotate) from
+  // multi-finger (scroll) since fingers arrive sequentially.
   {
     const canvas = renderer.domElement;
     canvas.style.pointerEvents = 'none'; // default: events pass through to page
@@ -1231,39 +1233,63 @@ async function init() {
     canvas.parentElement.appendChild(overlay);
 
     let activePointerIds = new Set();
+    let pendingEngageTimer = null;
+    let pendingEvent = null;
+
+    function engageCanvas(e) {
+      canvas.style.pointerEvents = 'auto';
+      overlay.style.pointerEvents = 'none';
+      canvas.dispatchEvent(new PointerEvent('pointerdown', {
+        pointerId: e.pointerId, pointerType: e.pointerType,
+        clientX: e.clientX, clientY: e.clientY,
+        screenX: e.screenX, screenY: e.screenY,
+        button: e.button, buttons: e.buttons,
+        isPrimary: e.isPrimary, bubbles: true
+      }));
+    }
+
+    function cancelPendingEngage() {
+      if (pendingEngageTimer) { clearTimeout(pendingEngageTimer); pendingEngageTimer = null; pendingEvent = null; }
+    }
+
+    function disengageCanvas() {
+      cancelPendingEngage();
+      canvas.style.pointerEvents = 'none';
+      overlay.style.pointerEvents = 'auto';
+    }
 
     overlay.addEventListener('pointerdown', e => {
       activePointerIds.add(e.pointerId);
-      // Only engage canvas on single-pointer (mouse click or single finger)
-      if (activePointerIds.size === 1) {
-        canvas.style.pointerEvents = 'auto';
-        overlay.style.pointerEvents = 'none'; // let subsequent events go to canvas
-        // Re-dispatch this pointerdown to the canvas so OrbitControls sees it
-        canvas.dispatchEvent(new PointerEvent('pointerdown', {
-          pointerId: e.pointerId, pointerType: e.pointerType,
-          clientX: e.clientX, clientY: e.clientY,
-          screenX: e.screenX, screenY: e.screenY,
-          button: e.button, buttons: e.buttons,
-          isPrimary: e.isPrimary, bubbles: true
-        }));
+      if (e.pointerType === 'mouse') {
+        // Mouse: engage immediately, no ambiguity
+        engageCanvas(e);
+      } else {
+        // Touch/pen: first finger → wait briefly for possible second finger
+        if (activePointerIds.size === 1) {
+          pendingEvent = e;
+          pendingEngageTimer = setTimeout(() => {
+            // Still only 1 finger after delay → single-finger drag, engage canvas
+            if (activePointerIds.size === 1 && pendingEvent) {
+              engageCanvas(pendingEvent);
+            }
+            pendingEvent = null;
+            pendingEngageTimer = null;
+          }, 80);
+        } else {
+          // 2+ fingers arrived → cancel pending engage, let browser handle scroll
+          cancelPendingEngage();
+        }
       }
-      // If 2+ fingers land on overlay → don't engage canvas, let browser scroll
     });
 
     // Listen on window for pointerup (canvas or overlay could have capture)
     window.addEventListener('pointerup', e => {
       activePointerIds.delete(e.pointerId);
-      if (activePointerIds.size === 0) {
-        canvas.style.pointerEvents = 'none';
-        overlay.style.pointerEvents = 'auto';
-      }
+      if (activePointerIds.size === 0) disengageCanvas();
     });
     window.addEventListener('pointercancel', e => {
       activePointerIds.delete(e.pointerId);
-      if (activePointerIds.size === 0) {
-        canvas.style.pointerEvents = 'none';
-        overlay.style.pointerEvents = 'auto';
-      }
+      if (activePointerIds.size === 0) disengageCanvas();
     });
   }
 
