@@ -211,7 +211,7 @@ const texChunkLoadingSet = new Set(); // unified guard: covers both download+gen
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
 const V4D_VERSION = 'v4d-13'; // bump: pointer-event capture for two-finger scroll + show commit in title
-const V4D_COMMIT = '5471d38'; // replaced at deploy time; fallback shown if not replaced
+const V4D_COMMIT = null; // resolved at runtime from GitHub API
 
 // DOM refs
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -1289,7 +1289,14 @@ async function init() {
   setLoading(100, 'Ready!');
   // Show version + commit in title bar
   const commitEl = document.getElementById('commit-info');
-  if (commitEl) commitEl.textContent = `${V4D_VERSION} · ${V4D_COMMIT.startsWith('__') ? 'dev' : V4D_COMMIT}`;
+  if (commitEl) {
+    commitEl.textContent = `${V4D_VERSION}`;
+    // Fetch latest commit hash from GitHub API (non-blocking)
+    fetch('https://api.github.com/repos/rocman/clawbot-playground/commits/pages', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data && data.sha) commitEl.textContent = `${V4D_VERSION} · ${data.sha.substring(0,7)}`; })
+      .catch(() => {}); // silently ignore if GitHub API fails
+  }
   console.log(`[V4d] Ready in ${((performance.now()-t0)/1000).toFixed(1)}s — Client-side pre-generate mode`);
 
   setTimeout(() => {
