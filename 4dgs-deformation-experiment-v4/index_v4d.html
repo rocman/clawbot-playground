@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-16'; // bump: pointer-events gate — canvas none by default, auto only while pressed
+const V4D_VERSION = 'v4d-17'; // bump: release memory after seek-scrub while paused
 const V4D_COMMIT = null; // resolved at runtime from GitHub API
 
 // DOM refs
@@ -1396,7 +1396,7 @@ function updateFrame(idx) {
     playbackStartTime = performance.now(); playbackStartFrame = idx;
     const timeSec = (idx/targetFPS).toFixed(1); const ci = getTexChunkForFrame(idx);
     frameLabel.textContent = idx === 0 ? `I-Frame (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s)` : `P-Frame ${idx}/${manifest.p_frame_count} (${timeSec}s / ${TOTAL_DURATION.toFixed(1)}s) [Chunk ${ci}]`;
-    if (ci >= 0) triggerPrefetch(ci);
+    if (ci >= 0 && !isSeeking) triggerPrefetch(ci); // skip prefetch during seek scrub
   } else {
     const ci = getTexChunkForFrame(idx);
     if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData && !texChunkLoadingSet.has(ci)) ensureTexChunkReady(ci).then(() => { applyFrameData(idx); currentFrame = idx; }); else if (!c && !texChunkLoadingSet.has(ci)) loadTexChunk(ci).then(() => { applyFrameData(idx); currentFrame = idx; }); }
@@ -1416,7 +1416,21 @@ playBtn.addEventListener('click', () => {
 let wasPlayingBeforeSeek = false, isSeeking = false;
 timeline.addEventListener('pointerdown', () => { wasPlayingBeforeSeek = isPlaying; isSeeking = true; isPlaying = false; });
 timeline.addEventListener('input', e => { updateFrame(parseInt(e.target.value)); });
-timeline.addEventListener('pointerup', () => { if (isSeeking) { isSeeking = false; if (wasPlayingBeforeSeek) { isPlaying = true; playBtn.textContent = '\u23F8'; playbackStartTime = performance.now(); playbackStartFrame = currentFrame; const ci = getTexChunkForFrame(currentFrame); if (ci >= 0 && !texChunkCache.has(ci)) loadTexChunk(ci, true); else if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData && !texChunkLoadingSet.has(ci)) ensureTexChunkReady(ci); } } } });
+timeline.addEventListener('pointerup', () => {
+  if (!isSeeking) return;
+  isSeeking = false;
+  if (wasPlayingBeforeSeek) {
+    // Resume playback
+    isPlaying = true; playBtn.textContent = '\u23F8';
+    playbackStartTime = performance.now(); playbackStartFrame = currentFrame;
+    const ci = getTexChunkForFrame(currentFrame);
+    if (ci >= 0 && !texChunkCache.has(ci)) loadTexChunk(ci, true);
+    else if (ci >= 0) { const c = texChunkCache.get(ci); if (c && !c.texData && !texChunkLoadingSet.has(ci)) ensureTexChunkReady(ci); }
+  } else {
+    // Still paused after seek — release memory loaded during scrub
+    pauseReleaseMemory();
+  }
+});
 document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => {
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
   viewMode = btn.dataset.mode;
