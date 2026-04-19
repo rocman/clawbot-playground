@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-22'; // fix: block touch event bubbling on engaged canvas
+const V4D_VERSION = 'v4d-23'; // fix: overlay touch-action:none so pointerdown fires before native gesture
 const V4D_COMMIT = null; // resolved at runtime from GitHub API
 
 // DOM refs
@@ -1230,15 +1230,16 @@ async function init() {
 
     // Transparent overlay sits on top, catches the initial pointerdown
     const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:absolute;inset:0;z-index:2;touch-action:auto;';
+    // touch-action:none on overlay ensures browser does NOT start a native
+    // scroll/gesture before our pointerdown handler fires.  Without this the
+    // browser wins the "touch-action negotiation" and cancels our pointer.
+    overlay.style.cssText = 'position:absolute;inset:0;z-index:2;touch-action:none;';
     canvas.parentElement.appendChild(overlay);
 
     let activePointerIds = new Set();
 
-    // While canvas is engaged, prevent touch events from bubbling and
-    // triggering browser-default scroll / refresh gestures.
-    function onTouchMove(e) { e.preventDefault(); }
-    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    // While canvas is engaged, block touchmove from bubbling to browser
+    canvas.addEventListener('touchmove', e => { e.preventDefault(); }, { passive: false });
 
     function engageCanvas(e) {
       canvas.style.pointerEvents = 'auto';
