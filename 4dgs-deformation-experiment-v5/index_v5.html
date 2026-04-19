@@ -29,7 +29,7 @@
   #timeline::-webkit-slider-thumb { -webkit-appearance: none; width: 32px; height: 32px; background: radial-gradient(circle, #7ecfff 8px, transparent 8px); border-radius: 50%; cursor: grab; border: none; }
   #timeline::-moz-range-thumb { width: 32px; height: 32px; background: radial-gradient(circle, #7ecfff 8px, transparent 8px); border-radius: 50%; cursor: grab; border: none; }
   #frame-label { font-size: 13px; color: #aaa; text-align: center; font-variant-numeric: tabular-nums; margin-bottom: 6px; }
-  #info-bar { display: flex; gap: 20px; font-size: 12px; color: #666; flex-wrap: wrap; }
+  #info-bar { display: flex; column-gap: 20px; row-gap: 2px; font-size: 12px; color: #666; flex-wrap: wrap; }
   #info-bar span { display: flex; align-items: center; gap: 4px; }
   #info-bar .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
   .dot-static { background: #4a9; } .dot-dynamic { background: #f74; } .dot-fps { background: #7ecfff; } .dot-mem { background: #c8a; }
@@ -215,7 +215,7 @@ const texChunkLoadingSet = new Set(); // unified guard: covers both download+gen
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
 const V4D_VERSION = 'v4d-19'; // OPFS namespace â€?shares V4d's cached data!
-const V5_VERSION = 'v5-6'; // fix: overlay touch-action:none so pointerdown fires before native gesture
+const V5_VERSION = 'v5-7'; // #autoplay hash param + info-bar row-gap fix
 const V4D_COMMIT = null; // resolved at runtime from GitHub API
 
 // V5: Per-frame read state â€?instead of holding entire chunk texData in memory,
@@ -1314,10 +1314,17 @@ async function init() {
     loadingOverlay.classList.add('hidden');
     // Default: paused. User must click play to start animation.
     isPlaying = false; playBtn.textContent = '\u25B6';
-    setTimeout(() => { renderer.render(scene, camera);
-      if (deltaTexture?.image?.data?.byteLength > 0) deltaTexture.image.data = new Uint16Array(0);
-      if (maskTexture?.image?.data?.byteLength > 0) maskTexture.image.data = new Float32Array(0);
-    }, 500);
+    // #autoplay hash parameter: auto-start playback if present
+    const hasAutoplay = location.hash.split(/[#&]/).some(i => i.split('=')[0] === 'autoplay');
+    if (hasAutoplay) {
+      // Trigger play after a short delay to ensure rendering is stable
+      setTimeout(() => { playBtn.click(); }, 200);
+    } else {
+      setTimeout(() => { renderer.render(scene, camera);
+        if (deltaTexture?.image?.data?.byteLength > 0) deltaTexture.image.data = new Uint16Array(0);
+        if (maskTexture?.image?.data?.byteLength > 0) maskTexture.image.data = new Float32Array(0);
+      }, 500);
+    }
   }, 300);
 
   // ============================================================
