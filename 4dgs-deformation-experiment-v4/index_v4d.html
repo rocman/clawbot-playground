@@ -210,7 +210,7 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-20'; // fix: touch event gate — delay engage for multi-finger detection
+const V4D_VERSION = 'v4d-21'; // simplify: touch single-finger = rotate camera, no delay
 const V4D_COMMIT = null; // resolved at runtime from GitHub API
 
 // DOM refs
@@ -1220,10 +1220,10 @@ async function init() {
 
   // === Pointer-events gate: canvas only receives events while pressed ===
   // Default: pointer-events:none → browser handles native scroll/gestures.
-  // On pointerdown (detected by an overlay): switch to pointer-events:auto so
-  // OrbitControls can handle rotate/pan. On pointerup: revert to none.
-  // For touch: use a short delay to distinguish single-finger (rotate) from
-  // multi-finger (scroll) since fingers arrive sequentially.
+  // On pointerdown: switch to pointer-events:auto so OrbitControls can handle
+  // rotate/pan. On all pointers up: revert to none.
+  // Mobile: single-finger drag = rotate camera (user's explicit choice).
+  //         Page scrolling is done via areas outside the canvas.
   {
     const canvas = renderer.domElement;
     canvas.style.pointerEvents = 'none'; // default: events pass through to page
@@ -1234,8 +1234,6 @@ async function init() {
     canvas.parentElement.appendChild(overlay);
 
     let activePointerIds = new Set();
-    let pendingEngageTimer = null;
-    let pendingEvent = null;
 
     function engageCanvas(e) {
       canvas.style.pointerEvents = 'auto';
@@ -1249,38 +1247,18 @@ async function init() {
       }));
     }
 
-    function cancelPendingEngage() {
-      if (pendingEngageTimer) { clearTimeout(pendingEngageTimer); pendingEngageTimer = null; pendingEvent = null; }
-    }
-
     function disengageCanvas() {
-      cancelPendingEngage();
       canvas.style.pointerEvents = 'none';
       overlay.style.pointerEvents = 'auto';
     }
 
     overlay.addEventListener('pointerdown', e => {
       activePointerIds.add(e.pointerId);
-      if (e.pointerType === 'mouse') {
-        // Mouse: engage immediately, no ambiguity
+      // First pointer (mouse click or first finger): engage canvas immediately
+      if (activePointerIds.size === 1) {
         engageCanvas(e);
-      } else {
-        // Touch/pen: first finger → wait briefly for possible second finger
-        if (activePointerIds.size === 1) {
-          pendingEvent = e;
-          pendingEngageTimer = setTimeout(() => {
-            // Still only 1 finger after delay → single-finger drag, engage canvas
-            if (activePointerIds.size === 1 && pendingEvent) {
-              engageCanvas(pendingEvent);
-            }
-            pendingEvent = null;
-            pendingEngageTimer = null;
-          }, 80);
-        } else {
-          // 2+ fingers arrived → cancel pending engage, let browser handle scroll
-          cancelPendingEngage();
-        }
       }
+      // Subsequent pointers go to canvas too (OrbitControls may use for zoom/pan)
     });
 
     // Listen on window for pointerup (canvas or overlay could have capture)
