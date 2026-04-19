@@ -11,6 +11,12 @@
 </style>
 </head>
 <body>
-<iframe src="index_v5.html" allowfullscreen></iframe>
+<iframe id="v5frame" src="index_v5.html" allowfullscreen></iframe>
+<script>
+  // Relay hash from parent URL to iframe src
+  var f = document.getElementById('v5frame');
+  if (location.hash) f.src = 'index_v5.html' + location.hash;
+  window.addEventListener('hashchange', function() { f.src = 'index_v5.html' + location.hash; });
+</script>
 </body>
 </html>
