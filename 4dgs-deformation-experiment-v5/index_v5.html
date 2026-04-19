@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4DGS Deformation Viewer V5 â€” Per-frame OPFS Read (Low Memory)</title>
+<title>4DGS Deformation Viewer V5 â€?Per-frame OPFS Read (Low Memory)</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; overflow-y: auto; }
@@ -66,7 +66,7 @@
 <body>
 <div id="viewer-section">
   <div id="loading-overlay">
-    <div id="loading-title">4DGS VIEWER V5 â€” Per-frame OPFS Read (Low Memory)</div>
+    <div id="loading-title">4DGS VIEWER V5 â€?Per-frame OPFS Read (Low Memory)</div>
     <div id="loading-bar-bg"><div id="loading-bar"></div></div>
     <div id="loading-text">Initializing...</div>
   </div>
@@ -101,11 +101,11 @@
 </div>
 <div id="memory-chart-section">
   <h2>ðŸ“Š Memory Usage Timeline</h2>
-  <div class="chart-subtitle">Real-time stacked bar chart â€” scroll down to view. Sampled every 500ms.</div>
+  <div class="chart-subtitle">Real-time stacked bar chart â€?scroll down to view. Sampled every 500ms.</div>
   <canvas id="mem-chart-canvas"></canvas>
   <div id="mem-chart-legend">
     <div class="legend-item"><span class="legend-swatch" style="background:#f74"></span> Frame TexData (in memory, ~2MB/frame Ã— 3 max)</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#3a5"></span> (No chunk buffer â€” per-frame OPFS slice read)</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#3a5"></span> (No chunk buffer â€?per-frame OPFS slice read)</div>
     <div class="legend-item"><span class="legend-swatch" style="background:rgba(126,207,255,0.25)"></span> JS Heap Used (overlay)</div>
   </div>
   <div id="mem-chart-stats"></div>
@@ -119,7 +119,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { SplatMesh, dyno } from "@sparkjsdev/spark";
 
 // ============================================================
-// V5 Configuration â€” Per-frame OPFS Read (Low Memory)
+// V5 Configuration â€?Per-frame OPFS Read (Low Memory)
 // Same GOP-based pre-generation as V4d, but during playback:
 // instead of caching entire chunk texData (~29MB) in memory,
 // reads only the needed frame (~2MB) from OPFS on demand.
@@ -204,7 +204,7 @@ let currentFrame = 0, isPlaying = false, viewMode = 'animated', playbackSpeedMul
 let uFrameIndex = null, uViewMode = null, uDeltaHalf = null, uDeltaHalfH = null;
 let deltaSampler = null, maskSampler = null, deltaTexture = null, maskTexture = null;
 let N = 0, qXyzDMin = null, qXyzDMax = null, qXyzDScale = null, qDcMin = null, qDcMax = null, qOpMin = 0, qOpMax = 0;
-let baseData = null; // Uint8Array(N * STRIDE) â€” frame 0 quantized, used to init prevFrame on GOP switch
+let baseData = null; // Uint8Array(N * STRIDE) â€?frame 0 quantized, used to init prevFrame on GOP switch
 let deltaTexW = 0, deltaTexH = 0, deltaTexHalfH = 0, rowsPerFrame = 0;
 let writePartition = 0, readPartition = 0;
 // V4d: chunk info is computed from manifest.gop_index, not from a separate v4c manifest
@@ -214,14 +214,14 @@ const texChunkCache = new Map();
 const texChunkLoadingSet = new Set(); // unified guard: covers both download+generate AND OPFS fetch
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
-const V4D_VERSION = 'v4d-19'; // OPFS namespace â€” shares V4d's cached data!
+const V4D_VERSION = 'v4d-19'; // OPFS namespace â€?shares V4d's cached data!
 const V5_VERSION = 'v5-6'; // fix: overlay touch-action:none so pointerdown fires before native gesture
 const V4D_COMMIT = null; // resolved at runtime from GitHub API
 
-// V5: Per-frame read state â€” instead of holding entire chunk texData in memory,
+// V5: Per-frame read state â€?instead of holding entire chunk texData in memory,
 // we read single frames from OPFS on demand.
-// frameTexCache: Map<globalFrame, Uint16Array> â€” holds at most a few frames
-const frameTexCache = new Map(); // globalFrame â†’ Uint16Array (single frame texData)
+// frameTexCache: Map<globalFrame, Uint16Array> â€?holds at most a few frames
+const frameTexCache = new Map(); // globalFrame â†?Uint16Array (single frame texData)
 const FRAME_CACHE_MAX = 3; // keep at most 3 frames in memory (~6 MB)
 
 // DOM refs
@@ -254,7 +254,7 @@ async function decompressGzip(buf) {
 }
 
 // ============================================================
-// Float16 â†” Float32 conversion helpers
+// Float16 â†?Float32 conversion helpers
 // ============================================================
 const _f16Buf = new ArrayBuffer(4);
 const _f32View = new Float32Array(_f16Buf);
@@ -297,7 +297,7 @@ function float16ToFloat32Array(f16arr) {
 }
 
 // ============================================================
-// Stream Decoder â€” decode frames from raw GOP binary
+// Stream Decoder â€?decode frames from raw GOP binary
 // Accepts an explicit `state` object for sequential P-frame decoding.
 // Each caller (background queue, prefetch, etc.) should use its own state
 // to avoid concurrency conflicts on the single-threaded async event loop.
@@ -332,18 +332,18 @@ function streamDecodeFrameRange(state, gopIdx, gopRaw, targetLocalIdx) {
     const prevGopExpectedLastIdx = manifest.gop_index[state.gopIdx].num_frames - 1;
     if (state.localIdx >= prevGopExpectedLastIdx) {
       // Sequential GOP transition: previous GOP was fully decoded, prevFrame holds
-      // the last decoded frame â€” correct reference for this GOP's first frame.
+      // the last decoded frame â€?correct reference for this GOP's first frame.
       state.gopIdx = gopIdx;
       state.localIdx = -1;
     } else {
-      // Previous GOP was NOT fully decoded â€” prevFrame is stale, must reset.
+      // Previous GOP was NOT fully decoded â€?prevFrame is stale, must reset.
       state.prevFrame = new Uint8Array(N * STRIDE);
       if (baseData) state.prevFrame.set(baseData);
       state.gopIdx = gopIdx;
       state.localIdx = -1;
     }
   } else {
-    // Non-sequential jump or first decode â€” must rebuild from baseData.
+    // Non-sequential jump or first decode â€?must rebuild from baseData.
     state.prevFrame = new Uint8Array(N * STRIDE);
     if (baseData) state.prevFrame.set(baseData);
     state.gopIdx = gopIdx;
@@ -399,7 +399,7 @@ function streamDecodeFrameRange(state, gopIdx, gopRaw, targetLocalIdx) {
 }
 
 // ============================================================
-// Pack decoded frame â†’ HalfFloat GPU texture data (single frame)
+// Pack decoded frame â†?HalfFloat GPU texture data (single frame)
 // ============================================================
 function packFrameToHalfFloat(frame) {
   const texData = new Uint16Array(deltaTexW * rowsPerFrame * 4);
@@ -435,11 +435,11 @@ function packFrameToHalfFloat(frame) {
 }
 
 // ============================================================
-// V4d: Module-level GOP download cache â€” ensures each GOP file is fetched only once
-// Maps gopIdx â†’ Promise<ArrayBuffer> (decompressed). Shared across all generateTexChunkFromGOPs calls.
+// V4d: Module-level GOP download cache â€?ensures each GOP file is fetched only once
+// Maps gopIdx â†?Promise<ArrayBuffer> (decompressed). Shared across all generateTexChunkFromGOPs calls.
 // Each entry tracks reference count; when no chunk generation needs this GOP, it's evicted.
 // ============================================================
-const _gopFetchCache = new Map(); // gopIdx â†’ { promise, refCount, purgeTimer }
+const _gopFetchCache = new Map(); // gopIdx â†?{ promise, refCount, purgeTimer }
 const GOP_RELEASE_DELAY_MS = 30000; // 30s grace period before evicting unreferenced GOPs
 
 function fetchAndDecompressGOP(gopIdx) {
@@ -452,7 +452,7 @@ function fetchAndDecompressGOP(gopIdx) {
   }
   const gopInfo = manifest.gop_index[gopIdx];
   const promise = (async () => {
-    const resp = await fetch(`data_v3d/${gopInfo.filename}`);
+    const resp = await fetch(`data_v5/${gopInfo.filename}`);
     if (!resp.ok) throw new Error(`GOP ${gopIdx} fetch failed: HTTP ${resp.status}`);
     const compressed = await resp.arrayBuffer();
     return decompressGzip(compressed);
@@ -466,7 +466,7 @@ function releaseGOP(gopIdx) {
   if (!entry) return;
   entry.refCount--;
   if (entry.refCount <= 0) {
-    // Delay actual eviction â€” the same GOP is often needed by the next sequential step
+    // Delay actual eviction â€?the same GOP is often needed by the next sequential step
     entry.purgeTimer = setTimeout(() => {
       // Only purge if still unreferenced
       if (entry.refCount <= 0) {
@@ -479,7 +479,7 @@ function releaseGOP(gopIdx) {
 
 // ============================================================
 // V4d: Generate texData chunk from GOP data
-// Downloads GOP .gz â†’ decompress â†’ sequentially decode each frame â†’ pack to HalfFloat â†’ concatenate â†’ return raw buffer
+// Downloads GOP .gz â†?decompress â†?sequentially decode each frame â†?pack to HalfFloat â†?concatenate â†?return raw buffer
 // The raw buffer is then cached in OPFS for zero-decode on subsequent visits.
 // ============================================================
 async function generateTexChunkFromGOPs(chunkIdx, state) {
@@ -490,7 +490,7 @@ async function generateTexChunkFromGOPs(chunkIdx, state) {
 
   // Determine which GOPs we need and download+decompress them (shared cache prevents duplicate fetches)
   const gopSize = manifest.gop_size;
-  const gopRawCache = new Map(); // gopIdx â†’ decompressed ArrayBuffer (local to this call)
+  const gopRawCache = new Map(); // gopIdx â†?decompressed ArrayBuffer (local to this call)
 
   for (let fi = 0; fi < numFrames; fi++) {
     const globalFrame = startFrame + fi;
@@ -513,7 +513,7 @@ async function generateTexChunkFromGOPs(chunkIdx, state) {
   for (let fi = 0; fi < numFrames; fi++) {
     const globalFrame = startFrame + fi;
 
-    // Frame 0 = I-frame, delta texture not used by shader â†’ fill zeros, skip decode
+    // Frame 0 = I-frame, delta texture not used by shader â†?fill zeros, skip decode
     if (globalFrame === 0) continue;
 
     // Find which GOP contains this frame
@@ -524,7 +524,7 @@ async function generateTexChunkFromGOPs(chunkIdx, state) {
     // Decode frame
     const decoded = streamDecodeFrameRange(state, gopIdx, gopRaw, localIdx);
     if (!decoded) {
-      // Frame data not in GOP (e.g. last frame off-by-one) â€” reuse previous frame's texData
+      // Frame data not in GOP (e.g. last frame off-by-one) â€?reuse previous frame's texData
       diagLog('warn', `Frame ${globalFrame} not in GOP ${gopIdx} (localIdx=${localIdx}), reusing previous frame`);
       if (fi > 0) {
         // Copy previous frame's packed data
@@ -543,7 +543,7 @@ async function generateTexChunkFromGOPs(chunkIdx, state) {
     if (fi % 5 === 4) await new Promise(r => setTimeout(r, 0));
   }
 
-  // Release GOP references â€” if no other chunk generation holds them, memory is freed
+  // Release GOP references â€?if no other chunk generation holds them, memory is freed
   for (const gopIdx of gopRawCache.keys()) {
     releaseGOP(gopIdx);
   }
@@ -553,7 +553,7 @@ async function generateTexChunkFromGOPs(chunkIdx, state) {
 }
 
 // ============================================================
-// V4d: Dry-run decode â€” advance a stream state without producing texData.
+// V4d: Dry-run decode â€?advance a stream state without producing texData.
 // Called when a chunk is already in OPFS but we need to maintain decoder
 // continuity for subsequent chunks (Method B: no refresh frames).
 // ============================================================
@@ -578,7 +578,7 @@ async function dryRunDecodeChunk(chunkIdx, state) {
 }
 
 // ============================================================
-// V5: Texture Chunk Loading â€” generates and stores to OPFS (same as V4d)
+// V5: Texture Chunk Loading â€?generates and stores to OPFS (same as V4d)
 // But does NOT keep texData in memory. Only stores metadata.
 // ============================================================
 async function loadTexChunk(chunkIdx) {
@@ -615,12 +615,12 @@ async function loadTexChunk(chunkIdx) {
         for (const gIdx of warmupGops) releaseGOP(gIdx);
       }
       const texData = await generateTexChunkFromGOPs(chunkIdx, localState);
-      // 3. Store in OPFS (fire-and-forget is fine â€” we don't keep texData in memory)
+      // 3. Store in OPFS (fire-and-forget is fine â€?we don't keep texData in memory)
       await persistCache.put(V4D_VERSION, rawKey, texData);
       diagLog('info', `Chunk ${chunkIdx} generated+cached in ${(performance.now()-t0).toFixed(0)}ms`);
     }
 
-    // V5: Do NOT store texData in memory â€” only metadata
+    // V5: Do NOT store texData in memory â€?only metadata
     texChunkCache.set(chunkIdx, {
       rawCacheKey: ci.rawCacheKey,
       numFrames: ci.numFrames,
@@ -641,7 +641,7 @@ async function loadTexChunk(chunkIdx) {
 }
 
 // ============================================================
-// V5: Per-frame OPFS read â€” read single frame from OPFS chunk
+// V5: Per-frame OPFS read â€?read single frame from OPFS chunk
 // Uses File.slice() to read only the needed bytes (~2MB), NOT the entire chunk (~29MB)
 // ============================================================
 
@@ -654,11 +654,11 @@ async function readFrameFromOPFS(globalFrame) {
   const local = globalFrame - ci.startFrame;
   const byteOff = local * bytesPerFrame;
 
-  // Try slice read first (OPFS only â€” much lower memory)
+  // Try slice read first (OPFS only â€?much lower memory)
   const slice = await persistCache.getSlice(V4D_VERSION, ci.rawCacheKey, byteOff, bytesPerFrame);
   if (slice) return new Uint16Array(slice);
 
-  // Fallback: full read (IDB or slice not supported) â€” read entire chunk, extract frame, discard
+  // Fallback: full read (IDB or slice not supported) â€?read entire chunk, extract frame, discard
   const raw = await persistCache.get(V4D_VERSION, ci.rawCacheKey);
   if (!raw || raw.byteLength === 0) return null;
   if (byteOff + bytesPerFrame > raw.byteLength) return null;
@@ -669,14 +669,14 @@ async function readFrameFromOPFS(globalFrame) {
   return copy;
 }
 
-// V5: Synchronous frame read â€” check frameTexCache for pre-loaded frame
+// V5: Synchronous frame read â€?check frameTexCache for pre-loaded frame
 function getFrameTexData(globalFrame) {
   const cached = frameTexCache.get(globalFrame);
   if (cached) return cached;
   return null; // async path needed
 }
 
-// V5: Prefetch frame â€” read frame from OPFS and store in frameTexCache
+// V5: Prefetch frame â€?read frame from OPFS and store in frameTexCache
 async function prefetchFrame(globalFrame) {
   if (frameTexCache.has(globalFrame)) return true;
   const texData = await readFrameFromOPFS(globalFrame);
@@ -736,7 +736,7 @@ function reportStats() {
 // ============================================================
 async function loadManifest() {
   setLoading(5, 'Loading manifest...');
-  const resp = await fetch('data_v3d/manifest.json');
+  const resp = await fetch('data_v5/manifest.json');
   manifest = await resp.json();
   targetFPS = manifest.target_fps || 30;
   TOTAL_DURATION = (manifest.p_frame_count || 299) / targetFPS;
@@ -772,14 +772,14 @@ async function loadManifest() {
 }
 
 async function loadDynamicMask() {
-  const compressed = await cachedFetch('data_v3d/' + manifest.dynamic_mask, manifest.dynamic_mask, null, 'spz-static');
+  const compressed = await cachedFetch('data_v5/' + manifest.dynamic_mask, manifest.dynamic_mask, null, 'spz-static');
   const raw = await decompressGzip(compressed);
   dynamicMask = new Uint8Array(raw, 4, new DataView(raw).getUint32(0, true));
 }
 
 async function loadGopMeta() {
   gopStatus.textContent = 'Meta: downloading...';
-  const compressed = await cachedFetch(`data_v3d/${manifest.gop_meta}`, manifest.gop_meta, null, 'spz-static');
+  const compressed = await cachedFetch(`data_v5/${manifest.gop_meta}`, manifest.gop_meta, null, 'spz-static');
   const raw = await decompressGzip(compressed);
   const v = new DataView(raw); let pos = 28;
   qDcMin = [v.getFloat32(pos,true), v.getFloat32(pos+4,true), v.getFloat32(pos+8,true)];
@@ -794,7 +794,7 @@ async function loadGopMeta() {
   const spzSize = v.getUint32(pos, true);
   pos += 4 + spzSize;
 
-  // Parse base frame (frame 0 quantized data â€” used to init prevFrame on GOP switch)
+  // Parse base frame (frame 0 quantized data â€?used to init prevFrame on GOP switch)
   const xyzBytesBase = N * 3 * 2;
   const dcBytes = N * 3;
   const baseXyz16 = new Uint16Array(raw, pos, N * 3);
@@ -859,7 +859,7 @@ function updateGopStripUI(idx, state) {
 }
 
 // ============================================================
-// Frame update â€” same as V4c: DIRECT texSubImage2D from pre-baked data
+// Frame update â€?same as V4c: DIRECT texSubImage2D from pre-baked data
 // ============================================================
 function applyFrameData(globalFrame) {
   if (globalFrame === 0) { uFrameIndex.value = 0; return true; }
@@ -908,7 +908,7 @@ function triggerPrefetch(currentChunkIdx) {
 
 // ============================================================
 // Background Pre-generate Queue
-// Sequentially generates ALL chunks (GOP download â†’ decode â†’ pack â†’ OPFS)
+// Sequentially generates ALL chunks (GOP download â†?decode â†?pack â†?OPFS)
 // ============================================================
 let bgDownloadRunning = false;
 let bgDownloadProgress = { done: 0, total: 0, currentIdx: -1 };
@@ -923,7 +923,7 @@ async function startBackgroundGenerateQueue() {
   // Create a dedicated stream decoder state for the background queue.
   // This state is maintained sequentially across all chunks (0, 1, 2, ...),
   // ensuring correct cross-chunk GOP boundary decoding (Method B: no refresh).
-  // It is NOT shared with loadTexChunk/prefetch â€” those use their own state.
+  // It is NOT shared with loadTexChunk/prefetch â€?those use their own state.
   const bgState = makeStreamState();
 
   // Pre-scan: check which chunks already exist in OPFS to determine if dry-run is needed.
@@ -1030,7 +1030,7 @@ async function startBackgroundGenerateQueue() {
 }
 
 // ============================================================
-// Pause Memory Release â€” free non-essential memory when playback is paused
+// Pause Memory Release â€?free non-essential memory when playback is paused
 // ============================================================
 function pauseReleaseMemory() {
   // Invalidate any in-flight async loads
@@ -1062,7 +1062,7 @@ function pauseReleaseMemory() {
 }
 
 // ============================================================
-// First-play initialization â€” deferred from init() to reduce startup cost.
+// First-play initialization â€?deferred from init() to reduce startup cost.
 // Loads GOP meta + first chunk + starts background queue on first play click.
 // ============================================================
 let _firstPlayDone = false;
@@ -1175,8 +1175,8 @@ async function init() {
   deltaSampler = dyno.dynoSampler2D(deltaTexture); maskSampler = dyno.dynoSampler2D(maskTexture);
 
   // Parallel: SPZ I-frame (needed for first render)
-  // GOP meta is deferred until first play â€” saves ~500KB+ network + decode work at startup.
-  const iFrameBuf = await cachedFetch('data_v3d/' + manifest.i_frame, manifest.i_frame, (p) => {
+  // GOP meta is deferred until first play â€?saves ~500KB+ network + decode work at startup.
+  const iFrameBuf = await cachedFetch('data_v5/' + manifest.i_frame, manifest.i_frame, (p) => {
     const pct = 30 + Math.round(p * 35);
     setLoading(pct, `Loading SPZ I-frame... ${Math.round(p * 100)}%`);
   }, 'spz-static');
@@ -1219,7 +1219,7 @@ async function init() {
   controls.screenSpacePanning = true; controls.minDistance = 0.5; controls.maxDistance = 100; controls.enableZoom = true; controls.update();
 
   // === Pointer-events gate: canvas only receives events while pressed ===
-  // Default: pointer-events:none â†’ browser handles native scroll/gestures.
+  // Default: pointer-events:none â†?browser handles native scroll/gestures.
   // On pointerdown: switch to pointer-events:auto so OrbitControls can handle
   // rotate/pan. On all pointers up: revert to none.
   // Mobile: single-finger drag = rotate camera (user's explicit choice).
@@ -1287,7 +1287,7 @@ async function init() {
 
   setLoading(85, 'Rendering I-frame...');
   // GOP meta, chunk loading, and background queue are all deferred until first play.
-  // At this point we have a fully rendered static I-frame scene â€” zero animation overhead.
+  // At this point we have a fully rendered static I-frame scene â€?zero animation overhead.
 
   // Zoom slider
   const zoomSlider = document.getElementById('zoom-slider'), zoomVal = document.getElementById('zoom-val');
@@ -1308,7 +1308,7 @@ async function init() {
       .then(data => { if (data && data.sha) titleH1.textContent = `4DGS Viewer - ${V5_VERSION} Â· ${data.sha.substring(0,7)}`; })
       .catch(() => {}); // silently ignore if GitHub API fails
   }
-  console.log(`[V5] Ready in ${((performance.now()-t0)/1000).toFixed(1)}s â€” Per-frame OPFS read mode`);
+  console.log(`[V5] Ready in ${((performance.now()-t0)/1000).toFixed(1)}s â€?Per-frame OPFS read mode`);
 
   setTimeout(() => {
     loadingOverlay.classList.add('hidden');
@@ -1384,7 +1384,7 @@ async function init() {
             triggerPrefetch(chunkIdx);
           }
         } else {
-          // Stall: data not ready â€” pause the clock so we don't skip frames when data arrives
+          // Stall: data not ready â€?pause the clock so we don't skip frames when data arrives
           playbackStartTime = now;
           playbackStartFrame = currentFrame;
           diagStatsAccum.stallFrames++;
@@ -1484,7 +1484,7 @@ timeline.addEventListener('pointerup', () => {
     const ci = getTexChunkForFrame(currentFrame);
     if (ci >= 0 && !texChunkCache.has(ci)) ensureChunkInOPFS(ci);
   } else {
-    // Still paused after seek â€” release memory loaded during scrub
+    // Still paused after seek â€?release memory loaded during scrub
     seekGeneration++; // invalidate any in-flight async loads from scrub
     pauseReleaseMemory();
     // Delayed second release: catch any async loads that completed after first release
