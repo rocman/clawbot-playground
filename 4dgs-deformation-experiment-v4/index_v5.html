@@ -214,7 +214,7 @@ const texChunkLoadingSet = new Set(); // unified guard: covers both download+gen
 const texChunkFailedSet = new Set();
 const TOTAL_DURATION_DEFAULT = 10.0; let TOTAL_DURATION = TOTAL_DURATION_DEFAULT;
 const V4D_VERSION = 'v4d-19'; // OPFS namespace — shares V4d's cached data!
-const V5_VERSION = 'v5-4'; // simplify: touch single-finger = rotate camera, no delay
+const V5_VERSION = 'v5-5'; // fix: block touch event bubbling on engaged canvas
 const V4D_COMMIT = null; // resolved at runtime from GitHub API
 
 // V5: Per-frame read state — instead of holding entire chunk texData in memory,
@@ -1234,8 +1234,14 @@ async function init() {
 
     let activePointerIds = new Set();
 
+    // While canvas is engaged, prevent touch events from bubbling and
+    // triggering browser-default scroll / refresh gestures.
+    function onTouchMove(e) { e.preventDefault(); }
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+
     function engageCanvas(e) {
       canvas.style.pointerEvents = 'auto';
+      canvas.style.touchAction = 'none'; // suppress browser gestures while active
       overlay.style.pointerEvents = 'none';
       canvas.dispatchEvent(new PointerEvent('pointerdown', {
         pointerId: e.pointerId, pointerType: e.pointerType,
@@ -1248,6 +1254,7 @@ async function init() {
 
     function disengageCanvas() {
       canvas.style.pointerEvents = 'none';
+      canvas.style.touchAction = ''; // restore default
       overlay.style.pointerEvents = 'auto';
     }
 
