@@ -937,6 +937,9 @@ async function _doLoadBundle() {
     }
   }
 
+  // Active buffer reference — updated as rawChunks are consolidated
+  let streamBuf = null; // ArrayBuffer backing the decompressed data
+
   function decodeAndPackFrame(globalFrame) {
     if (globalFrame === 0) return; // I-frame, skip (zeros in chunk)
 
@@ -945,9 +948,9 @@ async function _doLoadBundle() {
     const entry = bd.frameIndex[pfi];
     const dataOff = entry.byteOffset;
     const isRefresh = entry.flags === 2;
-    const xyzDelta = new Int8Array(bd.raw.buffer, dataOff, N * 3);
-    const dcDelta = new Int8Array(bd.raw.buffer, dataOff + N * 3, N * 3);
-    const opDelta = new Int8Array(bd.raw.buffer, dataOff + N * 6, N);
+    const xyzDelta = new Int8Array(streamBuf, dataOff, N * 3);
+    const dcDelta = new Int8Array(streamBuf, dataOff + N * 3, N * 3);
+    const opDelta = new Int8Array(streamBuf, dataOff + N * 6, N);
 
     if (isRefresh) {
       for (let ii = 0; ii < N * 3; ii++) { const c = ii % 3; reconXyz[ii] = bd.baselineXyz[ii] + (xyzDelta[ii] + 128) * qXyzDScale[c] + qXyzDMin[c]; }
@@ -1001,6 +1004,10 @@ async function _doLoadBundle() {
 
         // Replace rawChunks with single contiguous buffer (for frame data access)
         rawChunks = [allU8];
+        streamBuf = allU8.buffer;
+
+        // Re-parse with contiguous buffer to get correct typed array views
+        bd = parseBundle(streamBuf);
 
         // Init quant state
         qDcMin = bd.dcMin; qDcMax = bd.dcMax;
@@ -1024,9 +1031,19 @@ async function _doLoadBundle() {
 
     // Process any decodable frames
     if (headerParsed) {
-      // How many complete frames do we have in the buffer?
+      // How many complete frames could we decode based on available data?
       const availableFrameData = rawLen - headerEndOffset;
       const framesAvailable = Math.min(Math.floor(availableFrameData / FRAME_SIZE), bd.numFrames);
+
+      // Only consolidate if there are new frames to decode
+      if (framesAvailable > framesDecoded && rawChunks.length > 1) {
+        const consolidated = new Uint8Array(rawLen);
+        let wOff = 0;
+        for (const c of rawChunks) { consolidated.set(c, wOff); wOff += c.byteLength; }
+        rawChunks = [consolidated];
+        streamBuf = consolidated.buffer;
+        bd = parseBundle(streamBuf);
+      }
 
       while (framesDecoded < framesAvailable) {
         const globalFrame = framesDecoded + 1; // frame 0 is I-frame (always zeros)
@@ -1055,14 +1072,6 @@ async function _doLoadBundle() {
     }
 
     if (done) break;
-
-    // Consolidate chunks periodically to avoid too many small arrays
-    if (rawChunks.length > 50) {
-      const consolidated = new Uint8Array(rawLen);
-      let wOff = 0;
-      for (const c of rawChunks) { consolidated.set(c, wOff); wOff += c.byteLength; }
-      rawChunks = [consolidated];
-    }
   }
 
   // Final consolidation: ensure all remaining frames are processed
@@ -1073,8 +1082,8 @@ async function _doLoadBundle() {
       let wOff = 0;
       for (const c of rawChunks) { final.set(c, wOff); wOff += c.byteLength; }
       rawChunks = [final];
-      // Re-parse to get correct DataView references for remaining frames
-      bd = parseBundle(rawChunks[0].buffer);
+      streamBuf = final.buffer;
+      bd = parseBundle(streamBuf);
     }
 
     // Decode any remaining frames
