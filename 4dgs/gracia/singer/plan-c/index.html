@@ -127,7 +127,8 @@ async function loadMeta() {
 async function loadIFrame() {
   loadStatus.textContent = 'Loading I-frame PLY (21 MB)...';
   // Spark.js SplatMesh: fetch file bytes first, then construct with fileBytes
-  const resp = await fetch(IFRAME_URL);
+  // credentials: 'include' + redirect: 'follow' required for git.woa.com cross-origin auth
+  const resp = await fetch(IFRAME_URL, { credentials: 'include', redirect: 'follow' });
   if (!resp.ok) throw new Error(`Failed to fetch I-frame: ${resp.status} ${resp.statusText}`);
   const buf = await resp.arrayBuffer();
   loadStatus.textContent = 'Parsing gaussians...';
@@ -142,7 +143,7 @@ async function loadIFrame() {
 
 async function loadBundle() {
   loadStatus.textContent = 'Loading P-frame bundle (32 MB)...';
-  const resp = await fetch(BUNDLE_URL);
+  const resp = await fetch(BUNDLE_URL, { credentials: 'include', redirect: 'follow' });
   const compressed = await resp.arrayBuffer();
 
   // Decompress gzip
