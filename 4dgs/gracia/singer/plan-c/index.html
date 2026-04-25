@@ -126,14 +126,36 @@ async function loadMeta() {
 
 async function loadIFrame() {
   loadStatus.textContent = 'Loading I-frame PLY (21 MB)...';
-  // Spark.js SplatMesh: fetch file bytes first, then construct with fileBytes
   // credentials: 'include' + redirect: 'follow' required for git.woa.com cross-origin auth
   const resp = await fetch(IFRAME_URL, { credentials: 'include', redirect: 'follow' });
   if (!resp.ok) throw new Error(`Failed to fetch I-frame: ${resp.status} ${resp.statusText}`);
-  const buf = await resp.arrayBuffer();
+  const compressed = await resp.arrayBuffer();
+
+  // Decompress gzip — the file is .ply.gz so browser gets raw gzip bytes
+  loadStatus.textContent = 'Decompressing I-frame PLY...';
+  const ds = new DecompressionStream('gzip');
+  const writer = ds.writable.getWriter();
+  writer.write(new Uint8Array(compressed));
+  writer.close();
+  const chunks = [];
+  const reader = ds.readable.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+  }
+  const totalLen = chunks.reduce((s, c) => s + c.byteLength, 0);
+  const plyBytes = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const chunk of chunks) {
+    plyBytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  console.log(`I-frame decompressed: ${(compressed.byteLength/1e6).toFixed(1)} MB gz → ${(totalLen/1e6).toFixed(1)} MB ply`);
+
   loadStatus.textContent = 'Parsing gaussians...';
   await new Promise(r => setTimeout(r, 0)); // yield for UI update
-  splatMesh = new SplatMesh({ fileBytes: new Uint8Array(buf) });
+  splatMesh = new SplatMesh({ fileBytes: plyBytes, fileType: 'ply' });
   // Position the singer model
   splatMesh.position.set(0, 0, 0);
   splatMesh.quaternion.set(1, 0, 0, 0);
