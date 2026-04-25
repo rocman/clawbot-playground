@@ -1009,6 +1009,18 @@ async function _doLoadBundle() {
         // Re-parse with contiguous buffer to get correct typed array views
         bd = parseBundle(streamBuf);
 
+        // Make COPIES of baseline data (parseBundle returns views into streamBuf
+        // which will become invalid when we consolidate later)
+        const baselineXyzCopy = new Float32Array(bd.baselineXyz);
+        const baselineDcCopy = new Uint8Array(bd.baselineDc);
+        const baselineOpCopy = new Uint8Array(bd.baselineOp);
+        // Override bd references with copies
+        bd.baselineXyz = baselineXyzCopy;
+        bd.baselineDc = baselineDcCopy;
+        bd.baselineOp = baselineOpCopy;
+        // Also copy frameIndex (it's plain objects, already ok)
+        // But bd.raw is a view — we'll use streamBuf directly instead
+
         // Init quant state
         qDcMin = bd.dcMin; qDcMax = bd.dcMax;
         qOpMin = bd.opMin; qOpMax = bd.opMax;
@@ -1042,7 +1054,7 @@ async function _doLoadBundle() {
         for (const c of rawChunks) { consolidated.set(c, wOff); wOff += c.byteLength; }
         rawChunks = [consolidated];
         streamBuf = consolidated.buffer;
-        bd = parseBundle(streamBuf);
+        // No need to re-parse bd — baseline data was copied, frameIndex offsets are stable
       }
 
       while (framesDecoded < framesAvailable) {
@@ -1083,7 +1095,6 @@ async function _doLoadBundle() {
       for (const c of rawChunks) { final.set(c, wOff); wOff += c.byteLength; }
       rawChunks = [final];
       streamBuf = final.buffer;
-      bd = parseBundle(streamBuf);
     }
 
     // Decode any remaining frames
