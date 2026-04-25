@@ -137,15 +137,63 @@ const META_URL = 'data/slice_0/slice_meta.json';
 // ============================================================
 // V5 compat stubs — OPFS/cache code not used in Plan C bundle mode
 // ============================================================
-const persistCache = {
-  async get() { return null; },
-  async getSlice() { return null; },
-  async getSize() { return -1; },
-  async put() {},
-  async delete() {},
-  async purgeOldVersions() {},
-  get mode() { return 'none'; }
-};
+class PlanCPersistCache {
+  constructor() { this._mode = null; this._opfsRoot = null; this._ready = this._init(); }
+  async _init() {
+    try {
+      if (navigator.storage && navigator.storage.getDirectory) {
+        const root = await navigator.storage.getDirectory();
+        this._opfsRoot = await root.getDirectoryHandle('planc-4dgs-cache', { create: true });
+        this._mode = 'opfs';
+        return;
+      }
+    } catch (e) { console.warn('[PlanC] OPFS not available:', e); }
+    this._mode = null;
+  }
+  _key(ver, fn) { return `${ver}__${fn}`.replace(/[\//:]/g, '_'); }
+  async get(ver, fn) {
+    await this._ready;
+    if (this._mode !== 'opfs') return null;
+    try { const fh = await this._opfsRoot.getFileHandle(this._key(ver, fn)); return await (await fh.getFile()).arrayBuffer(); }
+    catch(e) { return null; }
+  }
+  async getSlice(ver, fn, byteOffset, byteLength) {
+    await this._ready;
+    if (this._mode !== 'opfs') return null;
+    try {
+      const fh = await this._opfsRoot.getFileHandle(this._key(ver, fn));
+      const file = await fh.getFile();
+      if (byteOffset + byteLength > file.size) return null;
+      return await file.slice(byteOffset, byteOffset + byteLength).arrayBuffer();
+    } catch(e) { return null; }
+  }
+  async getSize(ver, fn) {
+    await this._ready;
+    if (this._mode !== 'opfs') return -1;
+    try { const fh = await this._opfsRoot.getFileHandle(this._key(ver, fn)); return (await fh.getFile()).size; }
+    catch(e) { return -1; }
+  }
+  async put(ver, fn, buf) {
+    await this._ready;
+    if (this._mode !== 'opfs') return;
+    try {
+      const fh = await this._opfsRoot.getFileHandle(this._key(ver, fn), { create: true });
+      const w = await fh.createWritable(); await w.write(buf); await w.close();
+    } catch(e) { console.warn('[PlanC] OPFS put failed:', e); }
+  }
+  async purgeOldVersions(currentVer) {
+    await this._ready;
+    if (this._mode !== 'opfs') return;
+    const pfx = currentVer + '__';
+    try {
+      for await (const [name] of this._opfsRoot) {
+        if (!name.startsWith(pfx)) await this._opfsRoot.removeEntry(name).catch(() => {});
+      }
+    } catch(e) {}
+  }
+  get mode() { return this._mode; }
+}
+const persistCache = new PlanCPersistCache();
 
 // ============================================================
 // Fetch helper (with cross-origin auth for git.woa.com)
@@ -188,7 +236,7 @@ let diagStatsAccum = { framesRequested: 0, framesApplied: 0, framesDropped: 0, s
 const diagLogs = []; const DIAG_LOG_MAX = 300;
 function diagLog(level, msg, data) { diagLogs.push({ ts: performance.now(), level, msg, ...(data||{}) }); if (diagLogs.length > DIAG_LOG_MAX) diagLogs.shift(); if (level==='warn'||level==='error') console.warn(`[PlanC:${level}]`, msg); }
 
-function updateCacheStatus() { const el = document.getElementById('stat-cache'); if (el) el.textContent = 'N/A (bundle mode)'; }
+function updateCacheStatus() { const el = document.getElementById('stat-cache'); if (el) el.textContent = `${(persistCache.mode||'none').toUpperCase()} ${diagStatsAccum.cacheHits}/${diagStatsAccum.cacheHits+diagStatsAccum.cacheMisses} hits`; }
 
 // ============================================================
 // State
@@ -745,7 +793,7 @@ async function loadManifest() {
   for (let startFrame = 0; startFrame < totalFrames; startFrame += FRAMES_PER_CHUNK) {
     const endFrame = Math.min(startFrame + FRAMES_PER_CHUNK, totalFrames);
     const idx = chunkInfoList.length;
-    chunkInfoList.push({ index: idx, startFrame, endFrame, numFrames: endFrame - startFrame });
+    chunkInfoList.push({ index: idx, startFrame, endFrame, numFrames: endFrame - startFrame, rawCacheKey: `planc/chunk_${String(idx).padStart(3,'0')}.raw` });
   }
 
   document.getElementById('stat-total').textContent = N.toLocaleString();
@@ -779,44 +827,181 @@ async function loadBundle() {
   return _bundlePromise;
 }
 async function _doLoadBundle() {
+  // Check OPFS: if all chunks are already cached, skip download entirely
+  const allCached = await checkAllChunksCached();
+  if (allCached) {
+    console.log('[PlanC] All chunks found in OPFS — skipping bundle download');
+    for (let i = 0; i < chunkInfoList.length; i++) {
+      texChunkCache.set(i, { rawCacheKey: chunkInfoList[i].rawCacheKey || `planc/chunk_${String(i).padStart(3,'0')}.raw`, numFrames: chunkInfoList[i].numFrames, startFrame: chunkInfoList[i].startFrame, endFrame: chunkInfoList[i].endFrame });
+      updateGopStripUI(i, 'loaded');
+    }
+    gopStatus.textContent = 'All chunks cached (OPFS)';
+    gopBar.style.width = '100%';
+    // Still need quant params — read from OPFS meta
+    const metaBuf = await persistCache.get(PLANC_VERSION, 'planc/quant_meta.bin');
+    if (metaBuf) parseQuantMeta(metaBuf);
+    return;
+  }
+
   setLoading(40, 'Loading P-frame bundle...');
   const compressed = await fetchWithAuth(BUNDLE_URL, (p) => {
-    setLoading(40 + Math.round(p * 30), `Loading bundle... ${Math.round(p * 100)}%`);
+    setLoading(40 + Math.round(p * 20), `Loading bundle... ${Math.round(p * 100)}%`);
   });
-  setLoading(72, 'Decompressing bundle...');
+  setLoading(62, 'Decompressing bundle...');
   const raw = await decompressGzip(compressed);
-  bundleData = parseBundle(raw);
-  console.log(`Bundle: ${bundleData.numFrames} P-frames, ${bundleData.numGaussians} gaussians`);
+  const bd = parseBundle(raw);
+  console.log(`Bundle: ${bd.numFrames} P-frames, ${bd.numGaussians} gaussians`);
 
-  // Extract quant params for the delta texture system
-  qDcMin = bundleData.dcMin; qDcMax = bundleData.dcMax;
-  qOpMin = bundleData.opMin; qOpMax = bundleData.opMax;
-  qXyzDMin = bundleData.xyzDMin; qXyzDMax = bundleData.xyzDMax;
+  // Extract and persist quant params
+  qDcMin = bd.dcMin; qDcMax = bd.dcMax;
+  qOpMin = bd.opMin; qOpMax = bd.opMax;
+  qXyzDMin = bd.xyzDMin; qXyzDMax = bd.xyzDMax;
   qXyzDScale = [(qXyzDMax[0]-qXyzDMin[0])/255, (qXyzDMax[1]-qXyzDMin[1])/255, (qXyzDMax[2]-qXyzDMin[2])/255];
+  const dcScale = [(qDcMax[0]-qDcMin[0])/255, (qDcMax[1]-qDcMin[1])/255, (qDcMax[2]-qDcMin[2])/255];
+  const opScale = (qOpMax - qOpMin) / 255;
 
-  // Init recon state
-  reconXyz = new Float32Array(bundleData.baselineXyz);
-  reconDcQ = new Uint8Array(bundleData.baselineDc);
-  reconOpQ = new Uint8Array(bundleData.baselineOp);
+  // Persist quant meta for OPFS-only reload
+  persistQuantMeta();
 
-  // Build baseData for compatibility with V5 stream decoder expectations
+  // Build reconXyz/reconDcQ/reconOpQ for sequential decode
+  reconXyz = new Float32Array(bd.baselineXyz);
+  reconDcQ = new Uint8Array(bd.baselineDc);
+  reconOpQ = new Uint8Array(bd.baselineOp);
+
+  // Build baseData
   baseData = new Uint8Array(N * STRIDE);
   for (let i = 0; i < N; i++) {
     for (let c = 0; c < 3; c++) {
       const scale = 255.0 / (qXyzDMax[c] - qXyzDMin[c] + 1e-10);
-      let q = Math.round((0 - qXyzDMin[c]) * scale);  // baseline delta = 0
+      let q = Math.round((0 - qXyzDMin[c]) * scale);
       baseData[i * STRIDE + c] = q < 0 ? 0 : (q > 255 ? 255 : q);
     }
-    baseData[i * STRIDE + 3] = bundleData.baselineDc[i * 3];
-    baseData[i * STRIDE + 4] = bundleData.baselineDc[i * 3 + 1];
-    baseData[i * STRIDE + 5] = bundleData.baselineDc[i * 3 + 2];
-    baseData[i * STRIDE + 6] = bundleData.baselineOp[i];
+    baseData[i * STRIDE + 3] = bd.baselineDc[i * 3];
+    baseData[i * STRIDE + 4] = bd.baselineDc[i * 3 + 1];
+    baseData[i * STRIDE + 5] = bd.baselineDc[i * 3 + 2];
+    baseData[i * STRIDE + 6] = bd.baselineOp[i];
   }
 
-  // Mark all GOP strip segments as loaded
-  for (let i = 0; i < chunkInfoList.length; i++) updateGopStripUI(i, 'loaded');
-  gopStatus.textContent = `Bundle ready: ${bundleData.numFrames} frames`;
+  // === Core: decode all frames → pack to float16 → store as OPFS chunks ===
+  setLoading(65, 'Generating GPU texture chunks...');
+  const totalFrames = bd.numFrames + 1; // include I-frame (frame 0)
+
+  for (let ci = 0; ci < chunkInfoList.length; ci++) {
+    const chunk = chunkInfoList[ci];
+    const cacheKey = chunk.rawCacheKey || `planc/chunk_${String(ci).padStart(3,'0')}.raw`;
+    chunk.rawCacheKey = cacheKey;
+
+    updateGopStripUI(ci, 'loading');
+    const chunkBuf = new ArrayBuffer(chunk.numFrames * bytesPerFrame);
+    const chunkU8 = new Uint8Array(chunkBuf);
+
+    for (let fi = 0; fi < chunk.numFrames; fi++) {
+      const globalFrame = chunk.startFrame + fi;
+      if (globalFrame === 0) continue; // I-frame, skip (zeros)
+
+      // Decode P-frame: apply int8 delta to recon state
+      const pfi = globalFrame - 1;
+      if (pfi >= bd.numFrames) break;
+      const entry = bd.frameIndex[pfi];
+      const dataOff = entry.byteOffset;
+      const isRefresh = entry.flags === 2;
+      const xyzDelta = new Int8Array(bd.raw.buffer, dataOff, N * 3);
+      const dcDelta = new Int8Array(bd.raw.buffer, dataOff + N * 3, N * 3);
+      const opDelta = new Int8Array(bd.raw.buffer, dataOff + N * 6, N);
+
+      if (isRefresh) {
+        for (let ii = 0; ii < N * 3; ii++) { const c = ii % 3; reconXyz[ii] = bd.baselineXyz[ii] + (xyzDelta[ii] + 128) * qXyzDScale[c] + qXyzDMin[c]; }
+        for (let ii = 0; ii < N * 3; ii++) reconDcQ[ii] = Math.max(0, Math.min(255, bd.baselineDc[ii] + dcDelta[ii]));
+        for (let ii = 0; ii < N; ii++) reconOpQ[ii] = Math.max(0, Math.min(255, bd.baselineOp[ii] + opDelta[ii]));
+      } else {
+        for (let ii = 0; ii < N * 3; ii++) { const c = ii % 3; reconXyz[ii] += (xyzDelta[ii] + 128) * qXyzDScale[c] + qXyzDMin[c]; }
+        for (let ii = 0; ii < N * 3; ii++) reconDcQ[ii] = Math.max(0, Math.min(255, reconDcQ[ii] + dcDelta[ii]));
+        for (let ii = 0; ii < N; ii++) reconOpQ[ii] = Math.max(0, Math.min(255, reconOpQ[ii] + opDelta[ii]));
+      }
+
+      // Pack to float16 texture data (same layout as V5)
+      const texData = new Uint16Array(deltaTexW * rowsPerFrame * 4);
+      let row = 0, col = 0;
+      for (let ii = 0; ii < N; ii++) {
+        const sc = col * 2;
+        let off = (row * deltaTexW + sc) * 4;
+        texData[off]     = float32ToFloat16(reconXyz[ii*3]   - bd.baselineXyz[ii*3]);
+        texData[off + 1] = float32ToFloat16(reconXyz[ii*3+1] - bd.baselineXyz[ii*3+1]);
+        texData[off + 2] = float32ToFloat16(reconXyz[ii*3+2] - bd.baselineXyz[ii*3+2]);
+        texData[off + 3] = float32ToFloat16(qDcMin[0] + reconDcQ[ii*3] * dcScale[0]);
+        off = (row * deltaTexW + sc + 1) * 4;
+        texData[off]     = float32ToFloat16(qDcMin[1] + reconDcQ[ii*3+1] * dcScale[1]);
+        texData[off + 1] = float32ToFloat16(qDcMin[2] + reconDcQ[ii*3+2] * dcScale[2]);
+        texData[off + 2] = float32ToFloat16(qOpMin + reconOpQ[ii] * opScale);
+        texData[off + 3] = 0;
+        col++;
+        if (col >= DELTA_K) { col = 0; row++; }
+      }
+      const texU8 = new Uint8Array(texData.buffer);
+      chunkU8.set(texU8, fi * bytesPerFrame);
+
+      // Yield every 5 frames to avoid blocking UI
+      if (fi % 5 === 4) await new Promise(r => setTimeout(r, 0));
+    }
+
+    // Store chunk to OPFS
+    await persistCache.put(PLANC_VERSION, cacheKey, chunkBuf);
+    texChunkCache.set(ci, { rawCacheKey: cacheKey, numFrames: chunk.numFrames, startFrame: chunk.startFrame, endFrame: chunk.endFrame });
+    updateGopStripUI(ci, 'loaded');
+
+    const pct = 65 + Math.round((ci + 1) / chunkInfoList.length * 30);
+    setLoading(pct, `Generating chunks... ${ci + 1}/${chunkInfoList.length}`);
+    gopBar.style.width = `${Math.round((ci + 1) / chunkInfoList.length * 100)}%`;
+    gopStatus.textContent = `Chunks: ${ci + 1}/${chunkInfoList.length}`;
+
+    // Yield between chunks
+    await new Promise(r => setTimeout(r, 0));
+  }
+
+  // === Free bundle RAM ===
+  // bundleData is NOT stored — the parsed bundle is temporary
+  reconXyz = null; reconDcQ = null; reconOpQ = null;
+  // Let GC collect the decompressed bundle ArrayBuffer
+  console.log('[PlanC] All chunks generated and stored to OPFS. Bundle RAM released.');
+  gopStatus.textContent = `All ${chunkInfoList.length} chunks ready`;
   gopBar.style.width = '100%';
+}
+
+// Helper: check if all chunks are already in OPFS
+async function checkAllChunksCached() {
+  for (let i = 0; i < chunkInfoList.length; i++) {
+    const key = chunkInfoList[i].rawCacheKey || `planc/chunk_${String(i).padStart(3,'0')}.raw`;
+    chunkInfoList[i].rawCacheKey = key;
+    const size = await persistCache.getSize(PLANC_VERSION, key);
+    if (size <= 0) return false;
+  }
+  return true;
+}
+
+// Persist quant params to OPFS for cache-only reload
+function persistQuantMeta() {
+  const buf = new ArrayBuffer(56);
+  const dv = new DataView(buf);
+  let off = 0;
+  for (let c = 0; c < 3; c++) { dv.setFloat32(off, qDcMin[c], true); off += 4; }
+  for (let c = 0; c < 3; c++) { dv.setFloat32(off, qDcMax[c], true); off += 4; }
+  dv.setFloat32(off, qOpMin, true); off += 4;
+  dv.setFloat32(off, qOpMax, true); off += 4;
+  for (let c = 0; c < 3; c++) { dv.setFloat32(off, qXyzDMin[c], true); off += 4; }
+  for (let c = 0; c < 3; c++) { dv.setFloat32(off, qXyzDMax[c], true); off += 4; }
+  persistCache.put(PLANC_VERSION, 'planc/quant_meta.bin', buf);
+}
+
+function parseQuantMeta(buf) {
+  const dv = new DataView(buf);
+  let off = 0;
+  qDcMin = [dv.getFloat32(off,true), dv.getFloat32(off+4,true), dv.getFloat32(off+8,true)]; off += 12;
+  qDcMax = [dv.getFloat32(off,true), dv.getFloat32(off+4,true), dv.getFloat32(off+8,true)]; off += 12;
+  qOpMin = dv.getFloat32(off,true); off += 4;
+  qOpMax = dv.getFloat32(off,true); off += 4;
+  qXyzDMin = [dv.getFloat32(off,true), dv.getFloat32(off+4,true), dv.getFloat32(off+8,true)]; off += 12;
+  qXyzDMax = [dv.getFloat32(off,true), dv.getFloat32(off+4,true), dv.getFloat32(off+8,true)]; off += 12;
+  qXyzDScale = [(qXyzDMax[0]-qXyzDMin[0])/255, (qXyzDMax[1]-qXyzDMin[1])/255, (qXyzDMax[2]-qXyzDMin[2])/255];
 }
 
 function parseBundle(buf) {
@@ -891,67 +1076,10 @@ function updateGopStripUI(idx, state) {
 // Frame update —same as V4c: DIRECT texSubImage2D from pre-baked data
 // ============================================================
 function applyFrameData(globalFrame) {
-  if (globalFrame === 0) {
-    // Reset recon state to I-frame baseline
-    if (bundleData && reconXyz) {
-      reconXyz.set(bundleData.baselineXyz);
-      reconDcQ.set(bundleData.baselineDc);
-      reconOpQ.set(bundleData.baselineOp);
-    }
-    uFrameIndex.value = 0;
-    return true;
-  }
-  if (!bundleData || !reconXyz) return false;
-
-  // Decode P-frame: apply int8 delta to recon state
-  const bd = bundleData;
-  const fi = globalFrame - 1;
-  if (fi < 0 || fi >= bd.numFrames) return false;
-  const entry = bd.frameIndex[fi];
-  const dataOff = entry.byteOffset;
-  const isRefresh = entry.flags === 2;
-  const xyzDelta = new Int8Array(bd.raw.buffer, dataOff, N * 3);
-  const dcDelta = new Int8Array(bd.raw.buffer, dataOff + N * 3, N * 3);
-  const opDelta = new Int8Array(bd.raw.buffer, dataOff + N * 6, N);
-
-  if (isRefresh) {
-    for (let i = 0; i < N * 3; i++) {
-      const c = i % 3;
-      reconXyz[i] = bd.baselineXyz[i] + (xyzDelta[i] + 128) * qXyzDScale[c] + qXyzDMin[c];
-    }
-    for (let i = 0; i < N * 3; i++) reconDcQ[i] = Math.max(0, Math.min(255, bd.baselineDc[i] + dcDelta[i]));
-    for (let i = 0; i < N; i++) reconOpQ[i] = Math.max(0, Math.min(255, bd.baselineOp[i] + opDelta[i]));
-  } else {
-    for (let i = 0; i < N * 3; i++) {
-      const c = i % 3;
-      reconXyz[i] += (xyzDelta[i] + 128) * qXyzDScale[c] + qXyzDMin[c];
-    }
-    for (let i = 0; i < N * 3; i++) reconDcQ[i] = Math.max(0, Math.min(255, reconDcQ[i] + dcDelta[i]));
-    for (let i = 0; i < N; i++) reconOpQ[i] = Math.max(0, Math.min(255, reconOpQ[i] + opDelta[i]));
-  }
-
-  // Pack into delta texture (float16 RGBA, ring-buffer partition)
-  const dcScale = [(qDcMax[0]-qDcMin[0])/255, (qDcMax[1]-qDcMin[1])/255, (qDcMax[2]-qDcMin[2])/255];
-  const opScale = (qOpMax - qOpMin) / 255;
-  const texData = new Uint16Array(deltaTexW * deltaTexHalfH * 4);
-  for (let i = 0; i < N; i++) {
-    const row = Math.floor(i / DELTA_K);
-    const col = (i - row * DELTA_K) * 2;
-    const base = (row * deltaTexW + col) * 4;
-    // texel 0: xyz delta (offset from I-frame baseline) + dc_r
-    // Shader does center += dp, so we must write the OFFSET, not absolute position
-    texData[base]     = float32ToFloat16(reconXyz[i*3]     - bd.baselineXyz[i*3]);
-    texData[base + 1] = float32ToFloat16(reconXyz[i*3+1]   - bd.baselineXyz[i*3+1]);
-    texData[base + 2] = float32ToFloat16(reconXyz[i*3+2]   - bd.baselineXyz[i*3+2]);
-    texData[base + 3] = float32ToFloat16(qDcMin[0] + reconDcQ[i*3] * dcScale[0]);
-    // texel 1: dc_gb + op
-    texData[base + 4] = float32ToFloat16(qDcMin[1] + reconDcQ[i*3+1] * dcScale[1]);
-    texData[base + 5] = float32ToFloat16(qDcMin[2] + reconDcQ[i*3+2] * dcScale[2]);
-    texData[base + 6] = float32ToFloat16(qOpMin + reconOpQ[i] * opScale);
-    texData[base + 7] = 0;
-  }
-
-  // Upload to GPU ring-buffer partition
+  if (globalFrame === 0) { uFrameIndex.value = 0; return true; }
+  // V5-aligned: read pre-baked float16 texData from frameTexCache (OPFS-backed)
+  const texData = getFrameTexData(globalFrame);
+  if (!texData) return false;
   const gl = renderer.getContext();
   const texProps = renderer.properties.get(deltaTexture);
   const yOffset = writePartition * deltaTexHalfH;
@@ -1157,18 +1285,20 @@ let _firstPlayRunning = false;
 async function firstPlayInit() {
   if (_firstPlayDone || _firstPlayRunning) return;
   _firstPlayRunning = true;
-  diagLog('info', 'First play: ensuring bundle is loaded...');
+  diagLog('info', 'First play: ensuring OPFS chunks are ready...');
   gopStatus.textContent = 'Preparing playback...';
 
-  // Bundle should already be loading in background from init().
-  // If not ready yet, wait for it.
-  if (!bundleData) {
-    await loadBundle();
+  // Wait for loadBundle to complete (chunk generation + OPFS storage)
+  await loadBundle();
+
+  // Prefetch first few frames into frameTexCache for instant start
+  for (let f = 1; f <= Math.min(5, manifest.total_frames - 1); f++) {
+    await prefetchFrame(f);
   }
 
   _firstPlayDone = true;
   _firstPlayRunning = false;
-  diagLog('info', 'First play init complete — bundle ready');
+  diagLog('info', 'First play init complete — OPFS chunks ready');
 }
 
 function restoreAfterResume() {
