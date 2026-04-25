@@ -130,7 +130,8 @@ const STRIDE = 7; // bytes per gaussian per frame: xyz(3) + dc(3) + op(1)
 
 // Data URLs
 const LFS_BASE = 'https://git.woa.com/dyson-sphere/ai-workspace/gracia/raw/feat/serve-singer/data/gracia_singer_v2/plan-c/web-export/slice_0/';
-const IFRAME_URL = LFS_BASE + 'iframe_slice_0.spz';
+const IFRAME_SPZ_URL = LFS_BASE + 'iframe_slice_0.spz';
+const IFRAME_PLY_URL = LFS_BASE + 'iframe_slice_0.ply.gz';
 const BUNDLE_URL = LFS_BASE + 'pframes_bundle.bin.gz';
 const META_URL = 'data/slice_0/slice_meta.json';
 
@@ -1377,15 +1378,33 @@ async function init() {
 
   // Parallel: SPZ I-frame (needed for first render)
   // GOP meta is deferred until first play —saves ~500KB+ network + decode work at startup.
-  // Load SPZ I-frame (Spark.js natively supports SPZ, auto-detect)
-  const iFrameBuf = await fetchWithAuth(IFRAME_URL, (p) => {
-    const pct = 30 + Math.round(p * 35);
-    setLoading(pct, `Loading SPZ I-frame... ${Math.round(p * 100)}%`);
-  });
+  // Load I-frame: try SPZ first (1.9MB), fallback to PLY.gz (21MB)
+  let iFrameBuf = null;
+  let iFrameIsSPZ = false;
+  try {
+    iFrameBuf = await fetchWithAuth(IFRAME_SPZ_URL, (p) => {
+      setLoading(30 + Math.round(p * 35), `Loading SPZ I-frame... ${Math.round(p * 100)}%`);
+    });
+    // Verify it's actual SPZ data (not a login page redirect)
+    const header = new Uint8Array(iFrameBuf, 0, 4);
+    if (iFrameBuf.byteLength < 10000 || (header[0] === 0x3C && header[1] === 0x21)) {
+      // Too small or starts with "<!doctype" — likely HTML login page
+      throw new Error('SPZ response looks like HTML, not binary data');
+    }
+    iFrameIsSPZ = true;
+    console.log(`[PlanC] SPZ I-frame loaded: ${(iFrameBuf.byteLength/1e6).toFixed(1)} MB`);
+  } catch (e) {
+    console.warn('[PlanC] SPZ load failed, falling back to PLY.gz:', e.message);
+    const iFrameGz = await fetchWithAuth(IFRAME_PLY_URL, (p) => {
+      setLoading(30 + Math.round(p * 35), `Loading PLY I-frame... ${Math.round(p * 100)}%`);
+    });
+    setLoading(68, 'Decompressing PLY...');
+    iFrameBuf = await decompressGzip(iFrameGz);
+  }
   setLoading(70, `Parsing ${(N/1000).toFixed(0)}K gaussians...`);
   await new Promise(r => setTimeout(r, 0));
 
-  splatMesh = new SplatMesh({ fileBytes: new Uint8Array(iFrameBuf) });
+  splatMesh = new SplatMesh({ fileBytes: new Uint8Array(iFrameBuf), ...(iFrameIsSPZ ? {} : { fileType: 'ply' }) });
   splatMesh.objectModifier = dyno.dynoBlock({ gsplat: dyno.Gsplat }, { gsplat: dyno.Gsplat }, ({ gsplat }) => {
     const d = new dyno.Dyno({
       inTypes: { gsplat: dyno.Gsplat, frameIdx: "int", mode: "int", deltaTex: "sampler2D", maskTex: "sampler2D", maskW: "int", deltaK: "int", deltaHalf: "int", deltaHalfH: "int" },
@@ -1414,7 +1433,7 @@ async function init() {
   });
   // 4DGS COLMAP Y-down → Three.js Y-up: rotate 180° around X
   splatMesh.quaternion.set(0,1,0,0); splatMesh.position.set(0,0,0); scene.add(splatMesh);
-  camera.position.set(0, 1.3, 3.0);
+  camera.position.set(0, 1.3, -3.0);
 
   setLoading(75, 'Rendering I-frame preview...');
   const controls = new OrbitControls(camera, renderer.domElement);
