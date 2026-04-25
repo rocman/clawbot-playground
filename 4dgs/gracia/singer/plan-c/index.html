@@ -147,14 +147,6 @@ const persistCache = {
   get mode() { return 'none'; }
 };
 
-// Stub functions for V5 GOP/OPFS code paths (not used in Plan C bundle mode)
-function getFrameTexData() { return null; }
-function getTexChunkForFrame(f) { return Math.floor(f / 30); }
-function pauseReleaseMemory() {}
-function restoreAfterResume() {}
-async function ensureChunkInOPFS() { return true; }
-async function prefetchFrame() { return true; }
-
 // ============================================================
 // Fetch helper (with cross-origin auth for git.woa.com)
 // ============================================================
