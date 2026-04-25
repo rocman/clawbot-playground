@@ -135,6 +135,27 @@ const BUNDLE_URL = LFS_BASE + 'pframes_bundle.bin.gz';
 const META_URL = 'data/slice_0/slice_meta.json';
 
 // ============================================================
+// V5 compat stubs — OPFS/cache code not used in Plan C bundle mode
+// ============================================================
+const persistCache = {
+  async get() { return null; },
+  async getSlice() { return null; },
+  async getSize() { return -1; },
+  async put() {},
+  async delete() {},
+  async purgeOldVersions() {},
+  get mode() { return 'none'; }
+};
+
+// Stub functions for V5 GOP/OPFS code paths (not used in Plan C bundle mode)
+function getFrameTexData() { return null; }
+function getTexChunkForFrame(f) { return Math.floor(f / 30); }
+function pauseReleaseMemory() {}
+function restoreAfterResume() {}
+async function ensureChunkInOPFS() { return true; }
+async function prefetchFrame() { return true; }
+
+// ============================================================
 // Fetch helper (with cross-origin auth for git.woa.com)
 // ============================================================
 async function fetchWithAuth(url, onProgress) {
@@ -203,6 +224,9 @@ const PLANC_VIEWER_VERSION = 'planc-v1';
 let bundleData = null;
 // Reconstructed state for chained P-frame decoding
 let reconXyz = null, reconDcQ = null, reconOpQ = null;
+// V5 compat: frameTexCache kept as empty Map for code paths that reference it
+const frameTexCache = new Map();
+const FRAME_CACHE_MAX = 3;
 
 // DOM refs
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -743,6 +767,16 @@ async function loadManifest() {
     gopStrip.appendChild(seg);
   }
   console.log(`Manifest: ${N} gaussians, ${totalFrames} frames, ${targetFPS} fps`);
+
+  // V5 compat: add properties that V5 dead-code paths may reference
+  manifest.p_frame_count = totalFrames - 1;
+  manifest.total_gaussians = N;
+  manifest.dynamic_gaussians = N;
+  manifest.gop_index = chunkInfoList.map((ci, idx) => ({
+    start_frame: ci.startFrame, num_frames: ci.numFrames, filename: `chunk_${idx}.bin.gz`
+  }));
+  manifest.gop_size = chunkInfoList.length;
+  manifest.version = PLANC_VERSION;
 }
 
 async function loadBundle() {
