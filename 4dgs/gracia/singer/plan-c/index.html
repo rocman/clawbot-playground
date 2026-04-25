@@ -57,10 +57,12 @@ import { SplatMesh } from '@sparkjsdev/spark';
 // ============================================================
 // Configuration
 // ============================================================
-const DATA_BASE = 'https://git.woa.com/dyson-sphere/ai-workspace/gracia/raw/feat/serve-singer/data/gracia_singer_v2/plan-c/web-export/slice_0/';
-const IFRAME_URL = DATA_BASE + 'iframe_slice_0.ply.gz';
-const BUNDLE_URL = DATA_BASE + 'pframes_bundle.bin.gz';
-const META_URL   = DATA_BASE + 'slice_meta.json';
+// 大文件(LFS)走 git.woa.com raw — LFS 文件不受 302 认证影响
+const LFS_BASE = 'https://git.woa.com/dyson-sphere/ai-workspace/gracia/raw/feat/serve-singer/data/gracia_singer_v2/plan-c/web-export/slice_0/';
+const IFRAME_URL = LFS_BASE + 'iframe_slice_0.ply.gz';
+const BUNDLE_URL = LFS_BASE + 'pframes_bundle.bin.gz';
+// 小文件部署在 Pages 本地 — 非 LFS 文件走 git.woa.com raw 会被 302 到登录页
+const META_URL   = 'data/slice_0/slice_meta.json';
 
 const TOTAL_FRAMES = 300;
 const SLICE_DURATION_S = 30.2;
