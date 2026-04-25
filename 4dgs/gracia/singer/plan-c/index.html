@@ -1381,17 +1381,9 @@ async function init() {
   controls.addEventListener('change', () => { const d = getDist(); zoomSlider.value = Math.min(100, Math.max(0.5, d)); zoomVal.textContent = d.toFixed(1); });
 
   setLoading(100, 'Ready!');
-  // Show version + commit in title bar h1
   const titleH1 = document.getElementById('title-h1');
-  if (titleH1) {
-    titleH1.textContent = `4DGS Viewer - ${PLANC_VIEWER_VERSION}`;
-    // Fetch latest commit hash from GitHub API (non-blocking)
-    fetch('https://api.github.com/repos/rocman/clawbot-playground/commits/pages', { cache: 'no-store' })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data && data.sha) titleH1.textContent = `4DGS Viewer - ${PLANC_VIEWER_VERSION} · ${data.sha.substring(0,7)}`; })
-      .catch(() => {}); // silently ignore if GitHub API fails
-  }
-  console.log(`[PlanC] Ready in ${((performance.now()-t0)/1000).toFixed(1)}s —Per-frame OPFS read mode`);
+  if (titleH1) titleH1.textContent = `Gracia Singer - ${PLANC_VIEWER_VERSION}`;
+  console.log(`[PlanC] Ready in ${((performance.now()-t0)/1000).toFixed(1)}s`);
 
   setTimeout(() => {
     loadingOverlay.classList.add('hidden');
