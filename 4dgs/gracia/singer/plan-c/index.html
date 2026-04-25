@@ -243,6 +243,7 @@ function updateCacheStatus() { const el = document.getElementById('stat-cache');
 // ============================================================
 let manifest = null, splatMesh = null;
 let currentFrame = 0, isPlaying = false, viewMode = 'animated', playbackSpeedMult = 1.0, targetFPS = 30;
+let playbackStartTime = 0, playbackStartFrame = 0;
 let uFrameIndex = null, uViewMode = null, uDeltaHalf = null, uDeltaHalfH = null;
 let deltaSampler = null, maskSampler = null, deltaTexture = null, maskTexture = null;
 let N = 0, qXyzDMin = null, qXyzDMax = null, qXyzDScale = null, qDcMin = null, qDcMax = null, qOpMin = 0, qOpMax = 0;
@@ -1532,8 +1533,8 @@ async function init() {
   let frameCount = 0, lastFpsTime = performance.now();
   const ADVANCE_INTERVAL = 1000 / targetFPS;
   let stallWaitingChunk = -1;
-  let playbackStartTime = performance.now(); // wall-clock time when playback started/resumed
-  let playbackStartFrame = 0;               // the frame number at that moment
+  playbackStartTime = performance.now(); // wall-clock time when playback started/resumed
+  playbackStartFrame = 0;               // the frame number at that moment
 
   // Adaptive DPR
   let prevFrameTs = 0;
