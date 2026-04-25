@@ -165,8 +165,21 @@ async function loadIFrame() {
   await new Promise(r => setTimeout(r, 0)); // yield for UI update
   splatMesh = new SplatMesh({ fileBytes: plyBytes, fileType: 'ply' });
 
+  // Pre-create a placeholder delta texture so deltaSampler is valid when objectModifier is built.
+  // Will be replaced with real-sized texture once bundle is loaded.
+  deltaTexW = DELTA_K * 2;
+  deltaTexH = 1;
+  const placeholderData = new Float32Array(deltaTexW * deltaTexH * 4);
+  deltaTexture = new THREE.DataTexture(placeholderData, deltaTexW, deltaTexH,
+    THREE.RGBAFormat, THREE.FloatType);
+  deltaTexture.needsUpdate = true;
+  deltaTexture.minFilter = THREE.NearestFilter;
+  deltaTexture.magFilter = THREE.NearestFilter;
+  deltaTexture.generateMipmaps = false;
+
   // Setup dyno objectModifier for P-frame playback
   uFrameIndex = dyno.dynoInt(0);
+  deltaSampler = dyno.dynoSampler2D(deltaTexture);
   splatMesh.objectModifier = dyno.dynoBlock(
     { gsplat: dyno.Gsplat }, { gsplat: dyno.Gsplat },
     ({ gsplat }) => {
@@ -337,9 +350,20 @@ function initReconState() {
   reconDcQ = new Uint8Array(bundleData.baselineDc);
   reconOpQ = new Uint8Array(bundleData.baselineOp);
 
-  // Create delta texture and sampler
-  deltaTexture = createDeltaTexture(N);
-  deltaSampler = dyno.dynoSampler2D(deltaTexture);
+  // Recreate delta texture with correct size for N gaussians
+  // (replaces placeholder created during loadIFrame)
+  deltaTexW = DELTA_K * 2;
+  deltaTexH = Math.ceil(N / DELTA_K);
+  const texData = new Float32Array(deltaTexW * deltaTexH * 4);
+  deltaTexture = new THREE.DataTexture(texData, deltaTexW, deltaTexH,
+    THREE.RGBAFormat, THREE.FloatType);
+  deltaTexture.needsUpdate = true;
+  deltaTexture.minFilter = THREE.NearestFilter;
+  deltaTexture.magFilter = THREE.NearestFilter;
+  deltaTexture.generateMipmaps = false;
+  // Update the sampler to reference the new texture
+  deltaSampler.value = deltaTexture;
+  console.log(`Delta texture ready: ${deltaTexW}×${deltaTexH} for ${N} gaussians`);
 }
 
 function uploadFrameToTexture() {
