@@ -850,276 +850,116 @@ async function _doLoadBundle() {
     }
     gopStatus.textContent = 'All chunks cached (OPFS)';
     gopBar.style.width = '100%';
-    // Still need quant params — read from OPFS meta
     const metaBuf = await persistCache.get(PLANC_VERSION, 'planc/quant_meta.bin');
     if (metaBuf) parseQuantMeta(metaBuf);
     console.log(`[PlanC] ⏱ OPFS cache hit — ready at ${((performance.now()-_pageLoadT0)/1000).toFixed(2)}s`);
     return;
   }
 
-  // ================================================================
-  // Streaming bundle load: fetch → DecompressionStream → incremental
-  // parse → per-chunk decode + OPFS write → playback-ready ASAP
-  // ================================================================
-  setLoading(40, 'Streaming bundle...');
+  // Download + decompress bundle (full), then decode chunks incrementally
+  setLoading(40, 'Loading P-frame bundle...');
   const fetchT0 = performance.now();
+  const compressed = await fetchWithAuth(BUNDLE_URL, (p) => {
+    setLoading(40 + Math.round(p * 15), `Loading bundle... ${Math.round(p * 100)}%`);
+  });
+  console.log(`[PlanC] ⏱ Bundle downloaded at ${((performance.now()-_pageLoadT0)/1000).toFixed(2)}s (${(compressed.byteLength/1e6).toFixed(1)} MB compressed)`);
 
-  const fetchOpts = {};
-  if (BUNDLE_URL.includes('git.woa.com')) { fetchOpts.credentials = 'include'; fetchOpts.redirect = 'follow'; }
-  const resp = await fetch(BUNDLE_URL, fetchOpts);
-  if (!resp.ok) throw new Error(`Bundle fetch failed: HTTP ${resp.status}`);
+  setLoading(57, 'Decompressing bundle...');
+  const raw = await decompressGzip(compressed);
+  console.log(`[PlanC] ⏱ Bundle decompressed at ${((performance.now()-_pageLoadT0)/1000).toFixed(2)}s (${(raw.byteLength/1e6).toFixed(1)} MB raw)`);
 
-  const contentLength = parseInt(resp.headers.get('content-length') || '0', 10);
+  const bd = parseBundle(raw);
+  console.log(`Bundle: ${bd.numFrames} P-frames, ${bd.numGaussians} gaussians`);
 
-  // Pipe through DecompressionStream for streaming gzip decompress
-  const decompressedStream = resp.body.pipeThrough(new DecompressionStream('gzip'));
-  const reader = decompressedStream.getReader();
+  // Extract quant params
+  qDcMin = bd.dcMin; qDcMax = bd.dcMax;
+  qOpMin = bd.opMin; qOpMax = bd.opMax;
+  qXyzDMin = bd.xyzDMin; qXyzDMax = bd.xyzDMax;
+  qXyzDScale = [(qXyzDMax[0]-qXyzDMin[0])/255, (qXyzDMax[1]-qXyzDMin[1])/255, (qXyzDMax[2]-qXyzDMin[2])/255];
+  const dcScale = [(qDcMax[0]-qDcMin[0])/255, (qDcMax[1]-qDcMin[1])/255, (qDcMax[2]-qDcMin[2])/255];
+  const opScale = (qOpMax - qOpMin) / 255;
+  persistQuantMeta();
 
-  // Accumulate decompressed bytes into a growing buffer
-  let rawChunks = [];
-  let rawLen = 0;
-  let downloadedCompressed = 0; // approximate — we track decompressed
+  reconXyz = new Float32Array(bd.baselineXyz);
+  reconDcQ = new Uint8Array(bd.baselineDc);
+  reconOpQ = new Uint8Array(bd.baselineOp);
 
-  // Bundle layout constants (known from format spec):
-  // Header 28B + FrameIndex nf*12 + QuantParams 56B + BaselineXyz N*3*4 + BaselineDc N*3 + BaselineOp N
-  // Then frame data: each frame = N * STRIDE bytes
-  const HEADER_SIZE = 28;
-  const FRAME_SIZE = N * STRIDE; // 98886 * 7 = 692202
-  const CHUNK_FRAMES = chunkInfoList[0] ? chunkInfoList[0].numFrames : 30;
+  // === Incremental chunk generation: each chunk → OPFS → immediately playable ===
+  setLoading(60, 'Generating chunks...');
 
-  // Phases of parsing
-  let headerParsed = false;
-  let bd = null; // parsed bundle metadata
-  let headerEndOffset = 0; // byte offset where frame data starts
-  let framesDecoded = 0; // how many P-frames we've decoded so far
-  let currentChunkIdx = 0; // which chunk we're building
-  let chunkBuf = null;
-  let chunkU8 = null;
-  let chunkFirstGlobalFrame = 0;
-
-  // Quant state
-  let dcScale = null, opScale = 0;
-
-  function tryParseHeader(allBuf) {
-    if (allBuf.byteLength < HEADER_SIZE) return null;
-    const dv = new DataView(allBuf);
-    const numFrames = dv.getUint32(8, true);
-    const numGaussians = dv.getUint32(12, true);
-    const needed = HEADER_SIZE + numFrames * 12 + 56 + numGaussians * 3 * 4 + numGaussians * 3 + numGaussians;
-    if (allBuf.byteLength < needed) return null;
-    return parseBundle(allBuf);
-  }
-
-  function initChunk(ci) {
+  for (let ci = 0; ci < chunkInfoList.length; ci++) {
     const chunk = chunkInfoList[ci];
     const cacheKey = chunk.rawCacheKey || `planc/chunk_${String(ci).padStart(3,'0')}.raw`;
     chunk.rawCacheKey = cacheKey;
-    chunkBuf = new ArrayBuffer(chunk.numFrames * bytesPerFrame);
-    chunkU8 = new Uint8Array(chunkBuf);
-    chunkFirstGlobalFrame = chunk.startFrame;
     updateGopStripUI(ci, 'loading');
-  }
 
-  async function finalizeChunk(ci) {
-    const chunk = chunkInfoList[ci];
-    await persistCache.put(PLANC_VERSION, chunk.rawCacheKey, chunkBuf);
-    texChunkCache.set(ci, { rawCacheKey: chunk.rawCacheKey, numFrames: chunk.numFrames, startFrame: chunk.startFrame, endFrame: chunk.endFrame });
+    const chunkBuf = new ArrayBuffer(chunk.numFrames * bytesPerFrame);
+    const chunkU8 = new Uint8Array(chunkBuf);
+
+    for (let fi = 0; fi < chunk.numFrames; fi++) {
+      const globalFrame = chunk.startFrame + fi;
+      if (globalFrame === 0) continue;
+
+      const pfi = globalFrame - 1;
+      if (pfi >= bd.numFrames) break;
+      const entry = bd.frameIndex[pfi];
+      const dataOff = entry.byteOffset;
+      const isRefresh = entry.flags === 2;
+      const xyzDelta = new Int8Array(bd.raw.buffer, dataOff, N * 3);
+      const dcDelta = new Int8Array(bd.raw.buffer, dataOff + N * 3, N * 3);
+      const opDelta = new Int8Array(bd.raw.buffer, dataOff + N * 6, N);
+
+      if (isRefresh) {
+        for (let ii = 0; ii < N * 3; ii++) { const c = ii % 3; reconXyz[ii] = bd.baselineXyz[ii] + (xyzDelta[ii] + 128) * qXyzDScale[c] + qXyzDMin[c]; }
+        for (let ii = 0; ii < N * 3; ii++) reconDcQ[ii] = Math.max(0, Math.min(255, bd.baselineDc[ii] + dcDelta[ii]));
+        for (let ii = 0; ii < N; ii++) reconOpQ[ii] = Math.max(0, Math.min(255, bd.baselineOp[ii] + opDelta[ii]));
+      } else {
+        for (let ii = 0; ii < N * 3; ii++) { const c = ii % 3; reconXyz[ii] += (xyzDelta[ii] + 128) * qXyzDScale[c] + qXyzDMin[c]; }
+        for (let ii = 0; ii < N * 3; ii++) reconDcQ[ii] = Math.max(0, Math.min(255, reconDcQ[ii] + dcDelta[ii]));
+        for (let ii = 0; ii < N; ii++) reconOpQ[ii] = Math.max(0, Math.min(255, reconOpQ[ii] + opDelta[ii]));
+      }
+
+      const texData = new Uint16Array(deltaTexW * rowsPerFrame * 4);
+      let row = 0, col = 0;
+      for (let ii = 0; ii < N; ii++) {
+        const sc = col * 2;
+        let off = (row * deltaTexW + sc) * 4;
+        texData[off]     = float32ToFloat16(reconXyz[ii*3]   - bd.baselineXyz[ii*3]);
+        texData[off + 1] = float32ToFloat16(reconXyz[ii*3+1] - bd.baselineXyz[ii*3+1]);
+        texData[off + 2] = float32ToFloat16(reconXyz[ii*3+2] - bd.baselineXyz[ii*3+2]);
+        texData[off + 3] = float32ToFloat16(qDcMin[0] + reconDcQ[ii*3] * dcScale[0]);
+        off = (row * deltaTexW + sc + 1) * 4;
+        texData[off]     = float32ToFloat16(qDcMin[1] + reconDcQ[ii*3+1] * dcScale[1]);
+        texData[off + 1] = float32ToFloat16(qDcMin[2] + reconDcQ[ii*3+2] * dcScale[2]);
+        texData[off + 2] = float32ToFloat16(qOpMin + reconOpQ[ii] * opScale);
+        texData[off + 3] = 0;
+        col++;
+        if (col >= DELTA_K) { col = 0; row++; }
+      }
+      chunkU8.set(new Uint8Array(texData.buffer), fi * bytesPerFrame);
+
+      if (fi % 5 === 4) await new Promise(r => setTimeout(r, 0));
+    }
+
+    await persistCache.put(PLANC_VERSION, cacheKey, chunkBuf);
+    texChunkCache.set(ci, { rawCacheKey: cacheKey, numFrames: chunk.numFrames, startFrame: chunk.startFrame, endFrame: chunk.endFrame });
     updateGopStripUI(ci, 'loaded');
 
-    const pct = 40 + Math.round((ci + 1) / chunkInfoList.length * 55);
-    setLoading(pct, `Streaming... chunk ${ci + 1}/${chunkInfoList.length}`);
+    const pct = 60 + Math.round((ci + 1) / chunkInfoList.length * 35);
+    setLoading(pct, `Generating chunks... ${ci + 1}/${chunkInfoList.length}`);
     gopBar.style.width = `${Math.round((ci + 1) / chunkInfoList.length * 100)}%`;
     gopStatus.textContent = `Chunks: ${ci + 1}/${chunkInfoList.length}`;
 
     if (ci === 0) {
-      const elapsed = ((performance.now() - _pageLoadT0) / 1000).toFixed(2);
-      console.log(`[PlanC] ⏱ CHUNK 0 READY — playback possible at ${elapsed}s from page load`);
+      console.log(`[PlanC] ⏱ CHUNK 0 READY at ${((performance.now()-_pageLoadT0)/1000).toFixed(2)}s — playback possible!`);
     }
+
+    await new Promise(r => setTimeout(r, 0));
   }
 
-  // Active buffer reference — updated as rawChunks are consolidated
-  let streamBuf = null; // ArrayBuffer backing the decompressed data
-
-  function decodeAndPackFrame(globalFrame) {
-    if (globalFrame === 0) return; // I-frame, skip (zeros in chunk)
-
-    const pfi = globalFrame - 1;
-    if (pfi >= bd.numFrames) return;
-    const entry = bd.frameIndex[pfi];
-    const dataOff = entry.byteOffset;
-    const isRefresh = entry.flags === 2;
-    const xyzDelta = new Int8Array(streamBuf, dataOff, N * 3);
-    const dcDelta = new Int8Array(streamBuf, dataOff + N * 3, N * 3);
-    const opDelta = new Int8Array(streamBuf, dataOff + N * 6, N);
-
-    if (isRefresh) {
-      for (let ii = 0; ii < N * 3; ii++) { const c = ii % 3; reconXyz[ii] = bd.baselineXyz[ii] + (xyzDelta[ii] + 128) * qXyzDScale[c] + qXyzDMin[c]; }
-      for (let ii = 0; ii < N * 3; ii++) reconDcQ[ii] = Math.max(0, Math.min(255, bd.baselineDc[ii] + dcDelta[ii]));
-      for (let ii = 0; ii < N; ii++) reconOpQ[ii] = Math.max(0, Math.min(255, bd.baselineOp[ii] + opDelta[ii]));
-    } else {
-      for (let ii = 0; ii < N * 3; ii++) { const c = ii % 3; reconXyz[ii] += (xyzDelta[ii] + 128) * qXyzDScale[c] + qXyzDMin[c]; }
-      for (let ii = 0; ii < N * 3; ii++) reconDcQ[ii] = Math.max(0, Math.min(255, reconDcQ[ii] + dcDelta[ii]));
-      for (let ii = 0; ii < N; ii++) reconOpQ[ii] = Math.max(0, Math.min(255, reconOpQ[ii] + opDelta[ii]));
-    }
-
-    // Pack to float16 texture data
-    const fi = globalFrame - chunkFirstGlobalFrame;
-    const texData = new Uint16Array(deltaTexW * rowsPerFrame * 4);
-    let row = 0, col = 0;
-    for (let ii = 0; ii < N; ii++) {
-      const sc = col * 2;
-      let off = (row * deltaTexW + sc) * 4;
-      texData[off]     = float32ToFloat16(reconXyz[ii*3]   - bd.baselineXyz[ii*3]);
-      texData[off + 1] = float32ToFloat16(reconXyz[ii*3+1] - bd.baselineXyz[ii*3+1]);
-      texData[off + 2] = float32ToFloat16(reconXyz[ii*3+2] - bd.baselineXyz[ii*3+2]);
-      texData[off + 3] = float32ToFloat16(qDcMin[0] + reconDcQ[ii*3] * dcScale[0]);
-      off = (row * deltaTexW + sc + 1) * 4;
-      texData[off]     = float32ToFloat16(qDcMin[1] + reconDcQ[ii*3+1] * dcScale[1]);
-      texData[off + 1] = float32ToFloat16(qDcMin[2] + reconDcQ[ii*3+2] * dcScale[2]);
-      texData[off + 2] = float32ToFloat16(qOpMin + reconOpQ[ii] * opScale);
-      texData[off + 3] = 0;
-      col++;
-      if (col >= DELTA_K) { col = 0; row++; }
-    }
-    chunkU8.set(new Uint8Array(texData.buffer), fi * bytesPerFrame);
-  }
-
-  // === Main streaming loop ===
-  while (true) {
-    const { done, value } = await reader.read();
-    if (value) { rawChunks.push(value); rawLen += value.byteLength; }
-
-    // Try to parse header + metadata once we have enough bytes
-    if (!headerParsed) {
-      // Build a contiguous buffer to attempt header parse
-      const allBuf = new ArrayBuffer(rawLen);
-      const allU8 = new Uint8Array(allBuf);
-      let writeOff = 0;
-      for (const c of rawChunks) { allU8.set(c, writeOff); writeOff += c.byteLength; }
-
-      bd = tryParseHeader(allBuf);
-      if (bd) {
-        headerParsed = true;
-        headerEndOffset = HEADER_SIZE + bd.numFrames * 12 + 56 + N * 3 * 4 + N * 3 + N;
-
-        // Replace rawChunks with single contiguous buffer (for frame data access)
-        rawChunks = [allU8];
-        streamBuf = allU8.buffer;
-
-        // Re-parse with contiguous buffer to get correct typed array views
-        bd = parseBundle(streamBuf);
-
-        // Make COPIES of baseline data (parseBundle returns views into streamBuf
-        // which will become invalid when we consolidate later)
-        const baselineXyzCopy = new Float32Array(bd.baselineXyz);
-        const baselineDcCopy = new Uint8Array(bd.baselineDc);
-        const baselineOpCopy = new Uint8Array(bd.baselineOp);
-        // Override bd references with copies
-        bd.baselineXyz = baselineXyzCopy;
-        bd.baselineDc = baselineDcCopy;
-        bd.baselineOp = baselineOpCopy;
-        // Also copy frameIndex (it's plain objects, already ok)
-        // But bd.raw is a view — we'll use streamBuf directly instead
-
-        // Init quant state
-        qDcMin = bd.dcMin; qDcMax = bd.dcMax;
-        qOpMin = bd.opMin; qOpMax = bd.opMax;
-        qXyzDMin = bd.xyzDMin; qXyzDMax = bd.xyzDMax;
-        qXyzDScale = [(qXyzDMax[0]-qXyzDMin[0])/255, (qXyzDMax[1]-qXyzDMin[1])/255, (qXyzDMax[2]-qXyzDMin[2])/255];
-        dcScale = [(qDcMax[0]-qDcMin[0])/255, (qDcMax[1]-qDcMin[1])/255, (qDcMax[2]-qDcMin[2])/255];
-        opScale = (qOpMax - qOpMin) / 255;
-        persistQuantMeta();
-
-        reconXyz = new Float32Array(bd.baselineXyz);
-        reconDcQ = new Uint8Array(bd.baselineDc);
-        reconOpQ = new Uint8Array(bd.baselineOp);
-
-        initChunk(0);
-
-        const elapsed = ((performance.now() - _pageLoadT0) / 1000).toFixed(2);
-        console.log(`[PlanC] ⏱ Bundle header parsed at ${elapsed}s, ${bd.numFrames} P-frames, streaming decode started`);
-      }
-    }
-
-    // Process any decodable frames
-    if (headerParsed) {
-      // How many complete frames could we decode based on available data?
-      const availableFrameData = rawLen - headerEndOffset;
-      const framesAvailable = Math.min(Math.floor(availableFrameData / FRAME_SIZE), bd.numFrames);
-
-      // Only consolidate if there are new frames to decode
-      if (framesAvailable > framesDecoded && rawChunks.length > 1) {
-        const consolidated = new Uint8Array(rawLen);
-        let wOff = 0;
-        for (const c of rawChunks) { consolidated.set(c, wOff); wOff += c.byteLength; }
-        rawChunks = [consolidated];
-        streamBuf = consolidated.buffer;
-        // No need to re-parse bd — baseline data was copied, frameIndex offsets are stable
-      }
-
-      while (framesDecoded < framesAvailable) {
-        const globalFrame = framesDecoded + 1; // frame 0 is I-frame (always zeros)
-        decodeAndPackFrame(globalFrame);
-        framesDecoded++;
-
-        // Check if current chunk is complete
-        const chunk = chunkInfoList[currentChunkIdx];
-        const lastFrameInChunk = chunk.endFrame - 1;
-        if (globalFrame >= lastFrameInChunk || framesDecoded >= bd.numFrames) {
-          await finalizeChunk(currentChunkIdx);
-          currentChunkIdx++;
-          if (currentChunkIdx < chunkInfoList.length) {
-            initChunk(currentChunkIdx);
-          }
-          // Yield to let UI update + playback start
-          await new Promise(r => setTimeout(r, 0));
-        }
-      }
-
-      // Update progress based on decompressed size
-      if (contentLength > 0) {
-        const approxPct = Math.min(rawLen / (bd.numFrames * FRAME_SIZE + headerEndOffset), 1.0);
-        setLoading(40 + Math.round(approxPct * 55), `Streaming... ${framesDecoded}/${bd.numFrames} frames`);
-      }
-    }
-
-    if (done) break;
-  }
-
-  // Final consolidation: ensure all remaining frames are processed
-  if (headerParsed) {
-    // Build final contiguous buffer if not already
-    if (rawChunks.length > 1) {
-      const final = new Uint8Array(rawLen);
-      let wOff = 0;
-      for (const c of rawChunks) { final.set(c, wOff); wOff += c.byteLength; }
-      rawChunks = [final];
-      streamBuf = final.buffer;
-    }
-
-    // Decode any remaining frames
-    const totalPFrames = bd.numFrames;
-    while (framesDecoded < totalPFrames) {
-      const globalFrame = framesDecoded + 1;
-      decodeAndPackFrame(globalFrame);
-      framesDecoded++;
-
-      const chunk = chunkInfoList[currentChunkIdx];
-      const lastFrameInChunk = chunk.endFrame - 1;
-      if (globalFrame >= lastFrameInChunk || framesDecoded >= totalPFrames) {
-        await finalizeChunk(currentChunkIdx);
-        currentChunkIdx++;
-        if (currentChunkIdx < chunkInfoList.length) initChunk(currentChunkIdx);
-      }
-    }
-  }
-
-  // === Free bundle RAM ===
   reconXyz = null; reconDcQ = null; reconOpQ = null;
-  rawChunks = null; bd = null;
-  const totalElapsed = ((performance.now() - fetchT0) / 1000).toFixed(2);
-  console.log(`[PlanC] ⏱ All ${chunkInfoList.length} chunks streamed+decoded in ${totalElapsed}s. Bundle RAM released.`);
-  console.log(`[PlanC] ⏱ TOTAL time from page load: ${((performance.now()-_pageLoadT0)/1000).toFixed(2)}s`);
+  console.log(`[PlanC] ⏱ All ${chunkInfoList.length} chunks generated in ${((performance.now()-fetchT0)/1000).toFixed(2)}s`);
+  console.log(`[PlanC] ⏱ TOTAL from page load: ${((performance.now()-_pageLoadT0)/1000).toFixed(2)}s`);
   gopStatus.textContent = `All ${chunkInfoList.length} chunks ready`;
   gopBar.style.width = '100%';
 }
