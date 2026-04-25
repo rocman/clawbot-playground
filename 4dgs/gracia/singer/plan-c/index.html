@@ -931,10 +931,11 @@ function applyFrameData(globalFrame) {
     const row = Math.floor(i / DELTA_K);
     const col = (i - row * DELTA_K) * 2;
     const base = (row * deltaTexW + col) * 4;
-    // texel 0: xyz + dc_r
-    texData[base]     = float32ToFloat16(reconXyz[i*3]);
-    texData[base + 1] = float32ToFloat16(reconXyz[i*3+1]);
-    texData[base + 2] = float32ToFloat16(reconXyz[i*3+2]);
+    // texel 0: xyz delta (offset from I-frame baseline) + dc_r
+    // Shader does center += dp, so we must write the OFFSET, not absolute position
+    texData[base]     = float32ToFloat16(reconXyz[i*3]     - bd.baselineXyz[i*3]);
+    texData[base + 1] = float32ToFloat16(reconXyz[i*3+1]   - bd.baselineXyz[i*3+1]);
+    texData[base + 2] = float32ToFloat16(reconXyz[i*3+2]   - bd.baselineXyz[i*3+2]);
     texData[base + 3] = float32ToFloat16(qDcMin[0] + reconDcQ[i*3] * dcScale[0]);
     // texel 1: dc_gb + op
     texData[base + 4] = float32ToFloat16(qDcMin[1] + reconDcQ[i*3+1] * dcScale[1]);
@@ -1149,38 +1150,24 @@ let _firstPlayRunning = false;
 async function firstPlayInit() {
   if (_firstPlayDone || _firstPlayRunning) return;
   _firstPlayRunning = true;
-  diagLog('info', 'First play: loading GOP meta + first chunk...');
-  gopStatus.textContent = 'First play: loading meta...';
+  diagLog('info', 'First play: ensuring bundle is loaded...');
+  gopStatus.textContent = 'Preparing playback...';
 
-  await loadGopMeta();
-  await loadTexChunk(0);
-  // V5: Prefetch first few frames into frameTexCache for instant playback start
-  for (let f = 1; f <= Math.min(5, (manifest.total_frames - 1)); f++) {
-    await prefetchFrame(f);
+  // Bundle should already be loading in background from init().
+  // If not ready yet, wait for it.
+  if (!bundleData) {
+    await loadBundle();
   }
-  startBackgroundGenerateQueue();
 
   _firstPlayDone = true;
   _firstPlayRunning = false;
-  diagLog('info', 'First play init complete');
+  diagLog('info', 'First play init complete — bundle ready');
 }
 
 function restoreAfterResume() {
   // Reset time-driven playback clock to current frame
   playbackStartTime = performance.now();
   playbackStartFrame = currentFrame;
-  // V5: Prefetch current and next frames from OPFS
-  if (currentFrame > 0) prefetchFrame(currentFrame);
-  const maxFrame = (manifest.total_frames - 1);
-  for (let d = 1; d <= 3; d++) {
-    const nf = (currentFrame + d) % (maxFrame + 1);
-    if (nf > 0) prefetchFrame(nf);
-  }
-  // Ensure current chunk is in OPFS
-  const ci = getTexChunkForFrame(currentFrame);
-  if (ci >= 0) ensureChunkInOPFS(ci);
-  // Restart background generate queue
-  startBackgroundGenerateQueue();
 }
 
 // ============================================================
