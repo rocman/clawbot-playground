@@ -156,9 +156,10 @@ async function loadIFrame() {
   loadStatus.textContent = 'Parsing gaussians...';
   await new Promise(r => setTimeout(r, 0)); // yield for UI update
   splatMesh = new SplatMesh({ fileBytes: plyBytes, fileType: 'ply' });
-  // Position the singer model
+  // 4DGS uses COLMAP/OpenCV coords (Y-down), Three.js uses OpenGL (Y-up)
+  // Rotate 180° around X-axis to flip Y: quaternion (w=0, x=1, y=0, z=0)
   splatMesh.position.set(0, 0, 0);
-  splatMesh.quaternion.set(1, 0, 0, 0);
+  splatMesh.quaternion.set(0, 1, 0, 0);
   scene.add(splatMesh);
   console.log(`I-frame loaded: ${splatMesh.splatCount} splats`);
 }
