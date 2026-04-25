@@ -771,7 +771,14 @@ async function loadManifest() {
   manifest.version = PLANC_VERSION;
 }
 
+let _bundlePromise = null;
 async function loadBundle() {
+  if (bundleData) return;  // already loaded
+  if (_bundlePromise) return _bundlePromise;  // already loading, reuse promise
+  _bundlePromise = _doLoadBundle();
+  return _bundlePromise;
+}
+async function _doLoadBundle() {
   setLoading(40, 'Loading P-frame bundle...');
   const compressed = await fetchWithAuth(BUNDLE_URL, (p) => {
     setLoading(40 + Math.round(p * 30), `Loading bundle... ${Math.round(p * 100)}%`);
