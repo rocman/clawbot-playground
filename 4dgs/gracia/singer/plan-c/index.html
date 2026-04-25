@@ -53,6 +53,7 @@ canvas { display:block; width:100%; height:100%; touch-action:none; }
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { SplatMesh } from '@sparkjsdev/spark';
+import { dyno } from '@sparkjsdev/spark';
 
 // ============================================================
 // Configuration
@@ -66,6 +67,7 @@ const META_URL   = 'data/slice_0/slice_meta.json';
 
 const TOTAL_FRAMES = 300;
 const SLICE_DURATION_S = 30.2;
+const DELTA_K = 256;  // texture width factor for delta packing
 
 // ============================================================
 // Scene setup
@@ -104,6 +106,12 @@ let playing = false;
 let lastFrameTime = 0;
 let meta = null;
 let fpsCounter = { frames: 0, lastTime: performance.now(), value: 0 };
+
+// dyno uniforms & textures for P-frame playback
+let uFrameIndex = null;
+let deltaTexture = null;
+let deltaSampler = null;
+let deltaTexW = 0, deltaTexH = 0;
 
 // DOM
 const overlay = document.getElementById('loading-overlay');
@@ -156,6 +164,55 @@ async function loadIFrame() {
   loadStatus.textContent = 'Parsing gaussians...';
   await new Promise(r => setTimeout(r, 0)); // yield for UI update
   splatMesh = new SplatMesh({ fileBytes: plyBytes, fileType: 'ply' });
+
+  // Setup dyno objectModifier for P-frame playback
+  uFrameIndex = dyno.dynoInt(0);
+  splatMesh.objectModifier = dyno.dynoBlock(
+    { gsplat: dyno.Gsplat }, { gsplat: dyno.Gsplat },
+    ({ gsplat }) => {
+      const d = new dyno.Dyno({
+        inTypes: {
+          gsplat: dyno.Gsplat,
+          frameIdx: "int",
+          deltaTex: "sampler2D",
+          deltaK: "int",
+        },
+        outTypes: { gsplat: dyno.Gsplat },
+        globals: () => [dyno.unindent(`
+          void fetchDelta(sampler2D dTex, int sIdx, int K,
+                          out vec3 dPos, out vec3 dDC, out float dOp) {
+            int row = sIdx / K;
+            int col = (sIdx - row * K) * 2;
+            vec4 t0 = texelFetch(dTex, ivec2(col, row), 0);
+            vec4 t1 = texelFetch(dTex, ivec2(col + 1, row), 0);
+            dPos = t0.xyz;
+            dDC  = vec3(t0.w, t1.xy);
+            dOp  = t1.z;
+          }
+        `)],
+        statements: ({ inputs, outputs }) => dyno.unindentLines(`
+          ${outputs.gsplat} = ${inputs.gsplat};
+          if (${inputs.frameIdx} > 0) {
+            int sIdx = ${inputs.gsplat}.index;
+            vec3 dp; vec3 ddc; float dop;
+            fetchDelta(${inputs.deltaTex}, sIdx, ${inputs.deltaK}, dp, ddc, dop);
+            float SH_C0 = 0.28209479177;
+            ${outputs.gsplat}.center = dp;
+            ${outputs.gsplat}.rgba.rgb = SH_C0 * ddc + 0.5;
+            ${outputs.gsplat}.rgba.a = dop;
+          }
+        `)
+      });
+      gsplat = d.apply({
+        gsplat,
+        frameIdx: uFrameIndex,
+        deltaTex: deltaSampler,
+        deltaK: dyno.dynoInt(DELTA_K),
+      }).gsplat;
+      return { gsplat };
+    }
+  );
+
   // 4DGS uses COLMAP/OpenCV coords (Y-down), Three.js uses OpenGL (Y-up)
   // Rotate 180° around X-axis to flip Y: quaternion (w=0, x=1, y=0, z=0)
   splatMesh.position.set(0, 0, 0);
@@ -259,16 +316,89 @@ let reconXyz = null;    // Float32Array(N*3)
 let reconDcQ = null;    // Uint8Array(N*3)
 let reconOpQ = null;    // Uint8Array(N)
 
+function createDeltaTexture(N) {
+  deltaTexW = DELTA_K * 2;  // 2 texels per gaussian (RGBA each)
+  deltaTexH = Math.ceil(N / DELTA_K);
+  const texData = new Float32Array(deltaTexW * deltaTexH * 4);
+  const tex = new THREE.DataTexture(texData, deltaTexW, deltaTexH,
+    THREE.RGBAFormat, THREE.FloatType);
+  tex.needsUpdate = true;
+  tex.minFilter = THREE.NearestFilter;
+  tex.magFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  console.log(`Delta texture: ${deltaTexW}×${deltaTexH}`);
+  return tex;
+}
+
 function initReconState() {
   if (!bundleData) return;
   const N = bundleData.numGaussians;
   reconXyz = new Float32Array(bundleData.baselineXyz);  // copy
   reconDcQ = new Uint8Array(bundleData.baselineDc);
   reconOpQ = new Uint8Array(bundleData.baselineOp);
+
+  // Create delta texture and sampler
+  deltaTexture = createDeltaTexture(N);
+  deltaSampler = dyno.dynoSampler2D(deltaTexture);
+}
+
+function uploadFrameToTexture() {
+  // Write reconXyz / reconDcQ / reconOpQ into delta texture
+  // Layout: 2 texels per gaussian, RGBA Float32
+  // texel 0: (x, y, z, dc_r)  texel 1: (dc_g, dc_b, op, 0)
+  const N = bundleData.numGaussians;
+  const bd = bundleData;
+  const data = deltaTexture.image.data; // Float32Array
+
+  // Dequantize DC: uint8 → float via dc_min/dc_max linear map
+  // Then convert to SH coefficient space: dc_float = dc_min + (q/255)*(dc_max-dc_min)
+  // Opacity: op_float = op_min + (q/255)*(op_max-op_min)
+  const dcScale = [
+    (bd.dcMax[0] - bd.dcMin[0]) / 255.0,
+    (bd.dcMax[1] - bd.dcMin[1]) / 255.0,
+    (bd.dcMax[2] - bd.dcMin[2]) / 255.0,
+  ];
+  const opScale = (bd.opMax - bd.opMin) / 255.0;
+
+  for (let i = 0; i < N; i++) {
+    const t0 = i * 2 * 4;  // texel 0 base (4 floats per texel)
+    const t1 = t0 + 4;     // texel 1 base
+    // xyz: absolute position
+    data[t0]     = reconXyz[i * 3];
+    data[t0 + 1] = reconXyz[i * 3 + 1];
+    data[t0 + 2] = reconXyz[i * 3 + 2];
+    // dc_r
+    data[t0 + 3] = bd.dcMin[0] + reconDcQ[i * 3] * dcScale[0];
+    // dc_g, dc_b
+    data[t1]     = bd.dcMin[1] + reconDcQ[i * 3 + 1] * dcScale[1];
+    data[t1 + 1] = bd.dcMin[2] + reconDcQ[i * 3 + 2] * dcScale[2];
+    // opacity (already in activation space from training)
+    data[t1 + 2] = bd.opMin + reconOpQ[i] * opScale;
+    data[t1 + 3] = 0;
+  }
+
+  // Upload to GPU
+  const gl = renderer.getContext();
+  const texProps = renderer.properties.get(deltaTexture);
+  if (texProps.__webglTexture) {
+    gl.bindTexture(gl.TEXTURE_2D, texProps.__webglTexture);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, deltaTexW, deltaTexH,
+      gl.RGBA, gl.FLOAT, data);
+  } else {
+    deltaTexture.needsUpdate = true;
+  }
 }
 
 function applyFrame(frameNum) {
-  if (!bundleData || !splatMesh || frameNum < 1 || frameNum >= TOTAL_FRAMES) return;
+  if (!bundleData || !splatMesh) return;
+
+  // Frame 0 = I-frame (no delta)
+  if (frameNum === 0) {
+    uFrameIndex.value = 0;
+    return;
+  }
+
+  if (frameNum < 1 || frameNum >= TOTAL_FRAMES) return;
 
   const bd = bundleData;
   const fi = frameNum - 1;  // P-frame index (frame 1 → index 0)
@@ -283,7 +413,6 @@ function applyFrame(frameNum) {
   const opDelta = new Int8Array(bd.raw.buffer, dataOff + N * 6, N);
 
   if (isRefresh) {
-    // Reset to I-frame baseline, then apply delta
     for (let i = 0; i < N * 3; i++) {
       const c = i % 3;
       const scale = (bd.xyzDMax[c] - bd.xyzDMin[c]) / 255.0;
@@ -296,7 +425,6 @@ function applyFrame(frameNum) {
       reconOpQ[i] = Math.max(0, Math.min(255, bd.baselineOp[i] + opDelta[i]));
     }
   } else {
-    // Inter-frame: apply delta to previous reconstruction
     for (let i = 0; i < N * 3; i++) {
       const c = i % 3;
       const scale = (bd.xyzDMax[c] - bd.xyzDMin[c]) / 255.0;
@@ -310,11 +438,41 @@ function applyFrame(frameNum) {
     }
   }
 
-  // TODO: Apply reconXyz / reconDcQ / reconOpQ to splatMesh
-  // Spark.js SplatMesh currently does not expose a public API to mutate individual
-  // splat positions/colors/opacity after initial load. For this first version,
-  // we display the I-frame statically. P-frame playback will be implemented
-  // once we have a suitable mutation API or custom shader injection.
+  // Upload decoded frame to GPU texture
+  uploadFrameToTexture();
+  uFrameIndex.value = frameNum;
+}
+
+// Seek to arbitrary frame (must replay from nearest refresh/I-frame)
+function seekToFrame(targetFrame) {
+  if (!bundleData || !reconXyz) return;
+  if (targetFrame === 0) {
+    // Reset recon state to I-frame baseline
+    reconXyz.set(bundleData.baselineXyz);
+    reconDcQ.set(bundleData.baselineDc);
+    reconOpQ.set(bundleData.baselineOp);
+    uFrameIndex.value = 0;
+    return;
+  }
+  // Find nearest refresh frame before targetFrame
+  let startFrame = 0;
+  for (let f = targetFrame; f >= 1; f--) {
+    if (bundleData.frameIndex[f - 1].flags === 2) {
+      startFrame = f;
+      break;
+    }
+  }
+  if (startFrame === 0) {
+    // Reset to I-frame baseline first
+    reconXyz.set(bundleData.baselineXyz);
+    reconDcQ.set(bundleData.baselineDc);
+    reconOpQ.set(bundleData.baselineOp);
+  }
+  // Replay from startFrame (or 1) to targetFrame
+  const from = startFrame === 0 ? 1 : startFrame;
+  for (let f = from; f <= targetFrame; f++) {
+    applyFrame(f);
+  }
 }
 
 // ============================================================
@@ -339,7 +497,9 @@ btnPlay.addEventListener('click', () => {
 
 scrubber.addEventListener('input', () => {
   currentFrame = parseInt(scrubber.value);
-  // For now, just update HUD (P-frame application TODO)
+  if (bundleData && reconXyz) {
+    seekToFrame(currentFrame);
+  }
   updateHud();
 });
 
@@ -360,12 +520,20 @@ function animate() {
   }
 
   // Advance frame if playing
-  if (playing && bundleData) {
+  if (playing && bundleData && reconXyz) {
     const fps = meta?.target_fps || 10;
     if (now - lastFrameTime > 1000 / fps) {
       currentFrame = (currentFrame + 1) % TOTAL_FRAMES;
+      if (currentFrame === 0) {
+        // Loop back: reset recon state
+        reconXyz.set(bundleData.baselineXyz);
+        reconDcQ.set(bundleData.baselineDc);
+        reconOpQ.set(bundleData.baselineOp);
+        uFrameIndex.value = 0;
+      } else {
+        applyFrame(currentFrame);
+      }
       lastFrameTime = now;
-      // applyFrame(currentFrame);  // TODO: apply when mutation API available
       updateHud();
     }
   }
@@ -400,4 +568,4 @@ async function init() {
 init();
 </script>
 </body>
-</html>
+</html>
