@@ -126,11 +126,16 @@ async function loadMeta() {
 
 async function loadIFrame() {
   loadStatus.textContent = 'Loading I-frame PLY (21 MB)...';
-  // SplatMesh can load .ply.gz directly
-  splatMesh = new SplatMesh({ renderer });
-  await splatMesh.loadAsync(IFRAME_URL);
+  // Spark.js SplatMesh: fetch file bytes first, then construct with fileBytes
+  const resp = await fetch(IFRAME_URL);
+  if (!resp.ok) throw new Error(`Failed to fetch I-frame: ${resp.status} ${resp.statusText}`);
+  const buf = await resp.arrayBuffer();
+  loadStatus.textContent = 'Parsing gaussians...';
+  await new Promise(r => setTimeout(r, 0)); // yield for UI update
+  splatMesh = new SplatMesh({ fileBytes: new Uint8Array(buf) });
   // Position the singer model
   splatMesh.position.set(0, 0, 0);
+  splatMesh.quaternion.set(1, 0, 0, 0);
   scene.add(splatMesh);
   console.log(`I-frame loaded: ${splatMesh.splatCount} splats`);
 }
