@@ -738,22 +738,22 @@ async function loadManifest() {
   timeline.max = totalFrames - 1;
   gopStrip.innerHTML = '';
   for (let i = 0; i < chunkInfoList.length; i++) {
-    const seg = document.createElement('div'); seg.className = 'gop-seg'; seg.id = \`gop-seg-\${i}\`;
-    seg.title = \`Chunk \${i}: frames \${chunkInfoList[i].startFrame}-\${chunkInfoList[i].endFrame-1}\`;
+    const seg = document.createElement('div'); seg.className = 'gop-seg'; seg.id = `gop-seg-${i}`;
+    seg.title = `Chunk ${i}: frames ${chunkInfoList[i].startFrame}-${chunkInfoList[i].endFrame-1}`;
     gopStrip.appendChild(seg);
   }
-  console.log(\`Manifest: \${N} gaussians, \${totalFrames} frames, \${targetFPS} fps\`);
+  console.log(`Manifest: ${N} gaussians, ${totalFrames} frames, ${targetFPS} fps`);
 }
 
 async function loadBundle() {
   setLoading(40, 'Loading P-frame bundle...');
   const compressed = await fetchWithAuth(BUNDLE_URL, (p) => {
-    setLoading(40 + Math.round(p * 30), \`Loading bundle... \${Math.round(p * 100)}%\`);
+    setLoading(40 + Math.round(p * 30), `Loading bundle... ${Math.round(p * 100)}%`);
   });
   setLoading(72, 'Decompressing bundle...');
   const raw = await decompressGzip(compressed);
   bundleData = parseBundle(raw);
-  console.log(\`Bundle: \${bundleData.numFrames} P-frames, \${bundleData.numGaussians} gaussians\`);
+  console.log(`Bundle: ${bundleData.numFrames} P-frames, ${bundleData.numGaussians} gaussians`);
 
   // Extract quant params for the delta texture system
   qDcMin = bundleData.dcMin; qDcMax = bundleData.dcMax;
@@ -782,7 +782,7 @@ async function loadBundle() {
 
   // Mark all GOP strip segments as loaded
   for (let i = 0; i < chunkInfoList.length; i++) updateGopStripUI(i, 'loaded');
-  gopStatus.textContent = \`Bundle ready: \${bundleData.numFrames} frames\`;
+  gopStatus.textContent = `Bundle ready: ${bundleData.numFrames} frames`;
   gopBar.style.width = '100%';
 }
 
