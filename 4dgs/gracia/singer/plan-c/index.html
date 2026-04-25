@@ -563,6 +563,9 @@ function animate() {
   }
 
   controls.update();
+  // Tell Spark.js that splat data may have changed — needed for dyno shader re-evaluation.
+  // Without this, Spark.js skips re-generation when camera is idle, freezing the animation.
+  if (splatMesh) splatMesh.updateVersion();
   renderer.render(scene, camera);
 }
 
